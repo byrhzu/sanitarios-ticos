@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es-CR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel de solicitudes | Sanitarios Ticos</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css?v=20260826b">
+<style>
+  /* Estilos propios de esta página — una herramienta interna, no una
+     página de venta, así que no lleva las animaciones ni el menú del sitio. */
+  body { background: var(--paper-2); }
+  .panel-shell { max-width: 62rem; margin: 0 auto; padding: clamp(2rem, 5vw, 4rem) var(--gut) 5rem; }
+  .panel-top { display: flex; align-items: center; gap: .9rem; margin-bottom: 2rem; }
+  .panel-top img { height: 34px; width: auto; }
+  .panel-top span { font-family: var(--display); font-weight: 700; font-size: 1.1rem; }
+
+  .llave { max-width: 26rem; margin: 4rem auto; text-align: center; }
+  .llave .f { text-align: left; margin: 1.3rem 0; }
+
+  .filtros { display: grid; gap: .9rem; grid-template-columns: 1fr 1fr auto auto; align-items: end; margin-bottom: 1.6rem; }
+  @media (max-width: 719px) { .filtros { grid-template-columns: 1fr 1fr; } .filtros .btn { grid-column: span 1; } }
+
+  .tabla-wrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--line); }
+  table.solicitudes { width: 100%; border-collapse: collapse; font-size: .89rem; white-space: nowrap; }
+  table.solicitudes th, table.solicitudes td { padding: .7rem .9rem; border-bottom: 1px solid var(--line); text-align: left; }
+  table.solicitudes th { font-family: var(--display); font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--paper-2); }
+  table.solicitudes td.detalle { white-space: normal; min-width: 16rem; color: var(--ink-2); }
+  table.solicitudes tr:last-child td { border-bottom: 0; }
+
+  .estado-panel { font-size: .9rem; color: var(--muted); margin: 1rem 0; }
+  .estado-panel.is-error { color: #c0392b; }
+  .vacio { padding: 3rem 1rem; text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="panel-shell">
+  <div class="panel-top">
+    <img src="assets/img/logo-mascota.webp" alt="" width="34" height="34">
+    <span>Panel de solicitudes</span>
+  </div>
+
+  <!-- Se ve mientras no se haya escrito la clave correcta -->
+  <section class="llave" id="pantalla-clave">
+    <p class="kicker" style="justify-content:center; display:flex;">Acceso privado</p>
+    <h1 style="font-size:1.6rem;">Solicitudes del sitio</h1>
+    <p class="dim" style="margin-top:.6rem;">Ingrese la clave para ver y descargar las solicitudes guardadas.</p>
+    <form id="form-clave">
+      <div class="f">
+        <label for="clave">Clave</label>
+        <input type="password" id="clave" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn-orange" type="submit" style="width:100%;">Entrar</button>
+      <p class="estado-panel" id="estado-clave" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <!-- Se ve después de entrar la clave correcta -->
+  <section id="pantalla-panel" hidden>
+    <div class="filtros">
+      <div class="f">
+        <label for="desde">Desde</label>
+        <input type="date" id="desde">
+      </div>
+      <div class="f">
+        <label for="hasta">Hasta</label>
+        <input type="date" id="hasta">
+      </div>
+      <button class="btn btn-line" type="button" id="btn-filtrar">Filtrar</button>
+      <button class="btn btn-orange" type="button" id="btn-csv">Descargar CSV</button>
+    </div>
+
+    <p class="estado-panel" id="estado-lista" role="status" aria-live="polite"></p>
+
+    <div class="tabla-wrap">
+      <table class="solicitudes" id="tabla">
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Nombre</th><th>Teléfono</th><th>Servicio</th><th>Zona</th><th>Detalle</th><th>Página</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-tabla"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var $ = function (id) { return document.getElementById(id); };
+  var clave = sessionStorage.getItem("clavePanel") || "";
+
+  function escHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function mostrarPanel() {
+    $("pantalla-clave").hidden = true;
+    $("pantalla-panel").hidden = false;
+    cargar();
+  }
+
+  function urlConFiltros(base) {
+    var params = new URLSearchParams();
+    if ($("desde").value) params.set("desde", $("desde").value);
+    if ($("hasta").value) params.set("hasta", $("hasta").value);
+    var qs = params.toString();
+    return base + (qs ? "?" + qs : "");
+  }
+
+  function pintarFilas(solicitudes) {
+    var cuerpo = $("cuerpo-tabla");
+    if (!solicitudes.length) {
+      cuerpo.innerHTML = "";
+      $("estado-lista").textContent = "No hay solicitudes en ese rango de fechas.";
+      return;
+    }
+    $("estado-lista").textContent = solicitudes.length + " solicitud(es).";
+    cuerpo.innerHTML = solicitudes.map(function (s) {
+      return "<tr>" +
+        "<td>" + escHtml(s.creado) + "</td>" +
+        "<td>" + escHtml(s.nombre) + "</td>" +
+        "<td>" + escHtml(s.telefono) + "</td>" +
+        "<td>" + escHtml(s.servicio) + "</td>" +
+        "<td>" + escHtml(s.zona) + "</td>" +
+        "<td class=\"detalle\">" + escHtml(s.detalle || "—") + "</td>" +
+        "<td>" + escHtml(s.pagina || "—") + "</td>" +
+        "</tr>";
+    }).join("");
+  }
+
+  function cargar() {
+    $("estado-lista").textContent = "Cargando…";
+    $("estado-lista").classList.remove("is-error");
+    fetch(urlConFiltros("/api/panel/solicitudes"), { headers: { "X-Clave": clave } })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (!res.ok || !res.d.ok) throw new Error(res.d && res.d.error);
+        pintarFilas(res.d.solicitudes);
+      })
+      .catch(function () {
+        $("estado-lista").textContent = "No se pudo cargar. Intente de nuevo.";
+        $("estado-lista").classList.add("is-error");
+      });
+  }
+
+  $("form-clave").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var intento = $("clave").value;
+    $("estado-clave").textContent = "Comprobando…";
+    $("estado-clave").classList.remove("is-error");
+    fetch("/api/panel/solicitudes", { headers: { "X-Clave": intento } })
+      .then(function (r) {
+        if (r.status === 401) throw new Error("clave");
+        return r.json();
+      })
+      .then(function () {
+        clave = intento;
+        sessionStorage.setItem("clavePanel", clave);
+        $("estado-clave").textContent = "";
+        mostrarPanel();
+      })
+      .catch(function () {
+        $("estado-clave").textContent = "Clave incorrecta.";
+        $("estado-clave").classList.add("is-error");
+      });
+  });
+
+  $("btn-filtrar").addEventListener("click", cargar);
+
+  $("btn-csv").addEventListener("click", function () {
+    // El archivo necesita la clave, pero una descarga no puede llevar
+    // encabezados personalizados: por eso acá sí va como parámetro en
+    // la URL. Sólo viaja por HTTPS, igual que el resto de la página.
+    var params = new URLSearchParams();
+    if ($("desde").value) params.set("desde", $("desde").value);
+    if ($("hasta").value) params.set("hasta", $("hasta").value);
+    params.set("clave", clave);
+    window.location.href = "/api/panel/csv?" + params.toString();
+  });
+
+  // Si ya había una clave guardada de una visita anterior en esta pestaña,
+  // se entra directo sin volver a pedirla.
+  if (clave) mostrarPanel();
+})();
+</script>
+
+</body>
+</html>

@@ -57,11 +57,64 @@ Números actuales:
 
 ## Cómo funciona el formulario
 
-El sitio no tiene servidor propio, así que el formulario **no envía correos por su
-cuenta**: arma el mensaje con lo que la persona escribió y abre WhatsApp con todo
-listo para pulsar enviar. Debajo hay un enlace alternativo que hace lo mismo por
-correo. Es la opción más fiable en un hosting estático y además llega antes al
-teléfono de la empresa.
+Cuando alguien llena el formulario y pulsa el botón, pasan tres cosas en orden:
+
+1. Los datos se guardan en la base de datos (`worker.js`, función `guardarSolicitud`).
+2. Se manda un correo de aviso (ver "Aviso por correo" más abajo).
+3. Se abre WhatsApp con el mensaje ya armado, listo para pulsar enviar.
+
+El guardado y el correo pasan **antes** de abrir WhatsApp, así el dato queda
+aunque la persona no llegue a pulsar "enviar" allá. Si el guardado o el correo
+fallan por cualquier motivo (sin internet, Cloudflare caído), WhatsApp se abre
+igual — nunca se le traba el paso al cliente.
+
+Debajo del botón también hay un enlace para mandar los mismos datos por correo,
+como alternativa manual.
+
+### La base de datos
+
+Las solicitudes quedan en una base de datos D1 de Cloudflare llamada
+`sanitarios-ticos-datos`, en una tabla `solicitudes`. El SQL para crearla está
+en `tools/crear-tabla.sql` (se pega una sola vez en la pestaña **Console** de
+esa base de datos, en el panel de Cloudflare).
+
+### Aviso por correo
+
+Cada solicitud guardada manda un correo usando [Resend](https://resend.com),
+un servicio externo gratuito (no hay forma de mandar correos desde Cloudflare
+sin uno). Necesita dos cosas configuradas como variables en Cloudflare:
+
+- `RESEND_API_KEY` — la clave que da Resend al crear la cuenta. Se configura en
+  **Settings → Variables and Secrets** del Worker, marcada como **Encrypt**
+  (para que sea secreta, igual que una contraseña).
+- `CORREO_AVISO` — a qué correo llega el aviso. Este NO es secreto, así que
+  vive directamente en `wrangler.jsonc` — para cambiarlo, editar ese archivo y
+  hacer `git push`, nada más.
+
+**Importante:** mientras no se verifique un dominio propio en Resend, sólo se
+puede mandar correo **a la misma dirección con la que se creó la cuenta de
+Resend**. Por eso hay que registrarse ahí con `byrhu36@gmail.com` — si se usa
+otro correo para la cuenta de Resend, los avisos van a fallar en silencio
+(la solicitud igual queda guardada, sólo no llega el correo).
+
+### Panel privado
+
+En `/panel` (archivo `panel.html`) hay una página protegida con contraseña
+donde se ven las solicitudes guardadas, se pueden filtrar por rango de fechas
+y descargarse en CSV (se abre bien en Excel, con acentos y todo).
+
+Necesita una variable más en Cloudflare:
+
+- `CLAVE_PANEL` — la contraseña para entrar. También se configura como
+  **Encrypt** en **Settings → Variables and Secrets**. Elegir algo largo y
+  que no se use en ningún otro sitio.
+
+La página no aparece en ningún menú ni buscador (lleva `noindex` y está
+bloqueada en `robots.txt`), pero cualquiera que sepa la dirección puede
+*abrirla* — lo que la protege de verdad es la contraseña, que nunca queda
+escrita en el código. Es una protección simple, sin límite de intentos
+fallidos todavía; para algo más robusto (bloqueo tras varios intentos) se
+puede agregar más adelante.
 
 ## Los mapas
 
@@ -177,13 +230,18 @@ Sirve para revisar el sitio y para que el cliente lo apruebe antes de mover el
 dominio real. Cuando el dominio definitivo esté listo, se conecta desde el
 mismo panel del proyecto, en **Custom domains**.
 
-### Formulario y funciones con datos
+### El "fondo" del sitio (worker.js)
 
-Cloudflare permite añadir código de servidor sin contratar nada más: se agrega
-un archivo dentro de una carpeta `functions/` en la raíz del proyecto y se
-convierte en un pequeño programa que corre en los servidores de Cloudflare.
-Ahí es donde iría el guardado de solicitudes, con las claves guardadas en el
-panel de Cloudflare (nunca en el código).
+`worker.js` es el programa que corre en los servidores de Cloudflare (nunca en
+el navegador del visitante). Recibe el formulario, guarda en la base de datos,
+manda el correo de aviso y atiende el panel privado. `wrangler.jsonc` le dice
+a Cloudflare, con `"main": "worker.js"` y `"run_worker_first": ["/api/*"]`,
+que sólo las direcciones que empiezan con `/api/` pasan por ese programa —
+todo lo demás (las páginas, las fotos) se sigue sirviendo directo, como antes.
+
+Las claves (`RESEND_API_KEY`, `CLAVE_PANEL`) se configuran en el panel de
+Cloudflare, nunca en el código — ver "Aviso por correo" y "Panel privado"
+más arriba.
 
 ## Ver el sitio en el computador
 

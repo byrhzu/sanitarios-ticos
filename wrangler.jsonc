@@ -18,9 +18,16 @@
     "run_worker_first": ["/api/*"]
   },
 
+  // Dato normal (no secreto) que el programa puede leer como env.CORREO_AVISO.
+  // Para cambiarlo: editar el valor de abajo y hacer "git push", nada más.
+  // Las claves de verdad (RESEND_API_KEY, CLAVE_PANEL) NO van acá — esas se
+  // configuran en el panel de Cloudflare, en Settings → Variables and Secrets,
+  // para que nunca queden escritas en el código.
+  "vars": {
+    "CORREO_AVISO": "byrhu36@gmail.com"
+  },
+
   // La base de datos donde quedan las solicitudes del formulario.
-  // ⚠️ PENDIENTE: cambiar "database_id" por el que dé Cloudflare al
-  // crear la base de datos. Sin eso, el sitio no publica.
   "d1_databases": [
     {
       "binding": "DB",
