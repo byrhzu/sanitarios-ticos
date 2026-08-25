@@ -268,6 +268,27 @@
       if (field) field.classList.remove("is-error");
     });
 
+    // Guarda la solicitud en el servidor ANTES de abrir WhatsApp, así el
+    // dato queda aunque la persona no llegue a pulsar "enviar" allá.
+    // keepalive: true es necesario porque abrir WhatsApp saca de la
+    // página, y sin esto el navegador cancelaría el envío a mitad de
+    // camino. Nunca bloquea ni retrasa la apertura de WhatsApp: si el
+    // guardado falla (sin internet, servidor caído), igual se continúa,
+    // porque la prioridad es que el cliente pueda escribir siempre.
+    function guardarSolicitud(v) {
+      try {
+        fetch("/api/solicitud", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nombre: v.nombre, telefono: v.telefono, servicio: v.servicio,
+            zona: v.zona, detalle: v.detalle, pagina: location.pathname
+          }),
+          keepalive: true
+        }).catch(function () {});
+      } catch (e) {}
+    }
+
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (msg) { msg.textContent = ""; msg.classList.remove("is-error"); }
@@ -280,7 +301,10 @@
         return;
       }
 
-      var url = "https://wa.me/" + waNumber + "?text=" + encodeURIComponent(buildMessage(readValues()));
+      var v = readValues();
+      guardarSolicitud(v);
+
+      var url = "https://wa.me/" + waNumber + "?text=" + encodeURIComponent(buildMessage(v));
       window.open(url, "_blank", "noopener");
       if (msg) msg.textContent = "Abrimos WhatsApp con su mensaje listo. Sólo debe pulsar enviar.";
     });

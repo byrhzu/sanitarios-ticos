@@ -1,15 +1,31 @@
 {
   // Le dice a Cloudflare qué carpeta publicar y cómo comportarse.
-  // No es un programa: es solo un papel de instrucciones. No lleva ninguna
-  // clave secreta ni contraseña — es seguro que esté visible en GitHub.
+  // No lleva ninguna clave secreta — es seguro que esté visible en GitHub.
   "name": "sanitarios-ticos",
   "compatibility_date": "2026-08-25",
+
+  // El programa que recibe el formulario antes de guardar en la base de datos.
+  "main": "worker.js",
+
   "assets": {
-    // "." = la raíz del proyecto, porque las páginas están sueltas ahí
-    // (no hay una carpeta "dist" ni un paso de compilación).
+    // "." = la raíz del proyecto, porque las páginas están sueltas ahí.
     "directory": ".",
-    // Si alguien entra a una dirección que no existe, se le muestra 404.html
-    // en vez del aviso genérico de Cloudflare.
-    "not_found_handling": "404-page"
-  }
+    "binding": "ASSETS",
+    // Si alguien entra a una dirección que no existe, se le muestra 404.html.
+    "not_found_handling": "404-page",
+    // Sólo lo que empiece con /api/ pasa primero por worker.js.
+    // Todo lo demás (las páginas, las fotos) se sirve directo, como antes.
+    "run_worker_first": ["/api/*"]
+  },
+
+  // La base de datos donde quedan las solicitudes del formulario.
+  // ⚠️ PENDIENTE: cambiar "database_id" por el que dé Cloudflare al
+  // crear la base de datos. Sin eso, el sitio no publica.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sanitarios-ticos-datos",
+      "database_id": "PENDIENTE-REEMPLAZAR"
+    }
+  ]
 }
