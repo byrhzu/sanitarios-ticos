@@ -1,0 +1,7 @@
+# Archivos que existen en el repositorio pero que NO deben publicarse
+# como si fueran páginas del sitio (config, documentación, etc).
+wrangler.jsonc
+_headers
+.htaccess
+.gitignore
+README.md

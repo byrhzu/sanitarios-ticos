@@ -1,0 +1,15 @@
+{
+  // Le dice a Cloudflare qué carpeta publicar y cómo comportarse.
+  // No es un programa: es solo un papel de instrucciones. No lleva ninguna
+  // clave secreta ni contraseña — es seguro que esté visible en GitHub.
+  "name": "sanitarios-ticos",
+  "compatibility_date": "2026-08-25",
+  "assets": {
+    // "." = la raíz del proyecto, porque las páginas están sueltas ahí
+    // (no hay una carpeta "dist" ni un paso de compilación).
+    "directory": ".",
+    // Si alguien entra a una dirección que no existe, se le muestra 404.html
+    // en vez del aviso genérico de Cloudflare.
+    "not_found_handling": "404-page"
+  }
+}

@@ -146,33 +146,44 @@ al tamaño de la pantalla, de forma que un teléfono descarga unos 60 KB en vez 
 140 KB. Si sustituye una foto, hay que generar también sus versiones pequeñas y
 actualizar el atributo `srcset` de esa imagen.
 
-## Publicar en Cloudflare Pages
+## Publicar en Cloudflare
 
-El sitio es estático, así que se sube tal cual. En el panel de Cloudflare:
-**Workers & Pages → Create → Pages**, y se conecta el repositorio o se sube la
-carpeta directamente. No hay que compilar nada: no se indica ni comando de
-construcción ni carpeta de salida distinta de la raíz.
+**Aviso:** cuando escribí esto por primera vez, hablaba de "Cloudflare Pages".
+Al conectar el repositorio real, Cloudflare llevó a un flujo distinto llamado
+**Workers** (con "static assets", que es su forma actual de publicar sitios
+como este). Es lo mismo en la práctica —un sitio publicado gratis, conectado a
+GitHub—, pero cambia algún nombre en el panel. Esta sección ya está actualizada
+a eso.
 
-**No subir**: `assets/fotos-originales/`, `tools/` ni `.claude/`.
+El sitio se sube conectando el repositorio de GitHub en
+**Workers & Pages → Create → Import a repository**. No hace falta indicar
+ningún comando de compilación: las páginas ya están listas, sólo se publican
+tal cual.
 
-### Lo que cambia respecto a un hosting normal
+El proyecto lleva un archivo `wrangler.jsonc` en la raíz — es el papel de
+instrucciones que le dice a Cloudflare qué carpeta publicar. Sin él, el botón
+"Deploy" falla. Ya está incluido, no hay que crearlo.
 
-- **`.htaccess` no funciona en Cloudflare.** Las reglas de caché y las cabeceras
-  de seguridad están en `_headers`, que es el formato que sí lee Pages. El
-  `.htaccess` se deja por si algún día el sitio se mueve a un servidor Apache.
-- **Las direcciones pierden el `.html`.** Cloudflare suele servir
-  `/servicios` en vez de `/servicios.html`. Después del primer despliegue hay que
-  abrir `sanitariosticos.com/servicios.html` y mirar la barra de direcciones: si
-  se queda sin `.html`, hay que actualizar los enlaces internos, las etiquetas
-  `canonical` y el `sitemap.xml` para que coincidan. Es un cambio de una pasada,
-  pero conviene no dejarlo pendiente porque afecta a Google.
+Un archivo `.assetsignore` evita que `wrangler.jsonc`, `_headers`, `.htaccess`,
+`.gitignore` y `README.md` se publiquen como si fueran páginas del sitio.
+
+**No subir** (ya excluidos en `.gitignore`): `assets/fotos-originales/`,
+`tools/` ni `.claude/`.
+
+### La dirección donde queda publicado
+
+Cloudflare da una dirección gratuita del tipo `sanitarios-ticos.<algo>.workers.dev`.
+Sirve para revisar el sitio y para que el cliente lo apruebe antes de mover el
+dominio real. Cuando el dominio definitivo esté listo, se conecta desde el
+mismo panel del proyecto, en **Custom domains**.
 
 ### Formulario y funciones con datos
 
-Cloudflare permite añadir código de servidor sin contratar nada más: una carpeta
-`functions/` en la raíz se convierte en pequeños programas que corren en sus
-servidores. Ahí es donde irían el guardado de solicitudes y el asistente de IA,
-con las claves guardadas en el panel de Cloudflare (nunca en el código).
+Cloudflare permite añadir código de servidor sin contratar nada más: se agrega
+un archivo dentro de una carpeta `functions/` en la raíz del proyecto y se
+convierte en un pequeño programa que corre en los servidores de Cloudflare.
+Ahí es donde iría el guardado de solicitudes, con las claves guardadas en el
+panel de Cloudflare (nunca en el código).
 
 ## Ver el sitio en el computador
 
