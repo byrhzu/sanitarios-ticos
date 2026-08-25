@@ -1,0 +1,323 @@
+(function () {
+  "use strict";
+
+  /* =============================================================
+     SANITARIOS TICOS — main.js
+     Script clásico (sin módulos) envuelto en IIFE. Funciona en
+     file://, hosting compartido y CDN. El HTML ya trae todo el
+     contenido: este archivo sólo lo enriquece.
+     ============================================================= */
+
+  var data = window.__BRAND__ || {};
+
+  function $(sel, scope) { return (scope || document).querySelector(sel); }
+  function $$(sel, scope) { return Array.prototype.slice.call((scope || document).querySelectorAll(sel)); }
+  function safe(fn, name) { try { fn(); } catch (e) { console.warn("[" + name + "]", e); } }
+
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- Cabecera: sombra al hacer scroll + menú móvil ---------- */
+  function initHead() {
+    var head = $("[data-head]");
+    if (!head) return;
+
+    var onScroll = function () { head.classList.toggle("is-stuck", window.scrollY > 8); };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    var burger = $("[data-burger]", head);
+    if (burger) {
+      burger.addEventListener("click", function () {
+        var open = head.classList.toggle("is-open");
+        burger.setAttribute("aria-expanded", open ? "true" : "false");
+        burger.setAttribute("aria-label", open ? "Cerrar menú" : "Abrir menú");
+      });
+    }
+
+    $$(".menu a", head).forEach(function (a) {
+      a.addEventListener("click", function () {
+        head.classList.remove("is-open");
+        if (burger) burger.setAttribute("aria-expanded", "false");
+      });
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && head.classList.contains("is-open")) {
+        head.classList.remove("is-open");
+        if (burger) { burger.setAttribute("aria-expanded", "false"); burger.focus(); }
+      }
+    });
+  }
+
+  /* ---------- Enlaces internos con compensación de la cabecera ---------- */
+  function initAnchors() {
+    document.addEventListener("click", function (e) {
+      var a = e.target.closest ? e.target.closest('a[href^="#"]') : null;
+      if (!a) return;
+      var id = a.getAttribute("href");
+      if (!id || id === "#") return;
+      var el = document.querySelector(id);
+      if (!el) return;
+      e.preventDefault();
+      window.scrollTo({
+        top: el.getBoundingClientRect().top + window.scrollY - 92,
+        behavior: reduced ? "auto" : "smooth"
+      });
+      if (history.replaceState) history.replaceState(null, "", id);
+    });
+
+    // Llegada desde otra página con ancla (#tanques-septicos): corrige el offset
+    if (location.hash) {
+      var target = document.querySelector(location.hash);
+      if (target) {
+        setTimeout(function () {
+          window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 92, behavior: "auto" });
+        }, 60);
+      }
+    }
+  }
+
+  /* ---------- Aparición al hacer scroll ---------- */
+  function initReveals() {
+    var items = $$(".rv");
+    if (!items.length) return;
+
+    if (!("IntersectionObserver" in window)) {
+      items.forEach(function (el) { el.classList.add("on"); });
+      return;
+    }
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var el = entry.target;
+        var sibs = el.parentElement ? Array.prototype.indexOf.call(el.parentElement.children, el) : 0;
+        setTimeout(function () { el.classList.add("on"); }, Math.min(sibs, 5) * 65);
+        io.unobserve(el);
+      });
+    }, { threshold: 0.02, rootMargin: "0px 0px -3% 0px" });
+
+    items.forEach(function (el) { io.observe(el); });
+
+    // Red de seguridad: nada se queda invisible
+    setTimeout(function () {
+      $$(".rv:not(.on)").forEach(function (el) {
+        if (el.getBoundingClientRect().top < window.innerHeight * 1.3) el.classList.add("on");
+      });
+    }, 6000);
+  }
+
+  /* ---------- Una sola pregunta abierta a la vez ---------- */
+  function initFaq() {
+    var items = $$(".qa details");
+    items.forEach(function (d) {
+      d.addEventListener("toggle", function () {
+        if (!d.open) return;
+        items.forEach(function (other) { if (other !== d) other.open = false; });
+      });
+    });
+  }
+
+  /* ---------- Selector de sede: la tarjeta cambia el mapa ---------- */
+  function initMapa() {
+    var wrap = $("[data-mapa]");
+    if (!wrap) return;
+
+    var frame = $("[data-mapa-frame]", wrap);
+    var sedes = $$(".sede[data-sede]", wrap);
+    if (!frame || sedes.length < 2) return;
+
+    var elSede = $("[data-mapa-sede]", wrap);
+    var elDir  = $("[data-mapa-dir]", wrap);
+    var elRef  = $("[data-mapa-ref]", wrap);
+    var elRuta = $("[data-mapa-ruta]", wrap);
+
+    // Marca el contenedor para que el CSS active el cursor sobre la tarjeta
+    var lista = sedes[0].parentElement;
+    if (lista) lista.setAttribute("data-js", "1");
+
+    function elegir(sede) {
+      if (sede.classList.contains("is-active")) return;
+
+      sedes.forEach(function (s) {
+        var activa = s === sede;
+        s.classList.toggle("is-active", activa);
+        var btn = $("[data-sede-pick]", s);
+        if (btn) {
+          btn.setAttribute("aria-pressed", activa ? "true" : "false");
+          btn.textContent = activa ? "Viendo en el mapa" : "Ver en el mapa";
+        }
+      });
+
+      var nombre = sede.getAttribute("data-nombre");
+      frame.setAttribute("src", sede.getAttribute("data-embed"));
+      frame.setAttribute("title", "Ubicación de Sanitarios Ticos en " + nombre);
+      if (elSede) elSede.textContent = "Sede " + nombre;
+      if (elDir)  elDir.textContent  = sede.getAttribute("data-dir");
+      if (elRef)  elRef.textContent  = sede.getAttribute("data-ref") || "";
+      if (elRuta) elRuta.href        = sede.getAttribute("data-ruta");
+    }
+
+    sedes.forEach(function (s) {
+      var btn = $("[data-sede-pick]", s);
+      if (btn) {
+        btn.setAttribute("aria-pressed", s.classList.contains("is-active") ? "true" : "false");
+        if (s.classList.contains("is-active")) btn.textContent = "Viendo en el mapa";
+      }
+      // El botón ya funciona con teclado; el clic en la tarjeta es un extra
+      s.addEventListener("click", function (e) {
+        if (e.target.closest("a")) return;   // los enlaces siguen su camino
+        elegir(s);
+      });
+    });
+  }
+
+  /* ---------- Parallax discreto de la foto de portada ----------
+     Antes esto necesitaba GSAP + ScrollTrigger (44 KB comprimidos)
+     para un desplazamiento del 6 %. Ahora son unas pocas líneas:
+     un solo rAF, que además se apaga cuando la portada sale de pantalla. */
+  function initCoverParallax() {
+    if (reduced) return;
+    var cover = $(".cover");
+    var media = $(".cover-media img");
+    if (!cover || !media) return;
+
+    var visible = true;
+    var pendiente = false;
+    var ultimo = null;
+
+    function pintar() {
+      pendiente = false;
+      var alto = cover.offsetHeight || 1;
+      var avance = Math.min(Math.max(window.scrollY / alto, 0), 1);
+      var y = Math.round(avance * 60);          // 60 px como máximo
+      if (y === ultimo) return;
+      ultimo = y;
+      media.style.transform = "translate3d(0," + y + "px,0)";
+    }
+
+    function alHacerScroll() {
+      if (pendiente || !visible) return;
+      pendiente = true;
+      requestAnimationFrame(pintar);
+    }
+
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (entradas) {
+        visible = entradas[0].isIntersecting;
+        if (visible) alHacerScroll();
+      }, { threshold: 0 }).observe(cover);
+    }
+
+    window.addEventListener("scroll", alHacerScroll, { passive: true });
+    window.addEventListener("resize", function () { ultimo = null; alHacerScroll(); }, { passive: true });
+    pintar();
+  }
+
+  /* =============================================================
+     Formulario → WhatsApp (y correo como alternativa)
+     El sitio es estático: no hay servidor que reciba el envío,
+     así que el formulario compone el mensaje y abre WhatsApp.
+     ============================================================= */
+  function buildMessage(v) {
+    var lines = [
+      "Hola Sanitarios Ticos, quiero una cotización.",
+      "",
+      "Nombre: " + v.nombre,
+      "Teléfono: " + v.telefono,
+      "Servicio: " + v.servicio,
+      "Zona: " + v.zona
+    ];
+    if (v.detalle) lines.push("Detalle: " + v.detalle);
+    return lines.join("\n");
+  }
+
+  function initForm() {
+    var form = $("[data-form]");
+    if (!form) return;
+
+    var msg = $("[data-form-msg]", form);
+    var mailLink = $("[data-mail-fallback]", form);
+    var waNumber = (data.contact && data.contact.whatsappNumber) || "50683417547";
+    var email = (data.contact && data.contact.email) || "info@sanitariosticos.com";
+
+    function readValues() {
+      return {
+        nombre: (form.nombre.value || "").trim(),
+        telefono: (form.telefono.value || "").trim(),
+        servicio: form.servicio.value || "",
+        zona: (form.zona.value || "").trim(),
+        detalle: (form.detalle.value || "").trim()
+      };
+    }
+
+    function markErrors() {
+      var ok = true;
+      ["nombre", "telefono", "servicio", "zona"].forEach(function (name) {
+        var input = form[name];
+        var field = input.closest(".f");
+        var empty = !String(input.value || "").trim();
+        if (field) field.classList.toggle("is-error", empty);
+        if (empty && ok) { input.focus(); ok = false; }
+      });
+      return ok;
+    }
+
+    form.addEventListener("input", function (e) {
+      var field = e.target.closest && e.target.closest(".f");
+      if (field) field.classList.remove("is-error");
+    });
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (msg) { msg.textContent = ""; msg.classList.remove("is-error"); }
+
+      if (!markErrors()) {
+        if (msg) {
+          msg.textContent = "Complete los campos marcados para poder cotizarle.";
+          msg.classList.add("is-error");
+        }
+        return;
+      }
+
+      var url = "https://wa.me/" + waNumber + "?text=" + encodeURIComponent(buildMessage(readValues()));
+      window.open(url, "_blank", "noopener");
+      if (msg) msg.textContent = "Abrimos WhatsApp con su mensaje listo. Sólo debe pulsar enviar.";
+    });
+
+    if (mailLink) {
+      mailLink.addEventListener("click", function () {
+        var v = readValues();
+        var subject = "Solicitud de cotización" + (v.servicio ? " — " + v.servicio : "");
+        mailLink.href = "mailto:" + email +
+          "?subject=" + encodeURIComponent(subject) +
+          "&body=" + encodeURIComponent(buildMessage(v));
+      });
+    }
+  }
+
+  function initYear() {
+    var el = $("[data-year]");
+    if (el) el.textContent = String(new Date().getFullYear());
+  }
+
+  function boot() {
+    safe(initHead, "initHead");
+    safe(initAnchors, "initAnchors");
+    safe(initReveals, "initReveals");
+    safe(initFaq, "initFaq");
+    safe(initMapa, "initMapa");
+    safe(initForm, "initForm");
+    safe(initYear, "initYear");
+
+    safe(initCoverParallax, "initCoverParallax");
+
+    document.documentElement.classList.add("is-ready");
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})();

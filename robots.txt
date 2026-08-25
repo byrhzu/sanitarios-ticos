@@ -1,0 +1,4 @@
+# MODO DEMO — el sitio está en una dirección temporal.
+# Se pide a los buscadores que no lo indexen todavía.
+User-agent: *
+Disallow: /

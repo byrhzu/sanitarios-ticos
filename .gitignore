@@ -1,0 +1,14 @@
+# Cosas del sistema
+.DS_Store
+.claude/
+
+# Herramientas de trabajo: no forman parte del sitio publicado
+tools/
+
+# Fotos originales sin comprimir (las versiones optimizadas están en assets/img/)
+assets/fotos-originales/
+
+# Nunca subir claves ni datos de clientes
+.dev.vars
+.env
+datos/

@@ -1,0 +1,35 @@
+# ============================================================================
+# Cabeceras para Cloudflare Pages.
+# Cloudflare NO lee .htaccess (eso es de servidores Apache), así que las reglas
+# de caché y seguridad van aquí. Este archivo se sube junto a las páginas.
+# ============================================================================
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+# Las páginas siempre se revalidan: al publicar un cambio se ve de inmediato.
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+# El código lleva ?v= en el enlace, pero igual se revalida por seguridad.
+/styles.css
+  Cache-Control: public, max-age=0, must-revalidate
+
+/main.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/lib/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Las imágenes y el favicon cambian de nombre cuando cambian: caché larga.
+/assets/img/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/favicon.svg
+  Cache-Control: public, max-age=2592000
