@@ -248,7 +248,7 @@ REGLAS QUE DEBES SEGUIR SIEMPRE:
 // Se intenta primero el modelo más liviano; si falla, el siguiente.
 const MODELOS_GEMINI = ["gemini-2.5-flash-lite", "gemini-2.5-flash"];
 
-async function llamarGemini(env, mensajes) {
+async function llamarGemini(env, mensajes, infoDebug) {
   let ultimoError = null;
   for (const modelo of MODELOS_GEMINI) {
     try {
@@ -282,6 +282,7 @@ async function llamarGemini(env, mensajes) {
     }
   }
   console.error("Gemini falló con todos los modelos:", ultimoError);
+  if (infoDebug) infoDebug.error = String(ultimoError && ultimoError.message ? ultimoError.message : ultimoError).slice(0, 500);
   return null;
 }
 
@@ -306,7 +307,12 @@ async function usoDelDiaYSumar(env) {
 }
 
 async function responderAsistente(request, env) {
+  // Diagnóstico temporal: con la cabecera X-Debug se ve por qué falla,
+  // sin exponer la clave. Se quita en cuanto quede resuelto.
+  const debug = request.headers.get("X-Debug") === "1";
+
   if (!env.GEMINI_API_KEY) {
+    if (debug) return json({ ok: false, diagnostico: "GEMINI_API_KEY no está definida (env.GEMINI_API_KEY es falsy)" });
     return json({ ok: true, reply: "El asistente está en configuración todavía. Mientras tanto, escríbanos por WhatsApp o llame al 2440-1110 — le respondemos enseguida." });
   }
 
@@ -332,11 +338,14 @@ async function responderAsistente(request, env) {
     .map((h) => ({ role: h.role, parts: [{ text: texto(h.text, 500) }] }));
   mensajes.push({ role: "user", parts: [{ text: mensaje }] });
 
-  const respuesta = await llamarGemini(env, mensajes);
+  const infoDebug = {};
+  const respuesta = await llamarGemini(env, mensajes, infoDebug);
   if (!respuesta) {
+    if (debug) return json({ ok: false, diagnostico: "GEMINI_API_KEY está definida (largo " + env.GEMINI_API_KEY.length + ") pero la llamada a Gemini falló", errorGemini: infoDebug.error });
     return json({ ok: true, reply: "No pude responder justo ahora. Puede escribirnos por WhatsApp o llamar al 2440-1110, con gusto le ayudamos." });
   }
 
+  if (debug) return json({ ok: true, diagnostico: "Funcionó correctamente", reply: respuesta });
   return json({ ok: true, reply: respuesta });
 }
 
