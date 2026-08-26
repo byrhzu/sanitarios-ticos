@@ -320,6 +320,180 @@
     }
   }
 
+  /* ---------- Calculadora rápida (sin IA: son reglas fijas) ---------- */
+  function formatoColones(n) {
+    // toLocaleString("es-CR") separa los miles con espacio; en Costa Rica
+    // se usa punto (₡25.000), así que se arma el separador a mano.
+    var entero = String(Math.round(n));
+    var conPuntos = entero.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return "₡" + conPuntos;
+  }
+
+  function initCotizador() {
+    var raiz = $("[data-calc]");
+    if (!raiz) return;
+    var tarifas = data.tarifas;
+    if (!tarifas || !tarifas.servicios || !tarifas.servicios.length) return;
+
+    var selServicio = $("[data-calc-servicio]", raiz);
+    var campoOpcion = $("[data-calc-campo-opcion]", raiz);
+    var etiquetaOpcion = $("[data-calc-etiqueta-opcion]", raiz);
+    var selOpcion = $("[data-calc-opcion]", raiz);
+    var selZona = $("[data-calc-zona]", raiz);
+    var resultado = $("[data-calc-resultado]", raiz);
+    var elMonto = $("[data-calc-monto]", raiz);
+
+    tarifas.servicios.forEach(function (s) {
+      var op = document.createElement("option");
+      op.value = s.id;
+      op.textContent = s.nombre;
+      selServicio.appendChild(op);
+    });
+
+    function servicioActual() {
+      var id = selServicio.value;
+      return tarifas.servicios.filter(function (s) { return s.id === id; })[0] || null;
+    }
+
+    function pintarOpciones() {
+      var s = servicioActual();
+      selOpcion.innerHTML = "";
+      if (!s) { campoOpcion.hidden = true; calcular(); return; }
+      etiquetaOpcion.textContent = s.pregunta;
+      s.opciones.forEach(function (o, i) {
+        var op = document.createElement("option");
+        op.value = String(i);
+        op.textContent = o.etiqueta;
+        selOpcion.appendChild(op);
+      });
+      campoOpcion.hidden = false;
+      calcular();
+    }
+
+    function calcular() {
+      var s = servicioActual();
+      if (!s) { resultado.hidden = true; return; }
+      var opcion = s.opciones[Number(selOpcion.value) || 0];
+      if (!opcion) { resultado.hidden = true; return; }
+
+      var factor = selZona.value === "resto" ? 1 + (tarifas.recargoFueraValle || 0) : 1;
+      var min = opcion.rango[0] * factor;
+      var max = opcion.rango[1] * factor;
+
+      elMonto.textContent = formatoColones(min) + " – " + formatoColones(max);
+      resultado.hidden = false;
+
+      // Deja el servicio ya elegido en el formulario real, más abajo.
+      var selFormulario = document.getElementById("f-servicio");
+      if (selFormulario) {
+        Array.prototype.forEach.call(selFormulario.options, function (op) {
+          if (op.textContent === s.nombre) selFormulario.value = op.value;
+        });
+      }
+    }
+
+    selServicio.addEventListener("change", pintarOpciones);
+    selOpcion.addEventListener("change", calcular);
+    selZona.addEventListener("change", calcular);
+  }
+
+  /* ---------- Asistente de preguntas ---------- */
+  function initAsistente() {
+    var raiz = $("[data-asistente]");
+    if (!raiz) return;
+
+    var boton = $("[data-asistente-abrir]", raiz);
+    var panel = $("[data-asistente-panel]", raiz);
+    var hilo = $("[data-asistente-hilo]", raiz);
+    var sugeridas = $("[data-asistente-sugeridas]", raiz);
+    var form = $("[data-asistente-form]", raiz);
+    var input = $("[data-asistente-input]", raiz);
+
+    var historial = [];  // { role: "user"|"model", text: "..." }
+    var abierto = false;
+    var yaSaludo = false;
+
+    function agregarMensaje(texto, esUsuario) {
+      var div = document.createElement("div");
+      div.className = "asistente-msg " + (esUsuario ? "es-usuario" : "es-bot");
+      div.textContent = texto;
+      hilo.appendChild(div);
+      hilo.scrollTop = hilo.scrollHeight;
+      return div;
+    }
+
+    function saludarSiHaceFalta() {
+      if (yaSaludo) return;
+      yaSaludo = true;
+      agregarMensaje("¡Hola! Soy el asistente virtual de Sanitarios Ticos. Puedo ayudarle con dudas sobre nuestros servicios, cobertura y cómo pedir una cotización.", false);
+    }
+
+    function abrirPanel() {
+      abierto = true;
+      raiz.classList.add("is-open");
+      panel.hidden = false;
+      boton.setAttribute("aria-expanded", "true");
+      saludarSiHaceFalta();
+      setTimeout(function () { input.focus(); }, 50);
+    }
+
+    function cerrarPanel() {
+      abierto = false;
+      raiz.classList.remove("is-open");
+      panel.hidden = true;
+      boton.setAttribute("aria-expanded", "false");
+    }
+
+    boton.addEventListener("click", function () {
+      if (abierto) cerrarPanel(); else abrirPanel();
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && abierto) { cerrarPanel(); boton.focus(); }
+    });
+
+    function mandarPregunta(pregunta) {
+      pregunta = String(pregunta || "").trim();
+      if (!pregunta) return;
+
+      agregarMensaje(pregunta, true);
+      if (sugeridas) sugeridas.hidden = true;
+      input.value = "";
+
+      var cargando = agregarMensaje("Escribiendo…", false);
+      cargando.classList.add("es-cargando");
+
+      fetch("/api/asistente", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: pregunta, history: historial })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          cargando.remove();
+          var respuesta = (d && d.reply) || "No pude responder justo ahora. Puede escribirnos por WhatsApp o llamar al 2440-1110.";
+          agregarMensaje(respuesta, false);
+          historial.push({ role: "user", text: pregunta });
+          historial.push({ role: "model", text: respuesta });
+        })
+        .catch(function () {
+          cargando.remove();
+          agregarMensaje("No pude responder justo ahora. Puede escribirnos por WhatsApp o llamar al 2440-1110.", false);
+        });
+    }
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      mandarPregunta(input.value);
+    });
+
+    if (sugeridas) {
+      $$("button", sugeridas).forEach(function (b) {
+        b.addEventListener("click", function () { mandarPregunta(b.textContent); });
+      });
+    }
+  }
+
   function initYear() {
     var el = $("[data-year]");
     if (el) el.textContent = String(new Date().getFullYear());
@@ -330,6 +504,8 @@
     safe(initAnchors, "initAnchors");
     safe(initReveals, "initReveals");
     safe(initFaq, "initFaq");
+    safe(initCotizador, "initCotizador");
+    safe(initAsistente, "initAsistente");
     safe(initMapa, "initMapa");
     safe(initForm, "initForm");
     safe(initYear, "initYear");

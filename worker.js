@@ -213,6 +213,134 @@ async function descargarCsv(request, env) {
 }
 
 /* =============================================================
+   3. Asistente de preguntas (Gemini, capa gratuita de Google)
+   ============================================================= */
+
+// Todo lo que el asistente sabe. Si contesta algo que no está acá,
+// está inventando — por eso las reglas son estrictas.
+const CONOCIMIENTO_ASISTENTE = `Eres el asistente virtual del sitio web de Sanitarios Ticos (Grupo Ticos Sanitarios S.A.), una empresa costarricense de limpieza de tanques sépticos y manejo de aguas residuales.
+
+SERVICIOS QUE OFRECE LA EMPRESA:
+1. Limpieza de tanques sépticos — con camión cisterna y sistema de succión.
+2. Limpieza y destaqueo de tuberías — con sonda eléctrica, para tubería fina o gruesa.
+3. Limpieza de trampas de grasa y diesel — para restaurantes, sodas, talleres.
+4. Construcción de tanques sépticos, drenajes y plantas de tratamiento.
+5. Alquiler de tanques plásticos — para construcciones y eventos, con entrega y limpiezas calendarizadas.
+
+COBERTURA: sedes en Alajuela, Heredia (San Joaquín de Flores) y San José. Dan servicio en TODO Costa Rica (Guanacaste, Puntarenas, Limón, Cartago, Zona Norte, Zona Sur), coordinando la visita según la ruta.
+
+CONTACTO: teléfonos 2440-1110 y 2265-4150, WhatsApp 8341-7547, correo info@sanitariosticos.com. Atienden emergencias el mismo día.
+
+PREGUNTAS FRECUENTES QUE YA RESPONDE EL SITIO:
+- Frecuencia recomendada: cada 2-3 años en casas; más seguido en negocios con mucho movimiento.
+- Señales de tanque lleno: malos olores, inodoros que se devuelven, desagües lentos, zonas húmedas sobre el drenaje.
+- Qué no echar al tanque: toallas húmedas, pañales, aceite de cocina, pintura, solventes.
+- La cotización es siempre gratuita y sin compromiso; se da el precio antes de salir a hacer el trabajo.
+
+REGLAS QUE DEBES SEGUIR SIEMPRE:
+- Responde en español de Costa Rica, de "usted", en tono amable y directo. Respuestas cortas (2-4 oraciones), no hagas listas larguísimas.
+- NUNCA des un precio en colones ni un rango de precio: la empresa no tiene tarifas públicas todavía. Si preguntan precio, explique que la cotización es gratis y que se la dan antes de hacer el trabajo, y ofrezca ayudar a pedirla (el formulario del sitio o el teléfono 2440-1110).
+- NUNCA inventes datos que no estén arriba: no inventes certificaciones, promociones, plazos exactos de llegada ni disponibilidad de camiones en tiempo real.
+- Si es una emergencia (derrame, tanque rebalsado ahora mismo), recomiende llamar directo al 2440-1110 en vez de seguir escribiendo.
+- Si preguntan algo que no tiene nada que ver con la empresa (temas ajenos, otras marcas), dígalo con amabilidad y redirija la conversación a los servicios.
+- No es una persona real: si preguntan, aclare que es un asistente virtual.`;
+
+// Se intenta primero el modelo más liviano; si falla, el siguiente.
+const MODELOS_GEMINI = ["gemini-2.5-flash-lite", "gemini-2.5-flash"];
+
+async function llamarGemini(env, mensajes) {
+  let ultimoError = null;
+  for (const modelo of MODELOS_GEMINI) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${env.GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: CONOCIMIENTO_ASISTENTE }] },
+            contents: mensajes,
+            generationConfig: { temperature: 0.4, maxOutputTokens: 700, thinkingConfig: { thinkingBudget: 0 } },
+            safetySettings: [
+              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
+            ]
+          })
+        }
+      );
+      if (!res.ok) { ultimoError = await res.text(); continue; }
+      const datos = await res.json();
+      const respuesta = datos.candidates && datos.candidates[0] && datos.candidates[0].content
+        && datos.candidates[0].content.parts && datos.candidates[0].content.parts[0]
+        && datos.candidates[0].content.parts[0].text;
+      if (respuesta) return respuesta.trim();
+      ultimoError = "Respuesta vacía de " + modelo;
+    } catch (e) {
+      ultimoError = e;
+    }
+  }
+  console.error("Gemini falló con todos los modelos:", ultimoError);
+  return null;
+}
+
+// Tope diario simple: protege la cuota gratuita de un uso descontrolado.
+// No es por visitante (no distingue direcciones IP), es un tope global
+// de toda la conversación del sitio en el día.
+const TOPE_MENSAJES_DIA = 300;
+
+async function usoDelDiaYSumar(env) {
+  const hoy = new Date().toISOString().slice(0, 10);
+  try {
+    await env.DB.prepare(
+      `INSERT INTO uso_ia (fecha, mensajes) VALUES (?1, 1)
+       ON CONFLICT(fecha) DO UPDATE SET mensajes = mensajes + 1`
+    ).bind(hoy).run();
+    const fila = await env.DB.prepare(`SELECT mensajes FROM uso_ia WHERE fecha = ?1`).bind(hoy).first();
+    return fila ? fila.mensajes : 1;
+  } catch (e) {
+    console.error("Error al contar uso del asistente:", e);
+    return 0; // si falla el conteo, se deja pasar antes que romper el chat
+  }
+}
+
+async function responderAsistente(request, env) {
+  if (!env.GEMINI_API_KEY) {
+    return json({ ok: true, reply: "El asistente está en configuración todavía. Mientras tanto, escríbanos por WhatsApp o llame al 2440-1110 — le respondemos enseguida." });
+  }
+
+  let cuerpo;
+  try {
+    cuerpo = await request.json();
+  } catch (e) {
+    return json({ ok: false, error: "Formato inválido" }, 400);
+  }
+
+  const mensaje = texto(cuerpo.message, 500);
+  if (!mensaje) return json({ ok: false, error: "Falta el mensaje" }, 400);
+
+  const usados = await usoDelDiaYSumar(env);
+  if (usados > TOPE_MENSAJES_DIA) {
+    return json({ ok: true, reply: "Hoy hemos tenido muchas consultas y el asistente está descansando. Escríbanos por WhatsApp o llame al 2440-1110, ahí sí le atendemos al toque." });
+  }
+
+  // Historial corto: sólo los últimos mensajes, para no mandar de más.
+  const historialCrudo = Array.isArray(cuerpo.history) ? cuerpo.history.slice(-6) : [];
+  const mensajes = historialCrudo
+    .filter((h) => h && (h.role === "user" || h.role === "model") && h.text)
+    .map((h) => ({ role: h.role, parts: [{ text: texto(h.text, 500) }] }));
+  mensajes.push({ role: "user", parts: [{ text: mensaje }] });
+
+  const respuesta = await llamarGemini(env, mensajes);
+  if (!respuesta) {
+    return json({ ok: true, reply: "No pude responder justo ahora. Puede escribirnos por WhatsApp o llamar al 2440-1110, con gusto le ayudamos." });
+  }
+
+  return json({ ok: true, reply: respuesta });
+}
+
+/* =============================================================
    Entrada
    ============================================================= */
 
@@ -228,6 +356,9 @@ export default {
     }
     if (url.pathname === "/api/panel/csv" && request.method === "GET") {
       return descargarCsv(request, env);
+    }
+    if (url.pathname === "/api/asistente" && request.method === "POST") {
+      return responderAsistente(request, env);
     }
 
     // Cualquier otra dirección: se sirve como una página normal del sitio.

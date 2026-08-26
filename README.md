@@ -116,6 +116,52 @@ escrita en el código. Es una protección simple, sin límite de intentos
 fallidos todavía; para algo más robusto (bloqueo tras varios intentos) se
 puede agregar más adelante.
 
+## Asistente de preguntas y calculadora
+
+Dos funciones de IA, pensadas para ayudar a que la visita se convierta en
+cliente sin reemplazar la cotización real.
+
+### Asistente de chat
+
+La burbuja "Preguntar" (abajo a la izquierda, en las 4 páginas del sitio,
+pero no en `/panel`) responde preguntas sobre servicios, cobertura y el
+proceso, usando [Gemini](https://ai.google.dev) en su capa gratuita. Todo lo
+que sabe está en `worker.js`, en la constante `CONOCIMIENTO_ASISTENTE` — si
+responde algo raro, es ahí donde se corrige, no en el código de la conversación.
+
+Reglas que sigue siempre: nunca da un precio en colones (no los tiene
+cargados), nunca inventa datos que no estén en esa constante, y en una
+emergencia recomienda llamar en vez de seguir escribiendo.
+
+Necesita una variable más en Cloudflare:
+
+- `GEMINI_API_KEY` — se consigue gratis en
+  [Google AI Studio](https://aistudio.google.com/apikey) ("Create API key").
+  Se configura en **Settings → Variables and Secrets**, marcada como
+  **Encrypt**, igual que las otras claves.
+
+Mientras esa clave no esté puesta, la burbuja igual aparece pero responde
+"está en configuración" y manda a WhatsApp — nunca se rompe.
+
+Hay un tope diario simple (300 mensajes) guardado en la tabla `uso_ia` de la
+base de datos (SQL en `tools/crear-tabla-ia.sql`, se pega una vez en la
+Console de D1). Protege la cuota gratuita de Google; no hay límite por
+visitante todavía, sólo el tope general del día.
+
+### Calculadora rápida
+
+En la página de Contacto, antes del formulario. **No usa IA** — es aritmética
+simple en JavaScript (`main.js`, función `initCotizador`) sobre una tabla de
+rangos en `lib/manifest.js` (`window.__BRAND__.tarifas`). Se decidió así a
+propósito: los precios no se los inventa una IA, son reglas fijas que
+cualquiera puede revisar y editar.
+
+⚠️ **Las cifras de esa tabla son de EJEMPLO**, puestas para poder probar la
+calculadora antes de tener las tarifas reales de la empresa. La página ya lo
+avisa ("cifra de ejemplo, pendiente de confirmar"), pero hay que reemplazarlas
+en `lib/manifest.js` apenas el dueño confirme precios reales — buscar el
+comentario "PENDIENTE" en ese archivo.
+
 ## Los mapas
 
 Las páginas **Nosotros** y **Contacto** llevan un mapa de Google en la sección
