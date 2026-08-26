@@ -422,6 +422,15 @@
       return div;
     }
 
+    function agregarEscribiendo() {
+      var div = document.createElement("div");
+      div.className = "asistente-typing";
+      div.innerHTML = "<span></span><span></span><span></span>";
+      hilo.appendChild(div);
+      hilo.scrollTop = hilo.scrollHeight;
+      return div;
+    }
+
     function saludarSiHaceFalta() {
       if (yaSaludo) return;
       yaSaludo = true;
@@ -432,16 +441,24 @@
       abierto = true;
       raiz.classList.add("is-open");
       panel.hidden = false;
+      // Se agrega la clase un instante después de mostrarlo, para que
+      // la transición de escala/opacidad sí se note (si se agregara
+      // en el mismo instante que se quita "hidden", el navegador no
+      // anima el cambio).
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { panel.classList.add("is-visible"); });
+      });
       boton.setAttribute("aria-expanded", "true");
       saludarSiHaceFalta();
-      setTimeout(function () { input.focus(); }, 50);
+      setTimeout(function () { input.focus(); }, 200);
     }
 
     function cerrarPanel() {
       abierto = false;
       raiz.classList.remove("is-open");
-      panel.hidden = true;
+      panel.classList.remove("is-visible");
       boton.setAttribute("aria-expanded", "false");
+      setTimeout(function () { if (!abierto) panel.hidden = true; }, 220);
     }
 
     boton.addEventListener("click", function () {
@@ -460,8 +477,7 @@
       if (sugeridas) sugeridas.hidden = true;
       input.value = "";
 
-      var cargando = agregarMensaje("Escribiendo…", false);
-      cargando.classList.add("es-cargando");
+      var cargando = agregarEscribiendo();
 
       fetch("/api/asistente", {
         method: "POST",
