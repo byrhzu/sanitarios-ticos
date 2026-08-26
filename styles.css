@@ -628,6 +628,15 @@ strong, b { font-weight: 600; }
   box-shadow: 0 0 0 3px var(--orange-soft);
 }
 .f.is-error input, .f.is-error select { border-color: #c0392b; box-shadow: 0 0 0 3px rgba(192,57,43,.1); }
+.f-consiente {
+  display: flex; align-items: flex-start; gap: .6rem;
+  font-size: .82rem; line-height: 1.4; color: var(--muted);
+  cursor: pointer;
+}
+.f-consiente input { margin-top: .2rem; flex: 0 0 auto; width: 15px; height: 15px; accent-color: var(--orange); }
+.f-consiente a { color: var(--ink-2); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.f-consiente.is-error { color: #c0392b; }
+
 .form-alt { font-size: .86rem; color: var(--muted); }
 .form-alt a { color: var(--orange-dk); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .form-msg { font-size: .88rem; color: var(--orange-dk); font-weight: 500; min-height: 1.2em; }
@@ -847,6 +856,12 @@ strong, b { font-weight: 600; }
 }
 .asistente-form button:hover { transform: scale(1.06); box-shadow: 0 6px 16px rgba(239,101,17,.4); }
 .asistente-form button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.asistente-aviso {
+  font-size: .7rem; color: var(--muted-2); text-align: center;
+  padding: 0 1rem .8rem; background: var(--paper);
+}
+.asistente-aviso a { color: var(--muted-2); text-decoration: underline; text-underline-offset: 2px; }
 
 @media (max-width: 539px) {
   .asistente { right: .6rem; bottom: 4.7rem; }

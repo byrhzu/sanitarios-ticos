@@ -260,11 +260,21 @@
         if (field) field.classList.toggle("is-error", empty);
         if (empty && ok) { input.focus(); ok = false; }
       });
+
+      // La casilla de privacidad es obligatoria por ley: sin ella no
+      // se guarda ni se abre WhatsApp.
+      if (form.consiente) {
+        var sinMarcar = !form.consiente.checked;
+        var etiqueta = form.consiente.closest(".f-consiente");
+        if (etiqueta) etiqueta.classList.toggle("is-error", sinMarcar);
+        if (sinMarcar && ok) { form.consiente.focus(); ok = false; }
+      }
+
       return ok;
     }
 
     form.addEventListener("input", function (e) {
-      var field = e.target.closest && e.target.closest(".f");
+      var field = e.target.closest && e.target.closest(".f, .f-consiente");
       if (field) field.classList.remove("is-error");
     });
 

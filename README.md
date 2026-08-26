@@ -12,6 +12,7 @@ dentro de `public_html`.
 | `servicios.html` | Cada servicio en detalle, con su propia ancla (`#tanques-septicos`, `#destaqueo`, `#trampas`, `#construccion`, `#alquiler`) |
 | `nosotros.html` | La empresa, por qué elegirnos, cómo trabajamos y cobertura |
 | `contacto.html` | Datos directos, formulario de cotización y preguntas frecuentes |
+| `privacidad.html` | Política de privacidad (Ley 8968), enlazada desde el pie de página y desde el formulario |
 
 ## Archivos
 
@@ -115,6 +116,25 @@ bloqueada en `robots.txt`), pero cualquiera que sepa la dirección puede
 escrita en el código. Es una protección simple, sin límite de intentos
 fallidos todavía; para algo más robusto (bloqueo tras varios intentos) se
 puede agregar más adelante.
+
+## Aviso legal y privacidad
+
+La página `privacidad.html` explica, en lenguaje sencillo, qué datos se
+recopilan (formulario y chat), para qué se usan, con qué proveedores se
+comparten (Cloudflare, Resend, Google Gemini) y los derechos que da la
+Ley N.º 8968 de Costa Rica. Está enlazada en el pie de página de todo el
+sitio y como link dentro del formulario de cotización.
+
+El formulario de `contacto.html` tiene una casilla obligatoria de
+consentimiento ("Acepto que Sanitarios Ticos use estos datos..."): sin
+marcarla no se guarda la solicitud ni se abre WhatsApp. La burbuja del
+asistente de chat también lleva una línea pequeña avisando que usa
+inteligencia artificial, con enlace a la misma política.
+
+Bases de datos de uso interno (no vendidas ni distribuidas a terceros)
+como esta no requieren inscripción ante PRODHAB, pero sí este aviso previo
+y el consentimiento antes de recopilar los datos — que es justamente lo
+que se implementó.
 
 ## Asistente de preguntas y calculadora
 
