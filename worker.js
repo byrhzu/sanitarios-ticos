@@ -218,7 +218,9 @@ async function descargarCsv(request, env) {
 
 // Todo lo que el asistente sabe. Si contesta algo que no está acá,
 // está inventando — por eso las reglas son estrictas.
-const CONOCIMIENTO_ASISTENTE = `Eres el asistente virtual del sitio web de Sanitarios Ticos (Grupo Ticos Sanitarios S.A.), una empresa costarricense de limpieza de tanques sépticos y manejo de aguas residuales.
+const CONOCIMIENTO_ASISTENTE = `Eres Beto, el asistente virtual del sitio web de Sanitarios Ticos (Grupo Ticos Sanitarios S.A.), una empresa costarricense de limpieza de tanques sépticos y manejo de aguas residuales.
+
+TU PERSONALIDAD: sos costarricense de pura cepa, jocoso y de trato cercano, pero sin dejar de ser útil ni profesional — la gente te escribe porque tiene un problema real con su tanque, así que primero ayudás y después bromeás. Hablás de "usted" (nunca de "vos" ni de "tú"), pero con sabor tico: podés meter, con moderación (una o dos por respuesta, nunca a la fuerza), expresiones como "pura vida", "diay", "al chile", "tuanis", "con toda la pata", "de una vez", "qué buena nota", "deme un toque". No abuses de ellas ni las metas en cada oración — mejor una respuesta clara con un toque tico, que una llena de modismos y difícil de entender. Si alguien le pregunta su nombre, dice que se llama Beto.
 
 SERVICIOS QUE OFRECE LA EMPRESA:
 1. Limpieza de tanques sépticos — con camión cisterna y sistema de succión.
@@ -243,7 +245,7 @@ REGLAS QUE DEBES SEGUIR SIEMPRE:
 - NUNCA inventes datos que no estén arriba: no inventes certificaciones, promociones, plazos exactos de llegada ni disponibilidad de camiones en tiempo real.
 - Si es una emergencia (derrame, tanque rebalsado ahora mismo), recomiende llamar directo al 2440-1110 en vez de seguir escribiendo.
 - Si preguntan algo que no tiene nada que ver con la empresa (temas ajenos, otras marcas, cultura general, etc.), NO responda esa pregunta aunque sepa la respuesta. Dígalo con amabilidad ("eso no lo puedo ayudar por acá") y redirija directo a los servicios, sin contestar primero lo que preguntaron.
-- No es una persona real: si preguntan, aclare que es un asistente virtual.`;
+- No es una persona real: si preguntan, aclare que es un asistente virtual (Beto es un nombre, no significa que sea un empleado de carne y hueso).`;
 
 // Se intenta primero el modelo más liviano; si falla, el siguiente.
 const MODELOS_GEMINI = ["gemini-3.5-flash-lite", "gemini-3.6-flash"];
@@ -307,7 +309,7 @@ async function usoDelDiaYSumar(env) {
 
 async function responderAsistente(request, env) {
   if (!env.GEMINI_API_KEY) {
-    return json({ ok: true, reply: "El asistente está en configuración todavía. Mientras tanto, escríbanos por WhatsApp o llame al 2440-1110 — le respondemos enseguida." });
+    return json({ ok: true, reply: "Beto todavía está en configuración, pura vida igual: mientras tanto escríbanos por WhatsApp o llame al 2440-1110 — le respondemos enseguida." });
   }
 
   let cuerpo;
@@ -322,7 +324,7 @@ async function responderAsistente(request, env) {
 
   const usados = await usoDelDiaYSumar(env);
   if (usados > TOPE_MENSAJES_DIA) {
-    return json({ ok: true, reply: "Hoy hemos tenido muchas consultas y el asistente está descansando. Escríbanos por WhatsApp o llame al 2440-1110, ahí sí le atendemos al toque." });
+    return json({ ok: true, reply: "Diay, hoy Beto ha tenido tela que cortar y está descansando un toque. Escríbanos por WhatsApp o llame al 2440-1110, ahí sí le atendemos al toque." });
   }
 
   // Historial corto: sólo los últimos mensajes, para no mandar de más.
@@ -334,7 +336,7 @@ async function responderAsistente(request, env) {
 
   const respuesta = await llamarGemini(env, mensajes);
   if (!respuesta) {
-    return json({ ok: true, reply: "No pude responder justo ahora. Puede escribirnos por WhatsApp o llamar al 2440-1110, con gusto le ayudamos." });
+    return json({ ok: true, reply: "Uy, Beto no pudo responder justo ahora. Puede escribirnos por WhatsApp o llamar al 2440-1110, con gusto le ayudamos." });
   }
 
   return json({ ok: true, reply: respuesta });

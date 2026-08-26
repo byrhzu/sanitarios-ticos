@@ -143,11 +143,15 @@ la cotización real.
 
 ### Asistente de chat
 
-La burbuja "Preguntar" (abajo a la izquierda, en las 4 páginas del sitio,
-pero no en `/panel`) responde preguntas sobre servicios, cobertura y el
-proceso, usando [Gemini](https://ai.google.dev) en su capa gratuita. Todo lo
-que sabe está en `worker.js`, en la constante `CONOCIMIENTO_ASISTENTE` — si
-responde algo raro, es ahí donde se corrige, no en el código de la conversación.
+El asistente se llama **Beto** — burbuja "Hablar con Beto" (abajo a la
+izquierda, en las 6 páginas del sitio, pero no en `/panel`). Responde
+preguntas sobre servicios, cobertura y el proceso, usando
+[Gemini](https://ai.google.dev) en su capa gratuita. Todo lo que sabe (y su
+personalidad, jocosa y costarricense) está en `worker.js`, en la constante
+`CONOCIMIENTO_ASISTENTE` — si responde algo raro o se pasa de gracioso, es
+ahí donde se corrige, no en el código de la conversación. El saludo inicial
+(antes de que escriba nada) está aparte, en `main.js`, función
+`initAsistente` → `saludarSiHaceFalta`.
 
 Reglas que sigue siempre: nunca da un precio en colones (no los tiene
 cargados), nunca inventa datos que no estén en esa constante, y en una

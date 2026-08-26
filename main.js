@@ -367,7 +367,7 @@
     function saludarSiHaceFalta() {
       if (yaSaludo) return;
       yaSaludo = true;
-      agregarMensaje("¡Hola! Soy el asistente virtual de Sanitarios Ticos. Puedo ayudarle con dudas sobre nuestros servicios, cobertura y cómo pedir una cotización.", false);
+      agregarMensaje("¡Pura vida! Soy Beto, el asistente virtual de Sanitarios Ticos. Con toda la pata le ayudo con dudas sobre nuestros servicios, cobertura y cómo pedir una cotización.", false);
     }
 
     function abrirPanel() {
