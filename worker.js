@@ -260,7 +260,7 @@ async function llamarGemini(env, mensajes, infoDebug) {
           body: JSON.stringify({
             systemInstruction: { parts: [{ text: CONOCIMIENTO_ASISTENTE }] },
             contents: mensajes,
-            generationConfig: { temperature: 0.4, maxOutputTokens: 700, thinkingConfig: { thinkingBudget: 0 } },
+            generationConfig: { temperature: 0.4, maxOutputTokens: 700 },
             safetySettings: [
               { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
               { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
