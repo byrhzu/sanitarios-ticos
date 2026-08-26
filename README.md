@@ -136,10 +136,10 @@ como esta no requieren inscripción ante PRODHAB, pero sí este aviso previo
 y el consentimiento antes de recopilar los datos — que es justamente lo
 que se implementó.
 
-## Asistente de preguntas y calculadora
+## Asistente de preguntas
 
-Dos funciones de IA, pensadas para ayudar a que la visita se convierta en
-cliente sin reemplazar la cotización real.
+Pensado para ayudar a que la visita se convierta en cliente sin reemplazar
+la cotización real.
 
 ### Asistente de chat
 
@@ -168,19 +168,6 @@ base de datos (SQL en `tools/crear-tabla-ia.sql`, se pega una vez en la
 Console de D1). Protege la cuota gratuita de Google; no hay límite por
 visitante todavía, sólo el tope general del día.
 
-### Calculadora rápida
-
-En la página de Contacto, antes del formulario. **No usa IA** — es aritmética
-simple en JavaScript (`main.js`, función `initCotizador`) sobre una tabla de
-rangos en `lib/manifest.js` (`window.__BRAND__.tarifas`). Se decidió así a
-propósito: los precios no se los inventa una IA, son reglas fijas que
-cualquiera puede revisar y editar.
-
-⚠️ **Las cifras de esa tabla son de EJEMPLO**, puestas para poder probar la
-calculadora antes de tener las tarifas reales de la empresa. La página ya lo
-avisa ("cifra de ejemplo, pendiente de confirmar"), pero hay que reemplazarlas
-en `lib/manifest.js` apenas el dueño confirme precios reales — buscar el
-comentario "PENDIENTE" en ese archivo.
 
 ## Los mapas
 

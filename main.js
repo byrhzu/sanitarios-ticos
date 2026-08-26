@@ -330,83 +330,6 @@
     }
   }
 
-  /* ---------- Calculadora rápida (sin IA: son reglas fijas) ---------- */
-  function formatoColones(n) {
-    // toLocaleString("es-CR") separa los miles con espacio; en Costa Rica
-    // se usa punto (₡25.000), así que se arma el separador a mano.
-    var entero = String(Math.round(n));
-    var conPuntos = entero.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    return "₡" + conPuntos;
-  }
-
-  function initCotizador() {
-    var raiz = $("[data-calc]");
-    if (!raiz) return;
-    var tarifas = data.tarifas;
-    if (!tarifas || !tarifas.servicios || !tarifas.servicios.length) return;
-
-    var selServicio = $("[data-calc-servicio]", raiz);
-    var campoOpcion = $("[data-calc-campo-opcion]", raiz);
-    var etiquetaOpcion = $("[data-calc-etiqueta-opcion]", raiz);
-    var selOpcion = $("[data-calc-opcion]", raiz);
-    var selZona = $("[data-calc-zona]", raiz);
-    var resultado = $("[data-calc-resultado]", raiz);
-    var elMonto = $("[data-calc-monto]", raiz);
-
-    tarifas.servicios.forEach(function (s) {
-      var op = document.createElement("option");
-      op.value = s.id;
-      op.textContent = s.nombre;
-      selServicio.appendChild(op);
-    });
-
-    function servicioActual() {
-      var id = selServicio.value;
-      return tarifas.servicios.filter(function (s) { return s.id === id; })[0] || null;
-    }
-
-    function pintarOpciones() {
-      var s = servicioActual();
-      selOpcion.innerHTML = "";
-      if (!s) { campoOpcion.hidden = true; calcular(); return; }
-      etiquetaOpcion.textContent = s.pregunta;
-      s.opciones.forEach(function (o, i) {
-        var op = document.createElement("option");
-        op.value = String(i);
-        op.textContent = o.etiqueta;
-        selOpcion.appendChild(op);
-      });
-      campoOpcion.hidden = false;
-      calcular();
-    }
-
-    function calcular() {
-      var s = servicioActual();
-      if (!s) { resultado.hidden = true; return; }
-      var opcion = s.opciones[Number(selOpcion.value) || 0];
-      if (!opcion) { resultado.hidden = true; return; }
-
-      var factor = selZona.value === "resto" ? 1 + (tarifas.recargoFueraValle || 0) : 1;
-      var min = opcion.rango[0] * factor;
-      var max = opcion.rango[1] * factor;
-
-      elMonto.textContent = formatoColones(min) + " – " + formatoColones(max);
-      resultado.hidden = false;
-
-      // Deja el servicio ya elegido en el formulario real, más abajo.
-      var selFormulario = document.getElementById("f-servicio");
-      if (selFormulario) {
-        Array.prototype.forEach.call(selFormulario.options, function (op) {
-          if (op.textContent === s.nombre) selFormulario.value = op.value;
-        });
-      }
-    }
-
-    selServicio.addEventListener("change", pintarOpciones);
-    selOpcion.addEventListener("change", calcular);
-    selZona.addEventListener("change", calcular);
-  }
-
   /* ---------- Asistente de preguntas ---------- */
   function initAsistente() {
     var raiz = $("[data-asistente]");
@@ -530,7 +453,6 @@
     safe(initAnchors, "initAnchors");
     safe(initReveals, "initReveals");
     safe(initFaq, "initFaq");
-    safe(initCotizador, "initCotizador");
     safe(initAsistente, "initAsistente");
     safe(initMapa, "initMapa");
     safe(initForm, "initForm");

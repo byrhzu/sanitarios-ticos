@@ -554,7 +554,7 @@ strong, b { font-weight: 600; }
 
 /* --- Prueba / galería --- */
 .shots { display: grid; grid-template-columns: 1fr; gap: .8rem; }
-.shot { position: relative; overflow: hidden; aspect-ratio: 4/3; }
+.shot { position: relative; overflow: hidden; }
 .shot img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease); }
 .shot:hover img { transform: scale(1.04); }
 .shot figcaption {
@@ -680,32 +680,6 @@ strong, b { font-weight: 600; }
   display: flex; flex-wrap: wrap; gap: .4rem 1.5rem; justify-content: space-between;
   font-size: .78rem; color: rgba(250,247,242,.45);
 }
-
-/* --- Calculadora rápida --- */
-.calc {
-  background: var(--paper);
-  border: 1px solid var(--line);
-  padding: clamp(1.5rem, 3vw, 2.2rem);
-}
-.calc-campos { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
-.calc-campos .f[hidden] { display: none; }
-
-.calc-resultado[hidden] { display: none; }
-.calc-resultado {
-  margin-top: 1.6rem;
-  padding-top: 1.6rem;
-  border-top: 1px solid var(--line);
-}
-.calc-etiqueta {
-  display: block; font-family: var(--display); font-size: .76rem;
-  letter-spacing: .14em; text-transform: uppercase; color: var(--orange-dk);
-  margin-bottom: .4rem;
-}
-.calc-resultado strong {
-  display: block; font-family: var(--display); font-weight: 800;
-  font-size: clamp(1.8rem, 4vw, 2.6rem); letter-spacing: -.02em;
-}
-.calc-aviso { margin: .6rem 0 1.2rem; font-size: .85rem; color: var(--muted); max-width: 40rem; }
 
 /* =============================================================
    Asistente de preguntas (chat)
@@ -933,6 +907,12 @@ strong, b { font-weight: 600; }
   .wa-fab span, .asistente-fab span { display: none; }
   .wa-fab, .asistente-fab { padding: .9rem; }
   .foot-end { flex-direction: column; }
+
+  /* Sin la cuadrícula de escritorio (grid-auto-rows) el alto de cada
+     foto queda indefinido; aquí sí hace falta fijarlo. A partir de
+     720px el grid ya define el alto y esto sobra —de hecho, ahí
+     rompía las fotos que ocupan más de una columna. */
+  .shot { aspect-ratio: 4/3; }
 
   /* Los botones flotantes (chat + WhatsApp) quedan fijos en la esquina
      inferior derecha durante todo el recorrido de la página. Sin este
