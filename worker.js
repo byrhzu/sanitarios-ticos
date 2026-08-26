@@ -258,7 +258,7 @@ async function llamarGemini(env, mensajes, infoDebug) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            system_instruction: { parts: [{ text: CONOCIMIENTO_ASISTENTE }] },
+            systemInstruction: { parts: [{ text: CONOCIMIENTO_ASISTENTE }] },
             contents: mensajes,
             generationConfig: { temperature: 0.4, maxOutputTokens: 700, thinkingConfig: { thinkingBudget: 0 } },
             safetySettings: [
