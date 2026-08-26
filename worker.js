@@ -246,7 +246,7 @@ REGLAS QUE DEBES SEGUIR SIEMPRE:
 - No es una persona real: si preguntan, aclare que es un asistente virtual.`;
 
 // Se intenta primero el modelo más liviano; si falla, el siguiente.
-const MODELOS_GEMINI = ["gemini-2.5-flash-lite", "gemini-2.5-flash"];
+const MODELOS_GEMINI = ["gemini-3.5-flash-lite", "gemini-3.6-flash"];
 
 async function llamarGemini(env, mensajes, infoDebug) {
   let ultimoError = null;
