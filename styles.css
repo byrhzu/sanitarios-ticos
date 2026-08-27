@@ -303,10 +303,13 @@ strong, b { font-weight: 600; }
 .cover-btns { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 2.1rem; }
 
 /* Cualquier fila de 2-3 botones sueltos (llamar / WhatsApp / formulario,
-   cotizar / llamar, etc.). Mismo criterio que .cover-btns: en móvil se
-   apilan del mismo ancho, en vez de quedar cada uno del tamaño de su
-   propio texto. */
-.btn-row { display: flex; flex-wrap: wrap; gap: .7rem; }
+   cotizar / llamar, etc.). En vez de flex (cada botón del ancho de su
+   propio texto), es una cuadrícula de 2 columnas: cada columna se
+   ensancha al botón más largo que le toque, así los que quedan alineados
+   verticalmente (ej. "Llamar" sobre "Llenar el formulario") coinciden en
+   ancho. En móvil se apilan todos del mismo ancho, como antes. */
+.btn-row { display: grid; grid-template-columns: repeat(2, max-content); gap: .7rem; }
+.btn-row .btn { width: 100%; }
 
 .cover-media { position: relative; }
 .cover-media img { width: 100%; aspect-ratio: 4/3; object-fit: cover; }
@@ -706,7 +709,8 @@ strong, b { font-weight: 600; }
 
 .asistente-fab {
   position: relative;
-  display: inline-flex; align-items: center; gap: .5rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  min-width: 11rem;
   padding: .75rem 1.15rem .75rem .95rem;
   border-radius: 999px;
   background: linear-gradient(135deg, var(--orange) 0%, #ff8a3d 55%, #ffb066 100%);
@@ -861,7 +865,8 @@ strong, b { font-weight: 600; }
 /* WhatsApp flotante */
 .wa-fab {
   position: fixed; right: 1rem; bottom: 1rem; z-index: 80;
-  display: inline-flex; align-items: center; gap: .5rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  min-width: 11rem;
   padding: .8rem 1.15rem .8rem .95rem;
   border-radius: 999px;
   background: linear-gradient(135deg, var(--wa) 0%, #1ecb63 55%, #25e070 100%);
@@ -913,7 +918,8 @@ strong, b { font-weight: 600; }
   .bar-in { justify-content: center; padding-block: .4rem; }
   .bar-in > span:first-child { display: none; }
   .bar-links { gap: .9rem; font-size: .78rem; }
-  .cover-btns .btn, .btn-row .btn { width: 100%; }
+  .cover-btns .btn { width: 100%; }
+  .btn-row { grid-template-columns: 1fr; }
   .cover-stamp { left: 0; bottom: 0; max-width: none; width: 100%; border-left: 0; border-right: 0; border-bottom: 0; }
   .form { grid-template-columns: 1fr; }
   .fact { border-right: 0; border-bottom: 1px solid var(--line); padding: 1.2rem 0; }
@@ -921,7 +927,7 @@ strong, b { font-weight: 600; }
   .row { grid-template-columns: auto 1fr; }
   .row-go { display: none; }
   .wa-fab span, .asistente-fab span { display: none; }
-  .wa-fab, .asistente-fab { padding: .9rem; }
+  .wa-fab, .asistente-fab { padding: .9rem; min-width: 0; }
   .foot-end { flex-direction: column; }
 
   /* Sin la cuadrícula de escritorio (grid-auto-rows) el alto de cada
