@@ -90,6 +90,12 @@ h1, h2, h3, h4 {
   text-wrap: balance;
 }
 
+/* El h1 es el único titular "de cartel" de cada página; los h2 se
+   repiten en cada sección y, en negro completo, todos gritan igual —
+   un poco menos de peso les da jerarquía real en vez de todo mayúsculo
+   y grueso de principio a fin. */
+h2 { font-weight: 600; }
+
 strong, b { font-weight: 600; }
 ::selection { background: var(--orange); color: var(--white); }
 
@@ -116,7 +122,10 @@ strong, b { font-weight: 600; }
 }
 .skip-link:focus { top: 1rem; }
 
-/* Etiqueta de sección: [ 01 ] SERVICIOS ————————— */
+/* Etiqueta de sección: 01  SERVICIOS ————————— (sin corchetes: el
+   corchete + punto decorativo es un tic muy reconocible de plantillas
+   generadas por IA). Sólo lleva número cuando de verdad hay una
+   secuencia (pasos, servicios en orden); el resto no lleva data-n. */
 .tag {
   display: flex; align-items: center; gap: .75rem;
   font-family: var(--display);
@@ -131,6 +140,7 @@ strong, b { font-weight: 600; }
   font-variant-numeric: tabular-nums;
   letter-spacing: .06em;
 }
+.tag:not([data-n])::before { content: none; }
 .tag::after {
   content: ""; flex: 1; height: 1px; background: var(--line-2);
 }
