@@ -346,10 +346,47 @@
     var abierto = false;
     var yaSaludo = false;
 
+    // Convierte lo que Beto escribe en los mismos enlaces que ya
+    // existen como botones en el sitio: los teléfonos abren para
+    // llamar y "cotización"/"WhatsApp" abren WhatsApp con el mensaje
+    // ya armado — así no hay que copiar el número a mano.
+    function enlazarMensaje(texto) {
+      var contenedor = document.createElement("div");
+      contenedor.textContent = texto;
+      var html = contenedor.innerHTML;
+
+      var contacto = data.contact || {};
+      [
+        [contacto.phone1, contacto.phone1Tel],
+        [contacto.phone2, contacto.phone2Tel]
+      ].forEach(function (par) {
+        var numero = par[0], tel = par[1];
+        if (!numero || !tel) return;
+        var re = new RegExp(numero.replace(/[-./]/g, "\\$&"), "g");
+        html = html.replace(re, '<a href="tel:' + tel + '">' + numero + "</a>");
+      });
+
+      if (contacto.whatsappNumber) {
+        var urlWa = "https://wa.me/" + contacto.whatsappNumber
+          + "?text=" + encodeURIComponent("Hola, necesito una cotización.");
+        var abrirWa = function (texto) {
+          return '<a href="' + urlWa + '" target="_blank" rel="noopener">' + texto + "</a>";
+        };
+        html = html.replace(/WhatsApp/g, abrirWa("WhatsApp"));
+        html = html.replace(/cotizaci[oó]n(es)?/gi, abrirWa);
+      }
+
+      return html;
+    }
+
     function agregarMensaje(texto, esUsuario) {
       var div = document.createElement("div");
       div.className = "asistente-msg " + (esUsuario ? "es-usuario" : "es-bot");
-      div.textContent = texto;
+      if (esUsuario) {
+        div.textContent = texto;
+      } else {
+        div.innerHTML = enlazarMensaje(texto);
+      }
       hilo.appendChild(div);
       hilo.scrollTop = hilo.scrollHeight;
       return div;
