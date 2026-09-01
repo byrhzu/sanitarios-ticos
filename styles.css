@@ -573,6 +573,10 @@ strong, b { font-weight: 600; }
   color: var(--ink);
   border: 1px solid var(--line-2);
   padding: .34rem .8rem;
+  /* El texto cambia a "Viendo en el mapa" al elegirla, que es más largo.
+     Reservando el ancho del estado más largo, la fila no se recorre al
+     tocar de una sede a otra. */
+  min-width: 9.2rem;
   transition: background-color .25s var(--ease), color .25s var(--ease), border-color .25s var(--ease);
 }
 .sede-pick:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); }
@@ -593,11 +597,17 @@ strong, b { font-weight: 600; }
 .js .sedes[data-js] .sede[data-sede] { cursor: pointer; }
 .js .sedes[data-js] .sede[data-sede]:hover:not(.is-active) { background: var(--paper-2); }
 
-.sede-cr { background: var(--slate); color: rgba(250,247,242,.72); }
-.sede-cr h3 { color: var(--paper); }
-.sede-cr h3::before { background: var(--orange-lt); }
-.sede-cr .sede-dir { color: rgba(250,247,242,.85); }
-.sede-cr .sede-zonas { color: rgba(250,247,242,.55); }
+/* La cobertura fuera del Valle Central: una nota, no una tarjeta más.
+   Dentro de la lista de sedes parecía una cuarta opción seleccionable
+   que no reaccionaba al tocarla. */
+.sede-nota {
+  margin-top: .9rem;
+  padding-left: .9rem;
+  border-left: 3px solid var(--orange);
+  font-size: .89rem; color: var(--muted);
+  text-wrap: pretty;
+}
+.sede-nota b { color: var(--ink); font-weight: 600; }
 
 /* --- Prueba / galería --- */
 .shots { display: grid; grid-template-columns: 1fr; gap: .8rem; }
@@ -1036,6 +1046,32 @@ body.fabs-fuera .wa-fab {
   .menu .menu-cta { margin-top: 1rem; width: 100%; padding-block: .9rem; }
   .burger { display: flex; }
   .row-peek { display: none; }
+
+  /* Selector de sede compacto.
+     Bajo el mapa ya se muestran la dirección, la referencia y el "Cómo
+     llegar" de la sede que se está viendo. Repetir todo eso dentro de
+     cada tarjeta convertía la lista en una tira larguísima de scroll en
+     el celular, sólo para elegir entre tres.
+     Aquí cada tarjeta se queda con lo único que sirve para ELEGIR: el
+     nombre, un botón corto y las zonas que cubre —que es lo que la
+     persona anda buscando ("¿me cubren a mí?")—. Lo demás se lee bajo
+     el mapa, donde siempre corresponde a la sede activa. */
+  .sede {
+    display: grid; grid-template-columns: 1fr auto;
+    align-items: center; gap: .3rem .8rem;
+    padding: .85rem 1rem;
+  }
+  .sede h3 { grid-column: 1; grid-row: 1; margin-bottom: 0; font-size: 1.02rem; }
+  .sede-acciones { grid-column: 2; grid-row: 1; margin-bottom: 0; }
+  .sede-zonas { grid-column: 1 / -1; font-size: .82rem; }
+
+  /* La dirección y el "Cómo llegar" viven bajo el mapa. */
+  .sede-dir { display: none; }
+  .sede-acciones .arrow { display: none; }
+
+  /* El botón se queda: sin él sólo quedaría el toque en la tarjeta, que
+     no existe para quien navega con teclado o lector de pantalla. */
+  .sede-pick { padding: .3rem .7rem; font-size: .82rem; }
 }
 
 @media (max-width: 719px) {
