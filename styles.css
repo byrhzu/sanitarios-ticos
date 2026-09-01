@@ -1110,12 +1110,13 @@ body.fabs-fuera .wa-fab {
   /* La foto llega justo hasta el borde derecho de la ventana */
   .cover-media { margin-right: calc((min(100vw - var(--gut) * 2, var(--wrap)) - 100vw) / 2); }
   .cover-media img { aspect-ratio: 3/2.4; }
-  /* La foto sangra hasta el borde de la ventana, así que el pie se
-     detiene antes: el texto queda alineado con la foto y no se va a
-     morir contra el filo de la pantalla. */
+  /* La foto sangra hasta el borde de la ventana. Antes cortaba el velo
+     antes de ese borde y el corte se veía como un tajo vertical sobre
+     la foto. Ahora el velo llega hasta el filo —así no hay costura— y
+     lo que se detiene es el texto, con relleno del mismo ancho que
+     sobresale la foto. */
   .cover-stamp {
-    padding: 4.5rem 1.6rem 1.4rem;
-    right: calc((100vw - min(100vw - var(--gut) * 2, var(--wrap))) / 2);
+    padding: 4.5rem calc((100vw - min(100vw - var(--gut) * 2, var(--wrap))) / 2 + 1.6rem) 1.4rem 1.6rem;
   }
 }
 
