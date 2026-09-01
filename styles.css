@@ -634,16 +634,36 @@ strong, b { font-weight: 600; }
   grid-template-columns: repeat(auto-fit, minmax(min(50%, 10rem), 1fr));
   background: var(--line); border: 1px solid var(--line);
 }
-.logos li { background: var(--paper); display: grid; place-items: center; padding: 1.4rem 1.2rem; }
+/* Cada casilla mide exactamente lo mismo y el logo se centra dentro.
+   Así da igual que uno venga cuadrado y otro larguísimo: la retícula
+   no se deforma. */
+.logos li {
+  background: var(--paper);
+  display: grid; place-items: center;
+  padding: 1.1rem;
+  aspect-ratio: 5/3;
+}
 .logos img {
-  max-height: 46px; width: auto; object-fit: contain;
-  /* Los logos llegan en colores muy distintos entre sí; en escala de
-     grises la tira se lee como una sola pieza y no compite con el
-     naranja de la marca. Al pasar el mouse recupera su color. */
-  filter: grayscale(1); opacity: .62;
+  /* Limitar SOLO el alto deja los logos anchos gigantes y los altos
+     enanos. Limitando las dos medidas, cada uno entra en la casilla
+     por el lado que le apriete primero. */
+  max-height: 42px; max-width: 80%;
+  width: auto; height: auto;
+  object-fit: contain;
+  /* Vienen en colores muy distintos entre sí; en gris la tira se lee
+     como una sola pieza y no le pelea el protagonismo al naranja de
+     la marca. Al pasar el mouse recupera su color. */
+  filter: grayscale(1); opacity: .6;
   transition: filter .3s var(--ease), opacity .3s var(--ease);
 }
 .logos li:hover img { filter: none; opacity: 1; }
+
+/* Ajuste óptico. Dos logos con la misma altura en píxeles NO se ven
+   del mismo tamaño: uno muy ancho y bajo (una palabra larga) se ve
+   chiquito, y uno alto y compacto se ve enorme. Estas clases corrigen
+   eso a ojo, que es como se hace en una tira de logos. */
+.logos img.es-ancho { max-height: 30px; max-width: 92%; }
+.logos img.es-alto  { max-height: 58px; max-width: 62%; }
 
 /* --- Aviso de emergencia (cierre de portada) --- */
 .urgente {
