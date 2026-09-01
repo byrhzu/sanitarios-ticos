@@ -281,17 +281,18 @@ strong, b { font-weight: 600; }
 .cover { position: relative; padding-top: clamp(2.5rem, 5vw, 4rem); overflow: hidden; }
 .cover-grid { display: grid; gap: clamp(2rem, 4vw, 3rem); align-items: center; }
 
+/* Antes era una píldora con borde y un punto parpadeando — el mismo
+   badge de "✨ Novedad" que trae cualquier plantilla. Ahora es una
+   nota de rótulo: cuadro macizo del naranja del camión y la frase
+   suelta, sin caja ni parpadeo. */
 .cover-kick {
-  display: inline-flex; align-items: center; gap: .55rem;
-  font-family: var(--display); font-size: .8rem; font-weight: 600;
-  letter-spacing: .04em;
+  display: inline-flex; align-items: center; gap: .6rem;
+  font-family: var(--display); font-size: .82rem; font-weight: 600;
+  letter-spacing: .01em;
   color: var(--orange-dk);
-  border: 1px solid var(--orange-line);
-  padding: .35rem .85rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.3rem;
 }
-.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); animation: blink 2.4s infinite; }
-@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+.dot { width: 7px; height: 7px; background: var(--orange); }
 
 .cover h1 {
   font-size: clamp(2.5rem, 6.4vw, 4.6rem);
@@ -632,8 +633,10 @@ strong, b { font-weight: 600; }
 .f-full, .form > .btn, .form-alt, .form-msg { grid-column: 1 / -1; }
 .f label { font-size: .82rem; font-weight: 600; color: var(--muted); letter-spacing: .01em; }
 .f .opt { font-weight: 400; color: var(--muted-2); }
+/* 16px es el mínimo: por debajo de eso, Safari en iPhone hace zoom
+   automático al tocar el campo y deja la página descuadrada. */
 .f input, .f select, .f textarea {
-  font: inherit; font-size: .96rem;
+  font: inherit; font-size: 1rem;
   padding: .78rem .9rem;
   border: 1px solid var(--line-2);
   background: var(--white);
@@ -652,7 +655,7 @@ strong, b { font-weight: 600; }
   font-size: .82rem; line-height: 1.4; color: var(--muted);
   cursor: pointer;
 }
-.f-consiente input { margin-top: .2rem; flex: 0 0 auto; width: 15px; height: 15px; accent-color: var(--orange); }
+.f-consiente input { margin-top: .1rem; flex: 0 0 auto; width: 20px; height: 20px; accent-color: var(--orange); }
 .f-consiente a { color: var(--ink-2); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .f-consiente.is-error { color: #c0392b; }
 
@@ -706,6 +709,18 @@ strong, b { font-weight: 600; }
    (esquina "cola" asimétrica) en vez del rectángulo plano de antes.
    ============================================================= */
 .asistente { position: fixed; right: 1rem; bottom: 5.4rem; z-index: 81; }
+
+/* Los dos botones flotantes viven encima del contenido. En vez de
+   reservarles un hueco permanente en cada lista (que le robaba ancho
+   al texto en el celular), se apartan solos mientras se baja y vuelven
+   apenas se sube. El panel del chat abierto nunca se esconde. */
+.asistente, .wa-fab { transition: transform .3s var(--ease), opacity .3s var(--ease); }
+body.fabs-fuera .asistente:not(.is-open),
+body.fabs-fuera .wa-fab {
+  transform: translateY(150%);
+  opacity: 0;
+  pointer-events: none;
+}
 
 .asistente-fab {
   position: relative;
@@ -926,13 +941,28 @@ strong, b { font-weight: 600; }
   .btn-row { grid-template-columns: 1fr; }
   .cover-stamp { left: 0; bottom: 0; max-width: none; width: 100%; border-left: 0; border-right: 0; border-bottom: 0; }
   .form { grid-template-columns: 1fr; }
-  .fact { border-right: 0; border-bottom: 1px solid var(--line); padding: 1.2rem 0; }
-  .fact:last-child { border-bottom: 0; }
-  .row { grid-template-columns: auto 1fr; }
   .row-go { display: none; }
   .wa-fab span, .asistente-fab span { display: none; }
   .wa-fab, .asistente-fab { padding: .9rem; min-width: 0; }
   .foot-end { flex-direction: column; }
+
+  /* Los cuatro datos en 2×2. Apilados uno debajo de otro ocupaban
+     media pantalla de puro scroll para decir "2 camiones, 3 sedes". */
+  .facts { grid-template-columns: 1fr 1fr; }
+  .fact { padding: 1.15rem 0; border-right: 0; }
+  .fact:nth-child(odd) { padding-right: 1rem; }
+  .fact:nth-child(even) { padding-left: 1rem; border-left: 1px solid var(--line); }
+  .fact:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .fact strong { font-size: 1.9rem; }
+  .fact b { margin-top: .5rem; font-size: .7rem; letter-spacing: .1em; }
+  .fact span { font-size: .82rem; }
+
+  /* El número de cada servicio pasa arriba del título. Al lado se
+     comía 55 px de ancho y quedaba flotando a media altura, así que
+     los títulos se partían en tres líneas. */
+  .row { grid-template-columns: 1fr; gap: .3rem; align-items: start; }
+  .row-n { min-width: 0; font-size: .72rem; letter-spacing: .14em; color: var(--orange-dk); }
+  .row:hover .row-n { color: var(--orange-dk); }
 
   /* Sin la cuadrícula de escritorio (grid-auto-rows) el alto de cada
      foto queda indefinido; aquí sí hace falta fijarlo. A partir de
@@ -940,13 +970,17 @@ strong, b { font-weight: 600; }
      rompía las fotos que ocupan más de una columna. */
   .shot { aspect-ratio: 4/3; }
 
-  /* Los botones flotantes (chat + WhatsApp) quedan fijos en la esquina
-     inferior derecha durante todo el recorrido de la página. Sin este
-     espacio de más, el texto que llega hasta el borde queda tapado
-     detrás de ellos al desplazarse. */
-  .row-t, .hq li, .data li { padding-right: 3.6rem; }
-  .qa summary { padding-right: 3.6rem; }
-  .qa-body { padding-right: 3.6rem; }
+  /* Áreas táctiles: en el dedo, 20 px de alto no se aciertan. Los
+     teléfonos de la barra y los enlaces del pie son de lo que más se
+     toca, así que se les da altura de botón real. */
+  .bar-links a, .foot-col a, .data a, .arrow {
+    display: inline-flex; align-items: center; min-height: 44px;
+  }
+  .bar-in { min-height: 0; }
+  .foot-col { gap: 0; }
+  .social a { width: 44px; height: 44px; }
+
+  .qa-body { padding-right: 0; }
 }
 
 @media (min-width: 720px) {
@@ -983,5 +1017,5 @@ strong, b { font-weight: 600; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .marquee-track { animation: none; }
-  .dot { animation: none; }
+  .asistente, .wa-fab { transition: none; }
 }

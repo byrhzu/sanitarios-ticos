@@ -485,6 +485,47 @@
     if (el) el.textContent = String(new Date().getFullYear());
   }
 
+  // Los botones flotantes se apartan mientras se baja y vuelven apenas
+  // se sube, para no tapar el texto en pantallas pequeñas. Antes se les
+  // reservaba un hueco fijo en cada lista, que le quitaba ancho a todo.
+  function initFabsAlBajar() {
+    var wa = $(".wa-fab");
+    var chat = $("[data-asistente]");
+    if (!wa && !chat) return;
+
+    var ultimo = window.scrollY;
+    var pendiente = false;
+
+    function revisar() {
+      pendiente = false;
+      var y = window.scrollY;
+      var fin = document.documentElement.scrollHeight - window.innerHeight - 80;
+
+      // Con el chat abierto no se mueve nada.
+      if (chat && chat.classList.contains("is-open")) {
+        document.body.classList.remove("fabs-fuera");
+        ultimo = y;
+        return;
+      }
+
+      // Cerca del inicio o del final siempre se ven: ahí es donde la
+      // persona busca cómo contactar.
+      var esconder = y > 260 && y > ultimo + 6 && y < fin;
+      var mostrar = y < ultimo - 6 || y <= 260 || y >= fin;
+
+      if (esconder) document.body.classList.add("fabs-fuera");
+      else if (mostrar) document.body.classList.remove("fabs-fuera");
+
+      ultimo = y;
+    }
+
+    window.addEventListener("scroll", function () {
+      if (pendiente) return;
+      pendiente = true;
+      requestAnimationFrame(revisar);
+    }, { passive: true });
+  }
+
   function boot() {
     safe(initHead, "initHead");
     safe(initAnchors, "initAnchors");
@@ -494,6 +535,7 @@
     safe(initMapa, "initMapa");
     safe(initForm, "initForm");
     safe(initYear, "initYear");
+    safe(initFabsAlBajar, "initFabsAlBajar");
 
     safe(initCoverParallax, "initCoverParallax");
 
