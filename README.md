@@ -153,6 +153,28 @@ ahí donde se corrige, no en el código de la conversación. El saludo inicial
 (antes de que escriba nada) está aparte, en `main.js`, función
 `initAsistente` → `saludarSiHaceFalta`.
 
+### Pasar de Beto a una persona
+
+Apenas la visita escribe algo, dentro del chat aparece **"Seguir con una
+persona por WhatsApp"**. Ese enlace abre WhatsApp con el mensaje ya
+redactado, incluyendo lo que la persona acaba de contarle a Beto — para
+que no tenga que repetir la historia.
+
+El resumen se arma con **lo que ella misma escribió**, no con un resumen
+que invente la IA: es más fiel, no gasta una llamada del cupo diario y
+no puede meter datos falsos. Sale como borrador, así que lo lee y lo
+puede corregir antes de mandarlo.
+
+El botón aparece aunque Beto esté caído o sin clave configurada; de
+hecho ese es el caso en que más sirve. Se arma en `main.js`, función
+`initAsistente` → `refrescarPase`, con topes de largo para que el
+enlace no se pase de tamaño.
+
+Ojo: el traspaso es de ida. Beto entrega la conversación, pero no ve ni
+puede seguir lo que pase después en WhatsApp. Para un hilo único haría
+falta la API de WhatsApp Business, que obliga a sacar el número de la
+app normal — no conviene mientras se atienda desde un teléfono.
+
 Reglas que sigue siempre: nunca da un precio en colones (no los tiene
 cargados), nunca inventa datos que no estén en esa constante, y en una
 emergencia recomienda llamar en vez de seguir escribiendo.

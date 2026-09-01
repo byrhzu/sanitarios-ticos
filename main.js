@@ -341,10 +341,45 @@
     var sugeridas = $("[data-asistente-sugeridas]", raiz);
     var form = $("[data-asistente-form]", raiz);
     var input = $("[data-asistente-input]", raiz);
+    var pase = $("[data-asistente-pase]", raiz);
+    var enlacePase = $("[data-asistente-wa]", raiz);
 
     var historial = [];  // { role: "user"|"model", text: "..." }
+    var mensajesMios = [];  // sólo lo que escribió la persona, para el traspaso
     var abierto = false;
     var yaSaludo = false;
+
+    // Traspaso a WhatsApp sin repetir la historia.
+    //
+    // Se arma con lo que la persona escribió, NO con un resumen de la
+    // IA: es más fiel, no gasta una llamada del cupo diario y no puede
+    // inventarse nada. El mensaje queda como borrador en WhatsApp, así
+    // que ella lo lee y lo puede corregir antes de mandarlo.
+    var TOPE_LINEA = 140;   // por mensaje
+    var TOPE_TOTAL = 420;   // en total, para no reventar el enlace
+
+    function refrescarPase() {
+      if (!pase || !enlacePase) return;
+      if (!mensajesMios.length) { pase.hidden = true; return; }
+
+      var lineas = [];
+      var largo = 0;
+      for (var i = 0; i < mensajesMios.length; i++) {
+        var t = mensajesMios[i];
+        if (t.length > TOPE_LINEA) t = t.slice(0, TOPE_LINEA - 1) + "…";
+        if (largo + t.length > TOPE_TOTAL) break;
+        lineas.push("· " + t);
+        largo += t.length;
+      }
+
+      var texto = "Hola, vengo del chat de la página. Esto es lo que ya conté:\n"
+        + lineas.join("\n")
+        + "\n\nMe gustaría seguir con una persona.";
+
+      var numero = (data.contact && data.contact.whatsappNumber) || "50683417547";
+      enlacePase.href = "https://wa.me/" + numero + "?text=" + encodeURIComponent(texto);
+      pase.hidden = false;
+    }
 
     // Convierte lo que Beto escribe en los mismos enlaces que ya
     // existen como botones en el sitio: los teléfonos abren para
@@ -446,6 +481,11 @@
       agregarMensaje(pregunta, true);
       if (sugeridas) sugeridas.hidden = true;
       input.value = "";
+
+      // Se ofrece el traspaso apenas escribe, sin esperar la respuesta:
+      // si Beto falla o tarda, el camino a una persona ya está ahí.
+      mensajesMios.push(pregunta);
+      refrescarPase();
 
       var cargando = agregarEscribiendo();
 

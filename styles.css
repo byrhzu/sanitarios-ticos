@@ -929,6 +929,29 @@ body.fabs-fuera .wa-fab {
 }
 .asistente-sugeridas button:hover { border-color: var(--orange); background: var(--orange-soft); color: var(--orange-dk); }
 
+/* Traspaso a WhatsApp. El [hidden] va primero y explícito: un elemento
+   con display propio ignora el atributo hidden del navegador, y en este
+   proyecto ya nos pasó tres veces. */
+.asistente-pase[hidden] { display: none; }
+.asistente-pase {
+  display: flex;
+  border-top: 1px solid var(--line);
+  background: var(--paper-2);
+}
+.asistente-pase a {
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  width: 100%; min-height: 44px; padding: .72rem .9rem;
+  font-family: var(--display); font-weight: 600; font-size: .84rem;
+  color: #0a6b32;  /* 5.7:1 sobre el papel-2 del panel */
+  transition: background-color .2s var(--ease);
+}
+.asistente-pase a:hover { background: rgba(37,211,102,.14); }
+.asistente-pase svg {
+  width: 16px; height: 16px; flex: 0 0 auto;
+  fill: none; stroke: currentColor; stroke-width: 1.9;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
 .asistente-form {
   display: flex; gap: .5rem;
   padding: .8rem;

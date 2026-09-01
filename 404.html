@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260901l">
+<link rel="stylesheet" href="styles.css?v=20260901n">
 <script>document.documentElement.classList.add("js");setTimeout(function(){var d=document.documentElement;if(!d.classList.contains("is-ready"))d.classList.add("rv-rescate");},3000);</script>
 </head>
 <body><header class="head" data-head>
@@ -141,6 +141,15 @@
       <button type="button">¿Dan servicio en Guanacaste?</button>
       <button type="button">¿Cómo pido una cotización?</button>
     </div>
+    <!-- Traspaso a WhatsApp: aparece apenas la persona escribe algo, y
+         lleva en el mensaje lo que ya le contó a Beto, para que no tenga
+         que repetirlo. Lo arma main.js en cada envío. -->
+    <div class="asistente-pase" data-asistente-pase hidden>
+      <a data-asistente-wa href="https://wa.me/50683417547" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.6A8.4 8.4 0 0 0 6.9 4.9a8.3 8.3 0 0 0-1.6 9.8L4 20l5.5-1.3a8.4 8.4 0 0 0 11-7.1Z"/></svg>
+        Seguir con una persona por WhatsApp
+      </a>
+    </div>
     <form class="asistente-form" data-asistente-form>
       <input type="text" placeholder="Escriba su pregunta…" data-asistente-input aria-label="Escriba su pregunta" autocomplete="off">
       <button type="submit" aria-label="Enviar">
@@ -156,6 +165,6 @@
   <span>WhatsApp</span>
 </a>
 <script defer src="lib/manifest.js"></script>
-<script defer src="main.js?v=20260901l"></script>
+<script defer src="main.js?v=20260901n"></script>
 </body>
 </html>
