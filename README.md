@@ -117,17 +117,6 @@ escrita en el código. Es una protección simple, sin límite de intentos
 fallidos todavía; para algo más robusto (bloqueo tras varios intentos) se
 puede agregar más adelante.
 
-## Logos de empresas clientes
-
-La portada tiene una sección **"Quiénes nos contratan"** preparada para
-mostrar una tira de logos de empresas que hayan contratado el servicio.
-Todavía está vacía: el paso a paso para agregarlos está en
-`assets/img/clientes/COMO-PONER-LOS-LOGOS.md`.
-
-Sólo se ponen logos de empresas que de verdad hayan sido clientes y que
-hayan dado permiso. Mostrar el logo de alguien que no lo es afirma una
-relación comercial inexistente.
-
 ## Aviso legal y privacidad
 
 La página `privacidad.html` explica, en lenguaje sencillo, qué datos se

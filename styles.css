@@ -122,31 +122,45 @@ strong, b { font-weight: 600; }
 }
 .skip-link:focus { top: 1rem; }
 
-/* Etiqueta de sección: 01  SERVICIOS ————————— (sin corchetes: el
-   corchete + punto decorativo es un tic muy reconocible de plantillas
-   generadas por IA). Sólo lleva número cuando de verdad hay una
-   secuencia (pasos, servicios en orden); el resto no lleva data-n. */
+/* Etiqueta de sección.
+   Antes era: 01  SERVICIOS ——————————————————— con una línea fina que
+   cruzaba toda la pantalla. Esa línea larga es el divisor de sección
+   que trae cualquier plantilla, y además competía con las otras reglas
+   finas del sitio (las listas, las filas de servicio), que sí separan
+   contenido de verdad.
+   Ahora la etiqueta se marca con una barra corta del naranja del
+   camión: ocupa lo que tiene que ocupar, dice "aquí empieza algo" y
+   deja de dibujar rayas de lado a lado. */
 .tag {
-  display: flex; align-items: center; gap: .75rem;
+  display: inline-flex; align-items: center; gap: .7rem;
+  /* Dentro de un contenedor en rejilla, un inline-flex se estira a todo
+     el ancho de la columna. No se nota (no tiene fondo), pero así la
+     caja mide siempre lo que mide el texto. */
+  justify-self: start; align-self: start;
+  border-left: 3px solid var(--orange);
+  padding-left: .85rem;
   font-family: var(--display);
-  font-size: .74rem; font-weight: 600;
-  letter-spacing: .2em; text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 1.6rem;
+  font-size: .75rem; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink-2);
+  margin-bottom: 1.5rem;
 }
+/* El número sólo aparece donde hay una secuencia de verdad. */
 .tag::before {
   content: attr(data-n);
   color: var(--orange-dk);
   font-variant-numeric: tabular-nums;
-  letter-spacing: .06em;
+  letter-spacing: .04em;
 }
 .tag:not([data-n])::before { content: none; }
-.tag::after {
-  content: ""; flex: 1; height: 1px; background: var(--line-2);
-}
-.tag-lt { color: rgba(250,247,242,.6); }
+.tag-lt { color: rgba(250,247,242,.72); border-left-color: var(--orange-lt); }
 .tag-lt::before { color: var(--orange-lt); }
-.tag-lt::after { background: var(--line-lt); }
+
+/* .split sólo era rejilla a partir de 1024px, así que abajo de eso sus
+   dos mitades se apilaban pegadas: el titular terminaba y el párrafo
+   empezaba en la línea siguiente, sin aire. Definirlo como rejilla de
+   una columna desde el inicio le da ese respiro en tableta y celular. */
+.split { display: grid; gap: 1.15rem; }
 
 .lead { font-size: clamp(1.05rem, 1.5vw, 1.2rem); color: var(--ink-2); max-width: 40rem; }
 .dim { color: var(--muted); }
@@ -626,77 +640,30 @@ strong, b { font-weight: 600; }
 .marcas b { font-family: var(--display); font-size: 1rem; }
 .marcas span { font-size: .92rem; color: var(--muted); }
 
-/* --- Quiénes nos contratan --- */
-.clientes { display: flex; flex-wrap: wrap; gap: .5rem; }
-.clientes li {
-  border: 1px solid var(--line-2);
-  padding: .5rem 1rem;
-  font-family: var(--display); font-weight: 600; font-size: .92rem;
+/* --- Quiénes nos contratan ---
+   Eran nueve recuadros con borde, que parecían filtros de una tienda:
+   invitaban a hacer clic y no llevan a ningún lado. Como es una lista
+   para leer de corrido, ahora se lee de corrido — un solo párrafo en la
+   tipografía de titulares, separado por puntos naranja. Ocupa la mitad
+   del alto y se ve como una frase pensada, no como una barra de UI. */
+.clientes {
+  font-family: var(--display); font-weight: 600;
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  line-height: 1.7; letter-spacing: -.015em;
   color: var(--ink-2);
+  max-width: 54rem;
+  text-wrap: pretty;
 }
-
-/* Tira de logos de empresas clientes. Vive comentada en el HTML hasta
-   que existan los archivos reales en assets/img/clientes/. */
-.clientes-t {
-  margin: 2.6rem 0 1.2rem;
-  font-family: var(--display); font-size: .74rem; font-weight: 600;
-  letter-spacing: .18em; text-transform: uppercase; color: var(--muted-2);
+/* Cada oficio no se parte a la mitad ("Restaurantes y / sodas" se lee
+   fatal) y el punto va PEGADO al que termina, no al que empieza: si el
+   separador abre línea, el margen izquierdo queda como un serrucho. */
+.clientes li { display: inline; white-space: nowrap; }
+.clientes li:not(:last-child)::after {
+  content: "·";
+  margin: 0 .5rem 0 .55rem;
+  color: var(--orange);
+  font-weight: 700;
 }
-.logos {
-  display: grid; gap: 1px;
-  grid-template-columns: repeat(auto-fit, minmax(min(50%, 10rem), 1fr));
-  background: var(--line); border: 1px solid var(--line);
-}
-/* Cada casilla mide exactamente lo mismo y el logo se centra dentro.
-   Así da igual que uno venga cuadrado y otro larguísimo: la retícula
-   no se deforma. */
-.logos li {
-  background: var(--paper);
-  display: grid; place-items: center;
-  padding: 1.1rem;
-  aspect-ratio: 5/3;
-}
-.logos img {
-  /* Limitar SOLO el alto deja los logos anchos gigantes y los altos
-     enanos. Limitando las dos medidas, cada uno entra en la casilla
-     por el lado que le apriete primero. */
-  max-height: 42px; max-width: 80%;
-  width: auto; height: auto;
-  object-fit: contain;
-  /* Vienen en colores muy distintos entre sí; en gris la tira se lee
-     como una sola pieza y no le pelea el protagonismo al naranja de
-     la marca. Al pasar el mouse recupera su color. */
-  filter: grayscale(1); opacity: .6;
-  transition: filter .3s var(--ease), opacity .3s var(--ease);
-}
-.logos li:hover img { filter: none; opacity: 1; }
-
-/* Ajuste óptico. Dos logos con la misma altura en píxeles NO se ven
-   del mismo tamaño: uno muy ancho y bajo (una palabra larga) se ve
-   chiquito, y uno alto y compacto se ve enorme. Estas clases corrigen
-   eso a ojo, que es como se hace en una tira de logos. */
-.logos img.es-ancho { max-height: 30px; max-width: 92%; }
-.logos img.es-alto  { max-height: 58px; max-width: 62%; }
-
-/* Espacio reservado, mientras no haya logos reales. Se marca como
-   pendiente a propósito: así el propietario ve para qué es el hueco y
-   nadie lo confunde con una tira de clientes de verdad. */
-.reservado { margin-top: 2.6rem; }
-.reservado .clientes-t { margin-top: 0; }
-.logos-vacios li {
-  background: repeating-linear-gradient(135deg, var(--paper) 0 9px, var(--paper-2) 9px 18px);
-}
-.logos-vacios li::after {
-  content: "logo";
-  font-family: var(--display); font-size: .68rem; font-weight: 600;
-  letter-spacing: .16em; text-transform: uppercase;
-  color: var(--muted-2); opacity: .55;
-}
-.reservado-n {
-  margin-top: .9rem;
-  font-size: .86rem; color: var(--muted); max-width: 46rem;
-}
-.reservado-n b { color: var(--orange-dk); }
 
 /* --- Aviso de emergencia (cierre de portada) --- */
 .urgente {
@@ -1105,8 +1072,7 @@ body.fabs-fuera .wa-fab {
   .row { padding-block: 1.05rem; }
   .signals { gap: .4rem; }
   .signal { padding: .4rem .8rem; font-size: .84rem; }
-  .clientes { gap: .4rem; }
-  .clientes li { padding: .42rem .8rem; font-size: .86rem; }
+  .clientes { line-height: 1.62; }
   .urgente { margin-bottom: 1.8rem; padding: 1rem 1.1rem; }
 
   .bar-links a, .foot-col a, .data a, .arrow {
