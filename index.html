@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260901d">
+<link rel="stylesheet" href="styles.css?v=20260901e">
 <script>document.documentElement.classList.add("js");setTimeout(function(){var d=document.documentElement;if(!d.classList.contains("is-ready"))d.classList.add("rv-rescate");},3000);</script>
 <script type="application/ld+json">
 {
@@ -251,9 +251,24 @@
       <li>Fincas</li>
     </ul>
 
-    <!-- LOGOS DE EMPRESAS CLIENTES — el bloque va aquí.
-         Las instrucciones y el código para pegar están en
-         assets/img/clientes/COMO-PONER-LOS-LOGOS.md -->
+    <!-- ESPACIO RESERVADO PARA LOS LOGOS — bloque de referencia, para que
+         el propietario vea dónde van. Se reemplaza entero por la tira real
+         siguiendo assets/img/clientes/COMO-PONER-LOS-LOGOS.md.
+         Lleva data-demo: la herramienta tools/modo-publicacion.py avisa si
+         todavía está puesto a la hora de pasar el sitio a producción. -->
+    <div class="reservado rv" data-demo>
+      <p class="clientes-t">Empresas que nos han contratado</p>
+      <!-- Seis casillas para que las filas cierren parejas: 3x2 en el
+           celular y una sola fila en escritorio. -->
+      <ul class="logos logos-vacios" aria-hidden="true">
+        <li></li><li></li><li></li><li></li><li></li><li></li>
+      </ul>
+      <p class="reservado-n">
+        <b>Espacio reservado.</b> Aquí va la tira con los logos de las empresas
+        que han contratado el servicio. Quedan pendientes los archivos y el
+        permiso de cada empresa para publicar su marca.
+      </p>
+    </div>
   </div>
 </section>
 
@@ -401,6 +416,6 @@
   <span>WhatsApp</span>
 </a>
 <script defer src="lib/manifest.js"></script>
-<script defer src="main.js?v=20260901d"></script>
+<script defer src="main.js?v=20260901e"></script>
 </body>
 </html>

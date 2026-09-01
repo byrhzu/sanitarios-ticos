@@ -665,6 +665,26 @@ strong, b { font-weight: 600; }
 .logos img.es-ancho { max-height: 30px; max-width: 92%; }
 .logos img.es-alto  { max-height: 58px; max-width: 62%; }
 
+/* Espacio reservado, mientras no haya logos reales. Se marca como
+   pendiente a propósito: así el propietario ve para qué es el hueco y
+   nadie lo confunde con una tira de clientes de verdad. */
+.reservado { margin-top: 2.6rem; }
+.reservado .clientes-t { margin-top: 0; }
+.logos-vacios li {
+  background: repeating-linear-gradient(135deg, var(--paper) 0 9px, var(--paper-2) 9px 18px);
+}
+.logos-vacios li::after {
+  content: "logo";
+  font-family: var(--display); font-size: .68rem; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--muted-2); opacity: .55;
+}
+.reservado-n {
+  margin-top: .9rem;
+  font-size: .86rem; color: var(--muted); max-width: 46rem;
+}
+.reservado-n b { color: var(--orange-dk); }
+
 /* --- Aviso de emergencia (cierre de portada) --- */
 .urgente {
   display: flex; flex-wrap: wrap; align-items: center; gap: .7rem 1.4rem;
