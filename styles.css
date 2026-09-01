@@ -314,23 +314,36 @@ strong, b { font-weight: 600; }
 
 .cover-media { position: relative; }
 .cover-media img { width: 100%; aspect-ratio: 4/3; object-fit: cover; }
+/* Era una tarjeta blanca flotando sobre la foto con sombra difusa —
+   se veía pegada encima, no parte de la imagen. Ahora es un pie de
+   foto sobre la propia imagen, con el mismo degradado que ya usan las
+   fotos de la galería, así que el sitio habla un solo idioma. El
+   cuadrito naranja es el mismo de la nota de arriba del titular. */
 .cover-stamp {
-  position: absolute; left: -1.2rem; bottom: -1.2rem;
-  display: flex; align-items: flex-start; gap: .7rem;
-  background: var(--paper);
-  padding: 1rem 1.3rem;
-  max-width: 18.5rem;
-  box-shadow: 0 18px 40px rgba(27,25,23,.18), 0 2px 8px rgba(27,25,23,.08);
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: baseline; gap: .6rem;
+  padding: 3.4rem 1.3rem 1.1rem;
+  /* La foto tiene el camión naranja justo donde cae el texto, así que
+     el velo tiene que ser firme abajo o el blanco no se lee. Arranca
+     transparente para que no se note dónde empieza. */
+  background: linear-gradient(rgba(15,13,11,0), rgba(15,13,11,.68) 45%, rgba(15,13,11,.93));
+  color: var(--paper);
 }
 .cover-stamp::before {
-  content: ""; flex: 0 0 auto; margin-top: .3rem;
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--orange);
-  box-shadow: 0 0 0 4px var(--orange-soft);
+  content: ""; flex: 0 0 auto;
+  width: 7px; height: 7px; background: var(--orange);
+  transform: translateY(-1px);
 }
-.cover-stamp .txt { display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
-.cover-stamp strong { display: block; font-family: var(--display); font-size: .95rem; }
-.cover-stamp .txt span { font-size: .8rem; color: var(--muted); }
+.cover-stamp .txt { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+.cover-stamp strong {
+  display: block; font-family: var(--display); font-weight: 700;
+  font-size: .95rem; letter-spacing: -.01em;
+  text-shadow: 0 1px 10px rgba(15,13,11,.55);
+}
+.cover-stamp .txt span {
+  font-size: .82rem; color: rgba(250,247,242,.76); text-wrap: pretty;
+  text-shadow: 0 1px 10px rgba(15,13,11,.55);
+}
 
 /* --- Tira de datos --- */
 .facts {
@@ -1041,7 +1054,11 @@ body.fabs-fuera .wa-fab {
   .bar-links { gap: .9rem; font-size: .78rem; }
   .cover-btns .btn { width: 100%; }
   .btn-row { grid-template-columns: 1fr; }
-  .cover-stamp { left: 0; bottom: 0; max-width: none; width: 100%; border-left: 0; border-right: 0; border-bottom: 0; }
+  /* La foto es baja en el celular: menos velo, para que se siga viendo
+     el camión y no quede media imagen tapada. */
+  .cover-stamp { padding: 2.1rem 1.1rem .95rem; }
+  .cover-stamp strong { font-size: .9rem; }
+  .cover-stamp .txt span { font-size: .78rem; }
   .form { grid-template-columns: 1fr; }
   .row-go { display: none; }
   .wa-fab span, .asistente-fab span { display: none; }
@@ -1127,7 +1144,13 @@ body.fabs-fuera .wa-fab {
   /* La foto llega justo hasta el borde derecho de la ventana */
   .cover-media { margin-right: calc((min(100vw - var(--gut) * 2, var(--wrap)) - 100vw) / 2); }
   .cover-media img { aspect-ratio: 3/2.4; }
-  .cover-stamp { left: auto; right: calc((100vw - min(100vw - var(--gut) * 2, var(--wrap))) / 2 + 1.4rem); bottom: 1.4rem; }
+  /* La foto sangra hasta el borde de la ventana, así que el pie se
+     detiene antes: el texto queda alineado con la foto y no se va a
+     morir contra el filo de la pantalla. */
+  .cover-stamp {
+    padding: 4.5rem 1.6rem 1.4rem;
+    right: calc((100vw - min(100vw - var(--gut) * 2, var(--wrap))) / 2);
+  }
 }
 
 /* =============================================================
