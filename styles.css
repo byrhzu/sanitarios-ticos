@@ -603,6 +603,68 @@ strong, b { font-weight: 600; }
 }
 .signal:hover { border-color: var(--orange); color: var(--orange-dk); }
 
+/* --- Marcas de la empresa (bloque "La empresa") --- */
+.marcas { display: grid; gap: 0; margin-top: 1.6rem; border-top: 1px solid var(--line); }
+.marcas li {
+  display: grid; gap: .2rem;
+  padding: .95rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.marcas b { font-family: var(--display); font-size: 1rem; }
+.marcas span { font-size: .92rem; color: var(--muted); }
+
+/* --- Quiénes nos contratan --- */
+.clientes { display: flex; flex-wrap: wrap; gap: .5rem; }
+.clientes li {
+  border: 1px solid var(--line-2);
+  padding: .5rem 1rem;
+  font-family: var(--display); font-weight: 600; font-size: .92rem;
+  color: var(--ink-2);
+}
+
+/* Tira de logos de empresas clientes. Vive comentada en el HTML hasta
+   que existan los archivos reales en assets/img/clientes/. */
+.clientes-t {
+  margin: 2.6rem 0 1.2rem;
+  font-family: var(--display); font-size: .74rem; font-weight: 600;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--muted-2);
+}
+.logos {
+  display: grid; gap: 1px;
+  grid-template-columns: repeat(auto-fit, minmax(min(50%, 10rem), 1fr));
+  background: var(--line); border: 1px solid var(--line);
+}
+.logos li { background: var(--paper); display: grid; place-items: center; padding: 1.4rem 1.2rem; }
+.logos img {
+  max-height: 46px; width: auto; object-fit: contain;
+  /* Los logos llegan en colores muy distintos entre sí; en escala de
+     grises la tira se lee como una sola pieza y no compite con el
+     naranja de la marca. Al pasar el mouse recupera su color. */
+  filter: grayscale(1); opacity: .62;
+  transition: filter .3s var(--ease), opacity .3s var(--ease);
+}
+.logos li:hover img { filter: none; opacity: 1; }
+
+/* --- Aviso de emergencia (cierre de portada) --- */
+.urgente {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .7rem 1.4rem;
+  margin-bottom: 2.4rem; padding: 1.15rem 1.4rem;
+  border: 1px solid var(--line-lt);
+  border-left: 3px solid var(--orange);
+  background: rgba(250,247,242,.05);
+}
+.urgente-t { font-family: var(--display); font-weight: 700; font-size: 1.05rem; color: var(--paper); }
+.urgente-tel {
+  display: inline-flex; align-items: center; gap: .5rem;
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(1.35rem, 3.2vw, 1.75rem); letter-spacing: -.02em;
+  color: var(--orange-lt);
+  transition: color .2s var(--ease);
+}
+.urgente-tel:hover { color: var(--paper); }
+.urgente-tel .ico { width: .8em; height: .8em; stroke-width: 2; }
+.urgente-n { flex: 1 1 16rem; font-size: .88rem; color: rgba(250,247,242,.6); }
+
 /* --- Preguntas --- */
 .qa { border-top: 1px solid var(--line); }
 .qa details { border-bottom: 1px solid var(--line); }
@@ -968,11 +1030,28 @@ body.fabs-fuera .wa-fab {
      foto queda indefinido; aquí sí hace falta fijarlo. A partir de
      720px el grid ya define el alto y esto sobra —de hecho, ahí
      rompía las fotos que ocupan más de una columna. */
-  .shot { aspect-ratio: 4/3; }
+  .shots { grid-template-columns: 1fr 1fr; }
+  .shot { aspect-ratio: 1; }
+  .shot figcaption { padding: 1.2rem .7rem .6rem; font-size: .74rem; }
 
   /* Áreas táctiles: en el dedo, 20 px de alto no se aciertan. Los
      teléfonos de la barra y los enlaces del pie son de lo que más se
      toca, así que se les da altura de botón real. */
+  /* En el celular el aire de escritorio se vuelve puro scroll: eran
+     unos 120 px muertos por sección, y con nueve secciones eso es más
+     de una pantalla entera de nada. Se aprieta el ritmo vertical sin
+     que el contenido quede encimado. */
+  .block { padding-block: 2.4rem; }
+  .block-tight { padding-block: 1.8rem; }
+  .split { gap: 1.4rem; }
+  .shots { gap: .5rem; }
+  .row { padding-block: 1.05rem; }
+  .signals { gap: .4rem; }
+  .signal { padding: .4rem .8rem; font-size: .84rem; }
+  .clientes { gap: .4rem; }
+  .clientes li { padding: .42rem .8rem; font-size: .86rem; }
+  .urgente { margin-bottom: 1.8rem; padding: 1rem 1.1rem; }
+
   .bar-links a, .foot-col a, .data a, .arrow {
     display: inline-flex; align-items: center; min-height: 44px;
   }

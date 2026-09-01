@@ -8,9 +8,9 @@ dentro de `public_html`.
 
 | Archivo | Qué contiene |
 |---|---|
-| `index.html` | Portada: presentación, índice de los cinco servicios, cobertura nacional, fotos reales y señales de alerta |
-| `servicios.html` | Cada servicio en detalle, con su propia ancla (`#tanques-septicos`, `#destaqueo`, `#trampas`, `#construccion`, `#alquiler`) |
-| `nosotros.html` | La empresa, por qué elegirnos, cómo trabajamos y cobertura |
+| `index.html` | Portada: presentación, índice de los cinco servicios, la empresa, quiénes nos contratan, cobertura y cierre con el aviso de emergencia |
+| `servicios.html` | Señales de que hay que llamar, y cada servicio en detalle con su propia ancla (`#tanques-septicos`, `#destaqueo`, `#trampas`, `#construccion`, `#alquiler`) |
+| `nosotros.html` | La empresa, por qué elegirnos, cómo trabajamos, cobertura con mapa y la galería de fotos de campo |
 | `contacto.html` | Datos directos, formulario de cotización y preguntas frecuentes |
 | `privacidad.html` | Política de privacidad (Ley 8968), enlazada desde el pie de página y desde el formulario |
 
@@ -116,6 +116,17 @@ bloqueada en `robots.txt`), pero cualquiera que sepa la dirección puede
 escrita en el código. Es una protección simple, sin límite de intentos
 fallidos todavía; para algo más robusto (bloqueo tras varios intentos) se
 puede agregar más adelante.
+
+## Logos de empresas clientes
+
+La portada tiene una sección **"Quiénes nos contratan"** preparada para
+mostrar una tira de logos de empresas que hayan contratado el servicio.
+Todavía está vacía: el paso a paso para agregarlos está en
+`assets/img/clientes/COMO-PONER-LOS-LOGOS.md`.
+
+Sólo se ponen logos de empresas que de verdad hayan sido clientes y que
+hayan dado permiso. Mostrar el logo de alguien que no lo es afirma una
+relación comercial inexistente.
 
 ## Aviso legal y privacidad
 
