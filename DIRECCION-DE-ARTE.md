@@ -131,7 +131,7 @@ misma tipografía, no dos que se llevan bien.
 | Dominante | `#faf7f2` papel | fondo de la mayoría de secciones | ~55% |
 | Neutro medio | `#f3ece2` papel-2 | secciones intercaladas y franjas alternas | ~20% |
 | Neutro oscuro | `#1f2c33` pizarra | 2 secciones a sangre | ~20% |
-| Acento | `#ef6511` naranja | botón principal, cuadro del kicker, estados activos | ~2% |
+| Acento | `#ef6511` naranja | botón principal y estados activos | ~2% |
 | Tinta | `#1b1917` | texto sobre papel | — |
 
 **Decidido por Byron (2026-09-01): el naranja se queda como acento.** Se evaluó pasarlo a
@@ -219,11 +219,11 @@ cambiando el logo.
 
 | Tic | Se usa | Referencia que lo justifica | Justificación |
 |---|---|---|---|
-| 1 · Píldora sobre el titular | **No** | — | Se elimina. El dato ("emergencias el mismo día") sube al titular, que es donde importa. |
+| 1 · Píldora sobre el titular | **No** | Camión | Eliminada. El dato subió al titular: "Su tanque séptico, atendido **hoy mismo**". Si la urgencia es el argumento de venta, no va en 12px arriba — va en 88px. La promesa exacta ("atendemos emergencias el mismo día") abre el párrafo en negrita, para que el compromiso quede acotado a emergencias y no a todo trabajo. |
 | 2 · Palabra de acento en el titular | **No** | — | Se elimina "en *manos ticas*" en naranja. El énfasis pasa a ser de escala. |
 | 3 · Etiqueta numerada con línea | **No** | — | Se elimina entera: número y barra. Las secciones se separan por campo de color. |
 | 4 · Grid de chips con borde | **No** | — | Ya se quitó en "Quiénes nos contratan"; se revisa que no queden en señales. |
-| 5 · Botón relleno + fantasma | **No** | Camión | El teléfono va como pieza tipográfica grande, como en el tanque. WhatsApp queda como enlace secundario. |
+| 5 · Botón relleno + fantasma | **Sí, se conserva** | — | Byron decidió (2026-09-01) que la jerarquía entre "Llamar" y "Cotizar por WhatsApp" da igual. Queda registrado como excepción consciente, no como olvido: si algún día se ve que la mayoría llama, conviene revisarlo. |
 | 6 · Subrayado de color como énfasis | **No** | — | El subrayado queda solo para enlaces. |
 | 7–12 | **No** | — | Ausentes hoy y se mantienen ausentes. |
 
@@ -289,9 +289,15 @@ Criterios que no eran de gusto y que la elegida cumple:
 borde no se ve), el contorno de los botones fantasma, y los separadores internos del panel
 de chat, que es una interfaz compacta y no una página.
 
-## Lo que queda pendiente del catálogo
+## Segunda pasada (2026-09-01, misma fecha)
 
-| Tic | Estado | Por qué no se hizo todavía |
-|---|---|---|
-| 1 · Píldora sobre el titular | **Sigue** | El kicker "Emergencias atendidas el mismo día" sigue encima del h1. Quitarlo implica reescribir el titular para que se lleve el dato, y eso es una decisión de copy que no estaba en el encargo. |
-| 5 · Botón relleno + fantasma | **Sigue** | "Llamar" y "Cotizar por WhatsApp" siguen pesando lo mismo. Si el 80% llama por teléfono, la jerarquía miente. Cambiarlo es decisión de negocio, no de diseño. |
+- **Tic 1 eliminado.** Fuera la píldora del titular. El titular pasa a ser
+  "Su tanque séptico, atendido **hoy mismo**", con "hoy mismo" solo en su renglón —
+  énfasis de posición, no de color, que es el sistema del §4. La promesa acotada
+  ("atendemos emergencias el mismo día") abre el párrafo en negrita.
+- **Tic 5 conservado** por decisión de Byron: la jerarquía de los dos botones da igual.
+  Queda como excepción consciente.
+- El cuadrito naranja (`.dot`) desaparece del CSS: ya no lo usaba ninguna página.
+
+Con esto el catálogo de tics queda **todo ausente salvo el 5**, que está justificado
+arriba como decisión del cliente.

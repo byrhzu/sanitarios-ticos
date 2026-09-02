@@ -319,7 +319,6 @@ strong, b { font-weight: 600; }
   color: var(--orange-dk);
   margin-bottom: 1.3rem;
 }
-.dot { width: 7px; height: 7px; background: var(--orange); }
 
 /* Razón display:cuerpo de 5,2x (88px sobre 17px), que es la del costado
    del tanque: el titular contra la letra legal de la esquina. Antes
@@ -328,13 +327,17 @@ strong, b { font-weight: 600; }
 .cover h1 {
   font-size: clamp(2.6rem, 7vw, 5.5rem);
   letter-spacing: -.015em;
-  max-width: 15ch;
+  /* En versalitas condensadas caben bastantes más caracteres por línea
+     que en caja baja, así que la medida se ensancha: con 15ch el
+     titular se partía en cuatro renglones. */
+  max-width: 19ch;
 }
-/* Antes "manos ticas" iba en naranja dentro del titular. Es el gesto
-   más automático que existe y gastaba el acento: el naranja ya estaba
-   en el botón y en los enlaces. El énfasis del sitio lo carga la
-   escala, no el color. Ver DIRECCION-DE-ARTE.md §4. */
-.cover h1 em { font-style: normal; }
+/* Antes "manos ticas" iba en naranja dentro del titular: el gesto más
+   automático que existe, y gastaba el acento porque el naranja ya
+   estaba en el botón y en los enlaces. Ahora el énfasis es de posición
+   —"hoy mismo" cae solo en su línea— que es el argumento de venta de
+   quien llega con el tanque rebalsándose. Ver DIRECCION-DE-ARTE.md §4. */
+.cover h1 em { font-style: normal; display: block; }
 .cover-sub { margin-top: 1.5rem; font-size: clamp(1.02rem, 1.5vw, 1.16rem); color: var(--ink-2); max-width: 33rem; }
 .cover-btns { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 2.1rem; }
 
