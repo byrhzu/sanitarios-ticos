@@ -132,11 +132,21 @@ strong, b { font-weight: 600; }
 
 .ico { width: 1.05em; height: 1.05em; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 
-/* Transiciones entre páginas */
+/* Transiciones entre páginas.
+   Es la ganancia de fluidez más grande de un sitio de seis páginas:
+   sin esto, cada clic del menú da un parpadeo en blanco. */
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) {
-  animation-duration: .45s;
+  animation-duration: .3s;
   animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* La barra de teléfonos y la cabecera son idénticas en todas las
+   páginas. Nombrándolas, el navegador las deja quietas en vez de
+   fundirlas: al navegar sólo cambia el contenido, como en una app. */
+@media (prefers-reduced-motion: no-preference) {
+  .bar  { view-transition-name: barra-contacto; }
+  .head { view-transition-name: cabecera; }
 }
 
 /* =============================================================
@@ -383,16 +393,27 @@ strong, b { font-weight: 600; }
   text-shadow: 0 1px 10px rgba(15,13,11,.55);
 }
 
-/* --- Tira de datos --- */
+/* --- Tira de datos ---
+   Las franjas alternas sirven en una lista vertical, donde marcan el
+   ritmo de lectura. En una fila de cuatro no hay orden que las
+   justifique: quedaban dos bloques tintados sueltos, como un error.
+   Aquí va UNA sola franja que cruza los cuatro datos —la banda que
+   cruza el tanque del camión, que también es una sola— y los datos se
+   separan entre sí por aire. */
 .facts {
-  display: grid; gap: 0;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  display: grid;
+  gap: clamp(1.3rem, 3vw, 2.6rem);
+  /* Columnas fijas, no auto-fit: con cuatro datos, auto-fit caía a tres
+     columnas en anchos intermedios y el cuarto quedaba solo abajo. Dos
+     o cuatro siempre reparten parejo. */
+  grid-template-columns: repeat(2, 1fr);
+  background: var(--paper-2);
+  padding: clamp(1.5rem, 3vw, 2.2rem);
 }
-.fact {
-  display: grid; align-content: start;
-  padding: 1.7rem;
+@media (min-width: 880px) {
+  .facts { grid-template-columns: repeat(4, 1fr); }
 }
-/* La primera y la última se alinean con el borde del contenido */
+.fact { display: grid; align-content: start; }
 
 
 .fact strong {
@@ -523,7 +544,11 @@ strong, b { font-weight: 600; }
   width: 100%; height: 100%;
   border: 0;
   filter: saturate(.92) contrast(1.02);
+  /* Al cambiar de sede, el mapa se recarga y parpadeaba en gris. Con el
+     fundido el cambio se lee como una transición y no como un fallo. */
+  transition: opacity .35s var(--ease);
 }
+.mapa-frame.cargando iframe { opacity: 0; }
 .mapa-foot {
   display: flex; flex-wrap: wrap; gap: 1rem;
   align-items: center; justify-content: space-between;
@@ -703,6 +728,21 @@ strong, b { font-weight: 600; }
 /* --- Preguntas --- */
 .qa { }
 .qa details { }
+
+/* El acordeón abría de golpe y la página daba un salto: lo que estabas
+   leyendo se te iba de la pantalla. Animar la altura lo arregla — no es
+   decoración, es que deja de moverse el suelo bajo el dedo.
+   Va dentro de @supports: donde el navegador no lo entienda, abre de
+   golpe como hasta ahora. Sin regresión. */
+@supports selector(::details-content) {
+  :root { interpolate-size: allow-keywords; }
+  .qa details::details-content {
+    block-size: 0;
+    overflow: hidden;
+    transition: block-size .32s var(--ease), content-visibility .32s allow-discrete;
+  }
+  .qa details[open]::details-content { block-size: auto; }
+}
 .qa summary {
   list-style: none; cursor: pointer;
   padding: 1.15rem 2.6rem 1.15rem 0;
@@ -1097,11 +1137,6 @@ body.fabs-fuera .wa-fab {
 
   /* Los cuatro datos en 2×2. Apilados uno debajo de otro ocupaban
      media pantalla de puro scroll para decir "2 camiones, 3 sedes". */
-  .facts { grid-template-columns: 1fr 1fr; }
-  .fact { padding: 1.15rem 0; border-right: 0; }
-  .fact:nth-child(odd) { padding-right: 1rem; }
-  .fact:nth-child(even) { padding-left: 1rem; border-left: 1px solid var(--line); }
-  .fact:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
   .fact strong { font-size: 1.9rem; }
   .fact b { margin-top: .5rem; font-size: .7rem; letter-spacing: .1em; }
   .fact span { font-size: .82rem; }
@@ -1187,4 +1222,12 @@ body.fabs-fuera .wa-fab {
   html { scroll-behavior: auto; }
   .marquee-track { animation: none; }
   .asistente, .wa-fab { transition: none; }
+
+  /* Los tres movimientos que se agregaron también se apagan. El de las
+     páginas no se puede desactivar desde @view-transition, pero sí
+     quitándole la animación a sus pseudoelementos. */
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+  .qa details::details-content { transition: none; }
+  .mapa-frame iframe { transition: none; }
+  .mapa-frame.cargando iframe { opacity: 1; }
 }

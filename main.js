@@ -150,6 +150,23 @@
       });
 
       var nombre = sede.getAttribute("data-nombre");
+
+      // El mapa tarda en recargar y mientras tanto parpadeaba en gris,
+      // que se lee como un fallo. Se funde a la salida y se vuelve a
+      // mostrar cuando el nuevo mapa terminó de cargar. El temporizador
+      // es la red de seguridad: si el "load" no llega (sin internet, o
+      // Google tardando), el mapa reaparece igual y no queda en blanco.
+      var caja = frame.parentElement;
+      if (caja) {
+        caja.classList.add("cargando");
+        var mostrar = function () {
+          caja.classList.remove("cargando");
+          frame.removeEventListener("load", mostrar);
+        };
+        frame.addEventListener("load", mostrar);
+        setTimeout(mostrar, 2500);
+      }
+
       frame.setAttribute("src", sede.getAttribute("data-embed"));
       frame.setAttribute("title", "Ubicación de Sanitarios Ticos en " + nombre);
       if (elSede) elSede.textContent = "Sede " + nombre;

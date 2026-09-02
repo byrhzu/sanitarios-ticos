@@ -199,10 +199,23 @@ Consecuencia directa, y es lo que pediste:
 
 ## 9. Movimiento
 
-- Por defecto casi nada. Transiciones de 150–250 ms en estados reales.
-- **La única animación de entrada:** ninguna nueva. Se conserva el `rv` existente, que ya
-  tiene red de rescate a los 3 s.
-- `prefers-reduced-motion` respetado (ya lo está).
+**Actualizado el 2026-09-01.** Byron pidió movimiento que le diera fluidez al sitio. El
+criterio con el que se decidió qué entra: **el movimiento tiene que hacer algo, no
+decorar.** Si sólo adorna, no entra — por eso no hay contadores animados en las cifras ni
+`fade-in-up` nuevos.
+
+- Por defecto casi nada. Transiciones de 150–350 ms en estados reales.
+- **La única animación de entrada:** el `rv` existente, que ya escalona 65 ms por hermano
+  y tiene red de rescate a los 3 s. No se agregó ninguna otra.
+- **Los tres movimientos que sí entraron, y qué problema resuelve cada uno:**
+
+| Movimiento | Qué arregla |
+|---|---|
+| Transición entre páginas (`@view-transition`) | Cada clic del menú daba un parpadeo en blanco. En un sitio de seis páginas es la mayor ganancia de fluidez. La barra de teléfonos y la cabecera van nombradas, así que se quedan quietas y sólo cambia el contenido. |
+| Acordeón de preguntas con altura animada | Abría de golpe y la página pegaba un salto: lo que estabas leyendo se te iba de la pantalla. Va dentro de `@supports`; donde no se entienda, abre de golpe como antes. |
+| Fundido del mapa al cambiar de sede | El iframe se recargaba y parpadeaba en gris, que se lee como un fallo. Lleva red de seguridad a los 2,5 s por si el `load` no llega. |
+
+- `prefers-reduced-motion` apaga los tres, además de la marquesina.
 
 ## 10. Firma humana
 
