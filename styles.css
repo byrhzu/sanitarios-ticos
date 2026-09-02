@@ -41,8 +41,19 @@
   --line-2:   rgba(27,25,23,.22);
   --line-lt:  rgba(250,247,242,.16);
 
-  --sans:    "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --display: "Bricolage Grotesque", "Instrument Sans", system-ui, sans-serif;
+  /* Una sola familia con eje de ancho (Archivo, Omnibus-Type). El
+     titular usa el corte estrecho y pesado —el del logo y el rótulo del
+     camión— y el texto el corte normal. Titular y párrafo son la misma
+     tipografía, no dos que se llevan bien.
+     Ver DIRECCION-DE-ARTE.md §4. */
+  --sans:    "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Anchos del eje wdth. Se aplican con font-stretch, que es la forma
+     estándar (no font-variation-settings, que se salta la cascada). */
+  --ancho-cartel:  68%;   /* h1 y cifras grandes */
+  --ancho-titular: 76%;   /* h2, h3 y piezas de display */
+  --ancho-texto:  100%;   /* cuerpo */
 
   --ease:      cubic-bezier(0.16, 1, 0.3, 1);
   --ease-soft: cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -66,8 +77,9 @@ html {
 
 body {
   font-family: var(--sans);
-  font-size: 16.5px;
-  line-height: 1.62;
+  font-stretch: var(--ancho-texto);
+  font-size: 17px;
+  line-height: 1.6;
   color: var(--ink);
   background: var(--paper);
   -webkit-font-smoothing: antialiased;
@@ -84,17 +96,34 @@ p { text-wrap: pretty; }
 
 h1, h2, h3, h4 {
   font-family: var(--display);
+  font-stretch: var(--ancho-titular);
   font-weight: 700;
-  line-height: 1.04;
-  letter-spacing: -0.028em;
+  line-height: 1.02;
+  letter-spacing: -0.012em;
   text-wrap: balance;
 }
 
-/* El h1 es el único titular "de cartel" de cada página; los h2 se
-   repiten en cada sección y, en negro completo, todos gritan igual —
-   un poco menos de peso les da jerarquía real en vez de todo mayúsculo
-   y grueso de principio a fin. */
-h2 { font-weight: 600; }
+/* El h1 es el titular de cartel de cada página: va en el corte más
+   estrecho y pesado, en versalitas, como está pintado el costado del
+   tanque. Es el único que va en caja alta — en un párrafo sería
+   ilegible, y repetido en cada h2 dejaría de significar nada. */
+h1 {
+  font-stretch: var(--ancho-cartel);
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: .92;
+}
+
+/* Todo lo que use la familia de display en versión ancha se ve blando
+   al lado del h1. Estas piezas van en el corte de titular. */
+.btn, .marquee span, .pull, .clientes, .arrow,
+.fact strong, .fact b, .row-t h3,
+.hq b, .mapa-dato b, .mapa-dato small, .sede-pick, .qa summary,
+.data a, .data span, .data small, .foot .foot-t, .foot h4,
+.cover-kick, .cover-stamp strong, .asistente-cab strong,
+.urgente-t, .urgente-tel, .f label, .sede-nota b, .marcas b {
+  font-stretch: var(--ancho-titular);
+}
 
 strong, b { font-weight: 600; }
 ::selection { background: var(--orange); color: var(--white); }
@@ -122,39 +151,25 @@ strong, b { font-weight: 600; }
 }
 .skip-link:focus { top: 1rem; }
 
-/* Etiqueta de sección.
-   Antes era: 01  SERVICIOS ——————————————————— con una línea fina que
-   cruzaba toda la pantalla. Esa línea larga es el divisor de sección
-   que trae cualquier plantilla, y además competía con las otras reglas
-   finas del sitio (las listas, las filas de servicio), que sí separan
-   contenido de verdad.
-   Ahora la etiqueta se marca con una barra corta del naranja del
-   camión: ocupa lo que tiene que ocupar, dice "aquí empieza algo" y
-   deja de dibujar rayas de lado a lado. */
-.tag {
-  display: inline-flex; align-items: center; gap: .7rem;
-  /* Dentro de un contenedor en rejilla, un inline-flex se estira a todo
-     el ancho de la columna. No se nota (no tiene fondo), pero así la
-     caja mide siempre lo que mide el texto. */
-  justify-self: start; align-self: start;
-  border-left: 3px solid var(--orange);
-  padding-left: .85rem;
-  font-family: var(--display);
-  font-size: .75rem; font-weight: 600;
-  letter-spacing: .16em; text-transform: uppercase;
-  color: var(--ink-2);
-  margin-bottom: 1.5rem;
+/* Las etiquetas de sección se eliminaron por completo — el número, la
+   línea y la barra. Las secciones abren con el h2 solo y se separan
+   por campo de color y ancho de contenedor.
+   Ver DIRECCION-DE-ARTE.md §7.
+
+   Franja alterna: reemplaza las reglas de 1px que separaban ítems
+   dentro de una lista. Sale de la banda blanca que cruza el tanque del
+   camión: separa por materia, no por raya. El margen negativo saca el
+   color hasta un poco más allá del texto y lo devuelve con relleno, así
+   el texto sigue alineado con el resto de la página. */
+.franjas > *:nth-child(odd) { background: var(--paper-2); }
+.franjas > * {
+  padding-inline: 1.05rem;
+  margin-inline: -1.05rem;
 }
-/* El número sólo aparece donde hay una secuencia de verdad. */
-.tag::before {
-  content: attr(data-n);
-  color: var(--orange-dk);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: .04em;
-}
-.tag:not([data-n])::before { content: none; }
-.tag-lt { color: rgba(250,247,242,.72); border-left-color: var(--orange-lt); }
-.tag-lt::before { color: var(--orange-lt); }
+/* Sobre fondo papel-2 la alternancia se invierte, o no se vería. */
+.block-paper2 .franjas > *:nth-child(odd) { background: var(--paper); }
+/* Sobre pizarra, un tono más claro de la misma pizarra. */
+.block-dark .franjas > *:nth-child(odd) { background: var(--slate-2); }
 
 /* .split sólo era rejilla a partir de 1024px, así que abajo de eso sus
    dos mitades se apilaban pegadas: el titular terminaba y el párrafo
@@ -189,7 +204,6 @@ strong, b { font-weight: 600; }
 .head {
   position: sticky; top: 0; z-index: 90;
   background: var(--paper);
-  border-bottom: 1px solid var(--line);
   transition: box-shadow .3s var(--ease);
 }
 .head.is-stuck { box-shadow: 0 1px 20px rgba(27,25,23,.09); }
@@ -263,7 +277,6 @@ strong, b { font-weight: 600; }
   background: var(--orange);
   color: var(--ink);
   overflow: hidden;
-  border-block: 1px solid rgba(0,0,0,.08);
 }
 .marquee-track {
   display: flex; width: max-content;
@@ -308,12 +321,20 @@ strong, b { font-weight: 600; }
 }
 .dot { width: 7px; height: 7px; background: var(--orange); }
 
+/* Razón display:cuerpo de 5,2x (88px sobre 17px), que es la del costado
+   del tanque: el titular contra la letra legal de la esquina. Antes
+   estaba en 2,7x, que es lo que lo hacía sentirse plano.
+   Ver DIRECCION-DE-ARTE.md §4. */
 .cover h1 {
-  font-size: clamp(2.5rem, 6.4vw, 4.6rem);
-  letter-spacing: -.036em;
-  max-width: 14ch;
+  font-size: clamp(2.6rem, 7vw, 5.5rem);
+  letter-spacing: -.015em;
+  max-width: 15ch;
 }
-.cover h1 em { font-style: normal; color: var(--orange); }
+/* Antes "manos ticas" iba en naranja dentro del titular. Es el gesto
+   más automático que existe y gastaba el acento: el naranja ya estaba
+   en el botón y en los enlaces. El énfasis del sitio lo carga la
+   escala, no el color. Ver DIRECCION-DE-ARTE.md §4. */
+.cover h1 em { font-style: normal; }
 .cover-sub { margin-top: 1.5rem; font-size: clamp(1.02rem, 1.5vw, 1.16rem); color: var(--ink-2); max-width: 33rem; }
 .cover-btns { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 2.1rem; }
 
@@ -363,16 +384,13 @@ strong, b { font-weight: 600; }
 .facts {
   display: grid; gap: 0;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
-  border-block: 1px solid var(--line);
 }
 .fact {
   display: grid; align-content: start;
-  padding: 1.7rem 1.7rem 1.8rem;
-  border-right: 1px solid var(--line);
+  padding: 1.7rem;
 }
 /* La primera y la última se alinean con el borde del contenido */
-.fact:first-child { padding-left: 0; }
-.fact:last-child { border-right: 0; padding-right: 0; }
+
 
 .fact strong {
   font-family: var(--display); font-weight: 700;
@@ -393,24 +411,15 @@ strong, b { font-weight: 600; }
 }
 
 /* --- Índice de servicios (filas, no tarjetas) --- */
-.index { border-top: 1px solid var(--line-2); }
+.index { }
 .row {
   position: relative;
-  display: grid; grid-template-columns: auto 1fr auto; gap: 1.2rem;
+  display: grid; grid-template-columns: 1fr auto; gap: 1.2rem;
   align-items: center;
-  padding: clamp(1.4rem, 3vw, 2.1rem) 0;
-  border-bottom: 1px solid var(--line);
-  transition: padding-left .4s var(--ease), background-color .4s var(--ease);
+  padding-block: clamp(1.4rem, 3vw, 2.1rem);
+  transition: background-color .3s var(--ease);
 }
-.row:hover { padding-left: 1.1rem; background: var(--white); }
-.row-n {
-  font-family: var(--display); font-weight: 700;
-  font-size: .82rem; color: var(--muted-2);
-  font-variant-numeric: tabular-nums;
-  transition: color .3s var(--ease);
-  min-width: 2.2rem;
-}
-.row:hover .row-n { color: var(--orange); }
+.row:hover { background: var(--paper-3); }
 .row-t { min-width: 0; }
 .row-t h3 { font-size: clamp(1.25rem, 2.6vw, 1.85rem); letter-spacing: -.03em; }
 .row-t p { margin-top: .35rem; color: var(--muted); font-size: .93rem; max-width: 44ch; }
@@ -439,8 +448,7 @@ strong, b { font-weight: 600; }
 .row:hover .row-peek { opacity: 1; transform: translateY(-50%) scale(1) rotate(1.5deg); }
 
 /* --- Banda editorial alternada (servicios en detalle) --- */
-.band { border-bottom: 1px solid var(--line); }
-.band:last-of-type { border-bottom: 0; }
+.band:nth-of-type(even) { background: var(--paper-2); }
 .band-in {
   display: grid; gap: clamp(1.8rem, 4vw, 3.4rem);
   align-items: center;
@@ -448,20 +456,9 @@ strong, b { font-weight: 600; }
 }
 .band-media { position: relative; }
 .band-media img { width: 100%; aspect-ratio: 4/3; object-fit: cover; }
-.band-media .band-n {
-  position: absolute; top: -.55em; left: -.12em;
-  font-family: var(--display); font-weight: 700;
-  font-size: clamp(4rem, 11vw, 8.5rem);
-  line-height: 1;
-  color: var(--paper);
-  -webkit-text-stroke: 2px var(--orange);
-  paint-order: stroke fill;
-  letter-spacing: -.05em;
-  pointer-events: none;
-}
 .band-copy h2 { font-size: clamp(1.75rem, 3.6vw, 2.6rem); margin-bottom: .9rem; }
 .band-copy > p { color: var(--ink-2); }
-.band-list { margin: 1.5rem 0 1.7rem; display: grid; gap: .55rem; border-top: 1px solid var(--line); padding-top: 1.2rem; }
+.band-list { margin: 1.5rem 0 1.7rem; display: grid; gap: .55rem; }
 .band-list li { position: relative; padding-left: 1.55rem; font-size: .94rem; color: var(--ink-2); }
 .band-list li::before {
   content: ""; position: absolute; left: 0; top: .62em;
@@ -488,23 +485,19 @@ strong, b { font-weight: 600; }
 .plate p { position: relative; font-family: var(--display); font-size: 1.05rem; color: rgba(250,247,242,.82); max-width: 22ch; }
 
 /* --- Pasos --- */
-.steps { display: grid; gap: 1px; background: var(--line-lt); border: 1px solid var(--line-lt); }
+.steps { display: grid; gap: 0; }
 .step { background: var(--slate); padding: 1.7rem 1.5rem; }
-.step b {
-  display: block; font-family: var(--display); font-size: .75rem;
-  letter-spacing: .18em; color: var(--orange-lt); margin-bottom: .9rem;
-}
+.step:nth-child(even) { background: var(--slate-2); }
 .step h3 { font-size: 1.12rem; margin-bottom: .45rem; }
 .step p { font-size: .9rem; color: rgba(250,247,242,.7); }
 
 /* --- Cobertura --- */
 .reach { display: grid; gap: clamp(2rem, 4vw, 3.5rem); align-items: start; }
 .reach h2 { font-size: clamp(1.9rem, 4vw, 3rem); }
-.hq { display: grid; gap: 0; border-top: 1px solid var(--line-lt); }
+.hq { display: grid; gap: 0; }
 .hq li {
   display: flex; align-items: baseline; gap: 1rem;
-  padding: 1.05rem 0;
-  border-bottom: 1px solid var(--line-lt);
+  padding-block: 1.05rem;
 }
 .hq b { font-family: var(--display); font-size: 1.15rem; min-width: 7rem; }
 .hq span { font-size: .88rem; color: rgba(250,247,242,.6); }
@@ -520,7 +513,7 @@ strong, b { font-weight: 600; }
 /* --- Mapa y sedes --- */
 .mapa-grid { display: grid; gap: 1.4rem; align-items: start; }
 
-.mapa { border: 1px solid var(--line-2); background: var(--paper-2); }
+.mapa { background: var(--paper-2); }
 .mapa-frame { position: relative; aspect-ratio: 4/3; background: var(--paper-3); }
 .mapa-frame iframe {
   position: absolute; inset: 0;
@@ -532,7 +525,6 @@ strong, b { font-weight: 600; }
   display: flex; flex-wrap: wrap; gap: 1rem;
   align-items: center; justify-content: space-between;
   padding: 1.1rem 1.2rem;
-  border-top: 1px solid var(--line-2);
   font-size: .92rem;
 }
 .mapa-dato { display: grid; gap: .1rem; }
@@ -543,7 +535,7 @@ strong, b { font-weight: 600; }
 .mapa-dato b { font-family: var(--display); font-size: 1rem; }
 .mapa-dato .dim { font-size: .87rem; }
 
-.sedes { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.sedes { display: grid; gap: 0; }
 
 .sede {
   position: relative;
@@ -631,21 +623,32 @@ strong, b { font-weight: 600; }
 .pull em { font-style: normal; color: var(--orange-dk); }
 
 /* --- Señales --- */
-.signals { display: flex; flex-wrap: wrap; gap: .5rem; }
-.signal {
-  border: 1px solid var(--line-2);
-  padding: .48rem .95rem;
-  font-size: .88rem;
-  transition: border-color .3s var(--ease), color .3s var(--ease);
+/* Las siete señales eran recuadros con borde, que parecían filtros de
+   una interfaz e invitaban a un clic que no existe. Son una lista para
+   leer, así que se leen: mismo tratamiento que "quiénes nos contratan".
+   Ver DIRECCION-DE-ARTE.md §11, tic 4. */
+.signals {
+  font-stretch: var(--ancho-titular);
+  font-weight: 600;
+  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  line-height: 1.7; letter-spacing: -.012em;
+  color: var(--ink-2);
+  max-width: 52rem;
+  text-wrap: pretty;
 }
-.signal:hover { border-color: var(--orange); color: var(--orange-dk); }
+.signal { display: inline; white-space: nowrap; }
+.signal:not(:last-child)::after {
+  content: "\00b7";
+  margin: 0 .5rem 0 .55rem;
+  color: var(--orange);
+  font-weight: 700;
+}
 
 /* --- Marcas de la empresa (bloque "La empresa") --- */
-.marcas { display: grid; gap: 0; margin-top: 1.6rem; border-top: 1px solid var(--line); }
+.marcas { display: grid; gap: 0; margin-top: 1.6rem; }
 .marcas li {
   display: grid; gap: .2rem;
-  padding: .95rem 0;
-  border-bottom: 1px solid var(--line);
+  padding-block: .95rem;
 }
 .marcas b { font-family: var(--display); font-size: 1rem; }
 .marcas span { font-size: .92rem; color: var(--muted); }
@@ -679,7 +682,6 @@ strong, b { font-weight: 600; }
 .urgente {
   display: flex; flex-wrap: wrap; align-items: center; gap: .7rem 1.4rem;
   margin-bottom: 2.4rem; padding: 1.15rem 1.4rem;
-  border: 1px solid var(--line-lt);
   border-left: 3px solid var(--orange);
   background: rgba(250,247,242,.05);
 }
@@ -696,8 +698,8 @@ strong, b { font-weight: 600; }
 .urgente-n { flex: 1 1 16rem; font-size: .88rem; color: rgba(250,247,242,.6); }
 
 /* --- Preguntas --- */
-.qa { border-top: 1px solid var(--line); }
-.qa details { border-bottom: 1px solid var(--line); }
+.qa { }
+.qa details { }
 .qa summary {
   list-style: none; cursor: pointer;
   padding: 1.15rem 2.6rem 1.15rem 0;
@@ -757,8 +759,8 @@ strong, b { font-weight: 600; }
 .form-msg.is-error { color: #c0392b; }
 
 /* --- Datos de contacto --- */
-.data { display: grid; gap: 0; border-top: 1px solid var(--line); }
-.data li { display: flex; gap: 1rem; align-items: baseline; padding: 1rem 0; border-bottom: 1px solid var(--line); }
+.data { display: grid; gap: 0; }
+.data li { display: flex; gap: 1rem; align-items: baseline; padding-block: 1rem; }
 .data small {
   min-width: 6.5rem; font-size: .74rem; text-transform: uppercase;
   letter-spacing: .13em; color: var(--muted-2);
@@ -789,8 +791,7 @@ strong, b { font-weight: 600; }
 .social a:hover { background: var(--orange); border-color: var(--orange); color: var(--white); }
 .social svg { width: 17px; height: 17px; }
 .foot-end {
-  margin-top: 3rem; padding-block: 1.3rem;
-  border-top: 1px solid var(--line-lt);
+  margin-top: 3rem; padding-block: 2.2rem 1.3rem;
   display: flex; flex-wrap: wrap; gap: .4rem 1.5rem; justify-content: space-between;
   font-size: .78rem; color: rgba(250,247,242,.45);
 }
@@ -1106,8 +1107,6 @@ body.fabs-fuera .wa-fab {
      comía 55 px de ancho y quedaba flotando a media altura, así que
      los títulos se partían en tres líneas. */
   .row { grid-template-columns: 1fr; gap: .3rem; align-items: start; }
-  .row-n { min-width: 0; font-size: .72rem; letter-spacing: .14em; color: var(--orange-dk); }
-  .row:hover .row-n { color: var(--orange-dk); }
 
   /* Sin la cuadrícula de escritorio (grid-auto-rows) el alto de cada
      foto queda indefinido; aquí sí hace falta fijarlo. A partir de
@@ -1129,8 +1128,7 @@ body.fabs-fuera .wa-fab {
   .split { gap: 1.4rem; }
   .shots { gap: .5rem; }
   .row { padding-block: 1.05rem; }
-  .signals { gap: .4rem; }
-  .signal { padding: .4rem .8rem; font-size: .84rem; }
+  .signals { line-height: 1.62; }
   .clientes { line-height: 1.62; }
   .urgente { margin-bottom: 1.8rem; padding: 1rem 1.1rem; }
 
