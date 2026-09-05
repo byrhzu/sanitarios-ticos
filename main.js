@@ -360,6 +360,8 @@
     var input = $("[data-asistente-input]", raiz);
     var pase = $("[data-asistente-pase]", raiz);
     var enlacePase = $("[data-asistente-wa]", raiz);
+    var cajaCotiza = $("[data-asistente-cotiza]", raiz);
+    var botonCotizar = $("[data-asistente-cotizar]", raiz);
 
     var historial = [];  // { role: "user"|"model", text: "..." }
     var mensajesMios = [];  // sólo lo que escribió la persona, para el traspaso
@@ -431,10 +433,14 @@
       return html;
     }
 
-    function agregarMensaje(texto, esUsuario) {
+    // `sinEnlaces` es para los mensajes del cotizador: ahí la palabra
+    // "cotización" ya no es una invitación a pedir una por WhatsApp —
+    // la persona acaba de recibir la suya — y enlazarla contradice
+    // la frase que la contiene.
+    function agregarMensaje(texto, esUsuario, sinEnlaces) {
       var div = document.createElement("div");
       div.className = "asistente-msg " + (esUsuario ? "es-usuario" : "es-bot");
-      if (esUsuario) {
+      if (esUsuario || sinEnlaces) {
         div.textContent = texto;
       } else {
         div.innerHTML = enlazarMensaje(texto);
@@ -533,6 +539,174 @@
     if (sugeridas) {
       $$("button", sugeridas).forEach(function (b) {
         b.addEventListener("click", function () { mandarPregunta(b.textContent); });
+      });
+    }
+
+    /* -------- Cotizador ---------------------------------------------
+       Beto conversa, pero el precio NO lo inventa él: estos botones
+       recogen los datos y el servidor hace la cuenta. Un modelo de
+       lenguaje haciendo aritmética se equivoca tarde o temprano, y una
+       cotización equivocada la paga la empresa.
+
+       Tampoco se pregunta el tamaño del tanque, que casi nadie sabe: se
+       pregunta cuánta gente vive ahí y hace cuánto lo limpiaron, que
+       predice el volumen igual de bien. */
+
+    var opciones = null;      // catálogo que manda el servidor
+    var respuestas = {};      // lo que va contestando la persona
+    var pasoActual = 0;
+
+    // El orden importa: el servicio primero, porque de él dependen las
+    // opciones de los tres pasos siguientes.
+    var PASOS = [
+      { clave: "servicio", pregunta: "¿Qué servicio necesita?" },
+      { clave: "perfil",   pregunta: "¿Para qué tipo de propiedad?" },
+      { clave: "ultimo",   pregunta: "¿Hace cuánto se le hizo el servicio por última vez?" },
+      { clave: "acceso",   pregunta: "¿Qué tan cerca puede parquear el camión?" },
+      { clave: "zona",     pregunta: "¿Dónde queda?" }
+    ];
+
+    function opcionesDelPaso(clave) {
+      if (clave === "servicio") {
+        return Object.keys(opciones.servicios).map(function (id) {
+          return { id: id, etiqueta: opciones.servicios[id].nombre };
+        });
+      }
+      if (clave === "zona") return opciones.zona;
+      var svc = opciones.servicios[respuestas.servicio];
+      return svc ? svc[clave] : [];
+    }
+
+    // Fila de botones dentro del hilo. Al elegir, la fila se reemplaza
+    // por la respuesta como burbuja, para que quede el rastro de lo que
+    // se contestó.
+    function pintarOpciones(lista, alElegir) {
+      var caja = document.createElement("div");
+      caja.className = "asistente-ops";
+      lista.forEach(function (op) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.textContent = op.etiqueta;
+        b.addEventListener("click", function () {
+          caja.remove();
+          agregarMensaje(op.etiqueta, true);
+          alElegir(op);
+        });
+        caja.appendChild(b);
+      });
+      hilo.appendChild(caja);
+      hilo.scrollTop = hilo.scrollHeight;
+    }
+
+    function siguientePaso() {
+      if (pasoActual >= PASOS.length) return pedirPrecio();
+      var paso = PASOS[pasoActual];
+      agregarMensaje(paso.pregunta, false, true);
+      pintarOpciones(opcionesDelPaso(paso.clave), function (op) {
+        respuestas[paso.clave] = op.id;
+        pasoActual++;
+        siguientePaso();
+      });
+    }
+
+    function pedirPrecio() {
+      var cargando = agregarEscribiendo();
+      fetch("/api/cotizar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(respuestas)
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          cargando.remove();
+          if (!d || !d.ok) throw new Error("sin cotización");
+          mostrarCotizacion(d);
+        })
+        .catch(function () {
+          cargando.remove();
+          agregarMensaje(
+            "Uy, no me salió el cálculo. Mejor llame al 2440-1110 y se lo cotizamos de una vez.",
+            false
+          );
+          if (cajaCotiza) cajaCotiza.hidden = false;
+        });
+    }
+
+    function colones(n) {
+      return "₡" + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    function mostrarCotizacion(d) {
+      var partes = [
+        "Le sale entre " + colones(d.min) + " y " + colones(d.max) + " por el servicio de " +
+        d.servicioNombre.toLowerCase() + "."
+      ];
+
+      // Mientras las tarifas sean las provisionales, se dice. Callarlo
+      // sería dar por firme un número que la empresa no confirmó.
+      if (d.provisional) {
+        partes.push(
+          "Ojo: es un estimado con tarifas todavía en revisión. El precio en firme se lo " +
+          "damos por teléfono, siempre antes de salir y sin costo."
+        );
+      } else {
+        partes.push(
+          "Es un rango orientativo. El precio exacto se lo confirmamos antes de salir, sin costo."
+        );
+      }
+      if (d.numero) partes.push("Su número de cotización es " + d.numero + ".");
+
+      agregarMensaje(partes.join(" "), false, true);
+
+      // Con el número en mano, el traspaso a WhatsApp lleva la cotización.
+      mensajesMios.push(
+        "Cotización " + (d.numero || "") + ": " + d.servicioNombre +
+        ", entre " + colones(d.min) + " y " + colones(d.max)
+      );
+      refrescarPase();
+
+      // Se vuelve a ofrecer el botón: mucha gente cotiza dos servicios
+      // en la misma visita (el tanque y la trampa de grasa, por ejemplo).
+      if (cajaCotiza) cajaCotiza.hidden = false;
+    }
+
+    function arrancarCotizador() {
+      if (cajaCotiza) cajaCotiza.hidden = true;
+      if (sugeridas) sugeridas.hidden = true;
+      respuestas = {};
+      pasoActual = 0;
+
+      agregarMensaje(
+        "Con gusto. Son cinco preguntas rápidas y le doy un estimado. " +
+        "No necesito que sepa el tamaño del tanque.",
+        false, true
+      );
+
+      if (opciones) return siguientePaso();
+
+      var cargando = agregarEscribiendo();
+      fetch("/api/cotizar/opciones")
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          cargando.remove();
+          if (!d || !d.ok) throw new Error("sin opciones");
+          opciones = d;
+          siguientePaso();
+        })
+        .catch(function () {
+          cargando.remove();
+          agregarMensaje(
+            "No pude cargar el cotizador ahora mismo. Llame al 2440-1110 y se lo cotizamos de una vez.",
+            false
+          );
+          if (cajaCotiza) cajaCotiza.hidden = false;
+        });
+    }
+
+    if (botonCotizar) {
+      botonCotizar.addEventListener("click", function () {
+        if (!abierto) abrirPanel();
+        arrancarCotizador();
       });
     }
   }

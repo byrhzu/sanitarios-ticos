@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260902i">
+<link rel="stylesheet" href="styles.css?v=20260905a">
 <script>document.documentElement.classList.add("js");setTimeout(function(){var d=document.documentElement;if(!d.classList.contains("is-ready"))d.classList.add("rv-rescate");},3000);</script>
 </head>
 <body>
@@ -200,6 +200,16 @@
       <button type="button">¿Dan servicio en Guanacaste?</button>
       <button type="button">¿Cómo pido una cotización?</button>
     </div>
+    <!-- Cotizador. Beto conversa, pero el precio lo calcula el servidor:
+         estos botones recogen los datos y worker.js hace la cuenta.
+         Ver README, sección "Cotizaciones". -->
+    <div class="asistente-cotiza" data-asistente-cotiza>
+      <button type="button" data-asistente-cotizar>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg>
+        Cotizar ahora
+      </button>
+    </div>
+
     <!-- Traspaso a WhatsApp: aparece apenas la persona escribe algo, y
          lleva en el mensaje lo que ya le contó a Beto, para que no tenga
          que repetirlo. Lo arma main.js en cada envío. -->
@@ -224,6 +234,6 @@
   <span>WhatsApp</span>
 </a>
 <script defer src="lib/manifest.js"></script>
-<script defer src="main.js?v=20260902i"></script>
+<script defer src="main.js?v=20260905a"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
-<link rel="stylesheet" href="styles.css?v=20260902i">
+<link rel="stylesheet" href="styles.css?v=20260905a">
 <style>
   /* Estilos propios de esta página — una herramienta interna, no una
      página de venta, así que no lleva las animaciones ni el menú del sitio. */
@@ -34,6 +34,15 @@
 
   .estado-panel { font-size: .9rem; color: var(--muted); margin: 1rem 0; }
   .estado-panel.is-error { color: #c0392b; }
+
+  .paginacion[hidden] { display: none; }
+  .paginacion {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap; margin-top: 1.2rem;
+  }
+  .paginacion-txt { font-size: .88rem; color: var(--muted); }
+  .paginacion .btn:disabled { opacity: .4; cursor: default; }
+  .paginacion .btn:disabled:hover { background: none; border-color: var(--line-2); color: var(--ink); }
   .vacio { padding: 3rem 1rem; text-align: center; color: var(--muted); }
 </style>
 </head>
@@ -87,6 +96,14 @@
         <tbody id="cuerpo-tabla"></tbody>
       </table>
     </div>
+
+    <!-- Paginación. El panel traía todas las solicitudes de golpe; con
+         unos miles el teléfono se arrastra. Ahora vienen de 50 en 50. -->
+    <div class="paginacion" id="paginacion" hidden>
+      <button class="btn btn-line" type="button" id="btn-antes">&larr; Anteriores</button>
+      <span class="paginacion-txt" id="paginacion-txt" role="status" aria-live="polite"></span>
+      <button class="btn btn-line" type="button" id="btn-despues">Siguientes &rarr;</button>
+    </div>
   </section>
 </div>
 
@@ -109,12 +126,35 @@
     cargar();
   }
 
-  function urlConFiltros(base) {
+  var pagina = 1;
+
+  function urlConFiltros(base, conPagina) {
     var params = new URLSearchParams();
     if ($("desde").value) params.set("desde", $("desde").value);
     if ($("hasta").value) params.set("hasta", $("hasta").value);
+    if (conPagina && pagina > 1) params.set("pagina", String(pagina));
     var qs = params.toString();
     return base + (qs ? "?" + qs : "");
+  }
+
+  function pintarPaginacion(d) {
+    var caja = $("paginacion");
+    var total = d.total || 0;
+    var paginas = d.paginas || 1;
+
+    if (!total) { caja.hidden = true; return; }
+
+    var primera = (d.pagina - 1) * d.porPagina + 1;
+    var ultima = Math.min(d.pagina * d.porPagina, total);
+    $("estado-lista").textContent =
+      total === 1 ? "1 solicitud."
+                  : "Mostrando " + primera + " a " + ultima + " de " + total + ".";
+
+    // Los botones sólo aparecen si de verdad hay a dónde ir.
+    caja.hidden = paginas <= 1;
+    $("btn-antes").disabled = d.pagina <= 1;
+    $("btn-despues").disabled = d.pagina >= paginas;
+    $("paginacion-txt").textContent = "Página " + d.pagina + " de " + paginas;
   }
 
   function pintarFilas(solicitudes) {
@@ -122,9 +162,9 @@
     if (!solicitudes.length) {
       cuerpo.innerHTML = "";
       $("estado-lista").textContent = "No hay solicitudes en ese rango de fechas.";
+      $("paginacion").hidden = true;
       return;
     }
-    $("estado-lista").textContent = solicitudes.length + " solicitud(es).";
     cuerpo.innerHTML = solicitudes.map(function (s) {
       return "<tr>" +
         "<td>" + escHtml(s.creado) + "</td>" +
@@ -141,11 +181,15 @@
   function cargar() {
     $("estado-lista").textContent = "Cargando…";
     $("estado-lista").classList.remove("is-error");
-    fetch(urlConFiltros("/api/panel/solicitudes"), { headers: { "X-Clave": clave } })
+    fetch(urlConFiltros("/api/panel/solicitudes", true), { headers: { "X-Clave": clave } })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
         if (!res.ok || !res.d.ok) throw new Error(res.d && res.d.error);
         pintarFilas(res.d.solicitudes);
+        pintarPaginacion(res.d);
+        // Al cambiar de página, volver arriba: si no, uno queda mirando
+        // el final de una lista que ya cambió.
+        window.scrollTo({ top: 0, behavior: "smooth" });
       })
       .catch(function () {
         $("estado-lista").textContent = "No se pudo cargar. Intente de nuevo.";
@@ -175,7 +219,14 @@
       });
   });
 
-  $("btn-filtrar").addEventListener("click", cargar);
+  // Al cambiar el filtro se vuelve a la página 1: quedarse en la 7 de un
+  // rango que ahora tiene 2 páginas deja la tabla vacía sin explicación.
+  $("btn-filtrar").addEventListener("click", function () { pagina = 1; cargar(); });
+
+  $("btn-antes").addEventListener("click", function () {
+    if (pagina > 1) { pagina--; cargar(); }
+  });
+  $("btn-despues").addEventListener("click", function () { pagina++; cargar(); });
 
   $("btn-csv").addEventListener("click", function () {
     // El archivo necesita la clave, pero una descarga no puede llevar

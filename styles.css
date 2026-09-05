@@ -983,6 +983,49 @@ body.fabs-fuera .wa-fab {
 }
 .asistente-sugeridas button:hover { border-color: var(--orange); background: var(--orange-soft); color: var(--orange-dk); }
 
+/* Opciones del cotizador dentro del hilo. Se ven como respuestas que
+   la persona podría dar, no como un formulario: quedan del lado derecho,
+   alineadas con sus propios mensajes. */
+.asistente-ops {
+  display: flex; flex-direction: column; align-items: flex-end;
+  gap: .35rem;
+  margin: -.15rem 0 .2rem auto;
+  max-width: 88%;
+}
+.asistente-ops button {
+  text-align: right;
+  font-size: .82rem; line-height: 1.3;
+  color: var(--orange-dk);
+  background: var(--orange-soft);
+  border: 1px solid transparent;
+  border-radius: 14px 14px 4px 14px;
+  padding: .5rem .8rem;
+  transition: border-color .2s var(--ease), background-color .2s var(--ease);
+}
+.asistente-ops button:hover { border-color: var(--orange); }
+
+/* Botón de cotizar. Mismo patrón del traspaso: el [hidden] explícito
+   antes de darle display propio. */
+.asistente-cotiza[hidden] { display: none; }
+.asistente-cotiza {
+  display: flex;
+  border-top: 1px solid var(--line);
+  background: var(--orange-soft);
+}
+.asistente-cotiza button {
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  width: 100%; min-height: 44px; padding: .72rem .9rem;
+  font-family: var(--display); font-weight: 600; font-size: .84rem;
+  color: var(--orange-dk);
+  transition: background-color .2s var(--ease);
+}
+.asistente-cotiza button:hover { background: rgba(214,88,20,.14); }
+.asistente-cotiza svg {
+  width: 16px; height: 16px; flex: 0 0 auto;
+  fill: none; stroke: currentColor; stroke-width: 1.9;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
 /* Traspaso a WhatsApp. El [hidden] va primero y explícito: un elemento
    con display propio ignora el atributo hidden del navegador, y en este
    proyecto ya nos pasó tres veces. */

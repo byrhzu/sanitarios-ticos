@@ -159,13 +159,45 @@ function construirConsulta(url) {
   return { sql, valores, desde, hasta };
 }
 
+/* Cuántas filas por página. Con 50 solicitudes no se notaba, pero el
+   panel traía TODAS de golpe: con unos miles, el teléfono se arrastra y
+   la consulta a D1 empieza a costar. */
+const POR_PAGINA = 50;
+
 async function listaSolicitudes(request, env) {
   if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
 
-  const { sql, valores } = construirConsulta(new URL(request.url));
+  const url = new URL(request.url);
+  const { sql, valores } = construirConsulta(url);
+
+  // Página 1 si no la mandan o si mandan cualquier cosa.
+  const pedida = parseInt(url.searchParams.get("pagina"), 10);
+  const pagina = Number.isFinite(pedida) && pedida > 0 ? pedida : 1;
+  const desplazamiento = (pagina - 1) * POR_PAGINA;
+
+  // El total se cuenta con los mismos filtros, para poder decir
+  // "mostrando 51 a 100 de 340" sin traerse las 340.
+  const sqlTotal = sql
+    .replace(/^SELECT[\s\S]*?FROM/, "SELECT COUNT(*) AS n FROM")
+    .replace(/\s+ORDER BY[\s\S]*$/, "");
+
   try {
-    const { results } = await env.DB.prepare(sql).bind(...valores).all();
-    return json({ ok: true, solicitudes: results });
+    const fila = await env.DB.prepare(sqlTotal).bind(...valores).first();
+    const total = fila ? fila.n : 0;
+
+    const { results } = await env.DB
+      .prepare(sql + ` LIMIT ?${valores.length + 1} OFFSET ?${valores.length + 2}`)
+      .bind(...valores, POR_PAGINA, desplazamiento)
+      .all();
+
+    return json({
+      ok: true,
+      solicitudes: results,
+      total: total,
+      pagina: pagina,
+      porPagina: POR_PAGINA,
+      paginas: Math.max(1, Math.ceil(total / POR_PAGINA))
+    });
   } catch (e) {
     console.error("Error al consultar D1:", e);
     return json({ ok: false, error: "No se pudo consultar" }, 500);
@@ -179,6 +211,8 @@ function celdaCsv(valor) {
   return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 
+/* El CSV NO se pagina a propósito: quien lo descarga quiere el rango de
+   fechas completo en el archivo, no la página que estaba viendo. */
 async function descargarCsv(request, env) {
   if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
 
@@ -565,8 +599,11 @@ PREGUNTAS FRECUENTES QUE YA RESPONDE EL SITIO:
 
 REGLAS QUE DEBES SEGUIR SIEMPRE:
 - Responde en español de Costa Rica, de "usted", en tono amable y directo. Respuestas cortas (2-4 oraciones), no hagas listas larguísimas.
-- NO insista en mandar a WhatsApp o a llamar en cada respuesta: eso suena a vendedor pesado, no a alguien que de verdad está ayudando. Conteste la pregunta con naturalidad y sólo mencione el teléfono, el WhatsApp o el formulario cuando de verdad haga falta: para dar un precio (no puede darlo usted), en una emergencia, o cuando la persona ya está lista para agendar o cotizar. El resto de las veces, simplemente responda la duda y, si acaso, pregunte si necesita algo más — no cierre cada mensaje con la misma muletilla.
-- NUNCA des un precio en colones ni un rango de precio: la empresa no tiene tarifas públicas todavía. Si preguntan precio, explique que la cotización es gratis y que se la dan antes de hacer el trabajo, y ofrezca ayudar a pedirla (el formulario del sitio o el teléfono 2440-1110).
+- NO insista en mandar a WhatsApp o a llamar en cada respuesta: eso suena a vendedor pesado, no a alguien que de verdad está ayudando. Conteste la pregunta con naturalidad y sólo mencione el teléfono, el WhatsApp o el formulario cuando de verdad haga falta: en una emergencia, o cuando la persona ya está lista para agendar. El resto de las veces, simplemente responda la duda y, si acaso, pregunte si necesita algo más — no cierre cada mensaje con la misma muletilla.
+- NUNCA escriba usted un precio en colones ni un rango de precio, ni siquiera aproximado, ni aunque se lo pidan de frente o le insistan. Usted no conoce las tarifas y no las puede calcular.
+- Para eso está el botón "Cotizar ahora", abajo de esta misma conversación: le hace cinco preguntas rápidas y el sistema saca el estimado con las tarifas de la empresa. Cuando alguien pregunte por precios o por cuánto sale algo, dígale que toque ese botón. Ejemplo de cómo responderlo: "Los precios se los saca el cotizador de aquí abajo: toque «Cotizar ahora» y con cinco preguntitas le doy el estimado. Es gratis y sin compromiso."
+- El cotizador NO le pide el tamaño del tanque (casi nadie lo sabe): pregunta el tipo de propiedad, cuánta gente la usa, hace cuánto se limpió, qué tan cerca llega el camión y en qué zona queda. Si alguien se preocupa por no saber el tamaño, tranquilícelo con eso.
+- El resultado del cotizador es un rango estimado, no un precio cerrado: el precio en firme lo confirma la empresa antes de salir, siempre gratis y sin compromiso.
 - NUNCA inventes datos que no estén arriba: no inventes certificaciones, promociones, plazos exactos de llegada ni disponibilidad de camiones en tiempo real.
 - Si es una emergencia (derrame, tanque rebalsado ahora mismo), recomiende llamar directo al 2440-1110 en vez de seguir escribiendo.
 - Si preguntan algo que no tiene nada que ver con la empresa (temas ajenos, otras marcas, cultura general, etc.), NO responda esa pregunta aunque sepa la respuesta. Puede seguirle la broma con un comentario corto y de buen humor, pero sin contestar realmente lo que preguntaron, y siempre cerrando la respuesta con el regreso al tema: los servicios de la empresa.
