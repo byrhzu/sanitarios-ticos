@@ -213,7 +213,321 @@ async function descargarCsv(request, env) {
 }
 
 /* =============================================================
-   3. Asistente de preguntas (Gemini, capa gratuita de Google)
+   3. Motor de cotizaciones
+   =============================================================
+
+   POR QUÉ ESTO NO LO CALCULA BETO
+   --------------------------------
+   Beto conversa y recoge los datos; el precio lo saca este código.
+   Un modelo de lenguaje haciendo cuentas se equivoca tarde o temprano,
+   y una cotización equivocada la paga la empresa: o come la diferencia
+   o queda como que hizo carnada. Acá la aritmética siempre da igual, y
+   cambiar un precio es editar la tabla de abajo, no reescribir a Beto.
+
+   CÓMO SE LE DA LA VUELTA AL TAMAÑO DEL TANQUE
+   ---------------------------------------------
+   Casi nadie sabe cuántos litros tiene su tanque. Pero todo el mundo
+   sabe cuánta gente vive en la casa y hace cuánto lo limpiaron, y eso
+   predice el volumen igual de bien. Por eso no se pregunta el tamaño:
+   se pregunta lo que la persona sí puede contestar.
+   ============================================================= */
+
+// ⚠️⚠️  PRECIOS PROVISIONALES — NO SON LOS DE LA EMPRESA  ⚠️⚠️
+//
+// Están puestos para poder construir y probar el sistema completo. Son
+// cifras verosímiles para Costa Rica, pero INVENTADAS.
+//
+// Cuando el propietario entregue los precios reales:
+//   1. Cambie los números de TARIFAS.
+//   2. Ponga `provisional: false`.
+//   3. Confirme si los montos llevan IVA incluido y ajuste `iva`.
+//
+// Mientras `provisional` sea true, cada cotización sale marcada como
+// estimación y `tools/modo-publicacion.py` se niega a pasar el sitio a
+// producción. Es a propósito: cotizar de verdad con precios inventados
+// es peor que no cotizar.
+const TARIFAS = {
+  provisional: true,
+
+  // null = sin confirmar. El propietario tiene que decir si sus precios
+  // ya llevan el IVA adentro o si se suma aparte.
+  iva: { incluido: null, tasa: 0.13 },
+
+  vigenciaDias: 15,
+
+  // Recargo por salir del Valle Central. El camión igual sale; lo que
+  // cambia es el tiempo de ruta.
+  zona: { valle: 1, resto: 1.25 },
+
+  servicios: {
+    "tanques-septicos": {
+      nombre: "Limpieza de tanque séptico",
+      // Por debajo de esto no vale la pena sacar la cisterna.
+      minimo: 40000,
+      // El perfil sustituye a la pregunta "¿de qué tamaño es su tanque?"
+      perfil: {
+        "casa-pequena":   { etiqueta: "Casa de 1 a 4 personas",           rango: [45000, 60000] },
+        "casa-mediana":   { etiqueta: "Casa de 5 a 8 personas",           rango: [60000, 85000] },
+        "casa-grande":    { etiqueta: "Casa de 9 personas o más",         rango: [85000, 115000] },
+        "negocio-pequeno":{ etiqueta: "Soda, oficina o local pequeño",    rango: [70000, 100000] },
+        "negocio-grande": { etiqueta: "Restaurante, hotel o escuela",     rango: [110000, 165000] },
+        "industria":      { etiqueta: "Industria o condominio",           rango: [160000, 260000] }
+      },
+      // Más años sin limpiar = más lodo compactado = más trabajo.
+      ultimo: {
+        "menos2": { etiqueta: "Hace menos de 2 años", monto: 0 },
+        "2a4":    { etiqueta: "Entre 2 y 4 años",     monto: 8000 },
+        "mas5":   { etiqueta: "Hace 5 años o más",    monto: 18000 },
+        "nose":   { etiqueta: "Nunca, o no sé",       monto: 12000 }
+      },
+      // Metros de manguera desde donde puede parquear el camión.
+      acceso: {
+        "directo": { etiqueta: "El camión llega al tanque",  monto: 0 },
+        "corta":   { etiqueta: "Hasta 30 metros de manguera", monto: 9000 },
+        "larga":   { etiqueta: "Más de 30 metros",            monto: 22000 }
+      }
+    },
+
+    "trampas-grasa": {
+      nombre: "Limpieza de trampa de grasa",
+      minimo: 30000,
+      perfil: {
+        "negocio-pequeno":{ etiqueta: "Soda o cafetería",              rango: [30000, 45000] },
+        "negocio-grande": { etiqueta: "Restaurante",                   rango: [45000, 75000] },
+        "industria":      { etiqueta: "Comedor industrial o cadena",   rango: [75000, 130000] }
+      },
+      ultimo: {
+        "menos2": { etiqueta: "Con mantenimiento al día",  monto: 0 },
+        "2a4":    { etiqueta: "Hace varios meses",         monto: 7000 },
+        "mas5":   { etiqueta: "Hace más de un año",        monto: 16000 },
+        "nose":   { etiqueta: "Nunca, o no sé",            monto: 10000 }
+      },
+      acceso: {
+        "directo": { etiqueta: "El camión llega a la trampa", monto: 0 },
+        "corta":   { etiqueta: "Hasta 30 metros de manguera", monto: 8000 },
+        "larga":   { etiqueta: "Más de 30 metros",            monto: 18000 }
+      }
+    },
+
+    "destaqueo": {
+      nombre: "Destaqueo de tubería con sonda eléctrica",
+      // El destaqueo NO lleva cisterna: va la sonda, que es otro equipo
+      // y otro costo de movilizar. Su mínimo es mucho más bajo.
+      minimo: 20000,
+      perfil: {
+        "casa-pequena":   { etiqueta: "Tubería fina — baño o cocina",     rango: [22000, 35000] },
+        "casa-mediana":   { etiqueta: "Varias salidas de la casa",        rango: [32000, 50000] },
+        "negocio-grande": { etiqueta: "Colector principal o bajante",     rango: [50000, 85000] },
+        "industria":      { etiqueta: "Red de edificio o condominio",     rango: [85000, 150000] }
+      },
+      ultimo: {
+        "menos2": { etiqueta: "Se tapa de vez en cuando", monto: 0 },
+        "2a4":    { etiqueta: "Se tapa seguido",          monto: 6000 },
+        "mas5":   { etiqueta: "Está tapado del todo",     monto: 14000 },
+        "nose":   { etiqueta: "No sé",                    monto: 6000 }
+      },
+      acceso: {
+        "directo": { etiqueta: "El registro está a la vista",  monto: 0 },
+        "corta":   { etiqueta: "Hay que buscar el registro",   monto: 7000 },
+        "larga":   { etiqueta: "No se sabe dónde está",        monto: 15000 }
+      }
+    }
+  }
+};
+
+// ₡ con punto de miles, como se escribe en Costa Rica.
+// toLocaleString("es-CR") separa con espacio, que acá no se usa.
+function colones(n) {
+  return "₡" + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+/* Calcula el rango. Devuelve `null` si algún dato no corresponde a las
+   opciones conocidas — nunca adivina, porque un precio adivinado es
+   exactamente lo que estamos tratando de evitar. */
+function calcularCotizacion(entrada) {
+  const svc = TARIFAS.servicios[entrada.servicio];
+  if (!svc) return null;
+
+  const perfil = svc.perfil[entrada.perfil];
+  const ultimo = svc.ultimo[entrada.ultimo];
+  const acceso = svc.acceso[entrada.acceso];
+  const factorZona = TARIFAS.zona[entrada.zona];
+  if (!perfil || !ultimo || !acceso || !factorZona) return null;
+
+  const extras = ultimo.monto + acceso.monto;
+  let min = (perfil.rango[0] + extras) * factorZona;
+  let max = (perfil.rango[1] + extras) * factorZona;
+
+  // Si el mínimo del servicio levanta el piso, el techo sube lo mismo.
+  // Aplastar el techo contra el piso daría rangos tipo "de ₡40.000 a
+  // ₡40.000", que se leen como precio cerrado y no como estimación.
+  const alza = Math.max(0, (svc.minimo || 0) - min);
+  min += alza;
+  max += alza;
+
+  // Se redondea a miles: un rango con cifras exactas aparenta una
+  // precisión que una estimación no tiene.
+  const aMiles = (v) => Math.round(v / 1000) * 1000;
+
+  const desglose = [
+    { concepto: perfil.etiqueta, monto: null },
+    { concepto: ultimo.etiqueta, monto: ultimo.monto },
+    { concepto: acceso.etiqueta, monto: acceso.monto }
+  ];
+  if (factorZona !== 1) {
+    desglose.push({
+      concepto: "Fuera del Valle Central (ruta más larga)",
+      monto: null,
+      factor: factorZona
+    });
+  }
+
+  return {
+    servicio: entrada.servicio,
+    servicioNombre: svc.nombre,
+    min: aMiles(min),
+    max: aMiles(max),
+    desglose: desglose,
+    provisional: TARIFAS.provisional,
+    ivaIncluido: TARIFAS.iva.incluido,
+    vigenciaDias: TARIFAS.vigenciaDias
+  };
+}
+
+/* Número correlativo a partir del id que devuelve D1: COT-2026-0007. */
+function numeroCotizacion(id) {
+  return "COT-" + new Date().getFullYear() + "-" + String(id).padStart(4, "0");
+}
+
+async function avisarCotizacion(datos, env) {
+  if (!env.RESEND_API_KEY || !env.CORREO_AVISO) return;
+
+  const filas = [
+    ["Número", datos.numero],
+    ["Servicio", datos.servicioNombre],
+    ["Rango", colones(datos.min) + " – " + colones(datos.max)],
+    ["Nombre", datos.nombre || "—"],
+    ["Teléfono", datos.telefono || "—"],
+    ["Zona", datos.zona === "resto" ? "Fuera del Valle Central" : "Valle Central"],
+    ["Origen", datos.origen === "panel" ? "Panel interno" : "Chat de Beto"]
+  ].map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:#7d736a;">${k}</td><td style="padding:4px 0;"><b>${escaparHtml(String(v))}</b></td></tr>`).join("");
+
+  const aviso = datos.provisional
+    ? `<p style="margin:16px 0 0;padding:10px 12px;background:#fbeee5;color:#b34c0d;font-size:13px;">
+         <b>Ojo:</b> esta cotización salió con los precios provisionales.
+         No son los precios reales de la empresa.</p>`
+    : "";
+
+  const cuerpoCorreo = {
+    from: "Sanitarios Ticos <onboarding@resend.dev>",
+    to: [env.CORREO_AVISO],
+    subject: `Cotización ${datos.numero} — ${colones(datos.min)} a ${colones(datos.max)}`,
+    html: `<div style="font-family:system-ui,sans-serif;color:#1b1917;">
+             <h2 style="margin:0 0 12px;font-size:18px;">Beto emitió una cotización</h2>
+             <table style="border-collapse:collapse;font-size:14px;">${filas}</table>
+             ${aviso}
+           </div>`
+  };
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + env.RESEND_API_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(cuerpoCorreo)
+    });
+    if (!res.ok) console.error("Resend rechazó el aviso de cotización:", await res.text());
+  } catch (e) {
+    console.error("No se pudo avisar de la cotización:", e);
+  }
+}
+
+async function cotizar(request, env, ctx) {
+  let cuerpo;
+  try {
+    cuerpo = await request.json();
+  } catch (e) {
+    return json({ ok: false, error: "Formato inválido" }, 400);
+  }
+
+  const entrada = {
+    servicio: texto(cuerpo.servicio, 40),
+    perfil: texto(cuerpo.perfil, 40),
+    ultimo: texto(cuerpo.ultimo, 40),
+    acceso: texto(cuerpo.acceso, 40),
+    zona: texto(cuerpo.zona, 40)
+  };
+
+  const calculo = calcularCotizacion(entrada);
+  if (!calculo) {
+    return json({ ok: false, error: "Datos incompletos o no reconocidos" }, 400);
+  }
+
+  const nombre = texto(cuerpo.nombre, 200);
+  const telefono = texto(cuerpo.telefono, 60);
+  const origen = cuerpo.origen === "panel" ? "panel" : "beto";
+
+  let numero = null;
+  try {
+    const res = await env.DB.prepare(
+      `INSERT INTO cotizaciones
+         (servicio, perfil, ultimo, acceso, zona, monto_min, monto_max,
+          provisional, origen, nombre, telefono)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`
+    ).bind(
+      entrada.servicio, entrada.perfil, entrada.ultimo, entrada.acceso, entrada.zona,
+      calculo.min, calculo.max, calculo.provisional ? 1 : 0, origen, nombre, telefono
+    ).run();
+
+    const id = res.meta && res.meta.last_row_id;
+    if (id) {
+      numero = numeroCotizacion(id);
+      await env.DB.prepare(`UPDATE cotizaciones SET numero = ?1 WHERE id = ?2`)
+        .bind(numero, id).run();
+    }
+  } catch (e) {
+    // Que falle el guardado no debe dejar al cliente sin su número:
+    // la cotización se entrega igual y el fallo queda en el registro.
+    console.error("Error al guardar la cotización:", e);
+  }
+
+  const salida = Object.assign({ ok: true, numero: numero }, calculo);
+
+  // El aviso sale en segundo plano, como el del formulario.
+  ctx.waitUntil(avisarCotizacion(Object.assign({}, salida, {
+    nombre: nombre, telefono: telefono, zona: entrada.zona, origen: origen
+  }), env));
+
+  return json(salida);
+}
+
+/* Las opciones que muestra el chat. Salen de la misma tabla que el
+   cálculo, así que no pueden desincronizarse. */
+function opcionesCotizacion() {
+  const servicios = {};
+  for (const [id, s] of Object.entries(TARIFAS.servicios)) {
+    servicios[id] = {
+      nombre: s.nombre,
+      perfil: Object.entries(s.perfil).map(([k, v]) => ({ id: k, etiqueta: v.etiqueta })),
+      ultimo: Object.entries(s.ultimo).map(([k, v]) => ({ id: k, etiqueta: v.etiqueta })),
+      acceso: Object.entries(s.acceso).map(([k, v]) => ({ id: k, etiqueta: v.etiqueta }))
+    };
+  }
+  return json({
+    ok: true,
+    provisional: TARIFAS.provisional,
+    servicios: servicios,
+    zona: [
+      { id: "valle", etiqueta: "Valle Central (Alajuela, Heredia, San José)" },
+      { id: "resto", etiqueta: "Fuera del Valle Central" }
+    ]
+  });
+}
+
+/* =============================================================
+   4. Asistente de preguntas (Gemini, capa gratuita de Google)
    ============================================================= */
 
 // Todo lo que el asistente sabe. Si contesta algo que no está acá,
@@ -372,6 +686,15 @@ export default {
     }
     if (url.pathname === "/api/asistente" && request.method === "POST") {
       return responderAsistente(request, env);
+    }
+    // Las opciones de la cotización salen de la misma tabla que el
+    // cálculo, para que el chat nunca ofrezca algo que el motor no sepa
+    // cobrar.
+    if (url.pathname === "/api/cotizar/opciones" && request.method === "GET") {
+      return opcionesCotizacion();
+    }
+    if (url.pathname === "/api/cotizar" && request.method === "POST") {
+      return cotizar(request, env, ctx);
     }
 
     // Cualquier otra dirección: se sirve como una página normal del sitio.

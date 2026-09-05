@@ -38,7 +38,10 @@ El diseño parte del logo de la empresa:
   y la franja móvil. Nunca como fondo de una sección entera, para que no cargue la vista.
 - **Papel cálido** `#faf7f2` — el fondo del 80 % del sitio.
 - **Pizarra** `#1f2c33` — las secciones oscuras (cobertura, proceso, pie de página).
-- **Tipografías**: Bricolage Grotesque para títulos, Instrument Sans para el texto.
+- **Tipografía**: **Archivo** (Omnibus-Type), una sola familia variable. Los
+  titulares usan el corte estrecho y pesado —el mismo lenguaje del logo y del
+  rótulo del camión— y el texto el corte normal. El criterio completo está en
+  `DIRECCION-DE-ARTE.md`.
 
 El logo aparece en la cabecera de todas las páginas (versión horizontal) y en el
 pie (versión apilada). Los archivos están en `assets/img/logo-*.webp` y los
@@ -135,6 +138,73 @@ Bases de datos de uso interno (no vendidas ni distribuidas a terceros)
 como esta no requieren inscripción ante PRODHAB, pero sí este aviso previo
 y el consentimiento antes de recopilar los datos — que es justamente lo
 que se implementó.
+
+## Cotizaciones
+
+### Por qué Beto no calcula el precio
+
+Beto conversa y recoge los datos; **el precio lo saca código normal**, en
+`worker.js`, sección "Motor de cotizaciones". Un modelo de lenguaje haciendo
+cuentas se equivoca tarde o temprano, y una cotización equivocada la paga la
+empresa: o come la diferencia o queda como que hizo carnada.
+
+Para el cliente se siente igual —"Beto me cotizó"— pero la aritmética siempre
+da bien, y cambiar un precio es editar una tabla, no reescribir a Beto.
+
+### Cómo se le da la vuelta al tamaño del tanque
+
+Casi nadie sabe cuántos litros tiene su tanque. Pero todo el mundo sabe cuánta
+gente vive en la casa y hace cuánto se lo limpiaron, y eso predice el volumen
+igual de bien. Por eso el sistema **no pregunta el tamaño**: pregunta cuatro
+cosas que la persona sí puede contestar.
+
+1. Qué tipo de propiedad y de qué tamaño (por personas, no por litros)
+2. Hace cuánto se limpió
+3. Qué tan lejos queda del punto donde puede parquear el camión
+4. Si está dentro o fuera del Valle Central
+
+Esas cuatro cubren los tres factores de costo reales: **volumen, acceso y
+distancia**.
+
+### ⚠️ Los precios de hoy son INVENTADOS
+
+La tabla `TARIFAS` en `worker.js` tiene cifras verosímiles pero falsas, puestas
+para poder construir y probar el sistema completo antes de tener las reales.
+
+Mientras `provisional: true`:
+
+- Cada cotización sale marcada como estimación.
+- `tools/modo-publicacion.py` **se niega** a pasar el sitio a producción.
+
+Para ponerlas de verdad hacen falta seis datos del propietario:
+
+1. Precio base de una limpieza de tanque de casa normal
+2. Qué hace que suba (tamaño, metros de manguera, acceso, hora)
+3. Cuánto sube cada cosa, aunque sea aproximado
+4. El mínimo por el que vale la pena salir — **por servicio**, porque el
+   destaqueo no lleva cisterna y no cuesta lo mismo movilizar
+5. Cómo se cobra fuera del Valle Central
+6. Si los montos llevan IVA incluido o se suma aparte
+
+Falta también la **cédula jurídica**, que va en toda cotización formal.
+
+### La tabla de la base de datos
+
+Las cotizaciones emitidas se guardan en la tabla `cotizaciones`. El SQL está en
+`tools/crear-tabla-cotizaciones.sql` y se pega una vez en la Console de D1, igual
+que las otras dos tablas.
+
+La columna `provisional` queda en 1 mientras las tarifas sean las inventadas, así
+que después se sabe cuáles cotizaciones no hay que tomar en serio.
+
+### Las direcciones que atiende
+
+- `GET /api/cotizar/opciones` — las preguntas y sus opciones, sacadas de la
+  misma tabla que el cálculo, para que el chat nunca ofrezca algo que el motor
+  no sepa cobrar.
+- `POST /api/cotizar` — recibe las cuatro respuestas, devuelve el rango, guarda
+  la cotización con su número correlativo (`COT-2026-0001`) y manda el reporte
+  por correo a `CORREO_AVISO`.
 
 ## Asistente de preguntas
 
