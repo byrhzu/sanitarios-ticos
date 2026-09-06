@@ -138,6 +138,70 @@ function claveValida(request, env) {
   return recibida.length > 0 && recibida === env.CLAVE_PANEL;
 }
 
+/* Las dos tablas que el panel muestra. Se declaran acá y no en cada
+   endpoint para que el nombre de la tabla nunca salga de la URL: lo
+   que llega de afuera sólo sirve para escoger de esta lista, así que
+   no hay forma de inyectar SQL por el nombre. */
+const TABLAS_PANEL = {
+  solicitudes: {
+    columnas: `id, datetime(creado, '-6 hours') AS creado, nombre, telefono,
+               servicio, zona, detalle, pagina`,
+    csv: {
+      archivo: "solicitudes",
+      encabezado: ["Fecha (Costa Rica)", "Nombre", "Teléfono", "Servicio", "Zona", "Detalle", "Página"],
+      fila: (f) => [f.creado, f.nombre, f.telefono, f.servicio, f.zona, f.detalle || "", f.pagina || ""]
+    },
+    // Lo que ve el panel en pantalla. Sale de la misma fuente que el CSV
+    // para que nunca digan cosas distintas; lo que cambia es el formato,
+    // porque en pantalla se lee y en el CSV se suma.
+    vista: {
+      encabezado: ["Fecha", "Nombre", "Teléfono", "Servicio", "Zona", "Detalle", "Página"],
+      ancha: 5,
+      fila: (f) => [f.creado, f.nombre, f.telefono, f.servicio, f.zona, f.detalle || "—", f.pagina || "—"]
+    }
+  },
+  cotizaciones: {
+    columnas: `id, numero, datetime(creado, '-6 hours') AS creado, servicio, perfil,
+               ultimo, acceso, zona, monto_min, monto_max, provisional,
+               origen, nombre, telefono`,
+    csv: {
+      archivo: "cotizaciones",
+      encabezado: ["Número", "Fecha (Costa Rica)", "Servicio", "Mínimo", "Máximo",
+                   "Propiedad", "Último servicio", "Acceso", "Zona",
+                   "Precios provisionales", "Origen", "Nombre", "Teléfono"],
+      fila: (f) => [
+        f.numero || "", f.creado, etiqueta(f.servicio, null, "servicio"),
+        f.monto_min, f.monto_max,
+        etiqueta(f.servicio, f.perfil, "perfil"), etiqueta(f.servicio, f.ultimo, "ultimo"),
+        etiqueta(f.servicio, f.acceso, "acceso"), etiqueta(null, f.zona, "zona"),
+        f.provisional ? "Sí" : "No", f.origen || "",
+        f.nombre || "", f.telefono || ""
+      ]
+    },
+    vista: {
+      encabezado: ["Número", "Fecha", "Rango", "Servicio", "Propiedad",
+                   "Último servicio", "Acceso", "Zona", "Origen"],
+      ancha: 4,
+      fila: (f) => [
+        f.numero || "—",
+        f.creado,
+        colones(f.monto_min) + " – " + colones(f.monto_max),
+        etiqueta(f.servicio, null, "servicio"),
+        etiqueta(f.servicio, f.perfil, "perfil"),
+        etiqueta(f.servicio, f.ultimo, "ultimo"),
+        etiqueta(f.servicio, f.acceso, "acceso"),
+        etiqueta(null, f.zona, "zona"),
+        f.origen === "panel" ? "Panel" : "Beto"
+      ]
+    }
+  }
+};
+
+function tablaPedida(url) {
+  const pedida = url.searchParams.get("tabla");
+  return Object.prototype.hasOwnProperty.call(TABLAS_PANEL, pedida) ? pedida : "solicitudes";
+}
+
 // Arma el SQL de la consulta con el rango de fechas opcional.
 // Las fechas se comparan en hora de Costa Rica (UTC-6), que es la
 // única zona horaria del negocio, para que "hoy" signifique lo mismo
@@ -145,9 +209,9 @@ function claveValida(request, env) {
 function construirConsulta(url) {
   const desde = soloFecha(url.searchParams.get("desde"));
   const hasta = soloFecha(url.searchParams.get("hasta"));
+  const tabla = tablaPedida(url);
 
-  let sql = `SELECT id, datetime(creado, '-6 hours') AS creado, nombre, telefono, servicio, zona, detalle, pagina
-             FROM solicitudes`;
+  let sql = `SELECT ${TABLAS_PANEL[tabla].columnas} FROM ${tabla}`;
   const condiciones = [];
   const valores = [];
 
@@ -156,7 +220,7 @@ function construirConsulta(url) {
   if (condiciones.length) sql += ` WHERE ` + condiciones.join(" AND ");
   sql += ` ORDER BY creado DESC`;
 
-  return { sql, valores, desde, hasta };
+  return { sql, valores, desde, hasta, tabla };
 }
 
 /* Cuántas filas por página. Con 50 solicitudes no se notaba, pero el
@@ -164,11 +228,11 @@ function construirConsulta(url) {
    la consulta a D1 empieza a costar. */
 const POR_PAGINA = 50;
 
-async function listaSolicitudes(request, env) {
+async function listaPanel(request, env) {
   if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
 
   const url = new URL(request.url);
-  const { sql, valores } = construirConsulta(url);
+  const { sql, valores, tabla } = construirConsulta(url);
 
   // Página 1 si no la mandan o si mandan cualquier cosa.
   const pedida = parseInt(url.searchParams.get("pagina"), 10);
@@ -190,9 +254,16 @@ async function listaSolicitudes(request, env) {
       .bind(...valores, POR_PAGINA, desplazamiento)
       .all();
 
+    const vista = TABLAS_PANEL[tabla].vista;
     return json({
       ok: true,
-      solicitudes: results,
+      tabla: tabla,
+      encabezado: vista.encabezado,
+      ancha: vista.ancha,
+      filas: results.map(vista.fila),
+      // Un aviso arriba de la tabla vale más que una marca en cada
+      // fila: mientras las tarifas sean las provisionales, lo son todas.
+      hayProvisionales: results.some((f) => f.provisional),
       total: total,
       pagina: pagina,
       porPagina: POR_PAGINA,
@@ -216,7 +287,7 @@ function celdaCsv(valor) {
 async function descargarCsv(request, env) {
   if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
 
-  const { sql, valores, desde, hasta } = construirConsulta(new URL(request.url));
+  const { sql, valores, desde, hasta, tabla } = construirConsulta(new URL(request.url));
   let filas;
   try {
     const r = await env.DB.prepare(sql).bind(...valores).all();
@@ -226,16 +297,16 @@ async function descargarCsv(request, env) {
     return json({ ok: false, error: "No se pudo consultar" }, 500);
   }
 
-  const encabezado = ["Fecha (Costa Rica)", "Nombre", "Teléfono", "Servicio", "Zona", "Detalle", "Página"];
-  const lineas = [encabezado.join(",")];
+  const forma = TABLAS_PANEL[tabla].csv;
+  const lineas = [forma.encabezado.join(",")];
   for (const f of filas) {
-    lineas.push([f.creado, f.nombre, f.telefono, f.servicio, f.zona, f.detalle || "", f.pagina || ""].map(celdaCsv).join(","));
+    lineas.push(forma.fila(f).map(celdaCsv).join(","));
   }
 
   // El "﻿" al inicio es para que Excel abra el archivo reconociendo
   // los acentos correctamente, en vez de mostrar símbolos raros.
   const csv = "﻿" + lineas.join("\r\n");
-  const nombreArchivo = "solicitudes" + (desde ? "_" + desde : "") + (hasta ? "_a_" + hasta : "") + ".csv";
+  const nombreArchivo = forma.archivo + (desde ? "_" + desde : "") + (hasta ? "_a_" + hasta : "") + ".csv";
 
   return new Response(csv, {
     status: 200,
@@ -378,6 +449,23 @@ function colones(n) {
 /* Calcula el rango. Devuelve `null` si algún dato no corresponde a las
    opciones conocidas — nunca adivina, porque un precio adivinado es
    exactamente lo que estamos tratando de evitar. */
+/* Traduce los códigos guardados ("casa-mediana") al texto que lee una
+   persona ("Casa de 5 a 8 personas"). La base guarda el código y no la
+   etiqueta a propósito: si mañana se reescribe el texto de una opción,
+   las cotizaciones viejas se leen con la redacción nueva en vez de
+   quedar congeladas con la vieja. Si el código ya no existe en la
+   tabla, se muestra tal cual en vez de un vacío — así se nota. */
+const ZONAS = { valle: "Valle Central", resto: "Fuera del Valle Central" };
+
+function etiqueta(servicio, codigo, campo) {
+  if (campo === "zona") return ZONAS[codigo] || codigo || "";
+  const svc = TARIFAS.servicios[servicio];
+  if (!svc) return codigo || "";
+  if (campo === "servicio") return svc.nombre;
+  const opcion = svc[campo] && svc[campo][codigo];
+  return opcion ? opcion.etiqueta : (codigo || "");
+}
+
 function calcularCotizacion(entrada) {
   const svc = TARIFAS.servicios[entrada.servicio];
   if (!svc) return null;
@@ -716,7 +804,7 @@ export default {
       return guardarSolicitud(request, env, ctx);
     }
     if (url.pathname === "/api/panel/solicitudes" && request.method === "GET") {
-      return listaSolicitudes(request, env);
+      return listaPanel(request, env);
     }
     if (url.pathname === "/api/panel/csv" && request.method === "GET") {
       return descargarCsv(request, env);

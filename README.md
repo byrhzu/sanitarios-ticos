@@ -103,15 +103,31 @@ otro correo para la cuenta de Resend, los avisos van a fallar en silencio
 
 ### Panel privado
 
-En `/panel` (archivo `panel.html`) hay una página protegida con contraseña
-donde se ven las solicitudes guardadas, se pueden filtrar por rango de fechas
-y descargarse en CSV (se abre bien en Excel, con acentos y todo).
+En `/panel` (archivo `panel.html`) hay una página protegida con contraseña,
+con dos pestañas:
+
+- **Solicitudes** — lo que la gente manda por el formulario del sitio.
+- **Cotizaciones** — cada estimado que emitió Beto, con el rango de precio y
+  las respuestas con que se calculó. Mientras las tarifas sean las
+  provisionales, aparece un aviso arriba de la tabla.
+
+Las dos comparten el filtro por rango de fechas, la paginación (50 por
+página) y el botón de descargar CSV, que se lleva la pestaña que se esté
+viendo. El CSV sale con el rango de fechas completo, no sólo la página que
+está a la vista, y se abre bien en Excel, con acentos y todo.
 
 Necesita una variable más en Cloudflare:
 
-- `CLAVE_PANEL` — la contraseña para entrar. También se configura como
-  **Encrypt** en **Settings → Variables and Secrets**. Elegir algo largo y
-  que no se use en ningún otro sitio.
+- `CLAVE_PANEL` — la contraseña para entrar. Va en **Settings → Variables and
+  Secrets**, con el tipo **Secret** (no *Text*). Elegir algo largo y que no se
+  use en ningún otro sitio.
+
+  Si la clave deja de funcionar después de un despliegue, casi siempre es que
+  quedó guardada como *Text* en vez de *Secret*: los valores de tipo *Text* se
+  reemplazan por lo que diga `wrangler.jsonc` en cada despliegue, y como ahí no
+  está `CLAVE_PANEL`, desaparece. Los *Secret* sí sobreviven. La pantalla de
+  entrada ahora distingue "clave incorrecta" de "el servidor falló", para no
+  perder tiempo cambiando una contraseña que no era el problema.
 
 La página no aparece en ningún menú ni buscador (lleva `noindex` y está
 bloqueada en `robots.txt`), pero cualquiera que sepa la dirección puede

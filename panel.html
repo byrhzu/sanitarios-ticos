@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Panel de solicitudes | Sanitarios Ticos</title>
+<title>Panel interno | Sanitarios Ticos</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,6 +21,26 @@
 
   .llave { max-width: 26rem; margin: 4rem auto; text-align: center; }
   .llave .f { text-align: left; margin: 1.3rem 0; }
+
+  /* Pestañas. Sin bordes ni cajas: la que está activa se marca con una
+     línea gruesa abajo, como la navegación del sitio. */
+  .pestanas { display: flex; gap: .3rem; margin-bottom: 1.6rem; flex-wrap: wrap; }
+  .pestanas button {
+    font-family: var(--display); font-weight: 600; font-size: .92rem;
+    color: var(--muted); padding: .5rem .1rem; margin-right: 1.1rem;
+    border-bottom: 3px solid transparent;
+    transition: color .2s var(--ease), border-color .2s var(--ease);
+  }
+  .pestanas button:hover { color: var(--ink); }
+  .pestanas button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--orange); }
+
+  .aviso[hidden] { display: none; }
+  .aviso {
+    display: block;
+    background: var(--orange-soft); color: var(--orange-dk);
+    padding: .8rem 1rem; margin-bottom: 1.2rem;
+    font-size: .88rem; line-height: 1.45;
+  }
 
   .filtros { display: grid; gap: .9rem; grid-template-columns: 1fr 1fr auto auto; align-items: end; margin-bottom: 1.6rem; }
   @media (max-width: 719px) { .filtros { grid-template-columns: 1fr 1fr; } .filtros .btn { grid-column: span 1; } }
@@ -51,14 +71,14 @@
 <div class="panel-shell">
   <div class="panel-top">
     <img src="assets/img/logo-mascota.webp" alt="" width="34" height="34">
-    <span>Panel de solicitudes</span>
+    <span>Panel interno</span>
   </div>
 
   <!-- Se ve mientras no se haya escrito la clave correcta -->
   <section class="llave" id="pantalla-clave">
     <p class="kicker" style="justify-content:center; display:flex;">Acceso privado</p>
-    <h1 style="font-size:1.6rem;">Solicitudes del sitio</h1>
-    <p class="dim" style="margin-top:.6rem;">Ingrese la clave para ver y descargar las solicitudes guardadas.</p>
+    <h1 style="font-size:1.6rem;">Solicitudes y cotizaciones</h1>
+    <p class="dim" style="margin-top:.6rem;">Ingrese la clave para ver y descargar lo que ha entrado por el sitio.</p>
     <form id="form-clave">
       <div class="f">
         <label for="clave">Clave</label>
@@ -71,6 +91,16 @@
 
   <!-- Se ve después de entrar la clave correcta -->
   <section id="pantalla-panel" hidden>
+    <div class="pestanas" role="tablist" aria-label="Qué mostrar">
+      <button type="button" role="tab" id="tab-solicitudes" data-tabla="solicitudes" aria-selected="true">Solicitudes</button>
+      <button type="button" role="tab" id="tab-cotizaciones" data-tabla="cotizaciones" aria-selected="false">Cotizaciones</button>
+    </div>
+
+    <p class="aviso" id="aviso-provisional" hidden>
+      Estas cotizaciones salieron con las <b>tarifas provisionales</b>, que no son las
+      de la empresa. Sirven para ver que el sistema funciona, no para cobrar.
+    </p>
+
     <div class="filtros">
       <div class="f">
         <label for="desde">Desde</label>
@@ -88,11 +118,7 @@
 
     <div class="tabla-wrap">
       <table class="solicitudes" id="tabla">
-        <thead>
-          <tr>
-            <th>Fecha</th><th>Nombre</th><th>Teléfono</th><th>Servicio</th><th>Zona</th><th>Detalle</th><th>Página</th>
-          </tr>
-        </thead>
+        <thead><tr id="encabezado-tabla"></tr></thead>
         <tbody id="cuerpo-tabla"></tbody>
       </table>
     </div>
@@ -127,14 +153,15 @@
   }
 
   var pagina = 1;
+  var tabla = "solicitudes";
 
   function urlConFiltros(base, conPagina) {
     var params = new URLSearchParams();
+    params.set("tabla", tabla);
     if ($("desde").value) params.set("desde", $("desde").value);
     if ($("hasta").value) params.set("hasta", $("hasta").value);
     if (conPagina && pagina > 1) params.set("pagina", String(pagina));
-    var qs = params.toString();
-    return base + (qs ? "?" + qs : "");
+    return base + "?" + params.toString();
   }
 
   function pintarPaginacion(d) {
@@ -146,8 +173,9 @@
 
     var primera = (d.pagina - 1) * d.porPagina + 1;
     var ultima = Math.min(d.pagina * d.porPagina, total);
+    var cosa = tabla === "cotizaciones" ? "cotización" : "solicitud";
     $("estado-lista").textContent =
-      total === 1 ? "1 solicitud."
+      total === 1 ? "1 " + cosa + "."
                   : "Mostrando " + primera + " a " + ultima + " de " + total + ".";
 
     // Los botones sólo aparecen si de verdad hay a dónde ir.
@@ -157,24 +185,32 @@
     $("paginacion-txt").textContent = "Página " + d.pagina + " de " + paginas;
   }
 
-  function pintarFilas(solicitudes) {
+  /* Las columnas las decide el servidor, no esta página: así la tabla
+     de cotizaciones y la de solicitudes usan el mismo código, y lo que
+     se ve en pantalla nunca se desalinea del CSV que se descarga. */
+  function pintarFilas(d) {
     var cuerpo = $("cuerpo-tabla");
-    if (!solicitudes.length) {
+
+    $("encabezado-tabla").innerHTML = (d.encabezado || []).map(function (t) {
+      return "<th>" + escHtml(t) + "</th>";
+    }).join("");
+
+    if (!d.filas.length) {
       cuerpo.innerHTML = "";
-      $("estado-lista").textContent = "No hay solicitudes en ese rango de fechas.";
+      $("estado-lista").textContent = tabla === "cotizaciones"
+        ? "No hay cotizaciones en ese rango de fechas."
+        : "No hay solicitudes en ese rango de fechas.";
       $("paginacion").hidden = true;
       return;
     }
-    cuerpo.innerHTML = solicitudes.map(function (s) {
-      return "<tr>" +
-        "<td>" + escHtml(s.creado) + "</td>" +
-        "<td>" + escHtml(s.nombre) + "</td>" +
-        "<td>" + escHtml(s.telefono) + "</td>" +
-        "<td>" + escHtml(s.servicio) + "</td>" +
-        "<td>" + escHtml(s.zona) + "</td>" +
-        "<td class=\"detalle\">" + escHtml(s.detalle || "—") + "</td>" +
-        "<td>" + escHtml(s.pagina || "—") + "</td>" +
-        "</tr>";
+
+    cuerpo.innerHTML = d.filas.map(function (fila) {
+      return "<tr>" + fila.map(function (celda, i) {
+        // La columna "ancha" (el detalle, el tipo de propiedad) es la
+        // única que puede partirse en varias líneas.
+        var cls = i === d.ancha ? ' class="detalle"' : "";
+        return "<td" + cls + ">" + escHtml(celda) + "</td>";
+      }).join("") + "</tr>";
     }).join("");
   }
 
@@ -185,8 +221,9 @@
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
         if (!res.ok || !res.d.ok) throw new Error(res.d && res.d.error);
-        pintarFilas(res.d.solicitudes);
+        pintarFilas(res.d);
         pintarPaginacion(res.d);
+        $("aviso-provisional").hidden = !res.d.hayProvisionales;
         // Al cambiar de página, volver arriba: si no, uno queda mirando
         // el final de una lista que ya cambió.
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -204,7 +241,10 @@
     $("estado-clave").classList.remove("is-error");
     fetch("/api/panel/solicitudes", { headers: { "X-Clave": intento } })
       .then(function (r) {
+        // Distinguir el "no es la clave" del "el servidor está mal" evita
+        // pasar horas cambiando una contraseña que nunca fue el problema.
         if (r.status === 401) throw new Error("clave");
+        if (!r.ok) throw new Error("servidor:" + r.status);
         return r.json();
       })
       .then(function () {
@@ -213,8 +253,17 @@
         $("estado-clave").textContent = "";
         mostrarPanel();
       })
-      .catch(function () {
-        $("estado-clave").textContent = "Clave incorrecta.";
+      .catch(function (err) {
+        var msg = String(err && err.message);
+        if (msg === "clave") {
+          $("estado-clave").textContent =
+            "Clave incorrecta. Si acaba de cambiarla en Cloudflare, revise que " +
+            "esté guardada como Secret (no como Variable) y que el Worker se haya vuelto a desplegar.";
+        } else if (msg.indexOf("servidor:") === 0) {
+          $("estado-clave").textContent = "El servidor respondió con un error (" + msg.slice(9) + "). No es la clave.";
+        } else {
+          $("estado-clave").textContent = "No se pudo contactar al servidor. Revise la conexión.";
+        }
         $("estado-clave").classList.add("is-error");
       });
   });
@@ -222,6 +271,22 @@
   // Al cambiar el filtro se vuelve a la página 1: quedarse en la 7 de un
   // rango que ahora tiene 2 páginas deja la tabla vacía sin explicación.
   $("btn-filtrar").addEventListener("click", function () { pagina = 1; cargar(); });
+
+  // Las pestañas comparten el rango de fechas a propósito: casi siempre
+  // uno quiere ver las solicitudes y las cotizaciones del mismo periodo.
+  Array.prototype.forEach.call(document.querySelectorAll(".pestanas button"), function (b) {
+    b.addEventListener("click", function () {
+      if (b.dataset.tabla === tabla) return;
+      tabla = b.dataset.tabla;
+      pagina = 1;
+      Array.prototype.forEach.call(document.querySelectorAll(".pestanas button"), function (o) {
+        o.setAttribute("aria-selected", String(o === b));
+      });
+      $("aviso-provisional").hidden = true;
+      $("cuerpo-tabla").innerHTML = "";
+      cargar();
+    });
+  });
 
   $("btn-antes").addEventListener("click", function () {
     if (pagina > 1) { pagina--; cargar(); }
@@ -233,6 +298,7 @@
     // encabezados personalizados: por eso acá sí va como parámetro en
     // la URL. Sólo viaja por HTTPS, igual que el resto de la página.
     var params = new URLSearchParams();
+    params.set("tabla", tabla);
     if ($("desde").value) params.set("desde", $("desde").value);
     if ($("hasta").value) params.set("hasta", $("hasta").value);
     params.set("clave", clave);
