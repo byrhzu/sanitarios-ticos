@@ -139,20 +139,41 @@ strong, b { font-weight: 600; }
 
 /* Iris: la página nueva se abre en un círculo desde donde se tocó.
 
-   La de salida se queda quieta debajo en vez de fundirse —por eso
-   `animation: none`—, así el círculo se lee como algo que se abre y no
-   como dos imágenes cruzándose.
-
    El origen lo pone main.js en --iris-x/--iris-y con el punto del clic.
    Si no llega (teclado, o el enlace se abrió de otra forma), el centro
-   por defecto sirve igual. */
-::view-transition-old(root) { animation: none; }
+   por defecto sirve igual.
+
+   La duración y la curva van en variables: son los dos números que se
+   tocan si el efecto se siente lento o rápido.
+
+   La curva importa más que la duración. Con una easeOutQuint el 80 %
+   del círculo crecía en los primeros 120 ms y el resto era relleno: por
+   corto que fuera el total, se leía como un parpadeo. Esta arranca
+   despacio, mantiene el ritmo en el medio —que es donde la vista
+   alcanza a seguir el borde— y aterriza suave. */
+:root {
+  --iris-tiempo: .72s;
+  --iris-curva: cubic-bezier(0.62, 0.05, 0.2, 1);
+}
+
+/* La página que se va se queda en su sitio y sólo se apaga un poco.
+   No se mueve ni se encoge: cualquier cambio de geometría deja ver el
+   borde del recorte, y entonces el ojo mira el borde en vez del centro.
+   La penumbra basta para que el círculo se lea como algo que se abre
+   encima y no como dos imágenes cruzándose. */
+::view-transition-old(root) {
+  animation: iris-fondo var(--iris-tiempo) var(--iris-curva) forwards;
+}
 ::view-transition-new(root) {
-  animation: iris .42s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: iris var(--iris-tiempo) var(--iris-curva);
 }
 @keyframes iris {
   from { clip-path: circle(0% at var(--iris-x, 50%) var(--iris-y, 50%)); }
   to   { clip-path: circle(150% at var(--iris-x, 50%) var(--iris-y, 50%)); }
+}
+@keyframes iris-fondo {
+  from { opacity: 1; }
+  to   { opacity: .82; }
 }
 
 /* La barra de teléfonos y la cabecera son idénticas en todas las
