@@ -1004,6 +1004,17 @@ body.fabs-fuera .wa-fab {
 }
 .asistente-ops button:hover { border-color: var(--orange); }
 
+/* Enlace al documento de la cotización, dentro del hilo. */
+.asistente-doc { display: flex; margin: -.1rem 0 .3rem; }
+.asistente-doc a {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-size: .82rem; font-weight: 600;
+  color: var(--orange-dk);
+  border-bottom: 1px solid var(--orange-line);
+  padding-bottom: .1rem;
+}
+.asistente-doc a:hover { border-bottom-color: var(--orange); }
+
 /* Botón de cotizar. Mismo patrón del traspaso: el [hidden] explícito
    antes de darle display propio. */
 .asistente-cotiza[hidden] { display: none; }

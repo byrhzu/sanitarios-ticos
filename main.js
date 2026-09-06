@@ -658,6 +658,23 @@
 
       agregarMensaje(partes.join(" "), false, true);
 
+      // El documento va como enlace y no como archivo: se abre en el
+      // teléfono sin instalar nada, se guarda en PDF desde ahí, y se
+      // puede reenviar por WhatsApp sin que se pierda.
+      if (d.enlace) {
+        var caja = document.createElement("div");
+        caja.className = "asistente-doc";
+        var a = document.createElement("a");
+        a.href = d.enlace;
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.textContent = "Ver su cotización " + (d.numero || "");
+        caja.appendChild(a);
+        hilo.appendChild(caja);
+        hilo.scrollTop = hilo.scrollHeight;
+        mensajesMios.push("Documento: " + d.enlace);
+      }
+
       // Con el número en mano, el traspaso a WhatsApp lleva la cotización.
       mensajesMios.push(
         "Cotización " + (d.numero || "") + ": " + d.servicioNombre +

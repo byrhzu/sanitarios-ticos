@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es-CR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cotización | Sanitarios Ticos</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
+<style>
+/* =============================================================
+   COTIZACIÓN — documento imprimible
+   Especificado en DIRECCION-DE-ARTE.md §12. Cada valor de acá se
+   puede rastrear hasta esa sección.
+
+   No usa styles.css a propósito: el sitio está hecho para pantalla
+   sobre papel cálido, y esto se imprime sobre papel blanco de
+   verdad. Comparten la tipografía y el naranja, que es lo que
+   mantiene la línea entre la página, la marca y el documento.
+   ============================================================= */
+
+:root {
+  --hoja:    #ffffff;
+  --tinta:   #1b1917;   /* la misma tinta del sitio */
+  --tinta-2: #4a443d;
+  --gris:    #7d766e;   /* 4.6:1 sobre blanco */
+  --naranja: #ef6511;   /* el del costado del camión */
+  --naranja-dk: #b34c0d;
+  --filete:  #e0dbd4;
+  --realce:  #f7f4ef;
+
+  --sans: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Anchos del eje de la variable, igual que en el sitio (§4) */
+  --cartel:  68%;
+  --titular: 82%;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #e9e5df;   /* mesa, sólo en pantalla */
+  color: var(--tinta);
+  font-family: var(--sans);
+  font-size: 9.5pt;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- La hoja ------------------------------------------------- */
+.hoja {
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 8mm auto;
+  padding: 16mm;
+  background: var(--hoja);
+  box-shadow: 0 2px 18px rgba(27,25,23,.18);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Franja de identidad. Reemplaza la ola degradada de la referencia
+   Canva: hace el mismo trabajo con un solo color plano. */
+.hoja::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 6mm;
+  background: var(--naranja);
+}
+
+/* --- Etiquetas ------------------------------------------------ */
+.et {
+  font-size: 6.6pt;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--gris);
+  margin: 0 0 .35rem;
+}
+
+/* --- Cabecera -------------------------------------------------- */
+.cabeza {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12mm;
+  padding-top: 4mm;
+}
+.marca img { width: 46mm; height: auto; display: block; }
+.marca p {
+  margin: 2.5mm 0 0;
+  font-size: 7.4pt;
+  color: var(--gris);
+  line-height: 1.45;
+}
+.folio { text-align: right; flex: 0 0 auto; }
+.folio h1 {
+  margin: 0;
+  font-size: 25pt;
+  font-weight: 800;
+  font-stretch: var(--cartel);
+  text-transform: uppercase;
+  letter-spacing: .01em;
+  line-height: .9;
+}
+.folio .num {
+  margin: 1.5mm 0 0;
+  font-size: 11pt;
+  font-weight: 700;
+  font-stretch: var(--titular);
+  color: var(--naranja-dk);
+  font-variant-numeric: tabular-nums;
+}
+.folio dl {
+  margin: 3mm 0 0;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: .6mm 4mm;
+  font-size: 7.6pt;
+}
+.folio dt { color: var(--gris); text-align: right; }
+.folio dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* --- Partes (cliente / empresa) -------------------------------- */
+.partes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10mm;
+  margin-top: 7mm;
+  padding-top: 4mm;
+  border-top: .5pt solid var(--filete);
+}
+.parte .nom {
+  margin: 0 0 .8mm;
+  font-size: 11pt;
+  font-weight: 700;
+  font-stretch: var(--titular);
+}
+.parte p { margin: 0; color: var(--tinta-2); font-size: 8.4pt; line-height: 1.55; }
+.parte .pendiente { color: var(--naranja-dk); font-weight: 600; }
+
+/* --- Tabla del servicio ---------------------------------------- */
+.tabla { width: 100%; border-collapse: collapse; margin-top: 7mm; }
+.tabla th {
+  background: var(--tinta);
+  color: var(--hoja);
+  font-size: 6.6pt;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 2.4mm 3.5mm;
+}
+.tabla th.der { text-align: right; }
+.tabla td {
+  padding: 3.4mm 3.5mm;
+  border-bottom: .5pt solid var(--filete);
+  vertical-align: top;
+}
+.tabla .svc {
+  font-size: 12pt;
+  font-weight: 700;
+  font-stretch: var(--titular);
+  display: block;
+}
+.tabla .incl {
+  display: block;
+  margin-top: 1mm;
+  font-size: 8pt;
+  color: var(--gris);
+}
+.tabla .monto {
+  text-align: right;
+  white-space: nowrap;
+  font-size: 11pt;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Cómo se calculó + escalera -------------------------------- */
+.pie-tabla {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 12mm;
+  margin-top: 6mm;
+}
+
+.base { margin: 0; display: grid; gap: 2.6mm; }
+.base .fila { display: grid; grid-template-columns: 26mm 1fr; gap: 3mm; }
+.base dt {
+  font-size: 6.6pt; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--gris);
+  padding-top: .6mm;
+}
+.base dd { margin: 0; }
+.base .val { font-size: 9pt; font-weight: 600; }
+.base .porque { display: block; font-size: 7.6pt; color: var(--gris); }
+
+.escalera { display: grid; gap: 0; align-content: start; }
+.escalera .lin {
+  display: flex; justify-content: space-between; gap: 6mm;
+  padding: 1.9mm 0;
+  border-bottom: .5pt solid var(--filete);
+  font-size: 9pt;
+}
+.escalera .lin span:first-child { color: var(--tinta-2); }
+.escalera .lin span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; }
+.escalera .lin.iva span:last-child { color: var(--naranja-dk); font-weight: 600; }
+
+.rango {
+  margin-top: 3mm;
+  padding: 3mm 4mm;
+  background: var(--realce);
+  border-top: 2pt solid var(--naranja);
+}
+.rango .et { margin-bottom: 1.2mm; }
+.rango .cifra {
+  font-size: 17.5pt;
+  font-weight: 800;
+  font-stretch: var(--cartel);
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rango .nota { margin: 1.8mm 0 0; font-size: 7.6pt; color: var(--tinta-2); line-height: 1.45; }
+
+/* --- Aviso de tarifas provisionales ----------------------------- */
+.provisional {
+  margin-top: 5mm;
+  padding: 2.6mm 4mm;
+  border-left: 2pt solid var(--naranja);
+  background: var(--realce);
+  font-size: 8pt;
+  color: var(--tinta-2);
+}
+.provisional b { color: var(--tinta); }
+
+/* --- Condiciones ------------------------------------------------ */
+.condiciones {
+  margin-top: 6mm;
+  padding-top: 4mm;
+  border-top: .5pt solid var(--filete);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10mm;
+}
+.condiciones ul { margin: 0; padding-left: 4mm; }
+.condiciones li { margin-bottom: 1.2mm; font-size: 8.2pt; color: var(--tinta-2); }
+
+/* --- Firma ------------------------------------------------------ */
+.firma {
+  margin-top: auto;
+  padding-top: 10mm;
+  display: flex;
+  justify-content: flex-end;
+}
+.firma div { width: 62mm; text-align: center; border-top: .5pt solid var(--tinta); padding-top: 1.8mm; }
+.firma .et { margin: 0; }
+
+/* --- Pie -------------------------------------------------------- */
+.pie {
+  margin-top: 5mm;
+  padding-top: 3mm;
+  border-top: .5pt solid var(--filete);
+  display: flex;
+  justify-content: space-between;
+  gap: 8mm;
+  font-size: 7.4pt;
+  color: var(--gris);
+}
+.pie span { white-space: nowrap; }
+
+/* --- Barra de acciones (nunca se imprime) ----------------------- */
+.acciones {
+  width: 210mm;
+  max-width: 100%;
+  margin: 8mm auto 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2mm;
+}
+.acciones button, .acciones a {
+  font-family: var(--sans);
+  font-size: 9.5pt;
+  font-weight: 600;
+  padding: 2.6mm 5mm;
+  border: 1px solid rgba(27,25,23,.22);
+  background: #fff;
+  color: var(--tinta);
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: 2px;
+}
+.acciones button.primario { background: var(--naranja); border-color: var(--naranja); color: #fff; }
+.acciones button:hover, .acciones a:hover { border-color: var(--naranja); }
+.acciones .aviso { font-size: 8pt; color: #5d574f; align-self: center; margin-left: 2mm; }
+
+/* --- Estados ----------------------------------------------------- */
+.estado { padding: 24mm 16mm; text-align: center; }
+.estado h2 { font-stretch: var(--titular); font-weight: 700; margin: 0 0 3mm; }
+.estado p { margin: 0 auto; max-width: 62ch; color: var(--tinta-2); }
+[hidden] { display: none !important; }
+
+/* --- Pantallas angostas ------------------------------------------ */
+@media (max-width: 230mm) {
+  .hoja { width: 100%; min-height: 0; margin: 0; padding: 9mm 6mm 12mm; box-shadow: none; }
+  body { background: var(--hoja); }
+  .cabeza { flex-direction: column; gap: 6mm; }
+  .folio { text-align: left; }
+  .folio dl { grid-template-columns: auto auto; justify-content: start; }
+  .folio dt { text-align: left; }
+  .partes, .pie-tabla, .condiciones { grid-template-columns: 1fr; gap: 6mm; }
+  .pie { flex-direction: column; gap: 1mm; }
+  .acciones { width: auto; margin: 0 6mm 10mm; }
+  .firma { padding-top: 12mm; }
+}
+
+/* --- Impresión ---------------------------------------------------- */
+@page { size: A4 portrait; margin: 0; }
+@media print {
+  body { background: #fff; }
+  .hoja {
+    width: auto; min-height: auto; margin: 0;
+    padding: 16mm; box-shadow: none;
+  }
+  .acciones { display: none; }
+  /* Sin esto, los navegadores le quitan el fondo a la franja naranja
+     y al bloque del rango, que es justo lo que identifica el papel. */
+  .hoja::before, .tabla th, .rango, .provisional {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<article class="hoja" id="hoja" hidden>
+
+  <header class="cabeza">
+    <div class="marca">
+      <img src="assets/img/logo-horizontal.webp" alt="Sanitarios Ticos" width="853" height="150">
+      <p id="empresa-linea"></p>
+    </div>
+
+    <div class="folio">
+      <h1>Cotización</h1>
+      <p class="num" id="numero"></p>
+      <dl>
+        <dt>Emitida</dt><dd id="emitida"></dd>
+        <dt>Vence</dt><dd id="vence"></dd>
+      </dl>
+    </div>
+  </header>
+
+  <section class="partes">
+    <div class="parte">
+      <p class="et">Para</p>
+      <p class="nom" id="cliente-nombre">Cliente</p>
+      <p id="cliente-datos"></p>
+    </div>
+    <div class="parte">
+      <p class="et">Emite</p>
+      <p class="nom" id="razon-social"></p>
+      <p id="empresa-datos"></p>
+    </div>
+  </section>
+
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Servicio</th>
+        <th class="der">Estimado</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <span class="svc" id="servicio"></span>
+          <span class="incl">Incluye la succión, el transporte y la disposición final de lo extraído.</span>
+        </td>
+        <td class="monto" id="monto-fila"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="pie-tabla">
+    <div>
+      <p class="et">Cómo se calculó</p>
+      <dl class="base" id="base"></dl>
+    </div>
+
+    <div>
+      <div class="escalera">
+        <div class="lin"><span>Estimado mínimo</span><span id="min"></span></div>
+        <div class="lin"><span>Estimado máximo</span><span id="max"></span></div>
+        <div class="lin iva"><span>IVA</span><span id="iva"></span></div>
+      </div>
+      <div class="rango">
+        <p class="et">Rango estimado</p>
+        <p class="cifra" id="cifra"></p>
+        <p class="nota">El precio en firme se confirma antes de salir, sin costo y sin compromiso.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="provisional" id="provisional" hidden>
+    <b>Estimación con tarifas en revisión.</b> Los montos de este documento salieron
+    de una tabla de tarifas que la empresa todavía está afinando. Sirven para darse
+    una idea; no son un precio en firme.
+  </div>
+
+  <section class="condiciones">
+    <div>
+      <p class="et">Condiciones</p>
+      <ul>
+        <li id="cond-vigencia"></li>
+        <li>El precio en firme se confirma por teléfono antes de salir, sin costo.</li>
+        <li>Emergencias atendidas el mismo día, sujetas a disponibilidad del equipo.</li>
+      </ul>
+    </div>
+    <div>
+      <p class="et">Forma de pago</p>
+      <ul>
+        <li>Efectivo, SINPE Móvil o transferencia.</li>
+        <li>Se paga al terminar el trabajo.</li>
+        <li>Se emite factura electrónica.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="firma">
+    <div><p class="et">Firma autorizada</p></div>
+  </div>
+
+  <footer class="pie" id="pie"></footer>
+</article>
+
+<div class="acciones" id="acciones" hidden>
+  <button type="button" class="primario" id="btn-imprimir">Imprimir o guardar en PDF</button>
+  <button type="button" id="btn-copiar">Copiar el enlace</button>
+  <a id="btn-wa" href="#" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+  <span class="aviso" id="aviso-accion"></span>
+</div>
+
+<div class="estado" id="cargando">
+  <p>Abriendo la cotización…</p>
+</div>
+
+<div class="estado" id="error" hidden>
+  <h2>No se pudo abrir esta cotización</h2>
+  <p id="error-txt"></p>
+  <p style="margin-top:1rem;">Si el enlace le llegó cortado, pídanos otro al
+    <b>2440-1110</b> o por WhatsApp al <b>8341-7547</b>.</p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function mostrarError(txt) {
+    $("cargando").hidden = true;
+    $("error").hidden = false;
+    $("error-txt").textContent = txt || "El enlace no es válido.";
+  }
+
+  function fecha(iso) {
+    // "2026-09-05" → "5 de setiembre de 2026". Se arma a mano porque
+    // toLocaleDateString escribe "septiembre", y en Costa Rica se usa
+    // "setiembre".
+    var meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+                 "agosto", "setiembre", "octubre", "noviembre", "diciembre"];
+    var p = String(iso || "").split("-");
+    if (p.length !== 3) return "—";
+    return Number(p[2]) + " de " + meses[Number(p[1]) - 1] + " de " + p[0];
+  }
+
+  var params = new URLSearchParams(location.search);
+  var numero = params.get("n");
+  var llave = params.get("k");
+
+  if (!numero || !llave) {
+    mostrarError("Al enlace le falta información. Los enlaces de cotización llevan un número y una llave.");
+    return;
+  }
+
+  fetch("/api/cotizacion?n=" + encodeURIComponent(numero) + "&k=" + encodeURIComponent(llave))
+    .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+    .then(function (res) {
+      if (!res.ok || !res.d.ok) throw new Error(res.d && res.d.error);
+      pintar(res.d);
+    })
+    .catch(function (err) {
+      mostrarError(String(err && err.message) !== "undefined" && err.message
+        ? err.message
+        : "No pudimos contactar al servidor. Revise la conexión e intente de nuevo.");
+    });
+
+  function pintar(d) {
+    var e = d.empresa;
+
+    document.title = "Cotización " + d.numero + " | Sanitarios Ticos";
+
+    $("numero").textContent = d.numero;
+    $("emitida").textContent = fecha(d.emitida);
+    $("vence").textContent = fecha(d.vence);
+
+    $("empresa-linea").textContent = e.sedes + " · Servicio en todo el país";
+
+    // Cliente. Si no dejó nombre, no se inventa uno: se dice que el
+    // documento se emitió desde el sitio y ya.
+    $("cliente-nombre").textContent = d.cliente.nombre || "Cotización solicitada por el sitio web";
+    var cli = [];
+    if (d.cliente.telefono) cli.push("Teléfono: " + d.cliente.telefono);
+    var zona = (d.base.filter(function (b) { return b.campo === "Zona"; })[0] || {}).valor;
+    if (zona) cli.push("Zona: " + zona);
+    $("cliente-datos").textContent = cli.join(" · ");
+
+    // Empresa
+    $("razon-social").textContent = e.razonSocial;
+    var emp = [];
+    emp.push(e.cedula ? "Cédula jurídica: " + e.cedula : null);
+    emp.push("Teléfonos: " + e.telefonos.join(" / "));
+    emp.push("WhatsApp: " + e.whatsapp);
+    emp.push(e.correo);
+    $("empresa-datos").textContent = emp.filter(Boolean).join(" · ");
+    if (!e.cedula) {
+      // Mientras no esté, se dice que falta en vez de dejar el hueco:
+      // un documento formal sin cédula tiene que verse incompleto.
+      var av = document.createElement("span");
+      av.className = "pendiente";
+      av.textContent = " · Cédula jurídica pendiente";
+      $("empresa-datos").appendChild(av);
+    }
+
+    // Servicio y montos
+    $("servicio").textContent = d.servicio;
+    var rango = d.minTexto + " – " + d.maxTexto;
+    $("monto-fila").textContent = rango;
+    $("cifra").textContent = rango;
+    $("min").textContent = d.minTexto;
+    $("max").textContent = d.maxTexto;
+    $("iva").textContent = d.ivaIncluido === null
+      ? "Por confirmar"
+      : (d.ivaIncluido ? "Incluido" : "Se suma aparte");
+
+    // Cómo se calculó
+    var base = $("base");
+    d.base.forEach(function (b) {
+      var fila = document.createElement("div");
+      fila.className = "fila";
+      var dt = document.createElement("dt");
+      dt.textContent = b.campo;
+      var dd = document.createElement("dd");
+      var val = document.createElement("span");
+      val.className = "val";
+      val.textContent = b.valor;
+      var por = document.createElement("span");
+      por.className = "porque";
+      por.textContent = b.porque;
+      dd.appendChild(val);
+      dd.appendChild(por);
+      fila.appendChild(dt);
+      fila.appendChild(dd);
+      base.appendChild(fila);
+    });
+
+    $("cond-vigencia").textContent =
+      "Este estimado tiene una vigencia de " + d.vigenciaDias + " días naturales.";
+
+    $("provisional").hidden = !d.provisional;
+
+    $("pie").innerHTML = "";
+    [e.nombre, e.sitio, e.telefonos.join(" / "), "WhatsApp " + e.whatsapp].forEach(function (t) {
+      var s = document.createElement("span");
+      s.textContent = t;
+      $("pie").appendChild(s);
+    });
+
+    $("cargando").hidden = true;
+    $("hoja").hidden = false;
+    $("acciones").hidden = false;
+
+    $("btn-wa").href = "https://wa.me/506" + e.whatsapp.replace(/\D/g, "") +
+      "?text=" + encodeURIComponent(
+        "Hola, le comparto mi cotización " + d.numero + " (" + rango + "): " + location.href);
+  }
+
+  $("btn-imprimir").addEventListener("click", function () { window.print(); });
+
+  $("btn-copiar").addEventListener("click", function () {
+    var decir = function (t) {
+      $("aviso-accion").textContent = t;
+      setTimeout(function () { $("aviso-accion").textContent = ""; }, 3000);
+    };
+    // clipboard.writeText no existe fuera de HTTPS ni en navegadores
+    // viejos, y ahí es mejor decirlo que fallar en silencio.
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(location.href)
+        .then(function () { decir("Enlace copiado."); })
+        .catch(function () { decir("No se pudo copiar. Copie la dirección de la barra."); });
+    } else {
+      decir("Copie la dirección de la barra del navegador.");
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

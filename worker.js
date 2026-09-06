@@ -516,6 +516,37 @@ function calcularCotizacion(entrada) {
   };
 }
 
+/* Lo que va impreso en toda cotización. Está acá y no en el HTML del
+   documento para que un cambio de teléfono se haga en un solo lugar. */
+const EMPRESA = {
+  nombre: "Sanitarios Ticos",
+  razonSocial: "Grupo Ticos Sanitarios S.A.",
+  cedula: null,           // ⚠ PENDIENTE: cédula jurídica del propietario
+  telefonos: ["2440-1110", "2265-4150"],
+  whatsapp: "8341-7547",
+  correo: "info@sanitariosticos.com",
+  sitio: "sanitariosticos.com",
+  sedes: "Alajuela · Heredia · San José"
+};
+
+/* Qué mueve cada respuesta. Va debajo del dato en el documento, para que
+   el cliente entienda de dónde sale el rango en vez de tener que creerlo. */
+const PORQUE = {
+  perfil: "Estima el volumen del tanque",
+  ultimo: "Entre más tiempo pasa, más lodo hay que sacar",
+  acceso: "Metros de manguera desde donde para el camión",
+  zona:   "Distancia de la ruta"
+};
+
+/* Llave aleatoria del documento. Sin esto, el número correlativo sería
+   suficiente para que cualquiera fuera probando COT-2026-0001, 0002… y
+   leyera el nombre y el teléfono de otras personas. */
+function nuevaLlave() {
+  const b = new Uint8Array(18);
+  crypto.getRandomValues(b);
+  return btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
 /* Número correlativo a partir del id que devuelve D1: COT-2026-0007. */
 function numeroCotizacion(id) {
   return "COT-" + new Date().getFullYear() + "-" + String(id).padStart(4, "0");
@@ -592,15 +623,17 @@ async function cotizar(request, env, ctx) {
   const origen = cuerpo.origen === "panel" ? "panel" : "beto";
 
   let numero = null;
+  let enlace = null;
+  const llave = nuevaLlave();
   try {
     const res = await env.DB.prepare(
       `INSERT INTO cotizaciones
          (servicio, perfil, ultimo, acceso, zona, monto_min, monto_max,
-          provisional, origen, nombre, telefono)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`
+          provisional, origen, nombre, telefono, llave)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)`
     ).bind(
       entrada.servicio, entrada.perfil, entrada.ultimo, entrada.acceso, entrada.zona,
-      calculo.min, calculo.max, calculo.provisional ? 1 : 0, origen, nombre, telefono
+      calculo.min, calculo.max, calculo.provisional ? 1 : 0, origen, nombre, telefono, llave
     ).run();
 
     const id = res.meta && res.meta.last_row_id;
@@ -608,6 +641,10 @@ async function cotizar(request, env, ctx) {
       numero = numeroCotizacion(id);
       await env.DB.prepare(`UPDATE cotizaciones SET numero = ?1 WHERE id = ?2`)
         .bind(numero, id).run();
+      // La dirección del documento: sirve de PDF, de imagen y de enlace
+      // para pegar en WhatsApp, que es la que no se pierde.
+      enlace = new URL(request.url).origin +
+        "/cotizacion?n=" + encodeURIComponent(numero) + "&k=" + encodeURIComponent(llave);
     }
   } catch (e) {
     // Que falle el guardado no debe dejar al cliente sin su número:
@@ -615,7 +652,7 @@ async function cotizar(request, env, ctx) {
     console.error("Error al guardar la cotización:", e);
   }
 
-  const salida = Object.assign({ ok: true, numero: numero }, calculo);
+  const salida = Object.assign({ ok: true, numero: numero, enlace: enlace }, calculo);
 
   // El aviso sale en segundo plano, como el del formulario.
   ctx.waitUntil(avisarCotizacion(Object.assign({}, salida, {
@@ -623,6 +660,70 @@ async function cotizar(request, env, ctx) {
   }), env));
 
   return json(salida);
+}
+
+/* Los datos de una cotización ya emitida, para el documento imprimible.
+   Pide número Y llave: el número solo no alcanza, porque es correlativo.
+   La comparación se hace en la consulta, así que una llave equivocada
+   simplemente no devuelve fila. */
+async function verCotizacion(request, env) {
+  const url = new URL(request.url);
+  const numero = texto(url.searchParams.get("n"), 30);
+  const llave = texto(url.searchParams.get("k"), 40);
+  if (!numero || !llave) return json({ ok: false, error: "Faltan datos" }, 400);
+
+  let f;
+  try {
+    f = await env.DB.prepare(
+      `SELECT numero, datetime(creado, '-6 hours') AS creado, servicio, perfil,
+              ultimo, acceso, zona, monto_min, monto_max, provisional, nombre, telefono
+         FROM cotizaciones
+        WHERE numero = ?1 AND llave = ?2`
+    ).bind(numero, llave).first();
+  } catch (e) {
+    console.error("Error al consultar la cotización:", e);
+    return json({ ok: false, error: "No se pudo consultar" }, 500);
+  }
+
+  // Mismo mensaje para "no existe" y "la llave está mal": decir cuál de
+  // las dos es le confirmaría a alguien que ese número sí existe.
+  if (!f) return json({ ok: false, error: "Esa cotización no existe o el enlace está incompleto" }, 404);
+
+  const emitida = f.creado ? f.creado.slice(0, 10) : null;
+  const vence = emitida ? sumarDias(emitida, TARIFAS.vigenciaDias) : null;
+
+  return json({
+    ok: true,
+    empresa: EMPRESA,
+    numero: f.numero,
+    emitida: emitida,
+    vence: vence,
+    vigenciaDias: TARIFAS.vigenciaDias,
+    servicio: etiqueta(f.servicio, null, "servicio"),
+    min: f.monto_min,
+    max: f.monto_max,
+    minTexto: colones(f.monto_min),
+    maxTexto: colones(f.monto_max),
+    provisional: !!f.provisional,
+    ivaIncluido: TARIFAS.iva.incluido,
+    cliente: { nombre: f.nombre || null, telefono: f.telefono || null },
+    // Las cuatro respuestas con las que se calculó, cada una con lo que
+    // mueve. Es el reemplazo honesto de las líneas de una factura: no
+    // tenemos artículos, tenemos motivos.
+    base: [
+      { campo: "Propiedad",       valor: etiqueta(f.servicio, f.perfil, "perfil"), porque: PORQUE.perfil },
+      { campo: "Último servicio", valor: etiqueta(f.servicio, f.ultimo, "ultimo"), porque: PORQUE.ultimo },
+      { campo: "Acceso",          valor: etiqueta(f.servicio, f.acceso, "acceso"), porque: PORQUE.acceso },
+      { campo: "Zona",            valor: etiqueta(null, f.zona, "zona"),           porque: PORQUE.zona }
+    ]
+  });
+}
+
+/* Suma días a una fecha "AAAA-MM-DD" sin arrastrar la hora local. */
+function sumarDias(iso, dias) {
+  const d = new Date(iso + "T12:00:00Z");
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
 }
 
 /* Las opciones que muestra el chat. Salen de la misma tabla que el
@@ -817,6 +918,11 @@ export default {
     // cobrar.
     if (url.pathname === "/api/cotizar/opciones" && request.method === "GET") {
       return opcionesCotizacion();
+    }
+    // El documento imprimible pide sus datos acá. No lleva clave de
+    // panel: lo abre el cliente, y lo que lo protege es la llave.
+    if (url.pathname === "/api/cotizacion" && request.method === "GET") {
+      return verCotizacion(request, env);
     }
     if (url.pathname === "/api/cotizar" && request.method === "POST") {
       return cotizar(request, env, ctx);

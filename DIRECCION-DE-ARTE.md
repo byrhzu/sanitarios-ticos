@@ -314,3 +314,134 @@ de chat, que es una interfaz compacta y no una página.
 
 Con esto el catálogo de tics queda **todo ausente salvo el 5**, que está justificado
 arriba como decisión del cliente.
+
+---
+
+## 12. El documento de cotización
+
+Pendiente del visto bueno de Byron. Nada de esto está maquetado todavía.
+
+### 12.1 Referencias leídas
+
+**Referencia A — plantilla "Borcelle" (Canva), factura en español**
+
+A4 vertical sobre blanco. Dos olas azules degradadas, arriba y abajo, que se
+comen cerca del 28 % del papel. Logo circular y marca en versalitas espaciadas,
+arriba a la derecha. Debajo, dos bloques de datos enfrentados: *Datos del
+cliente* alineado a la izquierda, *Datos de la empresa* alineado a la derecha,
+cada línea etiquetada (`Nombre:`, `Dirección:`, `Mail:`, `Teléfono:`). Fecha en
+negrita sobre la tabla. Encabezado de tabla en azul marino con las celdas
+separadas por huecos blancos. Filas separadas por filetes negros finos, sin
+zebra. Abajo de la tabla, dos columnas: condiciones de pago y nota a la
+izquierda; escalera Subtotal / IVA / IRPF / **Total** a la derecha. Firma con
+línea, a la derecha. Sans geométrica con letter-spacing generoso en el cuerpo.
+
+**Referencia B — plantilla "Saldo Apps", factura**
+
+A4 sobre blanco puro, sin ornamento. Logo azul brillante a la izquierda, título
+en negrita a la derecha. Metadatos a la derecha, en pares etiqueta/valor de
+tipografía diminuta y gris. Tres bloques de direcciones (*De*, *Cobrar a*,
+*Envíe a*) con el nombre en negrita y el resto en gris pequeño. Barra de
+encabezado de tabla azul continua, con las etiquetas en mayúsculas de unos 7 px
+y mucho letter-spacing. Filas con zebra azulada muy tenue. Dentro de la celda de
+descripción hay **dos niveles**: nombre en negro y párrafo explicativo en gris
+más pequeño. Números alineados a la derecha. Escalera de totales con la última
+cifra sobre un fondo gris azulado. Firma manuscrita en azul.
+
+### 12.2 Qué tomo y qué no
+
+| De | Tomo | Porque para este negocio |
+|---|---|---|
+| A | Los dos bloques de datos enfrentados, cliente y empresa | Es la convención del documento comercial en español. El dueño la reconoce sin que nadie se la explique. |
+| A | El pie partido: condiciones a la izquierda, montos a la derecha | Separa lo que se lee una vez de lo que se busca con el dedo. |
+| A | La firma con línea | Una cotización de servicio en Costa Rica se firma. Sin eso no se ve formal. |
+| B | Etiquetas diminutas en mayúsculas sobre valores grandes | Es lo que hace que un documento se vea *de sistema* y no *de plantilla*. Es también el contraste de anchos que ya usa el sitio. |
+| B | Dos niveles dentro de una celda: dato arriba, explicación gris abajo | Calza exacto con nuestro problema: hay que decir **de qué depende** el precio, no sólo cuánto es. |
+| B | Números alineados a la derecha, `tabular-nums` | Sin esto, ₡96.000 y ₡135.000 no se comparan de un vistazo. |
+
+| De | No tomo | Porque |
+|---|---|---|
+| A | Las olas azules degradadas | Es la firma de la plantilla de Canva, no de la empresa. Se comen un cuarto del papel, imprimen sucio y gastan tinta. Quien haya visto otra factura hecha en Canva reconoce la ola. |
+| A | El letter-spacing amplio en el cuerpo | Estorba para leer cifras, que es el 80 % de para qué se abre este papel. |
+| A | El encabezado de tabla partido en celdas con huecos | Ruido decorativo; una barra continua dice lo mismo. |
+| B | El azul brillante | No es nuestra marca. Va el naranja del logo, y con la misma tacañería que en el sitio. |
+| B | La zebra | Con cinco filas no aporta nada. |
+
+### 12.3 El problema que ninguna referencia resuelve
+
+Las dos son **facturas**: concepto × cantidad × precio = total. Nuestra
+cotización no es eso. Es **un rango** — ₡96.000 a ₡135.000 — más el porqué de ese
+rango.
+
+Copiar la tabla de factura línea a línea sería fingir una precisión que no
+tenemos, y eso se paga después: el cliente lee ₡96.000 como precio cerrado, llega
+el camión, cobra ₡128.000 y la empresa queda de mentirosa.
+
+Decisiones que salen de ahí:
+
+- **No hay columnas de cantidad ni de precio unitario.** No existen.
+- **La tabla lista las respuestas que dio el cliente**, no artículos: tipo de
+  propiedad, hace cuánto se limpió, acceso del camión, zona. Cada una con su
+  explicación gris debajo, al estilo de la referencia B.
+- **La cifra grande del documento es el rango**, no un total. Va sola, sin nada
+  compitiendo a la par.
+- **Debajo del rango, en el mismo bloque, la frase que lo acota**: el precio en
+  firme se confirma antes de salir, gratis y sin compromiso.
+- **Vigencia visible** (15 días), porque un rango sin fecha de caducidad es una
+  promesa abierta.
+
+### 12.4 Sistema visual
+
+Todo sale de las secciones 4 y 5 de este documento; no se inventa nada nuevo.
+
+| Elemento | Decisión | Origen |
+|---|---|---|
+| Papel | Blanco `#ffffff`, no el papel cálido del sitio | Se imprime y se manda por WhatsApp. El papel cálido en una impresora se ve sucio. |
+| Banda de identidad | Una franja naranja sólida de 6 mm arriba, a sangre | Reemplaza la ola de la referencia A: mismo trabajo (identificar el documento de un vistazo), un solo color plano, sin degradado. Es el naranja del costado del camión. |
+| Titular `COTIZACIÓN` | Archivo 800, `font-stretch` 68 %, versalitas | Igual que el `h1` del sitio (§4). Es el rótulo del camión. |
+| Etiquetas | Archivo 500, 100 %, mayúsculas, 8 pt, `letter-spacing .14em` | De la referencia B. |
+| Cifra del rango | Archivo 800, 68 %, ~32 pt | Único elemento grande del documento aparte del titular. |
+| Cuerpo | Archivo 400, 100 %, 9.5 pt | §4. |
+| Naranja | Franja superior, número de cotización, filete bajo el rango | ~3 % de superficie, igual que en el sitio (§5). |
+| Filetes | `#e0dbd4`, 0.5 pt | La regla de "cero líneas divisorias" (§7) **no aplica acá** y queda declarado como excepción: en un documento impreso de una página no hay franjas alternas que hagan el trabajo, y una tabla de datos sin filetes se lee mal en papel. Es la referencia A justificándolo. |
+| Formato | A4 vertical, márgenes 16 mm | Es el papel que hay en cualquier oficina de Costa Rica. |
+
+### 12.5 Datos que van en el documento
+
+**De la empresa** (fijos, en el código): nombre legal Grupo Ticos Sanitarios
+S.A., cédula jurídica *(falta)*, teléfonos 2440-1110 / 2265-4150, WhatsApp
+8341-7547, correo info@sanitariosticos.com, sitio, sedes.
+
+**Del cliente** (de lo que él mismo dio): nombre, teléfono, zona. Nada más — no
+se le pide dirección exacta ni correo para poder emitir la cotización, porque
+cada campo obligatorio de más es gente que abandona.
+
+**De la cotización** (calculados): número `COT-2026-0000`, fecha de emisión,
+fecha de vencimiento, servicio, las cuatro respuestas con su explicación, el
+rango, y el sello de tarifas provisionales mientras lo sean.
+
+### 12.6 Cómo se genera
+
+Una página propia, `cotizacion.html`, que se abre con la cotización ya cargada y
+está hecha para imprimirse. De ahí salen las tres cosas que se pidieron:
+
+- **PDF** — «Imprimir → Guardar como PDF» en cualquier navegador o teléfono.
+- **Imagen de alta calidad** — captura de la misma página.
+- **Enlace** — la dirección se puede pegar en WhatsApp, y el cliente la abre sin
+  instalar nada. Esto es además lo que después va a permitir unificar los
+  canales: la cotización deja de ser un archivo suelto y pasa a ser una
+  dirección única con dueño.
+
+**Riesgo a resolver antes de maquetar:** los números son correlativos
+(`COT-2026-0007`), así que quien tenga uno puede adivinar los demás y leer
+nombres y teléfonos de otras personas. La dirección tiene que llevar además una
+llave aleatoria — `/cotizacion?n=COT-2026-0007&k=<24 caracteres>` — guardada en
+la fila. Sin la llave, no se muestra nada.
+
+### 12.7 Prueba del logo
+
+Si a este documento se le cambia el logo por el de una veterinaria, ¿sigue
+sirviendo? Sí en la estructura — cualquier cotización de servicio se ve así — y
+**no** en el contenido: la tabla de "de qué depende el precio" con propiedad,
+último servicio, acceso del camión y zona es de este oficio y de ningún otro.
+Ahí es donde el documento es de Sanitarios Ticos y no de nadie.

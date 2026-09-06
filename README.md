@@ -222,6 +222,33 @@ que después se sabe cuáles cotizaciones no hay que tomar en serio.
   la cotización con su número correlativo (`COT-2026-0001`) y manda el reporte
   por correo a `CORREO_AVISO`.
 
+### El documento de cotización
+
+Cada cotización emitida tiene su propia dirección:
+
+```
+/cotizacion?n=COT-2026-0007&k=<llave>
+```
+
+Esa página (`cotizacion.html`) es el documento formal. De ahí salen las tres
+formas de entregarlo:
+
+- **PDF** — «Imprimir → Guardar como PDF», desde cualquier navegador o teléfono.
+- **Imagen** — una captura de la misma página.
+- **Enlace** — se pega en WhatsApp y el cliente lo abre sin instalar nada.
+
+El diseño está especificado en `DIRECCION-DE-ARTE.md` §12, con las referencias
+que se usaron y qué se tomó de cada una.
+
+**La llave no es decorativa.** El número es correlativo, así que sin ella
+cualquiera podría ir probando `COT-2026-0001`, `0002`… y leer el nombre y el
+teléfono de otras personas. La columna se agrega con
+`tools/agregar-llave-cotizaciones.sql`, que se pega una vez en la Console de D1.
+
+Falta la **cédula jurídica**: mientras no esté, el documento lo dice en el
+bloque de la empresa, en naranja. Es a propósito — un documento formal sin
+cédula tiene que verse incompleto, no verse bien.
+
 ## Asistente de preguntas
 
 Pensado para ayudar a que la visita se convierta en cliente sin reemplazar
