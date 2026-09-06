@@ -184,7 +184,8 @@ const TABLAS_PANEL = {
   cotizaciones: {
     columnas: `id, numero, datetime(creado, '-6 hours') AS creado, servicio, perfil,
                ultimo, acceso, zona, monto_min, monto_max, provisional,
-               origen, nombre, telefono, cedula, correo, provincia, canton, distrito`,
+               origen, nombre, telefono, cedula, correo, provincia, canton, distrito,
+               llave`,
     csv: {
       archivo: "cotizaciones",
       encabezado: ["Número", "Fecha (Costa Rica)", "Servicio", "Mínimo", "Máximo",
@@ -203,6 +204,12 @@ const TABLAS_PANEL = {
       ]
     },
     vista: {
+      // La primera celda se vuelve enlace al documento. La llave viaja
+      // en la dirección, así que sólo la ve quien ya entró al panel.
+      enlace: (f, origen) => (f.numero && f.llave)
+        ? origen + "/cotizacion?n=" + encodeURIComponent(f.numero) +
+          "&k=" + encodeURIComponent(f.llave)
+        : null,
       encabezado: ["Número", "Fecha", "Rango", "Cliente", "Servicio", "Propiedad",
                    "Último servicio", "Acceso", "Zona", "Origen"],
       ancha: 5,
@@ -280,12 +287,16 @@ async function listaPanel(request, env) {
       .all();
 
     const vista = TABLAS_PANEL[tabla].vista;
+    const origen = url.origin;
     return json({
       ok: true,
       tabla: tabla,
       encabezado: vista.encabezado,
       ancha: vista.ancha,
       filas: results.map(vista.fila),
+      // Paralelo a `filas`: la dirección del documento de cada una, o
+      // null. Se manda aparte para no meter etiquetas HTML en los datos.
+      enlaces: vista.enlace ? results.map((f) => vista.enlace(f, origen)) : null,
       // Un aviso arriba de la tabla vale más que una marca en cada
       // fila: mientras las tarifas sean las provisionales, lo son todas.
       hayProvisionales: results.some((f) => f.provisional),

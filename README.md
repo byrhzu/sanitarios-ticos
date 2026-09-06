@@ -107,9 +107,11 @@ En `/panel` (archivo `panel.html`) hay una página protegida con contraseña,
 con dos pestañas:
 
 - **Solicitudes** — lo que la gente manda por el formulario del sitio.
-- **Cotizaciones** — cada estimado que emitió Beto, con el rango de precio y
+- **Cotizaciones** — cada estimado emitido, con el rango de precio y
   las respuestas con que se calculó. Mientras las tarifas sean las
-  provisionales, aparece un aviso arriba de la tabla.
+  provisionales, aparece un aviso arriba de la tabla. El número de cotización
+  es un enlace al documento imprimible, que es el camino para reenviarle a
+  alguien su cotización sin volver a emitirla.
 
 Las dos comparten el filtro por rango de fechas, la paginación (50 por
 página) y el botón de descargar CSV, que se lleva la pestaña que se esté

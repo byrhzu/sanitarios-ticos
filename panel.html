@@ -52,6 +52,13 @@
   table.solicitudes td.detalle { white-space: normal; min-width: 16rem; color: var(--ink-2); }
   table.solicitudes tr:last-child td { border-bottom: 0; }
 
+  table.solicitudes a.doc {
+    color: var(--orange-dk);
+    border-bottom: 1px solid var(--orange-line);
+    padding-bottom: 1px;
+  }
+  table.solicitudes a.doc:hover { border-bottom-color: var(--orange); }
+
   .estado-panel { font-size: .9rem; color: var(--muted); margin: 1rem 0; }
   .estado-panel.is-error { color: #c0392b; }
 
@@ -204,12 +211,21 @@
       return;
     }
 
-    cuerpo.innerHTML = d.filas.map(function (fila) {
+    cuerpo.innerHTML = d.filas.map(function (fila, n) {
+      var enlace = d.enlaces && d.enlaces[n];
       return "<tr>" + fila.map(function (celda, i) {
         // La columna "ancha" (el detalle, el tipo de propiedad) es la
         // única que puede partirse en varias líneas.
         var cls = i === d.ancha ? ' class="detalle"' : "";
-        return "<td" + cls + ">" + escHtml(celda) + "</td>";
+        var texto = escHtml(celda);
+        // La primera celda abre el documento, cuando lo hay. Es el
+        // camino para reenviarle a alguien su cotización sin tener que
+        // volver a emitirla.
+        if (i === 0 && enlace) {
+          texto = '<a class="doc" href="' + escHtml(enlace) + '" target="_blank" rel="noopener">' +
+                  texto + "</a>";
+        }
+        return "<td" + cls + ">" + texto + "</td>";
       }).join("") + "</tr>";
     }).join("");
   }
