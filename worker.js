@@ -1,3 +1,5 @@
+import { GEOGRAFIA } from "./lib/geografia-cr.js";
+
 /* =============================================================
    SANITARIOS TICOS — worker.js
    Este es el "fondo" del sitio: un programa que corre en los
@@ -71,8 +73,8 @@ async function guardarSolicitud(request, env, ctx) {
   if (!datos.nombre || !datos.telefono || !datos.servicio || !datos.zona) {
     return json({ ok: false, error: "Faltan datos obligatorios" }, 400);
   }
-  if (provincia && !cantonValido(provincia, canton)) {
-    return json({ ok: false, error: "Esa provincia y ese cantón no coinciden" }, 400);
+  if (provincia && !direccionValida(provincia, canton, distrito)) {
+    return json({ ok: false, error: "Esa dirección no existe en la lista de Costa Rica" }, 400);
   }
 
   try {
@@ -396,7 +398,7 @@ const TARIFAS = {
 
   vigenciaDias: 15,
 
-  // Recargo por salir del Valle Central. El camión igual sale; lo que
+  // Recargo por salir del GAM. El camión igual sale; lo que
   // cambia es el tiempo de ruta.
   zona: { valle: 1, resto: 1.25 },
 
@@ -491,7 +493,7 @@ function colones(n) {
    las cotizaciones viejas se leen con la redacción nueva en vez de
    quedar congeladas con la vieja. Si el código ya no existe en la
    tabla, se muestra tal cual en vez de un vacío — así se nota. */
-const ZONAS = { valle: "Valle Central", resto: "Fuera del Valle Central" };
+const ZONAS = { valle: "Dentro del GAM y alrededores", resto: "Fuera del GAM" };
 
 function etiqueta(servicio, codigo, campo) {
   if (campo === "zona") return ZONAS[codigo] || codigo || "";
@@ -534,7 +536,7 @@ function calcularCotizacion(entrada) {
   ];
   if (factorZona !== 1) {
     desglose.push({
-      concepto: "Fuera del Valle Central (ruta más larga)",
+      concepto: "Fuera del GAM (ruta más larga)",
       monto: null,
       factor: factorZona
     });
@@ -556,60 +558,44 @@ function calcularCotizacion(entrada) {
    División territorial de Costa Rica
    =============================================================
 
-   Provincia y cantón salen de esta lista cerrada. El **distrito va
-   libre**, a propósito: son cerca de 490 y escribirlos de memoria
-   garantiza errores en un documento formal. Cuando el propietario
-   consiga la lista oficial del IFAM, se cambia el campo por una
-   selección más y no hay que tocar nada más.
+   La lista completa vive en lib/geografia-cr.js, que salió del archivo
+   del propietario. Acá sólo está lo que el negocio hace con ella:
+   validar que la dirección exista de verdad y sacar el factor de zona.
 
-   Sirve para dos cosas a la vez: llenar la dirección de la cotización,
-   y sacar solo el factor de zona — antes había que preguntarlo aparte,
-   y era una pregunta que la persona ya había contestado. */
-const CANTONES = {
-  "San José": ["San José", "Escazú", "Desamparados", "Puriscal", "Tarrazú", "Aserrí",
-    "Mora", "Goicoechea", "Santa Ana", "Alajuelita", "Vázquez de Coronado", "Acosta",
-    "Tibás", "Moravia", "Montes de Oca", "Turrubares", "Dota", "Curridabat",
-    "Pérez Zeledón", "León Cortés Castro"],
-  "Alajuela": ["Alajuela", "San Ramón", "Grecia", "San Mateo", "Atenas", "Naranjo",
-    "Palmares", "Poás", "Orotina", "San Carlos", "Zarcero", "Sarchí", "Upala",
-    "Los Chiles", "Guatuso", "Río Cuarto"],
-  "Cartago": ["Cartago", "Paraíso", "La Unión", "Jiménez", "Turrialba", "Alvarado",
-    "Oreamuno", "El Guarco"],
-  "Heredia": ["Heredia", "Barva", "Santo Domingo", "Santa Bárbara", "San Rafael",
-    "San Isidro", "Belén", "Flores", "San Pablo", "Sarapiquí"],
-  "Guanacaste": ["Liberia", "Nicoya", "Santa Cruz", "Bagaces", "Carrillo", "Cañas",
-    "Abangares", "Tilarán", "Nandayure", "La Cruz", "Hojancha"],
-  "Puntarenas": ["Puntarenas", "Esparza", "Buenos Aires", "Montes de Oro", "Osa",
-    "Quepos", "Golfito", "Coto Brus", "Parrita", "Corredores", "Garabito",
-    "Monteverde", "Puerto Jiménez"],
-  "Limón": ["Limón", "Pococí", "Siquirres", "Talamanca", "Matina", "Guácimo"]
-};
+   Antes la zona era una pregunta aparte ("¿dentro o fuera del GAM?") y
+   el distrito se escribía a mano. Las dos cosas producían basura: la
+   misma zona escrita de cinco formas distintas, y un cobro de ruta que
+   dependía de que la persona supiera clasificarse sola. */
 
-/* ⚠ PROVISIONAL, como los precios. Cantones de las cuatro provincias
-   centrales que igual quedan lejos del Valle: el camión hace una ruta
-   larga y se cobra como "resto". Es una clasificación hecha a ojo de
-   mapa; el propietario, que conoce las rutas, la va a querer corregir. */
-const LEJOS_DEL_VALLE = new Set([
-  "Pérez Zeledón", "Dota", "Tarrazú", "León Cortés Castro", "Turrubares", "Puriscal",
-  "San Carlos", "Upala", "Los Chiles", "Guatuso", "Río Cuarto",
-  "Turrialba", "Jiménez",
-  "Sarapiquí"
-]);
+/* Qué se cobra como ruta larga. Lo definió el propietario: fuera del
+   GAM son estas tres provincias completas, y las otras cuatro se
+   consideran alcanzables. Es más grueso que ir cantón por cantón —un
+   viaje a Pérez Zeledón no cuesta lo mismo que uno a Escazú, y los dos
+   caen en "valle"— pero es la regla con que la empresa trabaja hoy, y
+   una regla real y gruesa vale más que una fina que yo me inventé.
+   Va a afinarse por ubicación más adelante. */
+const PROVINCIAS_LEJANAS = new Set(["Guanacaste", "Puntarenas", "Limón"]);
 
-const PROVINCIAS_CENTRALES = new Set(["San José", "Alajuela", "Cartago", "Heredia"]);
-
-/* El factor de zona sale del cantón, no de una pregunta aparte. */
-function zonaDeCanton(provincia, canton) {
-  if (!PROVINCIAS_CENTRALES.has(provincia)) return "resto";
-  return LEJOS_DEL_VALLE.has(canton) ? "resto" : "valle";
+/* El factor de zona sale de la dirección, no de una pregunta aparte:
+   pedirle a alguien que se clasifique solo entre "dentro" y "fuera"
+   del GAM es pedirle que adivine un cobro que no conoce. */
+function zonaDeProvincia(provincia) {
+  return PROVINCIAS_LEJANAS.has(provincia) ? "resto" : "valle";
 }
 
-function cantonValido(provincia, canton) {
-  return !!(CANTONES[provincia] && CANTONES[provincia].indexOf(canton) !== -1);
+/* La dirección se valida entera. El distrito es opcional —hay gente que
+   no sabe en cuál está— pero si viene, tiene que ser uno de los que le
+   corresponden a ese cantón, no cualquier texto. */
+function direccionValida(provincia, canton, distrito) {
+  const cantones = GEOGRAFIA[provincia];
+  if (!cantones) return false;
+  const distritos = cantones[canton];
+  if (!distritos) return false;
+  return !distrito || distritos.indexOf(distrito) !== -1;
 }
 
-/* "Belén, Heredia" o "San Antonio, Belén, Heredia" — de lo fino a lo
-   ancho, como se escribe una dirección en Costa Rica. */
+/* "San Antonio, Belén, Heredia" — de lo fino a lo ancho, como se
+   escribe una dirección en Costa Rica. */
 function zonaTexto(provincia, canton, distrito) {
   return [distrito, canton, provincia].filter(Boolean).join(", ") || null;
 }
@@ -659,7 +645,7 @@ async function avisarCotizacion(datos, env) {
     ["Rango", colones(datos.min) + " – " + colones(datos.max)],
     ["Nombre", datos.nombre || "—"],
     ["Teléfono", datos.telefono || "—"],
-    ["Zona", datos.zona === "resto" ? "Fuera del Valle Central" : "Valle Central"],
+    ["Zona", ZONAS[datos.zona] || datos.zona],
     ["Origen", datos.origen === "panel" ? "Panel interno" : "Chat de Beto"]
   ].map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:#7d736a;">${k}</td><td style="padding:4px 0;"><b>${escaparHtml(String(v))}</b></td></tr>`).join("");
 
@@ -707,8 +693,8 @@ async function cotizar(request, env, ctx) {
   const canton = texto(cuerpo.canton, 60);
   const distrito = texto(cuerpo.distrito, 80);
 
-  if (!cantonValido(provincia, canton)) {
-    return json({ ok: false, error: "Esa provincia y ese cantón no coinciden" }, 400);
+  if (!direccionValida(provincia, canton, distrito)) {
+    return json({ ok: false, error: "Esa dirección no existe en la lista de Costa Rica" }, 400);
   }
 
   const entrada = {
@@ -717,7 +703,7 @@ async function cotizar(request, env, ctx) {
     ultimo: texto(cuerpo.ultimo, 40),
     acceso: texto(cuerpo.acceso, 40),
     // La zona no se pregunta: sale del cantón, que la persona ya dio.
-    zona: zonaDeCanton(provincia, canton)
+    zona: zonaDeProvincia(provincia)
   };
 
   const calculo = calcularCotizacion(entrada);
@@ -861,9 +847,10 @@ function opcionesCotizacion() {
     ok: true,
     provisional: TARIFAS.provisional,
     servicios: servicios,
-    // La zona ya no es una pregunta: se deduce del cantón. Lo que viaja
-    // es la lista, para que el chat y el formulario la usen igual.
-    cantones: CANTONES
+    // La zona ya no es una pregunta: se deduce del cantón. La lista de
+    // lugares viaja aparte, en /api/geografia, porque es grande y no
+    // cambia nunca — así el navegador la guarda y no la vuelve a pedir.
+    geografia: "/api/geografia"
   });
 }
 
@@ -911,7 +898,7 @@ REGLAS QUE DEBES SEGUIR SIEMPRE:
 - Cuando alguien pida una cotización, pregunte por precios, o pregunte cuánto sale algo, usted NO contesta con cifras: arranca el cotizador. Para arrancarlo, escriba al final de su respuesta, en una línea aparte, exactamente esto: [[COTIZAR]]
 - Esa marca no es visible para la persona; lo que ella ve es sólo su respuesta. Antes de la marca, explique brevemente y con naturalidad qué va a pasar: que necesita unos datos para armarle la cotización formal, que son preguntas cortas, y que al final le queda el documento con su número. Dos o tres frases, no más. Ejemplo: "Con gusto le armo la cotización. Ocupo unos datos suyos y de la propiedad para dejarla formal; son preguntas cortitas y al final le queda el documento con su número. Vamos: [[COTIZAR]]"
 - Use la marca [[COTIZAR]] SÓLO cuando la persona quiere cotizar. Si nada más está preguntando qué servicios hay o si llegan a su zona, conteste normal, sin la marca.
-- El cotizador NO le pide el tamaño del tanque (casi nadie lo sabe): pregunta el tipo de propiedad, hace cuánto se limpió, qué tan cerca llega el camión, la provincia, el cantón y el distrito, y después el nombre, la cédula, el teléfono y el correo para emitir el documento. Si alguien se preocupa por no saber el tamaño, tranquilícelo con eso. La cédula y el correo se pueden dejar en blanco.
+- El cotizador NO le pide el tamaño del tanque (casi nadie lo sabe): pregunta el tipo de propiedad, hace cuánto se limpió, qué tan cerca llega el camión, y después la provincia, el cantón y el distrito escogiéndolos de una lista, y por último el nombre, la cédula, el teléfono y el correo para emitir el documento. Si alguien se preocupa por no saber el tamaño, tranquilícelo con eso. La cédula y el correo se pueden dejar en blanco.
 - El resultado del cotizador es un rango estimado, no un precio cerrado: el precio en firme lo confirma la empresa antes de salir, siempre gratis y sin compromiso.
 - NUNCA inventes datos que no estén arriba: no inventes certificaciones, promociones, plazos exactos de llegada ni disponibilidad de camiones en tiempo real.
 - Si es una emergencia (derrame, tanque rebalsado ahora mismo), recomiende llamar directo al 2440-1110 en vez de seguir escribiendo.
@@ -1039,6 +1026,19 @@ export default {
     if (url.pathname === "/api/cotizar/opciones" && request.method === "GET") {
       return opcionesCotizacion();
     }
+    /* La lista de provincias, cantones y distritos. No lleva nada
+       privado y no cambia nunca, así que se deja guardar en el
+       navegador por un día: son ~490 distritos y no tiene sentido
+       pedirlos otra vez en cada visita. */
+    if (url.pathname === "/api/geografia" && request.method === "GET") {
+      return new Response(JSON.stringify({ ok: true, geografia: GEOGRAFIA }), {
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "public, max-age=86400"
+        }
+      });
+    }
+
     // El documento imprimible pide sus datos acá. No lleva clave de
     // panel: lo abre el cliente, y lo que lo protege es la llave.
     if (url.pathname === "/api/cotizacion" && request.method === "GET") {

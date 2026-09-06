@@ -262,6 +262,7 @@
       var provincia = form.provincia ? form.provincia.value || "" : "";
       var canton = form.canton ? form.canton.value || "" : "";
       var distrito = form.distrito ? (form.distrito.value || "").trim() : "";
+
       return {
         nombre: (form.nombre.value || "").trim(),
         telefono: (form.telefono.value || "").trim(),
@@ -285,48 +286,60 @@
       };
     }
 
-    /* Provincia y cantón salen de la misma lista que usa el cotizador,
-       para que el formulario nunca ofrezca un cantón que el motor no
-       reconozca. Si la lista no carga, los dos campos pasan a texto
-       libre: es peor un formulario que no se puede enviar. */
+    /* Provincia, cantón y distrito se escogen; no se escriben. Es lo que
+       evita que la misma zona llegue como "Belén", "Belen" y "belen", y
+       que el cantón —que decide el cobro de ruta— sea uno inventado.
+
+       Si la lista no carga, los tres campos pasan a texto libre: un
+       formulario que no se puede enviar es peor que una zona sin
+       validar. */
     function cargarTerritorio() {
-      var selP = form.provincia, selC = form.canton;
-      if (!selP || !selC) return;
+      var selP = form.provincia, selC = form.canton, selD = form.distrito;
+      if (!selP || !selC || !selD) return;
 
       var aTexto = function () {
-        [selP, selC].forEach(function (sel) {
+        var ejemplos = { provincia: "Ej. Heredia", canton: "Ej. Belén", distrito: "Ej. San Antonio" };
+        [selP, selC, selD].forEach(function (sel) {
           var libre = document.createElement("input");
           libre.type = "text";
           libre.name = sel.name;
           libre.id = sel.id;
-          libre.required = sel.required;
-          libre.placeholder = sel === selP ? "Ej. Heredia" : "Ej. Belén";
+          libre.required = sel.name !== "distrito";
+          libre.placeholder = ejemplos[sel.name] || "";
           sel.parentNode.replaceChild(libre, sel);
         });
       };
 
-      fetch("/api/cotizar/opciones")
+      var llenar = function (sel, lista, vacio) {
+        sel.innerHTML = "";
+        var v = document.createElement("option");
+        v.value = "";
+        v.textContent = lista.length ? "Seleccione…" : vacio;
+        sel.appendChild(v);
+        lista.forEach(function (t) {
+          var o = document.createElement("option");
+          o.value = t; o.textContent = t;
+          sel.appendChild(o);
+        });
+        sel.disabled = !lista.length;
+      };
+
+      fetch("/api/geografia")
         .then(function (r) { return r.json(); })
         .then(function (d) {
-          if (!d || !d.ok || !d.cantones) throw new Error("sin territorio");
-          Object.keys(d.cantones).forEach(function (p) {
-            var o = document.createElement("option");
-            o.value = p; o.textContent = p;
-            selP.appendChild(o);
-          });
+          if (!d || !d.ok || !d.geografia) throw new Error("sin geografía");
+          var g = d.geografia;
+
+          llenar(selP, Object.keys(g), "");
+          selP.disabled = false;
+
           selP.addEventListener("change", function () {
-            selC.innerHTML = "";
-            var lista = d.cantones[selP.value] || [];
-            var vacia = document.createElement("option");
-            vacia.value = "";
-            vacia.textContent = lista.length ? "Seleccione…" : "Primero la provincia";
-            selC.appendChild(vacia);
-            lista.forEach(function (c) {
-              var o = document.createElement("option");
-              o.value = c; o.textContent = c;
-              selC.appendChild(o);
-            });
-            selC.disabled = !lista.length;
+            llenar(selC, Object.keys(g[selP.value] || {}), "Primero la provincia");
+            llenar(selD, [], "Primero el cantón");
+          });
+          selC.addEventListener("change", function () {
+            var cantones = g[selP.value] || {};
+            llenar(selD, cantones[selC.value] || [], "Primero el cantón");
           });
         })
         .catch(aTexto);
@@ -335,7 +348,7 @@
 
     function markErrors() {
       var ok = true;
-      ["nombre", "telefono", "servicio", "provincia", "canton"].forEach(function (name) {
+      ["nombre", "telefono", "servicio", "provincia", "canton", "distrito"].forEach(function (name) {
         if (!form[name]) return;
         var input = form[name];
         var field = input.closest(".f");
@@ -679,7 +692,8 @@
        Beto, o el formulario de contacto— y las tres terminan en la
        misma cotización guardada. */
 
-    var opciones = null;      // catálogo que manda el servidor
+    var opciones = null;      // tarifas y preguntas, del servidor
+    var geografia = null;     // provincias, cantones y distritos
     var respuestas = {};      // lo que va contestando la persona
     var pasoActual = 0;
     var cotizando = false;
@@ -695,8 +709,7 @@
       { clave: "acceso",    tipo: "ops",  pregunta: "¿Qué tan cerca puede parquear el camión?" },
       { clave: "provincia", tipo: "ops",  pregunta: "¿En qué provincia queda?" },
       { clave: "canton",    tipo: "ops",  pregunta: "¿Y en qué cantón?" },
-      { clave: "distrito",  tipo: "texto", pregunta: "¿Cuál distrito? Si no está seguro, escriba el que más se acerque.",
-        opcional: true },
+      { clave: "distrito",  tipo: "ops",   pregunta: "¿Y el distrito?" },
       { clave: "nombre",    tipo: "texto", pregunta: "Listo con la dirección. Ahora, ¿a nombre de quién emito la cotización?" },
       { clave: "cedula",    tipo: "texto", pregunta: "¿Su cédula? Va en el documento, como en cualquier cotización formal. Si prefiere no darla, escriba «después».",
         opcional: true },
@@ -714,13 +727,16 @@
           return { id: id, etiqueta: opciones.servicios[id].nombre };
         });
       }
-      if (clave === "provincia") {
-        return Object.keys(opciones.cantones).map(function (p) { return { id: p, etiqueta: p }; });
-      }
-      if (clave === "canton") {
-        return (opciones.cantones[respuestas.provincia] || []).map(function (c) {
-          return { id: c, etiqueta: c };
-        });
+      // La dirección se escoge de la lista oficial, nunca se escribe:
+      // así el cantón que decide el cobro de ruta siempre existe.
+      var comoOpciones = function (lista) {
+        return lista.map(function (t) { return { id: t, etiqueta: t }; });
+      };
+      if (clave === "provincia") return comoOpciones(Object.keys(geografia));
+      if (clave === "canton") return comoOpciones(Object.keys(geografia[respuestas.provincia] || {}));
+      if (clave === "distrito") {
+        var cantones = geografia[respuestas.provincia] || {};
+        return comoOpciones(cantones[respuestas.canton] || []);
       }
       var svc = opciones.servicios[respuestas.servicio];
       return svc ? svc[clave] : [];
@@ -750,7 +766,15 @@
       // Lo que ya se sabe no se vuelve a preguntar. Es lo que permite
       // que el formulario de contacto entregue el nombre, el teléfono y
       // la dirección, y Beto sólo pida lo que falta para el precio.
-      while (pasoActual < PASOS.length && respuestas[PASOS[pasoActual].clave]) pasoActual++;
+      while (pasoActual < PASOS.length && respuestas[PASOS[pasoActual].clave]) {
+        var p = PASOS[pasoActual];
+        // Un dato heredado que no esté en la lista no sirve: mejor
+        // volver a preguntarlo que mandar una dirección que no existe.
+        if (p.tipo === "ops" && !opcionesDelPaso(p.clave).some(function (o) {
+          return o.id === respuestas[p.clave];
+        })) { delete respuestas[p.clave]; break; }
+        pasoActual++;
+      }
       if (pasoActual >= PASOS.length) return confirmar();
 
       var paso = PASOS[pasoActual];
@@ -932,15 +956,21 @@
         );
       }
 
-      if (opciones) return siguientePaso();
+      if (opciones && geografia) return siguientePaso();
 
       var cargando = agregarEscribiendo();
-      fetch("/api/cotizar/opciones")
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
+      // Las tarifas y la lista de lugares viajan por separado: la
+      // segunda no cambia nunca y el navegador la guarda un día.
+      Promise.all([
+        fetch("/api/cotizar/opciones").then(function (r) { return r.json(); }),
+        fetch("/api/geografia").then(function (r) { return r.json(); })
+      ])
+        .then(function (par) {
           cargando.remove();
-          if (!d || !d.ok) throw new Error("sin opciones");
+          var d = par[0], g = par[1];
+          if (!d || !d.ok || !g || !g.ok || !g.geografia) throw new Error("sin opciones");
           opciones = d;
+          geografia = g.geografia;
           siguientePaso();
         })
         .catch(function () {

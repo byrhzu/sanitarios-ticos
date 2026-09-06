@@ -245,11 +245,20 @@ que se usaron y qué se tomó de cada una.
 Los datos del cliente —nombre, cédula, teléfono, correo y la dirección por
 provincia, cantón y distrito— se recogen por cualquiera de las tres puertas
 (el formulario, el botón de Beto o pidiéndoselo a Beto conversando) y las tres
-terminan en la misma cotización guardada. Provincia y cantón salen de una lista
-cerrada; **el distrito va libre** porque son cerca de 490 y escribirlos de
-memoria garantiza errores en un documento formal. La zona de cobro ya no se
-pregunta: sale del cantón (`tools/agregar-datos-cliente.sql` agrega las
-columnas).
+terminan en la misma cotización guardada.
+
+**La dirección se escoge, nunca se escribe.** Las tres listas están encadenadas
+—provincia abre cantón, cantón abre distrito— y salen de `lib/geografia-cr.js`:
+7 provincias, 84 cantones y 487 distritos, del archivo que entregó el
+propietario. El servidor vuelve a validar los tres niveles antes de guardar
+nada, porque una lista en el navegador se puede saltar.
+
+Así no llega la misma zona como "Belén", "Belen" y "belen", y el cantón —que
+decide el cobro de ruta— siempre existe. La zona de cobro ya no se pregunta:
+sale de la provincia. Fuera del GAM son Guanacaste, Puntarenas y Limón; las
+otras cuatro provincias se consideran alcanzables. Es una regla gruesa a
+propósito, y se va a afinar por ubicación más adelante.
+(`tools/agregar-datos-cliente.sql` agrega las columnas.)
 
 **La llave no es decorativa.** El número es correlativo, así que sin ella
 cualquiera podría ir probando `COT-2026-0001`, `0002`… y leer el nombre y el
