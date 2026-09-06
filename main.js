@@ -249,6 +249,61 @@
     return lines.join("\n");
   }
 
+  /* ---------- Formatos costarricenses ----------
+     Mismas reglas que lib/datos-cr.js, que es el que manda: esto sirve
+     para avisar de una vez, sin esperar al servidor. Si algo se cuela,
+     el servidor lo vuelve a revisar y lo rechaza igual.
+
+     Ver ese archivo para el porqué de cada formato. En resumen: los
+     teléfonos son 8 dígitos y empiezan con 2, 4, 6, 7 u 8; la cédula
+     de persona lleva 9 dígitos, la jurídica 10 empezando con 3, y el
+     DIMEX 11 o 12. */
+  var CR = {
+    telefono: function (entrada) {
+      var texto = String(entrada == null ? "" : entrada);
+      var rx = /(?:\+?506[\s.-]*)?(\d[\d\s.-]{6,}\d)/g, m, d;
+      while ((m = rx.exec(texto)) !== null) {
+        d = m[0].replace(/\D/g, "");
+        if (d.length === 11 && d.indexOf("506") === 0) d = d.slice(3);
+        if (d.length === 8 && /^[24-8]/.test(d)) {
+          return { ok: true, valor: d.slice(0, 4) + "-" + d.slice(4) };
+        }
+      }
+      var solo = texto.replace(/\D/g, "");
+      if (!solo) return { ok: false, error: "No encontré un número de teléfono." };
+      if (solo.length < 8) return { ok: false, error: "Los teléfonos de Costa Rica llevan 8 dígitos." };
+      return { ok: false, error: "Ese número no parece de Costa Rica. Son 8 dígitos y empiezan con 2, 4, 6, 7 u 8." };
+    },
+
+    cedula: function (entrada) {
+      var d = String(entrada == null ? "" : entrada).replace(/\D/g, "");
+      if (!d) return { ok: false, error: "No encontré un número de cédula." };
+      if (d.length === 9) return { ok: true, valor: d[0] + "-" + d.slice(1, 5) + "-" + d.slice(5) };
+      if (d.length === 10 && d[0] === "3") return { ok: true, valor: "3-" + d.slice(1, 4) + "-" + d.slice(4) };
+      if (d.length === 10 || d.length === 11 || d.length === 12) return { ok: true, valor: d };
+      return { ok: false, error: d.length < 9
+        ? "Esa cédula queda corta. La de persona lleva 9 dígitos y la jurídica 10."
+        : "Esa cédula queda larga. La de persona lleva 9 dígitos, la jurídica 10 y el DIMEX 11 o 12." };
+    },
+
+    correo: function (entrada) {
+      var m = String(entrada == null ? "" : entrada).trim()
+        .match(/[^\s@,;<>()]+@[^\s@,;<>()]+\.[A-Za-z]{2,}/);
+      if (!m) return { ok: false, error: "Eso no parece un correo. Debería llevar arroba y un punto." };
+      return { ok: true, valor: m[0].toLowerCase().replace(/[.,;]+$/, "") };
+    },
+
+    nombre: function (entrada) {
+      var t = String(entrada == null ? "" : entrada).replace(/\s+/g, " ").trim()
+        .replace(/^(?:soy|me llamo|mi nombre es|es|para|a nombre de)\s+/i, "")
+        .replace(/[.,;:]+$/, "").trim();
+      if (t.length < 2 || !/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/.test(t)) {
+        return { ok: false, error: "No entendí el nombre." };
+      }
+      return { ok: true, valor: t.slice(0, 120) };
+    }
+  };
+
   function initForm() {
     var form = $("[data-form]");
     if (!form) return;
@@ -346,8 +401,12 @@
     }
     cargarTerritorio();
 
+    var errorDeFormato = "";
+
     function markErrors() {
       var ok = true;
+      errorDeFormato = "";
+
       ["nombre", "telefono", "servicio", "provincia", "canton", "distrito"].forEach(function (name) {
         if (!form[name]) return;
         var input = form[name];
@@ -356,6 +415,30 @@
         if (field) field.classList.toggle("is-error", empty);
         if (empty && ok) { input.focus(); ok = false; }
       });
+
+      /* Formato de lo que sí escribieron. Al validar se reescribe el
+         campo con el dato ya en formato: así la persona ve qué se va a
+         guardar antes de mandarlo, en vez de descubrirlo en la
+         cotización. Un campo opcional vacío se salta; uno mal escrito
+         no, porque terminaría impreso. */
+      [["nombre", true], ["telefono", true], ["cedula", false], ["correo", false]]
+        .forEach(function (par) {
+          var campo = form[par[0]];
+          if (!campo) return;
+          var crudo = String(campo.value || "").trim();
+          if (!crudo && !par[1]) return;
+          if (!crudo) return;   // el vacío obligatorio ya se marcó arriba
+
+          var r = CR[par[0]](crudo);
+          var caja = campo.closest(".f");
+          if (r.ok) {
+            campo.value = r.valor;
+            if (caja) caja.classList.remove("is-error");
+          } else {
+            if (caja) caja.classList.add("is-error");
+            if (ok) { campo.focus(); ok = false; errorDeFormato = r.error; }
+          }
+        });
 
       // La casilla de privacidad es obligatoria por ley: sin ella no
       // se guarda ni se abre WhatsApp.
@@ -403,7 +486,8 @@
 
       if (!markErrors()) {
         if (msg) {
-          msg.textContent = "Complete los campos marcados para poder cotizarle.";
+          msg.textContent = errorDeFormato ||
+            "Complete los campos marcados para poder cotizarle.";
           msg.classList.add("is-error");
         }
         return;
@@ -710,12 +794,14 @@
       { clave: "provincia", tipo: "ops",  pregunta: "¿En qué provincia queda?" },
       { clave: "canton",    tipo: "ops",  pregunta: "¿Y en qué cantón?" },
       { clave: "distrito",  tipo: "ops",   pregunta: "¿Y el distrito?" },
-      { clave: "nombre",    tipo: "texto", pregunta: "Listo con la dirección. Ahora, ¿a nombre de quién emito la cotización?" },
-      { clave: "cedula",    tipo: "texto", pregunta: "¿Su cédula? Va en el documento, como en cualquier cotización formal. Si prefiere no darla, escriba «después».",
-        opcional: true },
-      { clave: "telefono",  tipo: "texto", pregunta: "¿A qué número la contactamos?" },
-      { clave: "correo",    tipo: "texto", pregunta: "¿Y su correo? Si no usa, escriba «no tengo».",
-        opcional: true }
+      { clave: "nombre",    tipo: "texto", formato: "nombre",
+        pregunta: "Listo con la dirección. Ahora, ¿a nombre de quién emito la cotización?" },
+      { clave: "cedula",    tipo: "texto", formato: "cedula", opcional: true,
+        pregunta: "¿Su cédula? Va en el documento, como en cualquier cotización formal. Sirve la de persona o la jurídica si es a nombre de una empresa. Si prefiere no darla, escriba «después»." },
+      { clave: "telefono",  tipo: "texto", formato: "telefono",
+        pregunta: "¿A qué número la contactamos?" },
+      { clave: "correo",    tipo: "texto", formato: "correo", opcional: true,
+        pregunta: "¿Y su correo? Si no usa, escriba «no tengo»." }
     ];
 
     // Lo que la persona escribe para decir "ese dato no se lo doy".
@@ -785,8 +871,33 @@
         // lo que hace que esto se sienta una conversación y no un
         // formulario disfrazado de chat.
         input.focus();
-        esperando = function (valor) {
-          if (!paso.opcional || !SIN_DATO.test(valor.trim())) respuestas[paso.clave] = valor.trim();
+        // Nombrada para poder volver a ponerse en espera cuando el dato
+        // viene mal: `arguments.callee` no existe en modo estricto.
+        esperando = function recibir(valor) {
+          valor = valor.trim();
+
+          // "no tengo", "después": el campo opcional se salta.
+          if (paso.opcional && SIN_DATO.test(valor)) {
+            pasoActual++;
+            return siguientePaso();
+          }
+
+          /* La gente contesta con frases —"escríbame al 8888-8888"— y
+             guardar la frase entera la mete en un documento formal. Se
+             saca el dato; si no se puede, Beto lo dice y pregunta otra
+             vez, que es lo que haría alguien al teléfono. */
+          if (paso.formato) {
+            var r = CR[paso.formato](valor);
+            if (!r.ok) {
+              agregarMensaje(r.error + " ¿Me lo repite?", false, true);
+              input.focus();
+              esperando = recibir;
+              return;
+            }
+            valor = r.valor;
+          }
+
+          respuestas[paso.clave] = valor;
           pasoActual++;
           siguientePaso();
         };

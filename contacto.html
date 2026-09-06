@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260905c">
+<link rel="stylesheet" href="styles.css?v=20260905d">
 <script>document.documentElement.classList.add("js");setTimeout(function(){var d=document.documentElement;if(!d.classList.contains("is-ready"))d.classList.add("rv-rescate");},3000);</script>
 <script type="application/ld+json">
 {
@@ -176,7 +176,8 @@
         </div>
         <div class="f">
           <label for="f-tel">Teléfono</label>
-          <input id="f-tel" name="telefono" type="tel" autocomplete="tel" placeholder="8888-8888" required>
+          <input id="f-tel" name="telefono" type="tel" inputmode="tel" autocomplete="tel"
+                 placeholder="8888-8888" maxlength="30" required>
         </div>
         <div class="f">
           <label for="f-servicio">Servicio que necesita</label>
@@ -189,8 +190,9 @@
           </select>
         </div>
         <div class="f">
-          <label for="f-cedula">Cédula <span class="opt">(opcional)</span></label>
-          <input id="f-cedula" name="cedula" type="text" inputmode="numeric" placeholder="1-2345-6789">
+          <label for="f-cedula">Cédula o cédula jurídica <span class="opt">(opcional)</span></label>
+          <input id="f-cedula" name="cedula" type="text" inputmode="numeric"
+                 placeholder="1-2345-6789 o 3-101-123456" maxlength="24">
         </div>
         <div class="f">
           <label for="f-correo">Correo <span class="opt">(opcional)</span></label>
@@ -481,6 +483,6 @@
   <span>WhatsApp</span>
 </a>
 <script defer src="lib/manifest.js"></script>
-<script defer src="main.js?v=20260905c"></script>
+<script defer src="main.js?v=20260905d"></script>
 </body>
 </html>

@@ -1,4 +1,6 @@
 import { GEOGRAFIA } from "./lib/geografia-cr.js";
+import { normalizarTelefono, normalizarCedula, normalizarCorreo, normalizarNombre }
+  from "./lib/datos-cr.js";
 
 /* =============================================================
    SANITARIOS TICOS — worker.js
@@ -53,24 +55,27 @@ async function guardarSolicitud(request, env, ctx) {
   const canton = texto(cuerpo.canton, 60);
   const distrito = texto(cuerpo.distrito, 80);
 
+  const persona = limpiarDatosPersona(cuerpo, ["nombre", "telefono"]);
+  if (persona.error) return json({ ok: false, error: persona.error }, 400);
+
   const datos = {
-    nombre: texto(cuerpo.nombre, 200),
-    telefono: texto(cuerpo.telefono, 60),
+    nombre: persona.datos.nombre,
+    telefono: persona.datos.telefono,
     servicio: texto(cuerpo.servicio, 200),
     // Se sigue guardando `zona` como texto legible, que es lo que el
     // panel viene mostrando desde el principio.
     zona: zonaTexto(provincia, canton, distrito) || texto(cuerpo.zona, 200),
     detalle: texto(cuerpo.detalle, 2000),
     pagina: texto(cuerpo.pagina, 300),
-    cedula: texto(cuerpo.cedula, 40),
-    correo: texto(cuerpo.correo, 200),
+    cedula: persona.datos.cedula,
+    correo: persona.datos.correo,
     provincia: provincia,
     canton: canton,
     distrito: distrito
   };
 
-  // Los mismos cuatro campos que el formulario marca como obligatorios.
-  if (!datos.nombre || !datos.telefono || !datos.servicio || !datos.zona) {
+  // El nombre y el teléfono ya vinieron comprobados de arriba.
+  if (!datos.servicio || !datos.zona) {
     return json({ ok: false, error: "Faltan datos obligatorios" }, 400);
   }
   if (provincia && !direccionValida(provincia, canton, distrito)) {
@@ -600,6 +605,39 @@ function zonaTexto(provincia, canton, distrito) {
   return [distrito, canton, provincia].filter(Boolean).join(", ") || null;
 }
 
+/* Limpia los datos personales de una petición. Devuelve o los datos ya
+   en formato, o el primer error para decírselo a quien escribió.
+
+   `obligatorios` dice cuáles no pueden faltar: el formulario y el
+   cotizador piden cosas distintas, pero el formato es el mismo en los
+   dos. Un campo opcional vacío pasa; uno opcional MAL ESCRITO no —
+   guardar "escríbame al 8888" como cédula es peor que no guardar nada. */
+function limpiarDatosPersona(cuerpo, obligatorios) {
+  const campos = {
+    nombre:   { fn: normalizarNombre,   etiqueta: "el nombre" },
+    telefono: { fn: normalizarTelefono, etiqueta: "el teléfono" },
+    cedula:   { fn: normalizarCedula,   etiqueta: "la cédula" },
+    correo:   { fn: normalizarCorreo,   etiqueta: "el correo" }
+  };
+
+  const salida = {};
+  for (const [clave, campo] of Object.entries(campos)) {
+    const crudo = texto(cuerpo[clave], 300);
+    if (!crudo) {
+      if (obligatorios.indexOf(clave) !== -1) {
+        return { error: "Falta " + campo.etiqueta + "." };
+      }
+      salida[clave] = "";
+      continue;
+    }
+    const r = campo.fn(crudo);
+    if (!r.ok) return { error: r.error };
+    salida[clave] = r.valor;
+    if (clave === "cedula") salida.tipoCedula = r.tipo;
+  }
+  return { datos: salida };
+}
+
 /* Lo que va impreso en toda cotización. Está acá y no en el HTML del
    documento para que un cambio de teléfono se haga en un solo lugar. */
 const EMPRESA = {
@@ -711,10 +749,9 @@ async function cotizar(request, env, ctx) {
     return json({ ok: false, error: "Datos incompletos o no reconocidos" }, 400);
   }
 
-  const nombre = texto(cuerpo.nombre, 200);
-  const telefono = texto(cuerpo.telefono, 60);
-  const cedula = texto(cuerpo.cedula, 40);
-  const correo = texto(cuerpo.correo, 200);
+  const persona = limpiarDatosPersona(cuerpo, ["nombre", "telefono"]);
+  if (persona.error) return json({ ok: false, error: persona.error }, 400);
+  const { nombre, telefono, cedula, correo } = persona.datos;
   const origen = ["panel", "formulario"].indexOf(cuerpo.origen) !== -1 ? cuerpo.origen : "beto";
 
   let numero = null;

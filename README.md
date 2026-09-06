@@ -260,6 +260,37 @@ otras cuatro provincias se consideran alcanzables. Es una regla gruesa a
 propósito, y se va a afinar por ubicación más adelante.
 (`tools/agregar-datos-cliente.sql` agrega las columnas.)
 
+### Formatos: teléfono, cédula y correo
+
+La gente no contesta con el dato pelado. A "¿a qué número la contactamos?"
+responden *"escríbame al 8888-8888"*, y guardar eso tal cual mete la frase
+entera en un documento formal.
+
+`lib/datos-cr.js` saca el dato de la frase, comprueba que tenga sentido y lo
+deja en un solo formato:
+
+| Campo | Qué acepta | Cómo queda |
+|---|---|---|
+| Teléfono | 8 dígitos, con o sin `+506`, dentro de una frase | `8888-8888` |
+| Cédula física | 9 dígitos | `1-2345-6789` |
+| Cédula jurídica | 10 dígitos empezando con 3 | `3-101-123456` |
+| DIMEX | 11 o 12 dígitos | sin guiones |
+| Correo | dentro de una frase | en minúscula |
+| Nombre | quita "soy", "me llamo" | como lo escribió |
+
+Los teléfonos empiezan con 2, 4, 6, 7 u 8 — el 3 no se asigna, así que un
+número que empieza con 3 en esa casilla es casi seguro una cédula jurídica
+puesta donde no va, y se rechaza diciéndolo.
+
+Un campo opcional vacío pasa; uno opcional **mal escrito** no, porque
+terminaría impreso. En el formulario, al validar se reescribe el campo con el
+dato ya en formato, para que la persona vea qué se va a guardar. Beto, cuando
+el dato no cuadra, lo dice y vuelve a preguntar, como haría alguien al
+teléfono.
+
+`main.js` repite estas reglas para avisar de una vez, pero el servidor las
+vuelve a aplicar: una validación en el navegador se puede saltar.
+
 **La llave no es decorativa.** El número es correlativo, así que sin ella
 cualquiera podría ir probando `COT-2026-0001`, `0002`… y leer el nombre y el
 teléfono de otras personas. La columna se agrega con
