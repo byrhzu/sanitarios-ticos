@@ -73,14 +73,18 @@ body {
   background: var(--naranja);
 }
 
-/* --- Etiquetas ------------------------------------------------ */
+/* --- Títulos de bloque ---------------------------------------
+   Tratamiento de la referencia A: mayúscula en negrita y a tamaño de
+   lectura, del color de la tinta. La versión diminuta con mucho
+   tracking se usa UNA sola vez, en la barra de la tabla (referencia B);
+   repetida en cada bloque es la marca de agua de una plantilla. */
 .et {
-  font-size: 6.6pt;
-  font-weight: 600;
-  letter-spacing: .14em;
+  font-size: 8.6pt;
+  font-weight: 700;
+  letter-spacing: .02em;
   text-transform: uppercase;
-  color: var(--gris);
-  margin: 0 0 .35rem;
+  color: var(--tinta);
+  margin: 0 0 2mm;
 }
 
 /* --- Cabecera -------------------------------------------------- */
@@ -135,14 +139,21 @@ body {
   padding-top: 4mm;
   border-top: .5pt solid var(--filete);
 }
-.parte .nom {
-  margin: 0 0 .8mm;
-  font-size: 11pt;
-  font-weight: 700;
-  font-stretch: var(--titular);
+/* Un dato por línea, con su etiqueta, como en la referencia A
+   ("Nombre:", "Dirección:", "Mail:"). Antes iban encadenados con " · ",
+   que amontona cosas distintas en un renglón y no deja ver qué falta. */
+.parte dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 17mm 1fr;
+  gap: .9mm 3mm;
+  font-size: 8.4pt;
+  line-height: 1.45;
 }
-.parte p { margin: 0; color: var(--tinta-2); font-size: 8.4pt; line-height: 1.55; }
-.parte .pendiente { color: var(--naranja-dk); font-weight: 600; }
+.parte dt { color: var(--gris); }
+.parte dd { margin: 0; color: var(--tinta-2); }
+.parte dd b { font-weight: 700; color: var(--tinta); }
+.parte .falta { color: var(--naranja-dk); font-weight: 600; }
 
 /* --- Tabla del servicio ---------------------------------------- */
 .tabla { width: 100%; border-collapse: collapse; margin-top: 7mm; }
@@ -192,10 +203,12 @@ body {
 
 .base { margin: 0; display: grid; gap: 2.6mm; }
 .base .fila { display: grid; grid-template-columns: 26mm 1fr; gap: 3mm; }
+/* Mismo tratamiento que las etiquetas del bloque del cliente: minúscula,
+   gris, sin tracking. La mayúscula diminuta y espaciada queda sólo en la
+   barra de la tabla. */
 .base dt {
-  font-size: 6.6pt; font-weight: 600; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--gris);
-  padding-top: .6mm;
+  font-size: 8.4pt; font-weight: 400; color: var(--gris);
+  padding-top: .2mm;
 }
 .base dd { margin: 0; }
 .base .val { font-size: 9pt; font-weight: 600; }
@@ -252,19 +265,9 @@ body {
 .condiciones ul { margin: 0; padding-left: 4mm; }
 .condiciones li { margin-bottom: 1.2mm; font-size: 8.2pt; color: var(--tinta-2); }
 
-/* --- Firma ------------------------------------------------------ */
-.firma {
-  margin-top: auto;
-  padding-top: 10mm;
-  display: flex;
-  justify-content: flex-end;
-}
-.firma div { width: 62mm; text-align: center; border-top: .5pt solid var(--tinta); padding-top: 1.8mm; }
-.firma .et { margin: 0; }
-
 /* --- Pie -------------------------------------------------------- */
 .pie {
-  margin-top: 5mm;
+  margin-top: auto;
   padding-top: 3mm;
   border-top: .5pt solid var(--filete);
   display: flex;
@@ -317,7 +320,6 @@ body {
   .partes, .pie-tabla, .condiciones { grid-template-columns: 1fr; gap: 6mm; }
   .pie { flex-direction: column; gap: 1mm; }
   .acciones { width: auto; margin: 0 6mm 10mm; }
-  .firma { padding-top: 12mm; }
 }
 
 /* --- Impresión ---------------------------------------------------- */
@@ -364,14 +366,12 @@ body {
 
   <section class="partes">
     <div class="parte">
-      <p class="et">Para</p>
-      <p class="nom" id="cliente-nombre">Cliente</p>
-      <p id="cliente-datos"></p>
+      <p class="et">Datos del cliente</p>
+      <dl id="cliente-datos"></dl>
     </div>
     <div class="parte">
-      <p class="et">Emite</p>
-      <p class="nom" id="razon-social"></p>
-      <p id="empresa-datos"></p>
+      <p class="et">Datos de la empresa</p>
+      <dl id="empresa-datos"></dl>
     </div>
   </section>
 
@@ -437,10 +437,6 @@ body {
       </ul>
     </div>
   </section>
-
-  <div class="firma">
-    <div><p class="et">Firma autorizada</p></div>
-  </div>
 
   <footer class="pie" id="pie"></footer>
 </article>
@@ -516,33 +512,47 @@ body {
     $("emitida").textContent = fecha(d.emitida);
     $("vence").textContent = fecha(d.vence);
 
-    $("empresa-linea").textContent = e.sedes + " · Servicio en todo el país";
+    $("empresa-linea").textContent = e.sedes;
 
-    // Cliente. Si no dejó nombre, no se inventa uno: se dice que el
-    // documento se emitió desde el sitio y ya.
-    $("cliente-nombre").textContent = d.cliente.nombre || "Cotización solicitada por el sitio web";
-    var cli = [];
-    if (d.cliente.telefono) cli.push("Teléfono: " + d.cliente.telefono);
-    var zona = (d.base.filter(function (b) { return b.campo === "Zona"; })[0] || {}).valor;
-    if (zona) cli.push("Zona: " + zona);
-    $("cliente-datos").textContent = cli.join(" · ");
-
-    // Empresa
-    $("razon-social").textContent = e.razonSocial;
-    var emp = [];
-    emp.push(e.cedula ? "Cédula jurídica: " + e.cedula : null);
-    emp.push("Teléfonos: " + e.telefonos.join(" / "));
-    emp.push("WhatsApp: " + e.whatsapp);
-    emp.push(e.correo);
-    $("empresa-datos").textContent = emp.filter(Boolean).join(" · ");
-    if (!e.cedula) {
-      // Mientras no esté, se dice que falta en vez de dejar el hueco:
-      // un documento formal sin cédula tiene que verse incompleto.
-      var av = document.createElement("span");
-      av.className = "pendiente";
-      av.textContent = " · Cédula jurídica pendiente";
-      $("empresa-datos").appendChild(av);
+    /* Un par etiqueta/valor por línea. `falta` marca en naranja lo que
+       todavía no se tiene: dejar el renglón vacío haría que un documento
+       incompleto se viera completo. */
+    function datos(caja, pares) {
+      var dl = $(caja);
+      dl.innerHTML = "";
+      pares.forEach(function (par) {
+        if (!par) return;
+        var dt = document.createElement("dt");
+        dt.textContent = par[0];
+        var dd = document.createElement("dd");
+        if (par[1]) {
+          if (par[2] === "fuerte") { var b = document.createElement("b"); b.textContent = par[1]; dd.appendChild(b); }
+          else dd.textContent = par[1];
+        } else {
+          dd.className = "falta";
+          dd.textContent = par[3] || "Pendiente";
+        }
+        dl.appendChild(dt);
+        dl.appendChild(dd);
+      });
     }
+
+    var c = d.cliente;
+    datos("cliente-datos", [
+      ["Nombre",   c.nombre,   "fuerte", "Sin registrar"],
+      ["Cédula",   c.cedula,   null,     "Sin registrar"],
+      ["Teléfono", c.telefono, null,     "Sin registrar"],
+      ["Correo",   c.correo,   null,     "Sin registrar"],
+      ["Zona",     c.zonaTexto, null,    "Sin registrar"]
+    ]);
+
+    datos("empresa-datos", [
+      ["Nombre",   e.razonSocial, "fuerte"],
+      ["Cédula",   e.cedula,      null, "Pendiente"],
+      ["Teléfono", e.telefonos.join(" / ")],
+      ["WhatsApp", e.whatsapp],
+      ["Correo",   e.correo]
+    ]);
 
     // Servicio y montos
     $("servicio").textContent = d.servicio;
@@ -583,9 +593,9 @@ body {
 
     $("pie").innerHTML = "";
     [e.nombre, e.sitio, e.telefonos.join(" / "), "WhatsApp " + e.whatsapp].forEach(function (t) {
-      var s = document.createElement("span");
-      s.textContent = t;
-      $("pie").appendChild(s);
+      var sp = document.createElement("span");
+      sp.textContent = t;
+      $("pie").appendChild(sp);
     });
 
     $("cargando").hidden = true;

@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260905b">
+<link rel="stylesheet" href="styles.css?v=20260905c">
 <script>document.documentElement.classList.add("js");setTimeout(function(){var d=document.documentElement;if(!d.classList.contains("is-ready"))d.classList.add("rv-rescate");},3000);</script>
 <script type="application/ld+json">
 {
@@ -182,12 +182,35 @@
           <label for="f-servicio">Servicio que necesita</label>
           <select id="f-servicio" name="servicio" required>
             <option value="">Seleccione una opción…</option>
-            <option>Limpieza de tanques sépticos</option><option>Limpieza y destaqueo de tuberías</option><option>Trampas de grasa y diesel</option><option>Construcción de tanques, drenajes y plantas</option><option>Alquiler de tanques plásticos</option><option>Otro / no estoy seguro</option>
+            <!-- data-cotiza enlaza la opción con el servicio del motor de
+                 cotizaciones. Las que no lo llevan no se pueden cotizar
+                 solas todavía: ahí Beto vuelve a preguntar. -->
+            <option data-cotiza="tanques-septicos">Limpieza de tanques sépticos</option><option data-cotiza="destaqueo">Limpieza y destaqueo de tuberías</option><option data-cotiza="trampas-grasa">Trampas de grasa y diesel</option><option>Construcción de tanques, drenajes y plantas</option><option>Alquiler de tanques plásticos</option><option>Otro / no estoy seguro</option>
           </select>
         </div>
         <div class="f">
-          <label for="f-zona">Zona, cantón o provincia</label>
-          <input id="f-zona" name="zona" type="text" placeholder="Ej. Belén, Heredia" required>
+          <label for="f-cedula">Cédula <span class="opt">(opcional)</span></label>
+          <input id="f-cedula" name="cedula" type="text" inputmode="numeric" placeholder="1-2345-6789">
+        </div>
+        <div class="f">
+          <label for="f-correo">Correo <span class="opt">(opcional)</span></label>
+          <input id="f-correo" name="correo" type="email" autocomplete="email" placeholder="nombre@correo.com">
+        </div>
+        <div class="f">
+          <label for="f-provincia">Provincia</label>
+          <select id="f-provincia" name="provincia" required>
+            <option value="">Seleccione…</option>
+          </select>
+        </div>
+        <div class="f">
+          <label for="f-canton">Cantón</label>
+          <select id="f-canton" name="canton" required disabled>
+            <option value="">Primero la provincia</option>
+          </select>
+        </div>
+        <div class="f">
+          <label for="f-distrito">Distrito <span class="opt">(opcional)</span></label>
+          <input id="f-distrito" name="distrito" type="text" placeholder="Ej. San Antonio">
         </div>
         <div class="f f-full">
           <label for="f-detalle">Cuéntenos brevemente qué pasa <span class="opt">(opcional)</span></label>
@@ -456,6 +479,6 @@
   <span>WhatsApp</span>
 </a>
 <script defer src="lib/manifest.js"></script>
-<script defer src="main.js?v=20260905b"></script>
+<script defer src="main.js?v=20260905c"></script>
 </body>
 </html>

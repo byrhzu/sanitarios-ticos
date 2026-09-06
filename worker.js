@@ -47,25 +47,41 @@ async function guardarSolicitud(request, env, ctx) {
     return json({ ok: false, error: "Formato inválido" }, 400);
   }
 
+  const provincia = texto(cuerpo.provincia, 40);
+  const canton = texto(cuerpo.canton, 60);
+  const distrito = texto(cuerpo.distrito, 80);
+
   const datos = {
     nombre: texto(cuerpo.nombre, 200),
     telefono: texto(cuerpo.telefono, 60),
     servicio: texto(cuerpo.servicio, 200),
-    zona: texto(cuerpo.zona, 200),
+    // Se sigue guardando `zona` como texto legible, que es lo que el
+    // panel viene mostrando desde el principio.
+    zona: zonaTexto(provincia, canton, distrito) || texto(cuerpo.zona, 200),
     detalle: texto(cuerpo.detalle, 2000),
-    pagina: texto(cuerpo.pagina, 300)
+    pagina: texto(cuerpo.pagina, 300),
+    cedula: texto(cuerpo.cedula, 40),
+    correo: texto(cuerpo.correo, 200),
+    provincia: provincia,
+    canton: canton,
+    distrito: distrito
   };
 
   // Los mismos cuatro campos que el formulario marca como obligatorios.
   if (!datos.nombre || !datos.telefono || !datos.servicio || !datos.zona) {
     return json({ ok: false, error: "Faltan datos obligatorios" }, 400);
   }
+  if (provincia && !cantonValido(provincia, canton)) {
+    return json({ ok: false, error: "Esa provincia y ese cantón no coinciden" }, 400);
+  }
 
   try {
     await env.DB.prepare(
-      `INSERT INTO solicitudes (nombre, telefono, servicio, zona, detalle, pagina)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6)`
-    ).bind(datos.nombre, datos.telefono, datos.servicio, datos.zona, datos.detalle, datos.pagina).run();
+      `INSERT INTO solicitudes (nombre, telefono, servicio, zona, detalle, pagina,
+                                cedula, correo, provincia, canton, distrito)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`
+    ).bind(datos.nombre, datos.telefono, datos.servicio, datos.zona, datos.detalle,
+           datos.pagina, datos.cedula, datos.correo, provincia, canton, distrito).run();
   } catch (e) {
     console.error("Error al guardar en D1:", e);
     return json({ ok: false, error: "No se pudo guardar" }, 500);
@@ -142,56 +158,65 @@ function claveValida(request, env) {
    endpoint para que el nombre de la tabla nunca salga de la URL: lo
    que llega de afuera sólo sirve para escoger de esta lista, así que
    no hay forma de inyectar SQL por el nombre. */
+const ORIGENES = { beto: "Beto", panel: "Panel", formulario: "Formulario" };
+
 const TABLAS_PANEL = {
   solicitudes: {
     columnas: `id, datetime(creado, '-6 hours') AS creado, nombre, telefono,
-               servicio, zona, detalle, pagina`,
+               servicio, zona, detalle, pagina, cedula, correo`,
     csv: {
       archivo: "solicitudes",
-      encabezado: ["Fecha (Costa Rica)", "Nombre", "Teléfono", "Servicio", "Zona", "Detalle", "Página"],
-      fila: (f) => [f.creado, f.nombre, f.telefono, f.servicio, f.zona, f.detalle || "", f.pagina || ""]
+      encabezado: ["Fecha (Costa Rica)", "Nombre", "Cédula", "Teléfono", "Correo",
+                   "Servicio", "Zona", "Detalle", "Página"],
+      fila: (f) => [f.creado, f.nombre, f.cedula || "", f.telefono, f.correo || "",
+                    f.servicio, f.zona, f.detalle || "", f.pagina || ""]
     },
     // Lo que ve el panel en pantalla. Sale de la misma fuente que el CSV
     // para que nunca digan cosas distintas; lo que cambia es el formato,
     // porque en pantalla se lee y en el CSV se suma.
     vista: {
-      encabezado: ["Fecha", "Nombre", "Teléfono", "Servicio", "Zona", "Detalle", "Página"],
-      ancha: 5,
-      fila: (f) => [f.creado, f.nombre, f.telefono, f.servicio, f.zona, f.detalle || "—", f.pagina || "—"]
+      encabezado: ["Fecha", "Nombre", "Teléfono", "Correo", "Servicio", "Zona", "Detalle", "Página"],
+      ancha: 6,
+      fila: (f) => [f.creado, f.nombre, f.telefono, f.correo || "—", f.servicio,
+                    f.zona, f.detalle || "—", f.pagina || "—"]
     }
   },
   cotizaciones: {
     columnas: `id, numero, datetime(creado, '-6 hours') AS creado, servicio, perfil,
                ultimo, acceso, zona, monto_min, monto_max, provisional,
-               origen, nombre, telefono`,
+               origen, nombre, telefono, cedula, correo, provincia, canton, distrito`,
     csv: {
       archivo: "cotizaciones",
       encabezado: ["Número", "Fecha (Costa Rica)", "Servicio", "Mínimo", "Máximo",
-                   "Propiedad", "Último servicio", "Acceso", "Zona",
-                   "Precios provisionales", "Origen", "Nombre", "Teléfono"],
+                   "Propiedad", "Último servicio", "Acceso",
+                   "Provincia", "Cantón", "Distrito", "Cobro de zona",
+                   "Precios provisionales", "Origen",
+                   "Nombre", "Cédula", "Teléfono", "Correo"],
       fila: (f) => [
         f.numero || "", f.creado, etiqueta(f.servicio, null, "servicio"),
         f.monto_min, f.monto_max,
         etiqueta(f.servicio, f.perfil, "perfil"), etiqueta(f.servicio, f.ultimo, "ultimo"),
-        etiqueta(f.servicio, f.acceso, "acceso"), etiqueta(null, f.zona, "zona"),
-        f.provisional ? "Sí" : "No", f.origen || "",
-        f.nombre || "", f.telefono || ""
+        etiqueta(f.servicio, f.acceso, "acceso"),
+        f.provincia || "", f.canton || "", f.distrito || "", etiqueta(null, f.zona, "zona"),
+        f.provisional ? "Sí" : "No", ORIGENES[f.origen] || f.origen || "",
+        f.nombre || "", f.cedula || "", f.telefono || "", f.correo || ""
       ]
     },
     vista: {
-      encabezado: ["Número", "Fecha", "Rango", "Servicio", "Propiedad",
+      encabezado: ["Número", "Fecha", "Rango", "Cliente", "Servicio", "Propiedad",
                    "Último servicio", "Acceso", "Zona", "Origen"],
-      ancha: 4,
+      ancha: 5,
       fila: (f) => [
         f.numero || "—",
         f.creado,
         colones(f.monto_min) + " – " + colones(f.monto_max),
+        f.nombre || "—",
         etiqueta(f.servicio, null, "servicio"),
         etiqueta(f.servicio, f.perfil, "perfil"),
         etiqueta(f.servicio, f.ultimo, "ultimo"),
         etiqueta(f.servicio, f.acceso, "acceso"),
-        etiqueta(null, f.zona, "zona"),
-        f.origen === "panel" ? "Panel" : "Beto"
+        zonaTexto(f.provincia, f.canton, f.distrito) || etiqueta(null, f.zona, "zona"),
+        ORIGENES[f.origen] || "Beto"
       ]
     }
   }
@@ -516,6 +541,68 @@ function calcularCotizacion(entrada) {
   };
 }
 
+/* =============================================================
+   División territorial de Costa Rica
+   =============================================================
+
+   Provincia y cantón salen de esta lista cerrada. El **distrito va
+   libre**, a propósito: son cerca de 490 y escribirlos de memoria
+   garantiza errores en un documento formal. Cuando el propietario
+   consiga la lista oficial del IFAM, se cambia el campo por una
+   selección más y no hay que tocar nada más.
+
+   Sirve para dos cosas a la vez: llenar la dirección de la cotización,
+   y sacar solo el factor de zona — antes había que preguntarlo aparte,
+   y era una pregunta que la persona ya había contestado. */
+const CANTONES = {
+  "San José": ["San José", "Escazú", "Desamparados", "Puriscal", "Tarrazú", "Aserrí",
+    "Mora", "Goicoechea", "Santa Ana", "Alajuelita", "Vázquez de Coronado", "Acosta",
+    "Tibás", "Moravia", "Montes de Oca", "Turrubares", "Dota", "Curridabat",
+    "Pérez Zeledón", "León Cortés Castro"],
+  "Alajuela": ["Alajuela", "San Ramón", "Grecia", "San Mateo", "Atenas", "Naranjo",
+    "Palmares", "Poás", "Orotina", "San Carlos", "Zarcero", "Sarchí", "Upala",
+    "Los Chiles", "Guatuso", "Río Cuarto"],
+  "Cartago": ["Cartago", "Paraíso", "La Unión", "Jiménez", "Turrialba", "Alvarado",
+    "Oreamuno", "El Guarco"],
+  "Heredia": ["Heredia", "Barva", "Santo Domingo", "Santa Bárbara", "San Rafael",
+    "San Isidro", "Belén", "Flores", "San Pablo", "Sarapiquí"],
+  "Guanacaste": ["Liberia", "Nicoya", "Santa Cruz", "Bagaces", "Carrillo", "Cañas",
+    "Abangares", "Tilarán", "Nandayure", "La Cruz", "Hojancha"],
+  "Puntarenas": ["Puntarenas", "Esparza", "Buenos Aires", "Montes de Oro", "Osa",
+    "Quepos", "Golfito", "Coto Brus", "Parrita", "Corredores", "Garabito",
+    "Monteverde", "Puerto Jiménez"],
+  "Limón": ["Limón", "Pococí", "Siquirres", "Talamanca", "Matina", "Guácimo"]
+};
+
+/* ⚠ PROVISIONAL, como los precios. Cantones de las cuatro provincias
+   centrales que igual quedan lejos del Valle: el camión hace una ruta
+   larga y se cobra como "resto". Es una clasificación hecha a ojo de
+   mapa; el propietario, que conoce las rutas, la va a querer corregir. */
+const LEJOS_DEL_VALLE = new Set([
+  "Pérez Zeledón", "Dota", "Tarrazú", "León Cortés Castro", "Turrubares", "Puriscal",
+  "San Carlos", "Upala", "Los Chiles", "Guatuso", "Río Cuarto",
+  "Turrialba", "Jiménez",
+  "Sarapiquí"
+]);
+
+const PROVINCIAS_CENTRALES = new Set(["San José", "Alajuela", "Cartago", "Heredia"]);
+
+/* El factor de zona sale del cantón, no de una pregunta aparte. */
+function zonaDeCanton(provincia, canton) {
+  if (!PROVINCIAS_CENTRALES.has(provincia)) return "resto";
+  return LEJOS_DEL_VALLE.has(canton) ? "resto" : "valle";
+}
+
+function cantonValido(provincia, canton) {
+  return !!(CANTONES[provincia] && CANTONES[provincia].indexOf(canton) !== -1);
+}
+
+/* "Belén, Heredia" o "San Antonio, Belén, Heredia" — de lo fino a lo
+   ancho, como se escribe una dirección en Costa Rica. */
+function zonaTexto(provincia, canton, distrito) {
+  return [distrito, canton, provincia].filter(Boolean).join(", ") || null;
+}
+
 /* Lo que va impreso en toda cotización. Está acá y no en el HTML del
    documento para que un cambio de teléfono se haga en un solo lugar. */
 const EMPRESA = {
@@ -605,12 +692,21 @@ async function cotizar(request, env, ctx) {
     return json({ ok: false, error: "Formato inválido" }, 400);
   }
 
+  const provincia = texto(cuerpo.provincia, 40);
+  const canton = texto(cuerpo.canton, 60);
+  const distrito = texto(cuerpo.distrito, 80);
+
+  if (!cantonValido(provincia, canton)) {
+    return json({ ok: false, error: "Esa provincia y ese cantón no coinciden" }, 400);
+  }
+
   const entrada = {
     servicio: texto(cuerpo.servicio, 40),
     perfil: texto(cuerpo.perfil, 40),
     ultimo: texto(cuerpo.ultimo, 40),
     acceso: texto(cuerpo.acceso, 40),
-    zona: texto(cuerpo.zona, 40)
+    // La zona no se pregunta: sale del cantón, que la persona ya dio.
+    zona: zonaDeCanton(provincia, canton)
   };
 
   const calculo = calcularCotizacion(entrada);
@@ -620,7 +716,9 @@ async function cotizar(request, env, ctx) {
 
   const nombre = texto(cuerpo.nombre, 200);
   const telefono = texto(cuerpo.telefono, 60);
-  const origen = cuerpo.origen === "panel" ? "panel" : "beto";
+  const cedula = texto(cuerpo.cedula, 40);
+  const correo = texto(cuerpo.correo, 200);
+  const origen = ["panel", "formulario"].indexOf(cuerpo.origen) !== -1 ? cuerpo.origen : "beto";
 
   let numero = null;
   let enlace = null;
@@ -629,11 +727,14 @@ async function cotizar(request, env, ctx) {
     const res = await env.DB.prepare(
       `INSERT INTO cotizaciones
          (servicio, perfil, ultimo, acceso, zona, monto_min, monto_max,
-          provisional, origen, nombre, telefono, llave)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)`
+          provisional, origen, nombre, telefono, llave,
+          cedula, correo, provincia, canton, distrito)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12,
+               ?13, ?14, ?15, ?16, ?17)`
     ).bind(
       entrada.servicio, entrada.perfil, entrada.ultimo, entrada.acceso, entrada.zona,
-      calculo.min, calculo.max, calculo.provisional ? 1 : 0, origen, nombre, telefono, llave
+      calculo.min, calculo.max, calculo.provisional ? 1 : 0, origen, nombre, telefono, llave,
+      cedula, correo, provincia, canton, distrito
     ).run();
 
     const id = res.meta && res.meta.last_row_id;
@@ -676,7 +777,8 @@ async function verCotizacion(request, env) {
   try {
     f = await env.DB.prepare(
       `SELECT numero, datetime(creado, '-6 hours') AS creado, servicio, perfil,
-              ultimo, acceso, zona, monto_min, monto_max, provisional, nombre, telefono
+              ultimo, acceso, zona, monto_min, monto_max, provisional, nombre, telefono,
+              cedula, correo, provincia, canton, distrito
          FROM cotizaciones
         WHERE numero = ?1 AND llave = ?2`
     ).bind(numero, llave).first();
@@ -706,7 +808,13 @@ async function verCotizacion(request, env) {
     maxTexto: colones(f.monto_max),
     provisional: !!f.provisional,
     ivaIncluido: TARIFAS.iva.incluido,
-    cliente: { nombre: f.nombre || null, telefono: f.telefono || null },
+    cliente: {
+      nombre: f.nombre || null,
+      cedula: f.cedula || null,
+      telefono: f.telefono || null,
+      correo: f.correo || null,
+      zonaTexto: zonaTexto(f.provincia, f.canton, f.distrito)
+    },
     // Las cuatro respuestas con las que se calculó, cada una con lo que
     // mueve. Es el reemplazo honesto de las líneas de una factura: no
     // tenemos artículos, tenemos motivos.
@@ -742,10 +850,9 @@ function opcionesCotizacion() {
     ok: true,
     provisional: TARIFAS.provisional,
     servicios: servicios,
-    zona: [
-      { id: "valle", etiqueta: "Valle Central (Alajuela, Heredia, San José)" },
-      { id: "resto", etiqueta: "Fuera del Valle Central" }
-    ]
+    // La zona ya no es una pregunta: se deduce del cantón. Lo que viaja
+    // es la lista, para que el chat y el formulario la usen igual.
+    cantones: CANTONES
   });
 }
 
@@ -790,8 +897,10 @@ REGLAS QUE DEBES SEGUIR SIEMPRE:
 - Responde en español de Costa Rica, de "usted", en tono amable y directo. Respuestas cortas (2-4 oraciones), no hagas listas larguísimas.
 - NO insista en mandar a WhatsApp o a llamar en cada respuesta: eso suena a vendedor pesado, no a alguien que de verdad está ayudando. Conteste la pregunta con naturalidad y sólo mencione el teléfono, el WhatsApp o el formulario cuando de verdad haga falta: en una emergencia, o cuando la persona ya está lista para agendar. El resto de las veces, simplemente responda la duda y, si acaso, pregunte si necesita algo más — no cierre cada mensaje con la misma muletilla.
 - NUNCA escriba usted un precio en colones ni un rango de precio, ni siquiera aproximado, ni aunque se lo pidan de frente o le insistan. Usted no conoce las tarifas y no las puede calcular.
-- Para eso está el botón "Cotizar ahora", abajo de esta misma conversación: le hace cinco preguntas rápidas y el sistema saca el estimado con las tarifas de la empresa. Cuando alguien pregunte por precios o por cuánto sale algo, dígale que toque ese botón. Ejemplo de cómo responderlo: "Los precios se los saca el cotizador de aquí abajo: toque «Cotizar ahora» y con cinco preguntitas le doy el estimado. Es gratis y sin compromiso."
-- El cotizador NO le pide el tamaño del tanque (casi nadie lo sabe): pregunta el tipo de propiedad, cuánta gente la usa, hace cuánto se limpió, qué tan cerca llega el camión y en qué zona queda. Si alguien se preocupa por no saber el tamaño, tranquilícelo con eso.
+- Cuando alguien pida una cotización, pregunte por precios, o pregunte cuánto sale algo, usted NO contesta con cifras: arranca el cotizador. Para arrancarlo, escriba al final de su respuesta, en una línea aparte, exactamente esto: [[COTIZAR]]
+- Esa marca no es visible para la persona; lo que ella ve es sólo su respuesta. Antes de la marca, explique brevemente y con naturalidad qué va a pasar: que necesita unos datos para armarle la cotización formal, que son preguntas cortas, y que al final le queda el documento con su número. Dos o tres frases, no más. Ejemplo: "Con gusto le armo la cotización. Ocupo unos datos suyos y de la propiedad para dejarla formal; son preguntas cortitas y al final le queda el documento con su número. Vamos: [[COTIZAR]]"
+- Use la marca [[COTIZAR]] SÓLO cuando la persona quiere cotizar. Si nada más está preguntando qué servicios hay o si llegan a su zona, conteste normal, sin la marca.
+- El cotizador NO le pide el tamaño del tanque (casi nadie lo sabe): pregunta el tipo de propiedad, hace cuánto se limpió, qué tan cerca llega el camión, la provincia, el cantón y el distrito, y después el nombre, la cédula, el teléfono y el correo para emitir el documento. Si alguien se preocupa por no saber el tamaño, tranquilícelo con eso. La cédula y el correo se pueden dejar en blanco.
 - El resultado del cotizador es un rango estimado, no un precio cerrado: el precio en firme lo confirma la empresa antes de salir, siempre gratis y sin compromiso.
 - NUNCA inventes datos que no estén arriba: no inventes certificaciones, promociones, plazos exactos de llegada ni disponibilidad de camiones en tiempo real.
 - Si es una emergencia (derrame, tanque rebalsado ahora mismo), recomiende llamar directo al 2440-1110 en vez de seguir escribiendo.

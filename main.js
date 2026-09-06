@@ -259,18 +259,84 @@
     var email = (data.contact && data.contact.email) || "info@sanitariosticos.com";
 
     function readValues() {
+      var provincia = form.provincia ? form.provincia.value || "" : "";
+      var canton = form.canton ? form.canton.value || "" : "";
+      var distrito = form.distrito ? (form.distrito.value || "").trim() : "";
       return {
         nombre: (form.nombre.value || "").trim(),
         telefono: (form.telefono.value || "").trim(),
         servicio: form.servicio.value || "",
-        zona: (form.zona.value || "").trim(),
+        // El texto que se guarda en la solicitud y el código que
+        // entiende el motor son cosas distintas: "Limpieza y destaqueo
+        // de tuberías" es lo que lee una persona, "destaqueo" es lo que
+        // busca la tabla de tarifas. Confundirlos hacía que Beto se
+        // saltara la pregunta con un servicio que no existía.
+        servicioCotiza: (form.servicio.selectedOptions &&
+                         form.servicio.selectedOptions[0] &&
+                         form.servicio.selectedOptions[0].dataset.cotiza) || "",
+        cedula: form.cedula ? (form.cedula.value || "").trim() : "",
+        correo: form.correo ? (form.correo.value || "").trim() : "",
+        provincia: provincia,
+        canton: canton,
+        distrito: distrito,
+        // De lo fino a lo ancho, como se escribe una dirección acá.
+        zona: [distrito, canton, provincia].filter(Boolean).join(", "),
         detalle: (form.detalle.value || "").trim()
       };
     }
 
+    /* Provincia y cantón salen de la misma lista que usa el cotizador,
+       para que el formulario nunca ofrezca un cantón que el motor no
+       reconozca. Si la lista no carga, los dos campos pasan a texto
+       libre: es peor un formulario que no se puede enviar. */
+    function cargarTerritorio() {
+      var selP = form.provincia, selC = form.canton;
+      if (!selP || !selC) return;
+
+      var aTexto = function () {
+        [selP, selC].forEach(function (sel) {
+          var libre = document.createElement("input");
+          libre.type = "text";
+          libre.name = sel.name;
+          libre.id = sel.id;
+          libre.required = sel.required;
+          libre.placeholder = sel === selP ? "Ej. Heredia" : "Ej. Belén";
+          sel.parentNode.replaceChild(libre, sel);
+        });
+      };
+
+      fetch("/api/cotizar/opciones")
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.ok || !d.cantones) throw new Error("sin territorio");
+          Object.keys(d.cantones).forEach(function (p) {
+            var o = document.createElement("option");
+            o.value = p; o.textContent = p;
+            selP.appendChild(o);
+          });
+          selP.addEventListener("change", function () {
+            selC.innerHTML = "";
+            var lista = d.cantones[selP.value] || [];
+            var vacia = document.createElement("option");
+            vacia.value = "";
+            vacia.textContent = lista.length ? "Seleccione…" : "Primero la provincia";
+            selC.appendChild(vacia);
+            lista.forEach(function (c) {
+              var o = document.createElement("option");
+              o.value = c; o.textContent = c;
+              selC.appendChild(o);
+            });
+            selC.disabled = !lista.length;
+          });
+        })
+        .catch(aTexto);
+    }
+    cargarTerritorio();
+
     function markErrors() {
       var ok = true;
-      ["nombre", "telefono", "servicio", "zona"].forEach(function (name) {
+      ["nombre", "telefono", "servicio", "provincia", "canton"].forEach(function (name) {
+        if (!form[name]) return;
         var input = form[name];
         var field = input.closest(".f");
         var empty = !String(input.value || "").trim();
@@ -309,7 +375,9 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             nombre: v.nombre, telefono: v.telefono, servicio: v.servicio,
-            zona: v.zona, detalle: v.detalle, pagina: location.pathname
+            zona: v.zona, detalle: v.detalle, pagina: location.pathname,
+            cedula: v.cedula, correo: v.correo,
+            provincia: v.provincia, canton: v.canton, distrito: v.distrito
           }),
           keepalive: true
         }).catch(function () {});
@@ -334,7 +402,40 @@
       var url = "https://wa.me/" + waNumber + "?text=" + encodeURIComponent(buildMessage(v));
       window.open(url, "_blank", "noopener");
       if (msg) msg.textContent = "Abrimos WhatsApp con su mensaje listo. Sólo debe pulsar enviar.";
+      ofrecerCotizacion(v);
     });
+
+    /* La solicitud ya quedó guardada; esto es el paso de más que la
+       convierte en cotización con número. Se ofrece, no se impone: la
+       persona ya hizo lo que vino a hacer y puede irse tranquila. */
+    function ofrecerCotizacion(v) {
+      if ($("[data-form-seguir]", form)) return;
+
+      var caja = document.createElement("p");
+      caja.className = "form-seguir";
+      caja.setAttribute("data-form-seguir", "");
+
+      var texto = document.createElement("span");
+      texto.textContent = "¿Quiere el estimado de una vez? Son tres preguntas más y le queda la cotización con su número.";
+
+      var boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "btn btn-line";
+      boton.textContent = "Seguir con Beto";
+      boton.addEventListener("click", function () {
+        document.dispatchEvent(new CustomEvent("cotizar-con-datos", {
+          detail: {
+            servicio: v.servicioCotiza,
+            nombre: v.nombre, cedula: v.cedula, telefono: v.telefono, correo: v.correo,
+            provincia: v.provincia, canton: v.canton, distrito: v.distrito
+          }
+        }));
+      });
+
+      caja.appendChild(texto);
+      caja.appendChild(boton);
+      form.appendChild(caja);
+    }
 
     if (mailLink) {
       mailLink.addEventListener("click", function () {
@@ -501,6 +602,18 @@
       pregunta = String(pregunta || "").trim();
       if (!pregunta) return;
 
+      // Si el cotizador está esperando un dato escrito, lo que la
+      // persona teclea es la respuesta a esa pregunta, no una consulta
+      // nueva para Beto.
+      if (esperando) {
+        agregarMensaje(pregunta, true);
+        input.value = "";
+        var recibir = esperando;
+        esperando = null;
+        recibir(pregunta);
+        return;
+      }
+
       agregarMensaje(pregunta, true);
       if (sugeridas) sugeridas.hidden = true;
       input.value = "";
@@ -521,9 +634,19 @@
         .then(function (d) {
           cargando.remove();
           var respuesta = (d && d.reply) || "No pude responder justo ahora. Puede escribirnos por WhatsApp o llamar al 2440-1110.";
+
+          // Cuando alguien pide una cotización conversando, Beto cierra
+          // su respuesta con esta marca. Se quita del texto y se arranca
+          // el mismo cuestionario del botón: da igual por dónde entró,
+          // termina en una cotización de verdad.
+          var quiereCotizar = respuesta.indexOf("[[COTIZAR]]") !== -1;
+          respuesta = respuesta.replace(/\s*\[\[COTIZAR\]\]\s*/g, " ").trim();
+
           agregarMensaje(respuesta, false);
           historial.push({ role: "user", text: pregunta });
           historial.push({ role: "model", text: respuesta });
+
+          if (quiereCotizar && !cotizando) arrancarCotizador(true);
         })
         .catch(function () {
           cargando.remove();
@@ -543,28 +666,47 @@
     }
 
     /* -------- Cotizador ---------------------------------------------
-       Beto conversa, pero el precio NO lo inventa él: estos botones
+       Beto conversa, pero el precio NO lo inventa él: estas preguntas
        recogen los datos y el servidor hace la cuenta. Un modelo de
        lenguaje haciendo aritmética se equivoca tarde o temprano, y una
        cotización equivocada la paga la empresa.
 
        Tampoco se pregunta el tamaño del tanque, que casi nadie sabe: se
        pregunta cuánta gente vive ahí y hace cuánto lo limpiaron, que
-       predice el volumen igual de bien. */
+       predice el volumen igual de bien.
+
+       Hay tres formas de llegar acá —el botón, una conversación con
+       Beto, o el formulario de contacto— y las tres terminan en la
+       misma cotización guardada. */
 
     var opciones = null;      // catálogo que manda el servidor
     var respuestas = {};      // lo que va contestando la persona
     var pasoActual = 0;
+    var cotizando = false;
+    var esperando = null;     // función que espera un dato escrito
 
-    // El orden importa: el servicio primero, porque de él dependen las
-    // opciones de los tres pasos siguientes.
+    /* El orden no es casual: primero lo que se contesta tocando un
+       botón, y de último lo que hay que escribir. Quien abandona a
+       mitad, abandona en la parte aburrida, no en la primera pregunta. */
     var PASOS = [
-      { clave: "servicio", pregunta: "¿Qué servicio necesita?" },
-      { clave: "perfil",   pregunta: "¿Para qué tipo de propiedad?" },
-      { clave: "ultimo",   pregunta: "¿Hace cuánto se le hizo el servicio por última vez?" },
-      { clave: "acceso",   pregunta: "¿Qué tan cerca puede parquear el camión?" },
-      { clave: "zona",     pregunta: "¿Dónde queda?" }
+      { clave: "servicio",  tipo: "ops",  pregunta: "¿Qué servicio necesita?" },
+      { clave: "perfil",    tipo: "ops",  pregunta: "¿Para qué tipo de propiedad?" },
+      { clave: "ultimo",    tipo: "ops",  pregunta: "¿Hace cuánto se le hizo el servicio por última vez?" },
+      { clave: "acceso",    tipo: "ops",  pregunta: "¿Qué tan cerca puede parquear el camión?" },
+      { clave: "provincia", tipo: "ops",  pregunta: "¿En qué provincia queda?" },
+      { clave: "canton",    tipo: "ops",  pregunta: "¿Y en qué cantón?" },
+      { clave: "distrito",  tipo: "texto", pregunta: "¿Cuál distrito? Si no está seguro, escriba el que más se acerque.",
+        opcional: true },
+      { clave: "nombre",    tipo: "texto", pregunta: "Listo con la dirección. Ahora, ¿a nombre de quién emito la cotización?" },
+      { clave: "cedula",    tipo: "texto", pregunta: "¿Su cédula? Va en el documento, como en cualquier cotización formal. Si prefiere no darla, escriba «después».",
+        opcional: true },
+      { clave: "telefono",  tipo: "texto", pregunta: "¿A qué número la contactamos?" },
+      { clave: "correo",    tipo: "texto", pregunta: "¿Y su correo? Si no usa, escriba «no tengo».",
+        opcional: true }
     ];
+
+    // Lo que la persona escribe para decir "ese dato no se lo doy".
+    var SIN_DATO = /^(no|no tengo|ninguno|ninguna|despu[eé]s|luego|paso|omitir|nada|-)$/i;
 
     function opcionesDelPaso(clave) {
       if (clave === "servicio") {
@@ -572,14 +714,20 @@
           return { id: id, etiqueta: opciones.servicios[id].nombre };
         });
       }
-      if (clave === "zona") return opciones.zona;
+      if (clave === "provincia") {
+        return Object.keys(opciones.cantones).map(function (p) { return { id: p, etiqueta: p }; });
+      }
+      if (clave === "canton") {
+        return (opciones.cantones[respuestas.provincia] || []).map(function (c) {
+          return { id: c, etiqueta: c };
+        });
+      }
       var svc = opciones.servicios[respuestas.servicio];
       return svc ? svc[clave] : [];
     }
 
-    // Fila de botones dentro del hilo. Al elegir, la fila se reemplaza
-    // por la respuesta como burbuja, para que quede el rastro de lo que
-    // se contestó.
+    /* Fila de botones dentro del hilo. Al elegir, la fila se reemplaza
+       por la respuesta como burbuja, para que quede el rastro. */
     function pintarOpciones(lista, alElegir) {
       var caja = document.createElement("div");
       caja.className = "asistente-ops";
@@ -599,14 +747,77 @@
     }
 
     function siguientePaso() {
-      if (pasoActual >= PASOS.length) return pedirPrecio();
+      // Lo que ya se sabe no se vuelve a preguntar. Es lo que permite
+      // que el formulario de contacto entregue el nombre, el teléfono y
+      // la dirección, y Beto sólo pida lo que falta para el precio.
+      while (pasoActual < PASOS.length && respuestas[PASOS[pasoActual].clave]) pasoActual++;
+      if (pasoActual >= PASOS.length) return confirmar();
+
       var paso = PASOS[pasoActual];
       agregarMensaje(paso.pregunta, false, true);
-      pintarOpciones(opcionesDelPaso(paso.clave), function (op) {
+
+      if (paso.tipo === "texto") {
+        // Se contesta escribiendo en la misma caja de siempre, que es
+        // lo que hace que esto se sienta una conversación y no un
+        // formulario disfrazado de chat.
+        input.focus();
+        esperando = function (valor) {
+          if (!paso.opcional || !SIN_DATO.test(valor.trim())) respuestas[paso.clave] = valor.trim();
+          pasoActual++;
+          siguientePaso();
+        };
+        return;
+      }
+
+      var lista = opcionesDelPaso(paso.clave);
+      if (!lista.length) {
+        // No debería pasar, pero si pasa la conversación queda trabada
+        // en una pregunta sin respuestas posibles. Mejor decirlo.
+        agregarMensaje(
+          "Uy, se me enredó el cotizador. Llame al 2440-1110 y se lo cotizamos de una vez.",
+          false
+        );
+        return terminar();
+      }
+      pintarOpciones(lista, function (op) {
         respuestas[paso.clave] = op.id;
         pasoActual++;
         siguientePaso();
       });
+    }
+
+    /* Antes de mandar nada, Beto repite lo que entendió. Es el paso que
+       convierte esto en una conversación con alguien y no en un envío a
+       ciegas — y de paso atrapa el dedo gordo en el teléfono. */
+    function confirmar() {
+      var svc = opciones.servicios[respuestas.servicio];
+      var lineas = [
+        "Perfecto. Déjeme repetirle lo que anoté:",
+        "",
+        "Servicio: " + (svc ? svc.nombre : respuestas.servicio),
+        "Dirección: " + [respuestas.distrito, respuestas.canton, respuestas.provincia]
+          .filter(Boolean).join(", "),
+        "A nombre de: " + (respuestas.nombre || "—"),
+        "Teléfono: " + (respuestas.telefono || "—")
+      ];
+      if (respuestas.cedula) lineas.push("Cédula: " + respuestas.cedula);
+      if (respuestas.correo) lineas.push("Correo: " + respuestas.correo);
+      lineas.push("", "¿Está todo bien?");
+
+      agregarMensaje(lineas.join("\n"), false, true);
+
+      pintarOpciones(
+        [{ id: "si", etiqueta: "Sí, está bien" },
+         { id: "no", etiqueta: "Hay algo que corregir" }],
+        function (op) {
+          if (op.id === "si") return pedirPrecio();
+          agregarMensaje(
+            "Con gusto, empecemos de nuevo — es más rápido que andar buscando cuál fue.",
+            false, true
+          );
+          arrancarCotizador(true);
+        }
+      );
     }
 
     function pedirPrecio() {
@@ -614,21 +825,22 @@
       fetch("/api/cotizar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(respuestas)
+        body: JSON.stringify(Object.assign({ origen: "beto" }, respuestas))
       })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
           cargando.remove();
-          if (!d || !d.ok) throw new Error("sin cotización");
-          mostrarCotizacion(d);
+          if (!res.ok || !res.d.ok) throw new Error((res.d && res.d.error) || "sin cotización");
+          mostrarCotizacion(res.d);
         })
-        .catch(function () {
+        .catch(function (err) {
           cargando.remove();
           agregarMensaje(
-            "Uy, no me salió el cálculo. Mejor llame al 2440-1110 y se lo cotizamos de una vez.",
+            (err && err.message ? err.message + ". " : "") +
+            "No me salió el cálculo. Mejor llame al 2440-1110 y se lo cotizamos de una vez.",
             false
           );
-          if (cajaCotiza) cajaCotiza.hidden = false;
+          terminar();
         });
     }
 
@@ -654,7 +866,7 @@
           "Es un rango orientativo. El precio exacto se lo confirmamos antes de salir, sin costo."
         );
       }
-      if (d.numero) partes.push("Su número de cotización es " + d.numero + ".");
+      if (d.numero) partes.push("Su cotización quedó con el número " + d.numero + ".");
 
       agregarMensaje(partes.join(" "), false, true);
 
@@ -675,29 +887,50 @@
         mensajesMios.push("Documento: " + d.enlace);
       }
 
-      // Con el número en mano, el traspaso a WhatsApp lleva la cotización.
       mensajesMios.push(
         "Cotización " + (d.numero || "") + ": " + d.servicioNombre +
         ", entre " + colones(d.min) + " y " + colones(d.max)
       );
       refrescarPase();
+      terminar();
+    }
 
-      // Se vuelve a ofrecer el botón: mucha gente cotiza dos servicios
-      // en la misma visita (el tanque y la trampa de grasa, por ejemplo).
+    function terminar() {
+      cotizando = false;
+      esperando = null;
       if (cajaCotiza) cajaCotiza.hidden = false;
     }
 
-    function arrancarCotizador() {
+    /* `desdeChat` es cuando la persona lo pidió conversando: ahí Beto ya
+       dijo lo suyo en su respuesta y repetir la presentación sonaría a
+       máquina contestando dos veces. */
+    function arrancarCotizador(desdeChat, previos) {
       if (cajaCotiza) cajaCotiza.hidden = true;
       if (sugeridas) sugeridas.hidden = true;
       respuestas = {};
+      if (previos) {
+        Object.keys(previos).forEach(function (k) {
+          if (previos[k]) respuestas[k] = previos[k];
+        });
+      }
       pasoActual = 0;
+      cotizando = true;
+      esperando = null;
 
-      agregarMensaje(
-        "Con gusto. Son cinco preguntas rápidas y le doy un estimado. " +
-        "No necesito que sepa el tamaño del tanque.",
-        false, true
-      );
+      if (previos && previos.nombre) {
+        agregarMensaje(
+          "¡Pura vida, " + String(previos.nombre).split(" ")[0] + "! Ya tengo sus datos del " +
+          "formulario, así que sólo me faltan unas cositas de la propiedad para armarle " +
+          "la cotización formal.",
+          false, true
+        );
+      } else if (!desdeChat) {
+        agregarMensaje(
+          "Con gusto. Le hago unas preguntas y le armo la cotización formal, con su " +
+          "número y todo. No necesito que sepa el tamaño del tanque.",
+          false, true
+        );
+      }
 
       if (opciones) return siguientePaso();
 
@@ -716,16 +949,25 @@
             "No pude cargar el cotizador ahora mismo. Llame al 2440-1110 y se lo cotizamos de una vez.",
             false
           );
-          if (cajaCotiza) cajaCotiza.hidden = false;
+          terminar();
         });
     }
 
     if (botonCotizar) {
       botonCotizar.addEventListener("click", function () {
         if (!abierto) abrirPanel();
-        arrancarCotizador();
+        arrancarCotizador(false);
       });
     }
+
+    /* Tercera puerta de entrada: el formulario de contacto. Manda lo que
+       ya recogió y Beto continúa desde ahí. Va por evento y no por
+       llamada directa porque el formulario vive en su propio ámbito y
+       sólo existe en una de las seis páginas. */
+    document.addEventListener("cotizar-con-datos", function (e) {
+      if (!abierto) abrirPanel();
+      arrancarCotizador(true, e.detail || {});
+    });
   }
 
   function initYear() {

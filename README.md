@@ -240,6 +240,15 @@ formas de entregarlo:
 El diseño está especificado en `DIRECCION-DE-ARTE.md` §12, con las referencias
 que se usaron y qué se tomó de cada una.
 
+Los datos del cliente —nombre, cédula, teléfono, correo y la dirección por
+provincia, cantón y distrito— se recogen por cualquiera de las tres puertas
+(el formulario, el botón de Beto o pidiéndoselo a Beto conversando) y las tres
+terminan en la misma cotización guardada. Provincia y cantón salen de una lista
+cerrada; **el distrito va libre** porque son cerca de 490 y escribirlos de
+memoria garantiza errores en un documento formal. La zona de cobro ya no se
+pregunta: sale del cantón (`tools/agregar-datos-cliente.sql` agrega las
+columnas).
+
 **La llave no es decorativa.** El número es correlativo, así que sin ella
 cualquiera podría ir probando `COT-2026-0001`, `0002`… y leer el nombre y el
 teléfono de otras personas. La columna se agrega con

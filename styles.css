@@ -931,6 +931,7 @@ body.fabs-fuera .wa-fab {
   background: var(--paper-2);
 }
 .asistente-msg {
+  white-space: pre-line;   /* Beto resume los datos en varias líneas */
   font-size: .89rem; line-height: 1.48; max-width: 86%;
   padding: .6rem .85rem;
   border-radius: 16px;
@@ -1003,6 +1004,16 @@ body.fabs-fuera .wa-fab {
   transition: border-color .2s var(--ease), background-color .2s var(--ease);
 }
 .asistente-ops button:hover { border-color: var(--orange); }
+
+/* El puente del formulario al cotizador. */
+.form-seguir {
+  grid-column: 1 / -1;
+  display: flex; flex-wrap: wrap; align-items: center; gap: .7rem;
+  margin-top: .3rem; padding: .9rem 1rem;
+  background: var(--orange-soft);
+  font-size: .92rem; color: var(--ink-2);
+}
+.form-seguir span { flex: 1 1 14rem; }
 
 /* Enlace al documento de la cotización, dentro del hilo. */
 .asistente-doc { display: flex; margin: -.1rem 0 .3rem; }
