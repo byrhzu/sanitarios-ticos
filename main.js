@@ -189,6 +189,58 @@
     });
   }
 
+  /* ---------- Origen del iris entre páginas ----------
+     La transición ya la hace el navegador; lo único que falta es desde
+     dónde se abre el círculo. Se guarda el punto del clic y se aplica
+     en la página que llega, que es donde viven los pseudoelementos de
+     la transición.
+
+     Sin esto el iris abre siempre desde el centro y se siente
+     despegado del dedo. Con esto, la página nueva sale de donde la
+     persona tocó. */
+  function initIris() {
+    if (reduced || !document.startViewTransition) return;
+
+    var GUARDADO = "irisOrigen";
+
+    // Se aplica lo antes posible: este archivo va con `defer`, así que
+    // corre antes del primer pintado y las variables llegan a tiempo.
+    try {
+      var previo = sessionStorage.getItem(GUARDADO);
+      if (previo) {
+        var xy = previo.split(",");
+        document.documentElement.style.setProperty("--iris-x", xy[0] + "px");
+        document.documentElement.style.setProperty("--iris-y", xy[1] + "px");
+        sessionStorage.removeItem(GUARDADO);
+      }
+    } catch (e) {}
+
+    document.addEventListener("click", function (e) {
+      var a = e.target.closest ? e.target.closest("a[href]") : null;
+      if (!a) return;
+
+      // Sólo la navegación normal dentro del sitio: un enlace externo,
+      // una descarga o un clic con Cmd abren otra pestaña y ahí no hay
+      // transición que originar.
+      if (a.target === "_blank" || a.hasAttribute("download")) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+      if (a.origin !== location.origin) return;
+      if (a.hash && a.pathname === location.pathname) return;
+
+      try {
+        // Coordenadas del clic; con teclado no hay, y ahí se usa el
+        // centro del propio enlace, que es de donde "sale" el foco.
+        var x = e.clientX, y = e.clientY;
+        if (!x && !y) {
+          var caja = a.getBoundingClientRect();
+          x = caja.left + caja.width / 2;
+          y = caja.top + caja.height / 2;
+        }
+        sessionStorage.setItem(GUARDADO, Math.round(x) + "," + Math.round(y));
+      } catch (err) {}
+    });
+  }
+
   /* ---------- Parallax discreto de la foto de portada ----------
      Antes esto necesitaba GSAP + ScrollTrigger (44 KB comprimidos)
      para un desplazamiento del 6 %. Ahora son unas pocas líneas:
@@ -1164,6 +1216,7 @@
     safe(initFaq, "initFaq");
     safe(initAsistente, "initAsistente");
     safe(initMapa, "initMapa");
+    safe(initIris, "initIris");
     safe(initForm, "initForm");
     safe(initYear, "initYear");
     safe(initFabsAlBajar, "initFabsAlBajar");

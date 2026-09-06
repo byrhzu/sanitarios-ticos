@@ -136,9 +136,23 @@ strong, b { font-weight: 600; }
    Es la ganancia de fluidez más grande de un sitio de seis páginas:
    sin esto, cada clic del menú da un parpadeo en blanco. */
 @view-transition { navigation: auto; }
-::view-transition-old(root), ::view-transition-new(root) {
-  animation-duration: .3s;
-  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+
+/* Iris: la página nueva se abre en un círculo desde donde se tocó.
+
+   La de salida se queda quieta debajo en vez de fundirse —por eso
+   `animation: none`—, así el círculo se lee como algo que se abre y no
+   como dos imágenes cruzándose.
+
+   El origen lo pone main.js en --iris-x/--iris-y con el punto del clic.
+   Si no llega (teclado, o el enlace se abrió de otra forma), el centro
+   por defecto sirve igual. */
+::view-transition-old(root) { animation: none; }
+::view-transition-new(root) {
+  animation: iris .42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes iris {
+  from { clip-path: circle(0% at var(--iris-x, 50%) var(--iris-y, 50%)); }
+  to   { clip-path: circle(150% at var(--iris-x, 50%) var(--iris-y, 50%)); }
 }
 
 /* La barra de teléfonos y la cabecera son idénticas en todas las
