@@ -735,3 +735,37 @@ no decían gran cosa. Ahora:
 > **distintas** de un vistazo en una pantalla que se mira todos los
 > días — no son tres servicios con iconos decorativos. El chip es un
 > cuadrado redondeado, no un círculo, y no hay tres columnas iguales.
+
+
+## 16. Beto: el componente que delataba al sitio entero
+
+Al buscar "qué se ve hecho por IA", el que aparecía no era el panel:
+era el asistente. En un solo componente había **seis tics del
+catálogo**, y está en las seis páginas.
+
+| Qué tenía | Tic |
+|---|---|
+| Botón flotante en píldora con degradado naranja de tres paradas | 8 (degradado como identidad) |
+| Cabecera del panel con degradado slate | 8 |
+| Avatar circular con otro degradado naranja | 8 |
+| Icono de **destello** ✨ como cara de Beto y como botón | — el glifo que significa literalmente "esto es IA" |
+| Anillo que late en bucle infinito alrededor del botón | 10 (animación sin estado real) |
+| Sombras difusas de color, `0 10px 24px rgba(naranja,.38)` | 12 |
+| Radios de 999px, 22px y 50% en un sitio cuyo radio es 0 | 12 |
+
+Eso no era el asistente de esta empresa: era el widget que trae puesto
+cualquier sitio generado.
+
+**Qué se hizo.** El destello se cambió por **la mascota del camión**,
+que es lo único de acá que no puede estar en ningún otro lado. Los
+cuatro degradados pasaron a color plano. El anillo que latía se
+eliminó. Los radios bajaron a 0, como el resto del sitio. Las sombras
+de color pasaron a sombras de tinta, más cortas.
+
+El botón flotante de WhatsApp recibió el mismo trato: acompaña al de
+Beto en la esquina, y si uno deja de ser píldora con degradado, el
+otro también.
+
+**Lo que NO se tocó:** la maquetación del sitio público, sus botones y
+su tipografía de cartel. Están construidos contra el rótulo del camión
+y funcionan; el problema era el widget pegado encima, no la página.

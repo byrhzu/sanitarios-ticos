@@ -905,30 +905,26 @@ body.fabs-fuera .wa-fab {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
   min-width: 11rem;
   padding: .75rem 1.15rem .75rem .95rem;
-  border-radius: 999px;
-  background: linear-gradient(135deg, var(--orange) 0%, #ff8a3d 55%, #ffb066 100%);
+  /* Beto era una píldora flotante con degradado naranja, anillo que
+     late sin parar y un destello de icono. Eso es el chatbot que trae
+     puesto cualquier sitio generado — seis tics del catálogo en un solo
+     componente, y lo primero que hace pensar "otra web de IA".
+
+     Ahora es rectangular como todos los botones del sitio, de un solo
+     naranja plano, y la cara es la mascota del camión: lo único de acá
+     que no puede estar en ningún otro lado. */
+  border-radius: 0;
+  background: var(--orange);
   color: var(--ink);
   font-family: var(--display); font-weight: 700; font-size: .88rem;
-  box-shadow: 0 10px 24px rgba(239,101,17,.38);
-  transition: transform .3s var(--ease), box-shadow .3s var(--ease);
+  box-shadow: 0 6px 20px rgba(27,25,23,.24);
+  transition: transform .3s var(--ease), box-shadow .3s var(--ease), background-color .25s var(--ease);
 }
-.asistente-fab::before {
-  content: ""; position: absolute; inset: -5px;
-  border-radius: 999px;
-  border: 1.5px solid var(--orange);
-  opacity: 0;
-  animation: asistentePulso 2.6s var(--ease) infinite;
-}
-.asistente.is-open .asistente-fab::before { display: none; }
-@keyframes asistentePulso {
-  0% { transform: scale(.92); opacity: .55; }
-  70% { transform: scale(1.16); opacity: 0; }
-  100% { opacity: 0; }
-}
-.asistente-fab:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(239,101,17,.46); }
+.asistente-fab:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(27,25,23,.3); background: var(--orange-dk); color: var(--paper); }
+.asistente-fab .cara { width: 26px; height: 26px; display: block; }
 .asistente-fab svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .asistente-fab .ico-cerrar { display: none; }
-.asistente.is-open .asistente-fab { background: var(--slate); color: var(--paper); box-shadow: 0 10px 24px rgba(31,44,51,.3); }
+.asistente.is-open .asistente-fab { background: var(--slate); color: var(--paper); box-shadow: 0 6px 20px rgba(27,25,23,.28); }
 .asistente.is-open .asistente-fab .ico-abrir { display: none; }
 .asistente.is-open .asistente-fab .ico-cerrar { display: block; }
 
@@ -937,9 +933,9 @@ body.fabs-fuera .wa-fab {
   position: absolute; right: 0; bottom: calc(100% + .8rem);
   width: min(23rem, calc(100vw - 2rem));
   background: var(--paper);
-  border-radius: 22px;
+  border-radius: 0;
   overflow: hidden;
-  box-shadow: 0 30px 70px rgba(27,25,23,.28);
+  box-shadow: 0 20px 50px rgba(27,25,23,.26);
   display: flex; flex-direction: column;
   max-height: min(32rem, 75vh);
   transform-origin: bottom right;
@@ -951,16 +947,16 @@ body.fabs-fuera .wa-fab {
 
 .asistente-cab {
   padding: 1.05rem 1.15rem;
-  background: linear-gradient(120deg, var(--slate) 0%, var(--slate-2) 100%);
+  background: var(--slate);
   color: var(--paper);
   display: flex; align-items: center; gap: .7rem;
 }
 .asistente-cab .avatar {
-  width: 34px; height: 34px; flex: 0 0 auto; border-radius: 50%;
+  width: 34px; height: 34px; flex: 0 0 auto;
   display: grid; place-items: center;
-  background: linear-gradient(135deg, var(--orange), #ffb066);
+  background: var(--orange);
 }
-.asistente-cab .avatar svg { width: 17px; height: 17px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.asistente-cab .avatar img { width: 30px; height: 30px; display: block; }
 .asistente-cab .txt { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
 .asistente-cab strong { font-family: var(--display); font-size: .96rem; }
 .asistente-cab span { font-size: .78rem; color: rgba(250,247,242,.62); }
@@ -991,7 +987,7 @@ body.fabs-fuera .wa-fab {
 }
 .asistente-msg.es-usuario {
   align-self: flex-end; border-bottom-right-radius: 4px;
-  background: linear-gradient(135deg, var(--orange), #ff8a3d);
+  background: var(--orange);
   color: var(--ink); font-weight: 500;
 }
 
@@ -1128,12 +1124,13 @@ body.fabs-fuera .wa-fab {
 }
 .asistente-form input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-soft); background: var(--paper); }
 .asistente-form button {
-  width: 40px; height: 40px; flex: 0 0 auto; border-radius: 50%;
+  width: 40px; height: 40px; flex: 0 0 auto;
   display: grid; place-items: center;
-  background: linear-gradient(135deg, var(--orange), #ff8a3d); color: var(--ink);
-  transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+  background: var(--orange); color: var(--ink);
+  transition: transform .2s var(--ease), background-color .2s var(--ease);
 }
-.asistente-form button:hover { transform: scale(1.06); box-shadow: 0 6px 16px rgba(239,101,17,.4); }
+.asistente-form button:hover { background: var(--orange-dk); color: var(--paper); }
+.asistente-form button:active { transform: scale(.94); }
 .asistente-form button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 .asistente-aviso {
@@ -1153,14 +1150,14 @@ body.fabs-fuera .wa-fab {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
   min-width: 11rem;
   padding: .8rem 1.15rem .8rem .95rem;
-  border-radius: 999px;
-  background: linear-gradient(135deg, var(--wa) 0%, #1ecb63 55%, #25e070 100%);
+  border-radius: 0;
+  background: var(--wa);
   color: #06331b;
   font-family: var(--display); font-weight: 700; font-size: .88rem;
-  box-shadow: 0 10px 24px rgba(37,211,102,.38);
+  box-shadow: 0 6px 20px rgba(27,25,23,.24);
   transition: transform .3s var(--ease), box-shadow .3s var(--ease);
 }
-.wa-fab:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(37,211,102,.46); }
+.wa-fab:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(27,25,23,.3); background: #1fbe5b; }
 .wa-fab svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 /* =============================================================
