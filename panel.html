@@ -11,19 +11,32 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
 <link rel="stylesheet" href="styles.css?v=20260906c">
 <style>
-  /* Estilos propios de esta página — una herramienta interna, no una
-     página de venta, así que no lleva las animaciones ni el menú del sitio. */
+  /* Estilos propios de esta página. Es una herramienta de trabajo, no
+     una página de venta: no lleva el menú del sitio ni las animaciones,
+     y es más ancha porque acá se comparan columnas.
+
+     Lo que sí conserva es la tipografía y el naranja, porque quien la
+     abre todos los días tiene que sentir que es de la misma empresa. */
   body { background: var(--paper-2); }
-  .panel-shell { max-width: 62rem; margin: 0 auto; padding: clamp(2rem, 5vw, 4rem) var(--gut) 5rem; }
-  .panel-top { display: flex; align-items: center; gap: .9rem; margin-bottom: 2rem; }
+  .panel-shell { max-width: 78rem; margin: 0 auto; padding: clamp(1.6rem, 4vw, 3rem) var(--gut) 5rem; }
+
+  .panel-top { display: flex; align-items: center; gap: .9rem; margin-bottom: 1.8rem; }
   .panel-top img { height: 34px; width: auto; }
-  .panel-top span { font-family: var(--display); font-weight: 700; font-size: 1.1rem; }
+  .panel-top { flex-wrap: wrap; }
+  .panel-top span { font-family: var(--display); font-weight: 700; font-size: 1.1rem; white-space: nowrap; }
+  .panel-top .derecha { margin-left: auto; display: flex; align-items: center; gap: .9rem; }
+  .panel-top .sello { font-size: .78rem; color: var(--muted); }
+  .panel-top button.txt {
+    font-size: .82rem; color: var(--muted); text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .panel-top button.txt:hover { color: var(--orange-dk); }
 
   .llave { max-width: 26rem; margin: 4rem auto; text-align: center; }
   .llave .f { text-align: left; margin: 1.3rem 0; }
 
-  /* Pestañas. Sin bordes ni cajas: la que está activa se marca con una
-     línea gruesa abajo, como la navegación del sitio. */
+  /* Pestañas. Sin cajas: la activa se marca con una línea gruesa
+     abajo, como la navegación del sitio. */
   .pestanas { display: flex; gap: .3rem; margin-bottom: 1.6rem; flex-wrap: wrap; }
   .pestanas button {
     font-family: var(--display); font-weight: 600; font-size: .92rem;
@@ -33,6 +46,13 @@
   }
   .pestanas button:hover { color: var(--ink); }
   .pestanas button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--orange); }
+  .pestanas .cuenta {
+    display: inline-block; margin-left: .35rem;
+    background: var(--orange); color: #fff;
+    font-size: .68rem; font-weight: 700; line-height: 1;
+    padding: .18rem .34rem; vertical-align: middle;
+  }
+  .pestanas .cuenta[hidden] { display: none; }
 
   .aviso[hidden] { display: none; }
   .aviso {
@@ -42,15 +62,105 @@
     font-size: .88rem; line-height: 1.45;
   }
 
-  .filtros { display: grid; gap: .9rem; grid-template-columns: 1fr 1fr auto auto; align-items: end; margin-bottom: 1.6rem; }
-  @media (max-width: 719px) { .filtros { grid-template-columns: 1fr 1fr; } .filtros .btn { grid-column: span 1; } }
+  /* ---------- Resumen ---------- */
+  .vista[hidden] { display: none; }
+
+  /* Las líneas entre tarjetas se dibujan con la sombra de cada una y no
+     con el fondo de la rejilla: así, cuando el número de tarjetas no
+     calza con el de columnas, el hueco que sobra queda del color del
+     papel en vez de un bloque gris. */
+  .tarjetas {
+    display: grid; gap: 1px; margin-bottom: 2rem;
+    border: 1px solid var(--line); background: var(--paper);
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  }
+  .tarjeta {
+    background: var(--paper); padding: 1.1rem 1.2rem 1.2rem;
+    box-shadow: 0 0 0 1px var(--line);
+  }
+  .tarjeta-t {
+    font-family: var(--display); font-size: .7rem; font-weight: 600;
+    letter-spacing: .09em; text-transform: uppercase; color: var(--muted);
+  }
+  .tarjeta-n {
+    font-family: var(--display); font-weight: 800; font-stretch: 112%;
+    font-size: clamp(1.7rem, 4vw, 2.3rem); line-height: 1.05;
+    margin-top: .45rem; letter-spacing: -.015em;
+  }
+  .tarjeta-p { font-size: .8rem; color: var(--muted); margin-top: .3rem; line-height: 1.4; }
+  .tarjeta.urge { background: var(--orange-tint); }
+  .tarjeta.urge .tarjeta-n, .tarjeta.urge .tarjeta-t { color: var(--orange-dk); }
+
+  .bloque { margin-bottom: 2.4rem; }
+  .bloque > h2 {
+    font-family: var(--display); font-size: 1rem; font-weight: 700;
+    margin-bottom: .9rem;
+  }
+  .bloque > h2 small { font-weight: 500; color: var(--muted); font-size: .8rem; margin-left: .5rem; }
+
+  /* La cola de pendientes. Es lo primero que se ve porque es lo único
+     del tablero sobre lo que hay que hacer algo hoy. */
+  .cola { border: 1px solid var(--line); background: var(--paper); }
+  .cola-item {
+    display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
+    padding: .85rem 1rem; border-bottom: 1px solid var(--line);
+  }
+  .cola-item:last-child { border-bottom: 0; }
+  .cola-item.viejo { background: var(--orange-tint); }
+  .cola-quien { min-width: 12rem; flex: 1 1 14rem; }
+  .cola-quien b { font-family: var(--display); font-size: .95rem; }
+  .cola-quien small { display: block; color: var(--muted); font-size: .8rem; margin-top: .15rem; }
+  .cola-espera {
+    font-family: var(--display); font-weight: 700; font-size: .8rem;
+    color: var(--muted); white-space: nowrap;
+  }
+  .cola-item.viejo .cola-espera { color: var(--orange-dk); }
+  .cola-acciones { display: flex; gap: .4rem; margin-left: auto; flex-wrap: wrap; }
+
+  .bt {
+    font-family: var(--display); font-size: .78rem; font-weight: 600;
+    padding: .38rem .7rem; border: 1px solid var(--line-2); color: var(--ink);
+    white-space: nowrap; transition: background .15s var(--ease), border-color .15s var(--ease);
+  }
+  .bt:hover { background: var(--paper-3); }
+  .bt.wa { background: var(--wa); border-color: var(--wa); color: #06371a; }
+  .bt.wa:hover { background: #1fbe5b; border-color: #1fbe5b; }
+  .bt.hecho { border-color: var(--orange-line); color: var(--orange-dk); }
+  .bt.hecho:hover { background: var(--orange-soft); }
+
+  /* Gráficas. Sin librería: son barras, y una barra es un div con
+     ancho en porcentaje. Cargar 90 KB de JavaScript para dibujar
+     nueve rectángulos sería absurdo. */
+  .rejilla { display: grid; gap: 1.6rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+  .barras { list-style: none; }
+  .barras li { margin-bottom: .7rem; }
+  .barras .fila { display: flex; justify-content: space-between; font-size: .84rem; margin-bottom: .25rem; }
+  .barras .fila span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .barras .pista { height: 6px; background: var(--paper-3); }
+  .barras .rell { height: 100%; background: var(--orange); }
+  .barras .rell.slate { background: var(--slate-3); }
+
+  .serie { width: 100%; height: 84px; display: block; overflow: visible; }
+  .serie-pie {
+    display: flex; justify-content: space-between;
+    font-size: .74rem; color: var(--muted); margin-top: .4rem;
+  }
+  .leyenda { display: flex; gap: 1.1rem; font-size: .78rem; color: var(--muted); margin-bottom: .7rem; }
+  .leyenda i { display: inline-block; width: 9px; height: 9px; margin-right: .35rem; }
+  .leyenda i.cot { background: var(--orange); }
+  .leyenda i.sol { background: var(--slate-3); }
+
+  /* ---------- Tablas ---------- */
+  .filtros { display: grid; gap: .9rem; grid-template-columns: 1fr 1fr 1fr auto auto; align-items: end; margin-bottom: 1.6rem; }
+  @media (max-width: 859px) { .filtros { grid-template-columns: 1fr 1fr; } }
 
   .tabla-wrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--line); }
   table.solicitudes { width: 100%; border-collapse: collapse; font-size: .89rem; white-space: nowrap; }
-  table.solicitudes th, table.solicitudes td { padding: .7rem .9rem; border-bottom: 1px solid var(--line); text-align: left; }
+  table.solicitudes th, table.solicitudes td { padding: .7rem .9rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
   table.solicitudes th { font-family: var(--display); font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--paper-2); }
   table.solicitudes td.detalle { white-space: normal; min-width: 16rem; color: var(--ink-2); }
   table.solicitudes tr:last-child td { border-bottom: 0; }
+  table.solicitudes tr.sin-atender td:first-child { box-shadow: inset 3px 0 0 var(--orange); }
 
   table.solicitudes a.doc {
     color: var(--orange-dk);
@@ -58,6 +168,59 @@
     padding-bottom: 1px;
   }
   table.solicitudes a.doc:hover { border-bottom-color: var(--orange); }
+
+  /* El estado es un select nativo a propósito: en el teléfono abre la
+     rueda del sistema, que es más rápida que cualquier menú que uno
+     dibuje. Se le pinta el fondo según en qué va. */
+  select.estado {
+    font-family: var(--display); font-size: .78rem; font-weight: 600;
+    padding: .3rem 1.4rem .3rem .55rem; border: 1px solid var(--line-2);
+    background-color: var(--paper-2); color: var(--ink); cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'><path d='M0 0h10L5 6z' fill='%236b6259'/></svg>");
+    background-repeat: no-repeat; background-position: right .5rem center; background-size: 8px;
+  }
+  select.estado[data-tono="alerta"] { background-color: var(--orange-tint); color: var(--orange-dk); border-color: var(--orange-line); }
+  select.estado[data-tono="curso"]  { background-color: rgba(31,44,51,.07); color: var(--slate); }
+  select.estado[data-tono="bien"]   { background-color: rgba(37,211,102,.16); color: #0d6b35; border-color: rgba(13,107,53,.3); }
+  select.estado[data-tono="gris"]   { background-color: var(--paper-3); color: var(--muted); }
+
+  input.nota {
+    font-size: .82rem; width: 11rem; padding: .3rem .4rem;
+    border: 1px solid transparent; background: transparent; color: var(--ink-2);
+  }
+  input.nota:hover { border-color: var(--line); }
+  input.nota:focus { border-color: var(--orange-line); background: var(--white); outline: none; }
+  td.guardado { animation: destello 1.1s var(--ease); }
+  @keyframes destello { from { background: var(--orange-tint); } to { background: var(--paper); } }
+
+  /* Estado, nota y contacto van pegados al borde derecho aunque la
+     tabla se corra: son las tres columnas con las que se trabaja, y
+     tenerlas que ir a buscar arrastrando es justo lo que hace que las
+     cosas se queden sin atender. */
+  table.solicitudes th.trabajo, table.solicitudes td.trabajo {
+    position: sticky; background: var(--paper);
+    box-shadow: -1px 0 0 var(--line);
+  }
+  table.solicitudes th.trabajo { background: var(--paper-2); z-index: 2; }
+  table.solicitudes td.t1, table.solicitudes th.t1 { right: calc(var(--t2, 0px) + var(--t3, 0px)); }
+  table.solicitudes td.t2, table.solicitudes th.t2 { right: var(--t3, 0px); box-shadow: none; }
+  table.solicitudes td.t3, table.solicitudes th.t3 { right: 0; box-shadow: none; }
+  @media (max-width: 719px) {
+    /* En un teléfono no hay ancho para fijar tres columnas: se sueltan
+       y la tabla se arrastra como cualquier otra. */
+    table.solicitudes th.trabajo, table.solicitudes td.trabajo { position: static; box-shadow: none; }
+  }
+
+  .acc { display: flex; gap: .35rem; }
+  .acc a {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.85rem; height: 1.85rem; border: 1px solid var(--line-2);
+  }
+  .acc a svg { width: 15px; height: 15px; fill: currentColor; }
+  .acc a.wa { background: var(--wa); border-color: var(--wa); color: #06371a; }
+  .acc a:hover { background: var(--paper-3); }
+  .acc a.wa:hover { background: #1fbe5b; }
 
   .estado-panel { font-size: .9rem; color: var(--muted); margin: 1rem 0; }
   .estado-panel.is-error { color: #c0392b; }
@@ -79,13 +242,18 @@
   <div class="panel-top">
     <img src="assets/img/logo-mascota.webp" alt="" width="34" height="34">
     <span>Panel interno</span>
+    <span class="derecha" id="top-derecha" hidden>
+      <span class="sello" id="sello"></span>
+      <button type="button" class="txt" id="btn-refrescar">Actualizar</button>
+      <button type="button" class="txt" id="btn-salir">Salir</button>
+    </span>
   </div>
 
   <!-- Se ve mientras no se haya escrito la clave correcta -->
   <section class="llave" id="pantalla-clave">
     <p class="kicker" style="justify-content:center; display:flex;">Acceso privado</p>
-    <h1 style="font-size:1.6rem;">Solicitudes y cotizaciones</h1>
-    <p class="dim" style="margin-top:.6rem;">Ingrese la clave para ver y descargar lo que ha entrado por el sitio.</p>
+    <h1 style="font-size:1.6rem;">Centro de control</h1>
+    <p class="dim" style="margin-top:.6rem;">Ingrese la clave para ver lo que ha entrado por el sitio.</p>
     <form id="form-clave">
       <div class="f">
         <label for="clave">Clave</label>
@@ -99,43 +267,94 @@
   <!-- Se ve después de entrar la clave correcta -->
   <section id="pantalla-panel" hidden>
     <div class="pestanas" role="tablist" aria-label="Qué mostrar">
-      <button type="button" role="tab" id="tab-solicitudes" data-tabla="solicitudes" aria-selected="true">Solicitudes</button>
-      <button type="button" role="tab" id="tab-cotizaciones" data-tabla="cotizaciones" aria-selected="false">Cotizaciones</button>
+      <button type="button" role="tab" data-vista="resumen" aria-selected="true">Resumen</button>
+      <button type="button" role="tab" data-vista="cotizaciones" aria-selected="false">Cotizaciones<span class="cuenta" id="cuenta-cot" hidden></span></button>
+      <button type="button" role="tab" data-vista="solicitudes" aria-selected="false">Solicitudes<span class="cuenta" id="cuenta-sol" hidden></span></button>
     </div>
 
     <p class="aviso" id="aviso-provisional" hidden>
-      Estas cotizaciones salieron con las <b>tarifas provisionales</b>, que no son las
+      Las cotizaciones salieron con las <b>tarifas provisionales</b>, que no son las
       de la empresa. Sirven para ver que el sistema funciona, no para cobrar.
     </p>
 
-    <div class="filtros">
-      <div class="f">
-        <label for="desde">Desde</label>
-        <input type="date" id="desde">
+    <!-- ================= RESUMEN ================= -->
+    <div class="vista" id="vista-resumen">
+      <p class="estado-panel" id="estado-resumen" role="status" aria-live="polite">Cargando…</p>
+
+      <div class="tarjetas" id="tarjetas"></div>
+
+      <div class="bloque" id="bloque-cola" hidden>
+        <h2>Lo que está esperando <small>nadie lo ha tocado todavía</small></h2>
+        <div class="cola" id="cola"></div>
       </div>
-      <div class="f">
-        <label for="hasta">Hasta</label>
-        <input type="date" id="hasta">
+
+      <div class="bloque">
+        <h2>Últimos 30 días</h2>
+        <div class="leyenda">
+          <span><i class="cot"></i>Cotizaciones</span>
+          <span><i class="sol"></i>Solicitudes</span>
+        </div>
+        <svg class="serie" id="serie" viewBox="0 0 300 60" preserveAspectRatio="none" role="img" aria-label="Entradas por día"></svg>
+        <div class="serie-pie"><span id="serie-ini"></span><span id="serie-fin"></span></div>
       </div>
-      <button class="btn btn-line" type="button" id="btn-filtrar">Filtrar</button>
-      <button class="btn btn-orange" type="button" id="btn-csv">Descargar CSV</button>
+
+      <div class="bloque">
+        <div class="rejilla">
+          <div>
+            <h2>En qué van <small>cotizaciones</small></h2>
+            <ul class="barras" id="b-embudo"></ul>
+          </div>
+          <div>
+            <h2>Qué se cotiza <small>30 días</small></h2>
+            <ul class="barras" id="b-servicios"></ul>
+          </div>
+          <div>
+            <h2>Dónde queda <small>30 días</small></h2>
+            <ul class="barras" id="b-provincias"></ul>
+          </div>
+          <div>
+            <h2>Por dónde entró <small>30 días</small></h2>
+            <ul class="barras" id="b-origenes"></ul>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <p class="estado-panel" id="estado-lista" role="status" aria-live="polite"></p>
+    <!-- ================= TABLAS ================= -->
+    <div class="vista" id="vista-tabla" hidden>
+      <div class="filtros">
+        <div class="f">
+          <label for="desde">Desde</label>
+          <input type="date" id="desde">
+        </div>
+        <div class="f">
+          <label for="hasta">Hasta</label>
+          <input type="date" id="hasta">
+        </div>
+        <div class="f">
+          <label for="f-estado">Estado</label>
+          <select id="f-estado"><option value="">Todos</option></select>
+        </div>
+        <button class="btn btn-line" type="button" id="btn-filtrar">Filtrar</button>
+        <button class="btn btn-orange" type="button" id="btn-csv">Descargar CSV</button>
+      </div>
 
-    <div class="tabla-wrap">
-      <table class="solicitudes" id="tabla">
-        <thead><tr id="encabezado-tabla"></tr></thead>
-        <tbody id="cuerpo-tabla"></tbody>
-      </table>
-    </div>
+      <p class="estado-panel" id="estado-lista" role="status" aria-live="polite"></p>
 
-    <!-- Paginación. El panel traía todas las solicitudes de golpe; con
-         unos miles el teléfono se arrastra. Ahora vienen de 50 en 50. -->
-    <div class="paginacion" id="paginacion" hidden>
-      <button class="btn btn-line" type="button" id="btn-antes">&larr; Anteriores</button>
-      <span class="paginacion-txt" id="paginacion-txt" role="status" aria-live="polite"></span>
-      <button class="btn btn-line" type="button" id="btn-despues">Siguientes &rarr;</button>
+      <div class="tabla-wrap">
+        <table class="solicitudes" id="tabla">
+          <thead><tr id="encabezado-tabla"></tr></thead>
+          <tbody id="cuerpo-tabla"></tbody>
+        </table>
+      </div>
+
+      <!-- Paginación: las filas vienen de 50 en 50 para que el teléfono
+           no se arrastre cuando haya miles. -->
+      <div class="paginacion" id="paginacion" hidden>
+        <button class="btn btn-line" type="button" id="btn-antes">&larr; Anteriores</button>
+        <span class="paginacion-txt" id="paginacion-txt" role="status" aria-live="polite"></span>
+        <button class="btn btn-line" type="button" id="btn-despues">Siguientes &rarr;</button>
+      </div>
     </div>
   </section>
 </div>
@@ -147,26 +366,241 @@
   var $ = function (id) { return document.getElementById(id); };
   var clave = sessionStorage.getItem("clavePanel") || "";
 
+  /* Estado de la pantalla. `vista` es cuál de las tres pestañas se está
+     viendo; cuando es una tabla, además es el nombre de la tabla. */
+  var vista = "resumen";
+  var pagina = 1;
+  var ESTADOS = null;          // llega del servidor en la primera carga
+  var resumenCargado = false;
+
   function escHtml(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
 
-  function mostrarPanel() {
-    $("pantalla-clave").hidden = true;
-    $("pantalla-panel").hidden = false;
-    cargar();
+  function pedir(ruta, opciones) {
+    var o = opciones || {};
+    o.headers = Object.assign({ "X-Clave": clave }, o.headers || {});
+    return fetch(ruta, o).then(function (r) {
+      return r.json().then(function (d) {
+        if (!r.ok || !d.ok) throw new Error((d && d.error) || ("HTTP " + r.status));
+        return d;
+      });
+    });
   }
 
-  var pagina = 1;
-  var tabla = "solicitudes";
+  /* Cifras. En las tarjetas van cortas porque lo que importa es el orden
+     de magnitud: "₡1,4 M" se lee de un vistazo, "₡1.437.500" no. */
+  function colones(n) { return "₡" + Number(n || 0).toLocaleString("es-CR"); }
+  function corto(n) {
+    n = Number(n || 0);
+    if (n >= 1000000) return "₡" + (n / 1000000).toFixed(1).replace(".", ",") + " M";
+    if (n >= 1000) return "₡" + Math.round(n / 1000) + " k";
+    return "₡" + n;
+  }
+
+  var MESES = ["ene","feb","mar","abr","may","jun","jul","ago","set","oct","nov","dic"];
+  function fechaCorta(iso) {
+    var p = String(iso || "").split("-");
+    return p.length === 3 ? (Number(p[2]) + " " + MESES[Number(p[1]) - 1]) : "";
+  }
+
+  /* "hace 3 h" / "hace 2 días". Las horas sueltas dicen poco después
+     del primer día, y los días sueltos dicen poco antes. */
+  function espera(horas) {
+    horas = Number(horas || 0);
+    if (horas < 1) return "recién";
+    if (horas < 24) return "hace " + horas + " h";
+    var d = Math.floor(horas / 24);
+    return "hace " + d + (d === 1 ? " día" : " días");
+  }
+
+  /* =========================================================
+     Resumen
+     ========================================================= */
+
+  function tarjeta(titulo, numero, pie, urge) {
+    return '<div class="tarjeta' + (urge ? " urge" : "") + '">' +
+      '<div class="tarjeta-t">' + escHtml(titulo) + "</div>" +
+      '<div class="tarjeta-n">' + escHtml(numero) + "</div>" +
+      (pie ? '<div class="tarjeta-p">' + escHtml(pie) + "</div>" : "") +
+      "</div>";
+  }
+
+  function pintarTarjetas(d) {
+    var esperando = d.esperando.total;
+    var t = [];
+
+    t.push(tarjeta(
+      "Sin atender", String(esperando),
+      esperando
+        ? ("el más viejo " + espera(d.esperaMax))
+        : "todo al día",
+      esperando > 0
+    ));
+    t.push(tarjeta("Hoy", String(d.hoy.cot + d.hoy.sol),
+      d.hoy.cot + (d.hoy.cot === 1 ? " cotización" : " cotizaciones") + " · " +
+      d.hoy.sol + (d.hoy.sol === 1 ? " solicitud" : " solicitudes")));
+    t.push(tarjeta("Últimos 7 días", String(d.semana.cot + d.semana.sol),
+      d.semana.cot + " cotizadas"));
+    t.push(tarjeta("Embudo abierto", corto(d.valor.max),
+      d.valor.min ? ("desde " + corto(d.valor.min) + " · lo que todavía se puede cerrar") : "nada abierto"));
+    t.push(tarjeta("Cierre",
+      d.cierre === null ? "—" : d.cierre + "%",
+      d.cierre === null ? "no hay cotizaciones resueltas" : ("de " + d.cerradas + " resueltas · " + corto(d.ganado.max) + " hechos")));
+
+    $("tarjetas").innerHTML = t.join("");
+  }
+
+  /* La cola: lo único del tablero sobre lo que hay que hacer algo hoy.
+     Cada línea trae el WhatsApp con el mensaje ya escrito, porque el
+     motivo de que algo lleve dos días esperando casi siempre es que
+     abrir WhatsApp y copiar el número da pereza. */
+  function pintarCola(d) {
+    var caja = $("bloque-cola");
+    if (!d.pendientes.length) { caja.hidden = true; return; }
+    caja.hidden = false;
+
+    $("cola").innerHTML = d.pendientes.map(function (p) {
+      var acc = [];
+      if (p.wa) acc.push('<a class="bt wa" href="' + escHtml(p.wa) + '" target="_blank" rel="noopener">WhatsApp</a>');
+      if (p.tel) acc.push('<a class="bt" href="tel:+506' + escHtml(String(p.tel).replace(/\D/g, "")) + '">Llamar</a>');
+      acc.push('<button type="button" class="bt hecho" data-tabla="' + escHtml(p.tabla) +
+               '" data-id="' + escHtml(String(p.id)) + '">Ya la atendí</button>');
+
+      return '<div class="cola-item' + (p.horas >= 24 ? " viejo" : "") + '" data-fila="' + escHtml(p.tabla + ":" + p.id) + '">' +
+        '<div class="cola-quien">' +
+          "<b>" + escHtml(p.nombre) + "</b>" +
+          "<small>" + escHtml(p.titulo + " · " + p.detalle + (p.lugar ? " · " + p.lugar : "")) + "</small>" +
+        "</div>" +
+        '<span class="cola-espera">' + escHtml(espera(p.horas)) + "</span>" +
+        '<div class="cola-acciones">' + acc.join("") + "</div>" +
+      "</div>";
+    }).join("");
+  }
+
+  /* Barras. `datos` es [{k, n}]; la más alta llena el ancho y las demás
+     se miden contra ella. Es comparación relativa, que es lo que uno
+     hace de verdad al mirar esto: cuál pesa más. */
+  function pintarBarras(destino, datos, clase) {
+    var caja = $(destino);
+    if (!datos || !datos.length) {
+      caja.innerHTML = '<li class="tarjeta-p">Todavía no hay datos.</li>';
+      return;
+    }
+    var tope = datos.reduce(function (a, f) { return Math.max(a, f.n); }, 0) || 1;
+    caja.innerHTML = datos.map(function (f) {
+      var pct = Math.max(2, Math.round((f.n / tope) * 100));
+      return "<li>" +
+        '<div class="fila"><span>' + escHtml(f.k) + "</span><span>" + f.n + "</span></div>" +
+        '<div class="pista"><div class="rell' + (clase ? " " + clase : "") + '" style="width:' + pct + '%"></div></div>' +
+      "</li>";
+    }).join("");
+  }
+
+  /* La serie de 30 días, dibujada a mano. Son sesenta rectángulos: meter
+     una librería de gráficas para esto costaría más en descarga que
+     todo el resto de la página junta. */
+  function pintarSerie(d) {
+    var s = d.serie;
+    var paso = 300 / s.length;
+    var ancho = paso * 0.72;
+    var tope = s.reduce(function (a, f) { return Math.max(a, f.cot + f.sol); }, 0) || 1;
+    var alto = 60;
+
+    var piezas = s.map(function (f, i) {
+      var x = (i * paso + (paso - ancho) / 2).toFixed(2);
+      var hc = (f.cot / tope) * alto;
+      var hs = (f.sol / tope) * alto;
+      var out = "";
+      // Las solicitudes van encima de las cotizaciones: la barra completa
+      // es todo lo que entró ese día.
+      if (hs) out += '<rect x="' + x + '" y="' + (alto - hc - hs).toFixed(2) + '" width="' + ancho.toFixed(2) +
+                     '" height="' + hs.toFixed(2) + '" fill="var(--slate-3)"><title>' +
+                     fechaCorta(f.d) + ": " + f.sol + " solicitudes</title></rect>";
+      if (hc) out += '<rect x="' + x + '" y="' + (alto - hc).toFixed(2) + '" width="' + ancho.toFixed(2) +
+                     '" height="' + hc.toFixed(2) + '" fill="var(--orange)"><title>' +
+                     fechaCorta(f.d) + ": " + f.cot + " cotizaciones</title></rect>";
+      // Un día en cero deja una marquita, para que se vea que existió.
+      if (!hc && !hs) out += '<rect x="' + x + '" y="' + (alto - 1) + '" width="' + ancho.toFixed(2) +
+                             '" height="1" fill="var(--line)"></rect>';
+      return out;
+    });
+
+    $("serie").innerHTML = piezas.join("");
+    $("serie-ini").textContent = fechaCorta(s[0].d);
+    $("serie-fin").textContent = fechaCorta(s[s.length - 1].d);
+  }
+
+  function llenarFiltroEstados() {
+    if (!ESTADOS || $("f-estado").options.length > 1) return;
+    var sel = $("f-estado");
+    Object.keys(ESTADOS).forEach(function (k) {
+      var o = document.createElement("option");
+      o.value = k;
+      o.textContent = ESTADOS[k].etiqueta;
+      sel.appendChild(o);
+    });
+  }
+
+  function cargarResumen() {
+    $("estado-resumen").textContent = "Cargando…";
+    $("estado-resumen").classList.remove("is-error");
+    pedir("/api/panel/resumen")
+      .then(function (d) {
+        ESTADOS = d.estados;
+        llenarFiltroEstados();
+        $("estado-resumen").textContent = "";
+        pintarTarjetas(d);
+        pintarCola(d);
+        pintarSerie(d);
+
+        // El embudo se pinta en el orden del proceso, no por tamaño:
+        // se lee como un recorrido, de "sin atender" a "hecha".
+        pintarBarras("b-embudo", Object.keys(ESTADOS).map(function (k) {
+          return { k: ESTADOS[k].etiqueta, n: d.embudo.cotizaciones[k] || 0 };
+        }).filter(function (f) { return f.n > 0; }));
+        pintarBarras("b-servicios", d.servicios);
+        pintarBarras("b-provincias", d.provincias, "slate");
+        pintarBarras("b-origenes", d.origenes, "slate");
+
+        // El contador en la pestaña es lo que hace que el panel sirva
+        // aunque esté abierto en otra vista.
+        marcarCuenta("cuenta-cot", d.esperando.cot);
+        marcarCuenta("cuenta-sol", d.esperando.sol);
+        $("aviso-provisional").hidden = !d.provisional;
+        sellar();
+        resumenCargado = true;
+      })
+      .catch(function () {
+        $("estado-resumen").textContent = "No se pudo cargar el resumen.";
+        $("estado-resumen").classList.add("is-error");
+      });
+  }
+
+  function marcarCuenta(id, n) {
+    var e = $(id);
+    e.textContent = String(n || 0);
+    e.hidden = !n;
+  }
+
+  function sellar() {
+    var h = new Date();
+    $("sello").textContent = "al día " + String(h.getHours()).padStart(2, "0") + ":" +
+                             String(h.getMinutes()).padStart(2, "0");
+  }
+
+  /* =========================================================
+     Tablas
+     ========================================================= */
 
   function urlConFiltros(base, conPagina) {
     var params = new URLSearchParams();
-    params.set("tabla", tabla);
+    params.set("tabla", vista);
     if ($("desde").value) params.set("desde", $("desde").value);
     if ($("hasta").value) params.set("hasta", $("hasta").value);
+    if ($("f-estado").value) params.set("estado", $("f-estado").value);
     if (conPagina && pagina > 1) params.set("pagina", String(pagina));
     return base + "?" + params.toString();
   }
@@ -175,74 +609,114 @@
     var caja = $("paginacion");
     var total = d.total || 0;
     var paginas = d.paginas || 1;
-
     if (!total) { caja.hidden = true; return; }
 
     var primera = (d.pagina - 1) * d.porPagina + 1;
     var ultima = Math.min(d.pagina * d.porPagina, total);
-    var cosa = tabla === "cotizaciones" ? "cotización" : "solicitud";
+    var cosa = vista === "cotizaciones" ? "cotización" : "solicitud";
     $("estado-lista").textContent =
-      total === 1 ? "1 " + cosa + "."
-                  : "Mostrando " + primera + " a " + ultima + " de " + total + ".";
+      total === 1 ? "1 " + cosa + "." : "Mostrando " + primera + " a " + ultima + " de " + total + ".";
 
-    // Los botones sólo aparecen si de verdad hay a dónde ir.
     caja.hidden = paginas <= 1;
     $("btn-antes").disabled = d.pagina <= 1;
     $("btn-despues").disabled = d.pagina >= paginas;
     $("paginacion-txt").textContent = "Página " + d.pagina + " de " + paginas;
   }
 
-  /* Las columnas las decide el servidor, no esta página: así la tabla
-     de cotizaciones y la de solicitudes usan el mismo código, y lo que
-     se ve en pantalla nunca se desalinea del CSV que se descarga. */
+  var ICO_WA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .1-1.6-.1a13 13 0 0 1-5-4.4c-.4-.6-.9-1.5-.9-2.4s.5-1.4.7-1.6c.2-.2.4-.3.6-.3h.5c.2 0 .4 0 .6.4l.8 1.9c0 .2 0 .3-.1.5l-.4.5c-.1.1-.3.3-.1.6.2.3.7 1.1 1.4 1.8.9.8 1.6 1 1.9 1.2.3.1.4 0 .6-.1l.7-.9c.2-.2.3-.2.6-.1l1.8.9c.3.1.4.2.5.3v1.2Z"/></svg>';
+  var ICO_TEL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h3.5l1.8 4.4-2.2 1.6a12.5 12.5 0 0 0 6.9 6.9l1.6-2.2L21 15.5V19a2 2 0 0 1-2.2 2A16.8 16.8 0 0 1 3 5.2 2 2 0 0 1 5 3Z"/></svg>';
+
+  function celdaEstado(m) {
+    var tono = (ESTADOS[m.estado] || {}).tono || "gris";
+    var ops = Object.keys(ESTADOS).map(function (k) {
+      return '<option value="' + k + '"' + (k === m.estado ? " selected" : "") + ">" +
+             escHtml(ESTADOS[k].etiqueta) + "</option>";
+    }).join("");
+    return '<select class="estado" data-tono="' + tono + '" aria-label="Estado">' + ops + "</select>";
+  }
+
+  function celdaAcciones(m) {
+    var a = [];
+    if (m.wa) a.push('<a class="wa" href="' + escHtml(m.wa) + '" target="_blank" rel="noopener" title="Escribir por WhatsApp" aria-label="Escribir por WhatsApp">' + ICO_WA + "</a>");
+    if (m.tel) a.push('<a href="tel:+506' + escHtml(String(m.tel).replace(/\D/g, "")) + '" title="Llamar" aria-label="Llamar">' + ICO_TEL + "</a>");
+    return a.length ? '<div class="acc">' + a.join("") + "</div>" : "—";
+  }
+
+  /* Las columnas de datos las decide el servidor: así la tabla de
+     cotizaciones y la de solicitudes usan el mismo código, y lo que se
+     ve en pantalla nunca se desalinea del CSV. Lo que agrega el panel
+     son las tres columnas con las que se TRABAJA — estado, nota y
+     contacto — que no son datos sino acciones. */
   function pintarFilas(d) {
     var cuerpo = $("cuerpo-tabla");
 
-    $("encabezado-tabla").innerHTML = (d.encabezado || []).map(function (t) {
-      return "<th>" + escHtml(t) + "</th>";
-    }).join("");
+    $("encabezado-tabla").innerHTML =
+      (d.encabezado || []).map(function (t) { return "<th>" + escHtml(t) + "</th>"; }).join("") +
+      (d.meta ? '<th class="trabajo t1">Estado</th><th class="trabajo t2">Nota</th>' +
+                '<th class="trabajo t3">Contactar</th>' : "");
 
     if (!d.filas.length) {
       cuerpo.innerHTML = "";
-      $("estado-lista").textContent = tabla === "cotizaciones"
-        ? "No hay cotizaciones en ese rango de fechas."
-        : "No hay solicitudes en ese rango de fechas.";
+      $("estado-lista").textContent = $("f-estado").value
+        ? "No hay nada con ese estado en ese rango."
+        : "No hay nada en ese rango de fechas.";
       $("paginacion").hidden = true;
       return;
     }
 
     cuerpo.innerHTML = d.filas.map(function (fila, n) {
       var enlace = d.enlaces && d.enlaces[n];
-      return "<tr>" + fila.map(function (celda, i) {
-        // La columna "ancha" (el detalle, el tipo de propiedad) es la
-        // única que puede partirse en varias líneas.
+      var m = d.meta && d.meta[n];
+
+      var celdas = fila.map(function (celda, i) {
         var cls = i === d.ancha ? ' class="detalle"' : "";
         var texto = escHtml(celda);
-        // La primera celda abre el documento, cuando lo hay. Es el
-        // camino para reenviarle a alguien su cotización sin tener que
-        // volver a emitirla.
+        // La primera celda abre el documento cuando lo hay: es el camino
+        // para reenviarle a alguien su cotización sin volver a emitirla.
         if (i === 0 && enlace) {
-          texto = '<a class="doc" href="' + escHtml(enlace) + '" target="_blank" rel="noopener">' +
-                  texto + "</a>";
+          texto = '<a class="doc" href="' + escHtml(enlace) + '" target="_blank" rel="noopener">' + texto + "</a>";
         }
         return "<td" + cls + ">" + texto + "</td>";
-      }).join("") + "</tr>";
+      }).join("");
+
+      if (m) {
+        celdas += '<td class="trabajo t1">' + celdaEstado(m) + "</td>" +
+                  '<td class="trabajo t2"><input class="nota" type="text" value="' + escHtml(m.nota) +
+                  '" placeholder="—" aria-label="Nota"></td>' +
+                  '<td class="trabajo t3">' + celdaAcciones(m) + "</td>";
+      }
+
+      return '<tr data-id="' + (m ? escHtml(String(m.id)) : "") + '"' +
+             (m && m.estado === "nueva" ? ' class="sin-atender"' : "") + ">" + celdas + "</tr>";
     }).join("");
   }
 
-  function cargar() {
+  /* Cuánto miden las dos últimas columnas. Las fijas de la derecha se
+     apoyan una en otra, y sus anchos dependen del texto de las
+     etiquetas: medirlos es más seguro que escribirlos a mano. */
+  function medirColumnasFijas() {
+    var t = $("tabla");
+    var f = t.querySelector("tbody tr");
+    if (!f) return;
+    var c2 = f.querySelector("td.t2"), c3 = f.querySelector("td.t3");
+    if (!c2 || !c3) return;
+    t.style.setProperty("--t2", c2.getBoundingClientRect().width + "px");
+    t.style.setProperty("--t3", c3.getBoundingClientRect().width + "px");
+  }
+
+  function cargarTabla() {
     $("estado-lista").textContent = "Cargando…";
     $("estado-lista").classList.remove("is-error");
-    fetch(urlConFiltros("/api/panel/solicitudes", true), { headers: { "X-Clave": clave } })
-      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
-      .then(function (res) {
-        if (!res.ok || !res.d.ok) throw new Error(res.d && res.d.error);
-        pintarFilas(res.d);
-        pintarPaginacion(res.d);
-        $("aviso-provisional").hidden = !res.d.hayProvisionales;
-        // Al cambiar de página, volver arriba: si no, uno queda mirando
-        // el final de una lista que ya cambió.
+    pedir(urlConFiltros("/api/panel/solicitudes", true))
+      .then(function (d) {
+        ESTADOS = d.estados || ESTADOS;
+        llenarFiltroEstados();
+        pintarFilas(d);
+        medirColumnasFijas();
+        pintarPaginacion(d);
+        if (d.hayProvisionales) $("aviso-provisional").hidden = false;
         window.scrollTo({ top: 0, behavior: "smooth" });
+        sellar();
       })
       .catch(function () {
         $("estado-lista").textContent = "No se pudo cargar. Intente de nuevo.";
@@ -250,12 +724,102 @@
       });
   }
 
+  /* Guardar el estado o la nota de una fila. Se manda estado Y nota
+     siempre: son el mismo registro, y mandar sólo uno borraría el otro. */
+  function guardar(tabla, id, estado, nota, celda) {
+    return pedir("/api/panel/estado", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tabla: tabla, id: id, estado: estado, nota: nota })
+    }).then(function () {
+      if (celda) {
+        celda.classList.remove("guardado");
+        void celda.offsetWidth;          // reinicia la animación
+        celda.classList.add("guardado");
+      }
+      // El resumen ya no dice la verdad: se vuelve a pedir la próxima vez.
+      resumenCargado = false;
+    });
+  }
+
+  // Delegación: la tabla se repinta entera en cada carga, así que poner
+  // un escuchador por fila sería colgarlos y botarlos todo el tiempo.
+  $("cuerpo-tabla").addEventListener("change", function (e) {
+    var sel = e.target.closest("select.estado");
+    if (!sel) return;
+    var tr = sel.closest("tr");
+    var nota = tr.querySelector("input.nota");
+    sel.dataset.tono = (ESTADOS[sel.value] || {}).tono || "gris";
+    tr.classList.toggle("sin-atender", sel.value === "nueva");
+    guardar(vista, tr.dataset.id, sel.value, nota ? nota.value : "", sel.closest("td"))
+      .catch(function () { alert("No se pudo guardar el estado."); });
+  });
+
+  $("cuerpo-tabla").addEventListener("change", function (e) {
+    var inp = e.target.closest("input.nota");
+    if (!inp) return;
+    var tr = inp.closest("tr");
+    var sel = tr.querySelector("select.estado");
+    guardar(vista, tr.dataset.id, sel ? sel.value : "nueva", inp.value, inp.closest("td"))
+      .catch(function () { alert("No se pudo guardar la nota."); });
+  });
+
+  // "Ya la atendí" en la cola del resumen: la saca de la lista de una,
+  // sin recargar todo, porque lo normal es marcar varias seguidas.
+  $("cola").addEventListener("click", function (e) {
+    var b = e.target.closest("button.hecho");
+    if (!b) return;
+    b.disabled = true;
+    guardar(b.dataset.tabla, b.dataset.id, "contactada", null, null)
+      .then(function () {
+        var item = b.closest(".cola-item");
+        item.parentNode.removeChild(item);
+        if (!$("cola").children.length) $("bloque-cola").hidden = true;
+      })
+      .catch(function () { b.disabled = false; alert("No se pudo guardar."); });
+  });
+
+  /* =========================================================
+     Navegación y arranque
+     ========================================================= */
+
+  function irA(nueva) {
+    vista = nueva;
+    pagina = 1;
+    Array.prototype.forEach.call(document.querySelectorAll(".pestanas button"), function (b) {
+      b.setAttribute("aria-selected", String(b.dataset.vista === nueva));
+    });
+    var esResumen = nueva === "resumen";
+    $("vista-resumen").hidden = !esResumen;
+    $("vista-tabla").hidden = esResumen;
+
+    if (esResumen) {
+      if (!resumenCargado) cargarResumen();
+    } else {
+      $("cuerpo-tabla").innerHTML = "";
+      cargarTabla();
+    }
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll(".pestanas button"), function (b) {
+    b.addEventListener("click", function () {
+      if (b.dataset.vista !== vista) irA(b.dataset.vista);
+    });
+  });
+
+  function mostrarPanel() {
+    $("pantalla-clave").hidden = true;
+    $("pantalla-panel").hidden = false;
+    $("top-derecha").hidden = false;
+    irA("resumen");
+  }
+
   $("form-clave").addEventListener("submit", function (e) {
     e.preventDefault();
     var intento = $("clave").value;
     $("estado-clave").textContent = "Comprobando…";
     $("estado-clave").classList.remove("is-error");
-    fetch("/api/panel/solicitudes", { headers: { "X-Clave": intento } })
+    fetch("/api/panel/resumen", { headers: { "X-Clave": intento } })
       .then(function (r) {
         // Distinguir el "no es la clave" del "el servidor está mal" evita
         // pasar horas cambiando una contraseña que nunca fue el problema.
@@ -286,43 +850,38 @@
 
   // Al cambiar el filtro se vuelve a la página 1: quedarse en la 7 de un
   // rango que ahora tiene 2 páginas deja la tabla vacía sin explicación.
-  $("btn-filtrar").addEventListener("click", function () { pagina = 1; cargar(); });
+  $("btn-filtrar").addEventListener("click", function () { pagina = 1; cargarTabla(); });
+  $("f-estado").addEventListener("change", function () { pagina = 1; cargarTabla(); });
 
-  // Las pestañas comparten el rango de fechas a propósito: casi siempre
-  // uno quiere ver las solicitudes y las cotizaciones del mismo periodo.
-  Array.prototype.forEach.call(document.querySelectorAll(".pestanas button"), function (b) {
-    b.addEventListener("click", function () {
-      if (b.dataset.tabla === tabla) return;
-      tabla = b.dataset.tabla;
-      pagina = 1;
-      Array.prototype.forEach.call(document.querySelectorAll(".pestanas button"), function (o) {
-        o.setAttribute("aria-selected", String(o === b));
-      });
-      $("aviso-provisional").hidden = true;
-      $("cuerpo-tabla").innerHTML = "";
-      cargar();
-    });
+  $("btn-antes").addEventListener("click", function () { if (pagina > 1) { pagina--; cargarTabla(); } });
+  $("btn-despues").addEventListener("click", function () { pagina++; cargarTabla(); });
+
+  $("btn-refrescar").addEventListener("click", function () {
+    if (vista === "resumen") { resumenCargado = false; cargarResumen(); }
+    else cargarTabla();
   });
 
-  $("btn-antes").addEventListener("click", function () {
-    if (pagina > 1) { pagina--; cargar(); }
+  // Salir borra la clave de esta pestaña. Sirve cuando el panel se abre
+  // en un teléfono que no es sólo de uno.
+  $("btn-salir").addEventListener("click", function () {
+    sessionStorage.removeItem("clavePanel");
+    location.reload();
   });
-  $("btn-despues").addEventListener("click", function () { pagina++; cargar(); });
 
   $("btn-csv").addEventListener("click", function () {
     // El archivo necesita la clave, pero una descarga no puede llevar
-    // encabezados personalizados: por eso acá sí va como parámetro en
-    // la URL. Sólo viaja por HTTPS, igual que el resto de la página.
+    // encabezados personalizados: por eso acá sí va en la dirección.
+    // Sólo viaja por HTTPS, igual que el resto de la página.
     var params = new URLSearchParams();
-    params.set("tabla", tabla);
+    params.set("tabla", vista);
     if ($("desde").value) params.set("desde", $("desde").value);
     if ($("hasta").value) params.set("hasta", $("hasta").value);
+    if ($("f-estado").value) params.set("estado", $("f-estado").value);
     params.set("clave", clave);
     window.location.href = "/api/panel/csv?" + params.toString();
   });
 
-  // Si ya había una clave guardada de una visita anterior en esta pestaña,
-  // se entra directo sin volver a pedirla.
+  // Si ya había una clave guardada en esta pestaña, se entra directo.
   if (clave) mostrarPanel();
 })();
 </script>

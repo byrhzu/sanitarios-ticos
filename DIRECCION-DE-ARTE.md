@@ -446,3 +446,30 @@ sirviendo? Sí en la estructura — cualquier cotización de servicio se ve así
 **no** en el contenido: la tabla de "de qué depende el precio" con propiedad,
 último servicio, acceso del camión y zona es de este oficio y de ningún otro.
 Ahí es donde el documento es de Sanitarios Ticos y no de nadie.
+
+## 13. El panel
+
+No es una página de venta y no se diseña como tal, pero tampoco es un
+tablero genérico: quien lo abre todos los días tiene que reconocerlo
+como de la misma empresa. Lo que se mantiene del sistema es la
+tipografía (Archivo), el naranja y el papel; lo que se suelta son las
+animaciones, el menú y el ritmo pausado de las secciones.
+
+**Decisiones**
+
+- **Ancho 78rem, no 62.** Acá se comparan columnas; el ancho de lectura
+  cómoda no aplica.
+- **Sin librería de gráficas.** Las barras son divs con ancho en
+  porcentaje y la serie de 30 días es un `<svg>` de sesenta rectángulos
+  escrito a mano. Traer 90 KB de JavaScript para dibujar eso costaría
+  más que toda la página junta, y el sitio no tiene paso de compilación.
+- **La cifra grande es "sin atender".** Un tablero que abre con
+  "ingresos del mes" se mira; uno que abre con lo que está esperando
+  obliga a hacer algo. Es la única tarjeta que cambia de color.
+- **Las tres columnas de trabajo van fijas a la derecha.** Estado, nota
+  y contacto no se van al arrastrar la tabla. Tener que ir a buscarlas
+  es exactamente lo que hace que las cosas se queden sin atender.
+- **El estado es un `<select>` nativo.** En el teléfono abre la rueda
+  del sistema, que es más rápida que cualquier menú dibujado.
+- **El verde de WhatsApp se usa tal cual** (`--wa`), aunque no sea del
+  sistema. Es señalización, no decoración: se reconoce antes de leerlo.

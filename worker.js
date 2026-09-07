@@ -167,41 +167,96 @@ function claveValida(request, env) {
    no hay forma de inyectar SQL por el nombre. */
 const ORIGENES = { beto: "Beto", panel: "Panel", formulario: "Formulario" };
 
+/* En qué va cada solicitud y cada cotización.
+
+   Antes el panel sólo mostraba lo que había entrado, así que la única
+   forma de no perder una cotización era acordarse de ella. Con esto
+   cada fila dice en qué quedó, y el resumen puede contar lo que sigue
+   esperando — que es la única cifra que de verdad obliga a hacer algo.
+
+   El orden importa: es el del embudo, y así salen en los botones. */
+const ESTADOS = {
+  nueva:      { etiqueta: "Sin atender", tono: "alerta" },
+  contactada: { etiqueta: "Contactada",  tono: "curso"  },
+  agendada:   { etiqueta: "Agendada",    tono: "curso"  },
+  hecha:      { etiqueta: "Hecha",       tono: "bien"   },
+  perdida:    { etiqueta: "Perdida",     tono: "gris"   }
+};
+const ESTADO_INICIAL = "nueva";
+
+/* WhatsApp es el canal en Costa Rica: acá nadie abre un correo para
+   coordinar un camión. Entonces el panel no manda mensajes — abre
+   WhatsApp con el texto ya escrito y el número ya puesto, y la persona
+   sólo revisa y le da enviar. Sin API de Meta, sin verificación de
+   empresa, y el mensaje sale del WhatsApp real de la empresa.
+
+   El texto lo arma el servidor porque es el que tiene los datos; si lo
+   armara el panel habría que repetir acá los nombres de los servicios. */
+function waDe(telefono, mensaje) {
+  const d = String(telefono == null ? "" : telefono).replace(/\D/g, "");
+  if (d.length !== 8) return null;
+  return "https://wa.me/506" + d + "?text=" + encodeURIComponent(mensaje);
+}
+
+function nombreEstado(codigo) {
+  return (ESTADOS[codigo] || ESTADOS[ESTADO_INICIAL]).etiqueta;
+}
+
+/* Para el mensaje de WhatsApp. "Buenas María Fernanda Rojas Vargas" se
+   lee a máquina; "Buenas María" se lee a persona. */
+function primerNombre(nombre) {
+  return String(nombre || "").trim().split(/\s+/)[0] || "";
+}
+
 const TABLAS_PANEL = {
   solicitudes: {
     columnas: `id, datetime(creado, '-6 hours') AS creado, nombre, telefono,
-               servicio, zona, detalle, pagina, cedula, correo`,
+               servicio, zona, detalle, pagina, cedula, correo,
+               estado, nota, provincia, canton, distrito`,
     csv: {
       archivo: "solicitudes",
-      encabezado: ["Fecha (Costa Rica)", "Nombre", "Cédula", "Teléfono", "Correo",
-                   "Servicio", "Zona", "Detalle", "Página"],
-      fila: (f) => [f.creado, f.nombre, f.cedula || "", f.telefono, f.correo || "",
-                    f.servicio, f.zona, f.detalle || "", f.pagina || ""]
+      encabezado: ["Fecha (Costa Rica)", "Estado", "Nombre", "Cédula", "Teléfono", "Correo",
+                   "Servicio", "Zona", "Detalle", "Nota", "Página"],
+      fila: (f) => [f.creado, nombreEstado(f.estado), f.nombre, f.cedula || "", f.telefono,
+                    f.correo || "", f.servicio, f.zona, f.detalle || "", f.nota || "",
+                    f.pagina || ""]
     },
     // Lo que ve el panel en pantalla. Sale de la misma fuente que el CSV
     // para que nunca digan cosas distintas; lo que cambia es el formato,
     // porque en pantalla se lee y en el CSV se suma.
     vista: {
-      encabezado: ["Fecha", "Nombre", "Teléfono", "Correo", "Servicio", "Zona", "Detalle", "Página"],
-      ancha: 6,
-      fila: (f) => [f.creado, f.nombre, f.telefono, f.correo || "—", f.servicio,
-                    f.zona, f.detalle || "—", f.pagina || "—"]
+      encabezado: ["Fecha", "Nombre", "Teléfono", "Servicio", "Zona", "Detalle"],
+      ancha: 5,
+      fila: (f) => [f.creado, f.nombre, f.telefono, f.servicio,
+                    f.zona, f.detalle || "—"],
+      meta: (f) => ({
+        id: f.id,
+        estado: f.estado || ESTADO_INICIAL,
+        nota: f.nota || "",
+        nombre: f.nombre || "",
+        tel: f.telefono || null,
+        wa: waDe(f.telefono,
+          "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") + ", le escribo de " +
+          "Sanitarios Ticos. Nos entró su solicitud de " + (f.servicio || "servicio").toLowerCase() +
+          ". ¿Cuándo le queda bien que se lo coordinemos?")
+      })
     }
   },
   cotizaciones: {
     columnas: `id, numero, datetime(creado, '-6 hours') AS creado, servicio, perfil,
                ultimo, acceso, zona, monto_min, monto_max, provisional,
                origen, nombre, telefono, cedula, correo, provincia, canton, distrito,
-               llave`,
+               llave, estado, nota`,
     csv: {
       archivo: "cotizaciones",
-      encabezado: ["Número", "Fecha (Costa Rica)", "Servicio", "Mínimo", "Máximo",
+      encabezado: ["Número", "Fecha (Costa Rica)", "Estado", "Nota", "Servicio", "Mínimo", "Máximo",
                    "Propiedad", "Último servicio", "Acceso",
                    "Provincia", "Cantón", "Distrito", "Cobro de zona",
                    "Precios provisionales", "Origen",
                    "Nombre", "Cédula", "Teléfono", "Correo"],
       fila: (f) => [
-        f.numero || "", f.creado, etiqueta(f.servicio, null, "servicio"),
+        f.numero || "", f.creado, nombreEstado(f.estado), f.nota || "",
+        etiqueta(f.servicio, null, "servicio"),
         f.monto_min, f.monto_max,
         etiqueta(f.servicio, f.perfil, "perfil"), etiqueta(f.servicio, f.ultimo, "ultimo"),
         etiqueta(f.servicio, f.acceso, "acceso"),
@@ -217,20 +272,34 @@ const TABLAS_PANEL = {
         ? origen + "/cotizacion?n=" + encodeURIComponent(f.numero) +
           "&k=" + encodeURIComponent(f.llave)
         : null,
-      encabezado: ["Número", "Fecha", "Rango", "Cliente", "Servicio", "Propiedad",
-                   "Último servicio", "Acceso", "Zona", "Origen"],
+      /* En pantalla van sólo las columnas con las que se decide qué
+         hacer. El último servicio, el acceso y el origen siguen en el
+         CSV y en el documento: sacarlos de acá es lo que deja espacio
+         para el estado y el botón de WhatsApp, que es lo que uno de
+         verdad viene a tocar. */
+      encabezado: ["Número", "Fecha", "Cliente", "Servicio", "Rango", "Propiedad", "Zona"],
       ancha: 5,
+      meta: (f) => ({
+        id: f.id,
+        estado: f.estado || ESTADO_INICIAL,
+        nota: f.nota || "",
+        nombre: f.nombre || "",
+        tel: f.telefono || null,
+        wa: waDe(f.telefono,
+          "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") + ", le escribo de " +
+          "Sanitarios Ticos por su cotización " + (f.numero || "") + ": " +
+          etiqueta(f.servicio, null, "servicio").toLowerCase() + ", entre " +
+          colones(f.monto_min) + " y " + colones(f.monto_max) +
+          ". ¿Le sirve que se lo coordinemos esta semana?")
+      }),
       fila: (f) => [
         f.numero || "—",
         f.creado,
-        colones(f.monto_min) + " – " + colones(f.monto_max),
         f.nombre || "—",
         etiqueta(f.servicio, null, "servicio"),
+        colones(f.monto_min) + " – " + colones(f.monto_max),
         etiqueta(f.servicio, f.perfil, "perfil"),
-        etiqueta(f.servicio, f.ultimo, "ultimo"),
-        etiqueta(f.servicio, f.acceso, "acceso"),
-        zonaTexto(f.provincia, f.canton, f.distrito) || etiqueta(null, f.zona, "zona"),
-        ORIGENES[f.origen] || "Beto"
+        zonaTexto(f.provincia, f.canton, f.distrito) || etiqueta(null, f.zona, "zona")
       ]
     }
   }
@@ -256,6 +325,14 @@ function construirConsulta(url) {
 
   if (desde) { condiciones.push(`date(creado, '-6 hours') >= ?`); valores.push(desde); }
   if (hasta) { condiciones.push(`date(creado, '-6 hours') <= ?`); valores.push(hasta); }
+
+  /* El estado se escoge de la lista de arriba, nunca se toma crudo de la
+     URL: si no está en ESTADOS, se ignora el filtro. */
+  const estado = url.searchParams.get("estado");
+  if (Object.prototype.hasOwnProperty.call(ESTADOS, estado)) {
+    condiciones.push(`estado = ?`);
+    valores.push(estado);
+  }
   if (condiciones.length) sql += ` WHERE ` + condiciones.join(" AND ");
   sql += ` ORDER BY creado DESC`;
 
@@ -304,6 +381,11 @@ async function listaPanel(request, env) {
       // Paralelo a `filas`: la dirección del documento de cada una, o
       // null. Se manda aparte para no meter etiquetas HTML en los datos.
       enlaces: vista.enlace ? results.map((f) => vista.enlace(f, origen)) : null,
+      // Lo que necesita cada fila para poder ACTUAR sobre ella: el id
+      // para cambiarle el estado, y el teléfono y el mensaje ya armado
+      // para escribirle sin salirse del panel.
+      meta: vista.meta ? results.map(vista.meta) : null,
+      estados: ESTADOS,
       // Un aviso arriba de la tabla vale más que una marca en cada
       // fila: mientras las tarifas sean las provisionales, lo son todas.
       hayProvisionales: results.some((f) => f.provisional),
@@ -358,6 +440,203 @@ async function descargarCsv(request, env) {
       "Content-Disposition": `attachment; filename="${nombreArchivo}"`
     }
   });
+}
+
+/* -------------------------------------------------------------
+   Cambiar el estado de una fila
+
+   Es la única escritura que hace el panel. Va por POST y con la clave
+   en encabezado, no en la dirección: un GET se guarda en el historial
+   del navegador y en los registros del servidor, y esto modifica datos.
+   ------------------------------------------------------------- */
+async function cambiarEstado(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+
+  let cuerpo;
+  try { cuerpo = await request.json(); }
+  catch { return json({ ok: false, error: "Petición mal formada" }, 400); }
+
+  // La tabla se escoge del registro, nunca se interpola lo que llegue.
+  const tabla = Object.prototype.hasOwnProperty.call(TABLAS_PANEL, cuerpo.tabla)
+    ? cuerpo.tabla : null;
+  if (!tabla) return json({ ok: false, error: "Tabla desconocida" }, 400);
+
+  const id = parseInt(cuerpo.id, 10);
+  if (!Number.isFinite(id) || id <= 0) return json({ ok: false, error: "Fila inválida" }, 400);
+
+  const estado = Object.prototype.hasOwnProperty.call(ESTADOS, cuerpo.estado)
+    ? cuerpo.estado : null;
+  if (!estado) return json({ ok: false, error: "Estado desconocido" }, 400);
+
+  // La nota es opcional y se recorta: es un recordatorio de una línea
+  // ("llamar después de las 5"), no un expediente.
+  const nota = cuerpo.nota == null ? null : String(cuerpo.nota).trim().slice(0, 400) || null;
+
+  try {
+    await env.DB
+      .prepare(`UPDATE ${tabla} SET estado = ?, nota = ?, actualizado = datetime('now') WHERE id = ?`)
+      .bind(estado, nota, id)
+      .run();
+    return json({ ok: true, estado, nota: nota || "" });
+  } catch (e) {
+    console.error("Error al cambiar el estado:", e);
+    return json({ ok: false, error: "No se pudo guardar" }, 500);
+  }
+}
+
+/* -------------------------------------------------------------
+   Resumen: las cifras del tablero
+
+   Todo se calcula en SQL y en hora de Costa Rica. Traerse las filas
+   para contarlas en el navegador funcionaría hoy con doscientas y se
+   caería solo con veinte mil, y además obligaría a repetir en el panel
+   reglas que ya viven acá.
+
+   Las nueve consultas van en un solo `batch`: D1 cobra por viaje, no
+   por consulta, y así el tablero abre de una.
+   ------------------------------------------------------------- */
+const DIAS_RESUMEN = 30;
+
+async function resumenPanel(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+
+  const dia = `date(creado, '-6 hours')`;
+  const desde = `date('now', '-6 hours', '-${DIAS_RESUMEN - 1} days')`;
+  // Horas que lleva esperando. Sirve para ordenar y para pintar en rojo
+  // lo que ya pasó de un día sin que nadie lo tocara.
+  const espera = `CAST((julianday('now') - julianday(creado)) * 24 AS INTEGER) AS horas`;
+
+  const q = (sql) => env.DB.prepare(sql);
+
+  try {
+    const r = await env.DB.batch([
+      // 0 · serie diaria de cotizaciones
+      q(`SELECT ${dia} AS d, COUNT(*) AS n, SUM(monto_min) AS smin, SUM(monto_max) AS smax
+         FROM cotizaciones WHERE ${dia} >= ${desde} GROUP BY d ORDER BY d`),
+      // 1 · serie diaria de solicitudes
+      q(`SELECT ${dia} AS d, COUNT(*) AS n
+         FROM solicitudes WHERE ${dia} >= ${desde} GROUP BY d ORDER BY d`),
+      // 2 · embudo de cotizaciones — sin filtro de fecha: una cotización
+      //     de hace dos meses que sigue sin atender importa igual.
+      q(`SELECT estado, COUNT(*) AS n, SUM(monto_min) AS smin, SUM(monto_max) AS smax
+         FROM cotizaciones GROUP BY estado`),
+      // 3 · embudo de solicitudes
+      q(`SELECT estado, COUNT(*) AS n FROM solicitudes GROUP BY estado`),
+      // 4 · lo que está esperando, cotizaciones
+      q(`SELECT id, numero, nombre, telefono, servicio, monto_min, monto_max,
+                provincia, canton, ${dia} AS d, ${espera}
+         FROM cotizaciones WHERE estado = 'nueva' ORDER BY creado ASC LIMIT 15`),
+      // 5 · lo que está esperando, solicitudes
+      q(`SELECT id, nombre, telefono, servicio, zona, ${dia} AS d, ${espera}
+         FROM solicitudes WHERE estado = 'nueva' ORDER BY creado ASC LIMIT 15`),
+      // 6 · qué se cotiza
+      q(`SELECT servicio AS k, COUNT(*) AS n FROM cotizaciones
+         WHERE ${dia} >= ${desde} GROUP BY k ORDER BY n DESC`),
+      // 7 · dónde queda — esto es lo que dice para dónde van los camiones
+      q(`SELECT COALESCE(provincia, '—') AS k, COUNT(*) AS n FROM cotizaciones
+         WHERE ${dia} >= ${desde} GROUP BY k ORDER BY n DESC`),
+      // 8 · por dónde entró — dice si Beto está sirviendo o no
+      q(`SELECT COALESCE(origen, 'beto') AS k, COUNT(*) AS n FROM cotizaciones
+         WHERE ${dia} >= ${desde} GROUP BY k ORDER BY n DESC`)
+    ]);
+
+    const filas = (i) => (r[i] && r[i].results) || [];
+
+    // La serie se rellena día por día: los días sin nada tienen que
+    // aparecer en cero, si no la gráfica miente sobre el ritmo.
+    const porDiaCot = new Map(filas(0).map((f) => [f.d, f]));
+    const porDiaSol = new Map(filas(1).map((f) => [f.d, f.n]));
+    const serie = [];
+    const hoyCR = new Date(Date.now() - 6 * 3600 * 1000);
+    for (let i = DIAS_RESUMEN - 1; i >= 0; i--) {
+      const t = new Date(hoyCR.getTime() - i * 86400000);
+      const d = t.toISOString().slice(0, 10);
+      const c = porDiaCot.get(d);
+      serie.push({ d, cot: c ? c.n : 0, sol: porDiaSol.get(d) || 0, max: c ? (c.smax || 0) : 0 });
+    }
+
+    const sumar = (campo, n) => serie.slice(-n).reduce((a, f) => a + f[campo], 0);
+
+    const embudoCot = {};
+    let esperandoCot = 0, valorMin = 0, valorMax = 0, ganadoMin = 0, ganadoMax = 0;
+    for (const f of filas(2)) {
+      embudoCot[f.estado] = f.n;
+      if (f.estado === "nueva") esperandoCot = f.n;
+      // El embudo abierto es lo que todavía se puede cerrar: ni lo
+      // perdido ni lo ya hecho cuentan como plata por venir.
+      if (f.estado !== "perdida" && f.estado !== "hecha") {
+        valorMin += f.smin || 0; valorMax += f.smax || 0;
+      }
+      if (f.estado === "hecha") { ganadoMin += f.smin || 0; ganadoMax += f.smax || 0; }
+    }
+    const embudoSol = {};
+    let esperandoSol = 0;
+    for (const f of filas(3)) {
+      embudoSol[f.estado] = f.n;
+      if (f.estado === "nueva") esperandoSol = f.n;
+    }
+
+    /* Las dos listas de pendientes se mezclan en una sola cola ordenada
+       por antigüedad. Al que atiende no le sirve saber por qué puerta
+       entró cada una: le sirve saber cuál lleva más rato esperando. */
+    const pendientes = filas(4).map((f) => ({
+      tabla: "cotizaciones", id: f.id, horas: f.horas, fecha: f.d,
+      titulo: f.numero || ("Cotización " + f.id),
+      nombre: f.nombre || "Sin nombre",
+      detalle: etiqueta(f.servicio, null, "servicio") + " · " +
+               colones(f.monto_min) + "–" + colones(f.monto_max),
+      lugar: [f.canton, f.provincia].filter(Boolean).join(", ") || null,
+      tel: f.telefono || null,
+      wa: waDe(f.telefono,
+        "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") + ", le escribo de " +
+        "Sanitarios Ticos por su cotización " + (f.numero || "") + ": " +
+        etiqueta(f.servicio, null, "servicio").toLowerCase() + ", entre " +
+        colones(f.monto_min) + " y " + colones(f.monto_max) +
+        ". ¿Le sirve que se lo coordinemos esta semana?")
+    })).concat(filas(5).map((f) => ({
+      tabla: "solicitudes", id: f.id, horas: f.horas, fecha: f.d,
+      titulo: "Solicitud",
+      nombre: f.nombre || "Sin nombre",
+      detalle: f.servicio || "",
+      lugar: f.zona || null,
+      tel: f.telefono || null,
+      wa: waDe(f.telefono,
+        "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") + ", le escribo de " +
+        "Sanitarios Ticos. Nos entró su solicitud de " + (f.servicio || "servicio").toLowerCase() +
+        ". ¿Cuándo le queda bien que se lo coordinemos?")
+    }))).sort((a, b) => b.horas - a.horas).slice(0, 20);
+
+    const cerradas = (embudoCot.hecha || 0) + (embudoCot.perdida || 0);
+
+    return json({
+      ok: true,
+      dias: DIAS_RESUMEN,
+      serie,
+      hoy:    { cot: sumar("cot", 1),  sol: sumar("sol", 1)  },
+      semana: { cot: sumar("cot", 7),  sol: sumar("sol", 7)  },
+      mes:    { cot: sumar("cot", 30), sol: sumar("sol", 30) },
+      esperando: { cot: esperandoCot, sol: esperandoSol, total: esperandoCot + esperandoSol },
+      // El más viejo sin atender. Si esto pasa de 24, algo se está
+      // quedando en el camino y el tablero tiene que decirlo.
+      esperaMax: pendientes.length ? pendientes[0].horas : 0,
+      pendientes,
+      valor: { min: valorMin, max: valorMax },
+      ganado: { min: ganadoMin, max: ganadoMax },
+      // Sobre lo ya resuelto, no sobre el total: las que aún no se han
+      // trabajado no son ni ganadas ni perdidas todavía.
+      cierre: cerradas ? Math.round(((embudoCot.hecha || 0) / cerradas) * 100) : null,
+      cerradas,
+      embudo: { cotizaciones: embudoCot, solicitudes: embudoSol },
+      servicios:  filas(6).map((f) => ({ k: etiqueta(f.k, null, "servicio"), n: f.n })),
+      provincias: filas(7).map((f) => ({ k: f.k, n: f.n })),
+      origenes:   filas(8).map((f) => ({ k: ORIGENES[f.k] || f.k, n: f.n })),
+      estados: ESTADOS,
+      provisional: TARIFAS.provisional
+    });
+  } catch (e) {
+    console.error("Error al armar el resumen:", e);
+    return json({ ok: false, error: "No se pudo armar el resumen" }, 500);
+  }
 }
 
 /* =============================================================
@@ -1053,6 +1332,12 @@ export default {
     }
     if (url.pathname === "/api/panel/csv" && request.method === "GET") {
       return descargarCsv(request, env);
+    }
+    if (url.pathname === "/api/panel/resumen" && request.method === "GET") {
+      return resumenPanel(request, env);
+    }
+    if (url.pathname === "/api/panel/estado" && request.method === "POST") {
+      return cambiarEstado(request, env);
     }
     if (url.pathname === "/api/asistente" && request.method === "POST") {
       return responderAsistente(request, env);

@@ -157,6 +157,68 @@ como esta no requieren inscripción ante PRODHAB, pero sí este aviso previo
 y el consentimiento antes de recopilar los datos — que es justamente lo
 que se implementó.
 
+## El panel: centro de control
+
+Está en **`/panel`**, con la clave que vive en Cloudflare como *Secret*
+(`CLAVE_PANEL`). Tiene tres pestañas.
+
+### Resumen
+
+Lo primero que se ve al entrar. Cinco cifras arriba:
+
+| Tarjeta | Qué dice |
+|---|---|
+| **Sin atender** | Cuántas cosas nadie ha tocado, y cuánto lleva esperando la más vieja. Se pinta naranja si hay alguna. |
+| **Hoy** | Cotizaciones y solicitudes que entraron hoy |
+| **Últimos 7 días** | Lo mismo, de la semana |
+| **Embudo abierto** | La plata de las cotizaciones que todavía se pueden cerrar (ni hechas ni perdidas) |
+| **Cierre** | De las cotizaciones ya resueltas, qué porcentaje terminó en trabajo |
+
+Debajo va **lo que está esperando**: la cola de todo lo que sigue en
+"sin atender", lo más viejo de primero, mezclando solicitudes y
+cotizaciones. Cada línea trae tres botones — **WhatsApp** con el mensaje
+ya escrito, **Llamar**, y **Ya la atendí**. Lo que lleva más de un día
+se pinta naranja.
+
+Después, una barra por día de los últimos 30, y cuatro desgloses: en qué
+van las cotizaciones, qué servicio se pide, en qué provincia, y por
+dónde entró (Beto, formulario o panel).
+
+### Cotizaciones y Solicitudes
+
+Las dos tablas de siempre, con tres columnas nuevas pegadas a la derecha
+que no se van al arrastrar:
+
+- **Estado** — un menú: sin atender · contactada · agendada · hecha · perdida.
+  Se guarda solo al cambiarlo.
+- **Nota** — una línea ("llamar después de las 5"). Se guarda al salir del campo.
+- **Contactar** — WhatsApp y llamar.
+
+En pantalla van sólo las columnas con las que se decide qué hacer. El
+último servicio, el acceso y el origen **siguen en el CSV y en el
+documento**: se sacaron de la tabla para dejarle campo a las tres
+columnas de trabajo.
+
+El filtro de estado se suma al de fechas, y el CSV baja lo que esté
+filtrado (todas las páginas, no sólo la que se está viendo).
+
+### Por qué WhatsApp es un enlace y no un envío
+
+En Costa Rica nadie coordina un camión por correo. Pero mandar mensajes
+*desde* el sistema necesitaría la API de WhatsApp de Meta, con
+verificación de empresa de por medio.
+
+Mientras tanto el panel hace lo siguiente mejor: arma el mensaje con los
+datos de la fila y abre WhatsApp con el número puesto y el texto escrito.
+La persona revisa y le da enviar. Sale del WhatsApp real de la empresa,
+no cuesta nada, y no hay nada que configurar.
+
+### La tabla de estados
+
+Se agrega con `tools/agregar-estados.sql`, que se pega **una sola vez**
+en la Console de D1 (Workers & Pages → D1 → `sanitarios-ticos-datos` →
+Console). Agrega `estado`, `nota` y `actualizado` a las dos tablas.
+
 ## Cotizaciones
 
 ### Por qué Beto no calcula el precio
@@ -494,4 +556,10 @@ Doble clic en `index.html` funciona. Para verlo igual que en el servidor:
 python3 -m http.server 4173
 ```
 
-y abrir `http://localhost:4173`.
+y abrir `http://localhost:4173`. (`\.claude/launch.json` tiene esa misma
+configuración con el nombre `estatico`, para las herramientas que la
+levantan solas.)
+
+Ojo: así se ve el sitio, pero **no el Worker**. Todo lo que empieza con
+`/api/` no responde, así que el panel y las cotizaciones sólo funcionan
+de verdad en Cloudflare.
