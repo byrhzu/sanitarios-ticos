@@ -305,6 +305,15 @@ const TABLAS_PANEL = {
   }
 };
 
+/* Qué se puede filtrar en cada tabla. Es una lista cerrada por la misma
+   razón que el nombre de la tabla: lo que llega de la URL sólo sirve
+   para escoger de acá. `servicio` sólo está en cotizaciones porque
+   solicitudes guarda el texto que escogió la persona, no el código. */
+const FILTROS_TABLA = {
+  solicitudes:  ["estado", "provincia"],
+  cotizaciones: ["estado", "provincia", "servicio"]
+};
+
 function tablaPedida(url) {
   const pedida = url.searchParams.get("tabla");
   return Object.prototype.hasOwnProperty.call(TABLAS_PANEL, pedida) ? pedida : "solicitudes";
@@ -326,12 +335,22 @@ function construirConsulta(url) {
   if (desde) { condiciones.push(`date(creado, '-6 hours') >= ?`); valores.push(desde); }
   if (hasta) { condiciones.push(`date(creado, '-6 hours') <= ?`); valores.push(hasta); }
 
-  /* El estado se escoge de la lista de arriba, nunca se toma crudo de la
-     URL: si no está en ESTADOS, se ignora el filtro. */
-  const estado = url.searchParams.get("estado");
-  if (Object.prototype.hasOwnProperty.call(ESTADOS, estado)) {
-    condiciones.push(`estado = ?`);
-    valores.push(estado);
+  /* Los filtros del tablero. Cada valor se comprueba contra la lista que
+     ya existe —los estados, las provincias de Costa Rica, los servicios
+     que sabe cobrar el motor— y el que no esté se ignora. Así el
+     tablero puede mandar cualquier cosa sin que llegue a la consulta. */
+  const permitidos = FILTROS_TABLA[tabla] || [];
+  const valido = {
+    estado:    (v) => Object.prototype.hasOwnProperty.call(ESTADOS, v),
+    provincia: (v) => Object.prototype.hasOwnProperty.call(GEOGRAFIA, v),
+    servicio:  (v) => Object.prototype.hasOwnProperty.call(TARIFAS.servicios, v)
+  };
+  for (const campo of permitidos) {
+    const v = url.searchParams.get(campo);
+    if (v && valido[campo](v)) {
+      condiciones.push(campo + ` = ?`);
+      valores.push(v);
+    }
   }
   if (condiciones.length) sql += ` WHERE ` + condiciones.join(" AND ");
   sql += ` ORDER BY creado DESC`;
@@ -627,8 +646,11 @@ async function resumenPanel(request, env) {
       cierre: cerradas ? Math.round(((embudoCot.hecha || 0) / cerradas) * 100) : null,
       cerradas,
       embudo: { cotizaciones: embudoCot, solicitudes: embudoSol },
-      servicios:  filas(6).map((f) => ({ k: etiqueta(f.k, null, "servicio"), n: f.n })),
-      provincias: filas(7).map((f) => ({ k: f.k, n: f.n })),
+      /* Cada desglose lleva su `id` además de la etiqueta: es el valor con
+         el que el tablero filtra la lista al tocar la barra. El origen no
+         lo lleva porque no se filtra por eso — se mira y ya. */
+      servicios:  filas(6).map((f) => ({ id: f.k, k: etiqueta(f.k, null, "servicio"), n: f.n })),
+      provincias: filas(7).map((f) => ({ id: f.k, k: f.k, n: f.n })),
       origenes:   filas(8).map((f) => ({ k: ORIGENES[f.k] || f.k, n: f.n })),
       estados: ESTADOS,
       provisional: TARIFAS.provisional

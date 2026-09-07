@@ -473,3 +473,178 @@ animaciones, el menú y el ritmo pausado de las secciones.
   del sistema, que es más rápida que cualquier menú dibujado.
 - **El verde de WhatsApp se usa tal cual** (`--wa`), aunque no sea del
   sistema. Es señalización, no decoración: se reconoce antes de leerlo.
+
+
+## 14. El panel, segunda versión
+
+La primera versión del panel se hizo sin referencia. Se nota, y se nota
+en el mismo lugar donde ya se había notado antes: **la tipografía de
+etiqueta en mayúsculas rastreadas**. En el documento de cotización el
+propietario la señaló como "tipografía de IA" y se dejó en un solo
+lugar. En el panel volvió a aparecer en cuatro (`.tarjeta-t`,
+`.nueva-t`, `.hecha-num`, el `th` de las tablas), más dos usos de
+`font-stretch: 112%` en las cifras.
+
+No es casualidad que reaparezca: es lo que sale por defecto cuando no
+hay de dónde sacar el criterio. Por eso esta versión sí tiene
+referencia.
+
+### 14.1 La referencia leída
+
+**Panel de control de Kinsta** (captura entregada por el propietario).
+Es un tablero de hosting: nada que ver con tanques sépticos, y por eso
+mismo sirve — lo que se toma es el sistema, no el rubro.
+
+Lo que hay, medido a ojo sobre la captura:
+
+- **Una barra lateral oscura fija**, de un azul muy profundo, con el
+  logo arriba y ocho destinos con icono. El activo se marca con una
+  píldora clara y el icono relleno. No hay pestañas en ninguna parte.
+- **Fondo de página gris azulado muy claro; tarjetas blancas puras.**
+  Las tarjetas **no tienen borde ni sombra visible**: se separan del
+  fondo por contraste de valor, nada más.
+- **Sin mayúsculas rastreadas en ningún título.** "Sus Sitios", "Uso de
+  Recursos", "Notificaciones" van en caja normal, semibold, del mismo
+  tamaño que el cuerpo o un punto más. La única excepción en toda la
+  pantalla son los encabezados de columna de la tabla —"NOMBRE",
+  "VISITAS"— en gris, chiquitos.
+- **Cabecera de tarjeta de dos partes:** título a la izquierda, acción o
+  rango de fechas a la derecha en gris. Se repite idéntica en las tres
+  tarjetas de arriba.
+- **Las cifras grandes van arriba de su gráfica, alineadas a la
+  izquierda**, en el color de acento. "42.63 MB" y "284" pesan unas 2,3
+  veces el cuerpo. Peso semibold, sin condensar ni expandir.
+- **Filas separadas por líneas de un pixel**, sin cajas, sin radios.
+- **Un solo acento** (violeta) más un segundo color de dato (turquesa)
+  que sólo aparece dentro de las gráficas.
+- **Lo que NO hay:** ni bordes, ni sombras, ni iconos decorativos, ni
+  degradados, ni una sola caja con borde de 1px.
+
+### 14.2 Qué tomo, qué descarto
+
+| | |
+|---|---|
+| **Tomo** | La barra lateral oscura fija como única navegación. Las tarjetas blancas sin borde sobre fondo tintado. La cabecera de tarjeta título-izquierda / acción-derecha. La cifra grande arriba de su gráfica. Las líneas hairline en vez de cajas. Un acento y un color secundario de dato. |
+| **Descarto** | El violeta y el turquesa: son la marca de Kinsta. La dona de consumo — mide cuota contra un tope contratado, y acá no hay cuotas; una dona sin denominador es decoración. La burbuja de chat flotante, que es su producto de soporte. La grotesca geométrica: el sitio ya tiene Archivo, sacada del rótulo del camión, y esa sí es del cliente. |
+| **Traducido** | El azul profundo de la barra pasa a `--slate` (#1f2c33), que ya existe y es el gris azulado de la carrocería. El violeta pasa a `--orange`. El fondo gris azulado pasa a `--paper-2`, el papel tibio del sitio. La tarjeta blanca pasa a `--paper`. |
+
+### 14.3 Decisiones
+
+- **Barra lateral en vez de pestañas.** Las pestañas obligan a recordar
+  cuál está activa y se apilan en dos líneas en el teléfono. La barra
+  pone los cuatro destinos siempre a la vista y siempre en el mismo
+  sitio. En pantallas angostas baja a una barra inferior fija, que es
+  donde el pulgar ya busca.
+- **Cero bordes en las superficies.** La versión anterior tenía
+  `border: 1px solid var(--line)` en tarjetas, tablas, cola, formulario
+  y resultado — todo. Es el tic 12 del catálogo con borde en vez de
+  sombra. Las tarjetas se separan por contraste; las líneas de 1px
+  quedan sólo **entre filas**, que es donde separan datos.
+- **Mayúsculas rastreadas: un solo lugar.** El encabezado de columna de
+  la tabla, igual que en la referencia. Todo lo demás en caja normal.
+  Se elimina `font-stretch` de las cifras: la referencia las pone en
+  semibold sin deformar, y deformar un tipo variable "porque se puede"
+  es exactamente lo que delata al generador.
+- **Todo número es un filtro.** Es lo que pidió el propietario con
+  "dashboard interactuable", y es también lo más predecible: si en la
+  pantalla dice 2 sin atender, tocar ese 2 tiene que llevar a esas dos.
+  Se vuelven tocables las tarjetas de cifra, las barras de los
+  desgloses (servicio, provincia, estado) y las barras del calendario.
+  Cada una lleva a la lista ya filtrada.
+- **Se quita el aviso de tarifas provisionales.** Lo pidió el
+  propietario: él sabe que lo son. Se queda dentro del documento que ve
+  el cliente, que es donde importa, y en el resultado al crear una
+  cotización desde el panel.
+
+### 14.4 Excepciones al catálogo de tics
+
+> **Tic 12 (radio uniforme).** Se usa un radio de 6px en tarjetas y
+> botones, uniforme. La referencia lo tiene así y en una herramienta de
+> trabajo la uniformidad **es** la función: nada acá compite por
+> atención, todo es del mismo rango. El sitio público sigue con radio 0.
+> Sombras: ninguna, como en la referencia.
+
+> **El `th` en mayúsculas rastreadas.** Se mantiene en ese único lugar
+> porque la referencia lo hace exactamente ahí y en ningún otro, y
+> porque es la misma resolución a la que se llegó en el documento de
+> cotización (§12).
+
+### 14.5 Segunda referencia — Linear (linear.app), medida
+
+Kinsta da la estructura de un tablero. Lo que no da es cómo se comporta
+una herramienta que alguien tiene abierta ocho horas. Para eso se midió
+Linear, que es el caso canónico. Tres hallazgos, todos contra la
+medición y no de memoria:
+
+**1. Toda la interfaz corre a 13px.** Cuerpo, enlaces, botones, ítems de
+lista y hasta los `h3`: 13px, una sola familia (Inter). Sólo los
+titulares de marketing suben a 40–48px. En una herramienta la interfaz
+es chica y callada; lo grande se reserva para el dato.
+
+**2. La jerarquía la carga el peso, no el tamaño — y en medio paso.**
+400 para todo, **510** para lo enfatizado. No 700, no 800. La diferencia
+entre un ítem normal y uno importante es casi imperceptible y aun así
+funciona, porque no compite con nada más.
+
+**3. El acento ocupa casi nada.** El amarillo ácido de Linear suma 207
+unidades de área contra 156.434 del texto: **el 0,13%**. Todo lo demás
+son tres grises casi idénticos (#08090a, #0f1011, #161718), separados
+por siete puntos. La profundidad sale de esos escalones, no de bordes
+ni de sombras.
+
+**Traducido a este panel.** El tercer punto es el que corrige el error
+real de la primera versión: había naranja en las tarjetas, en las
+cifras, en las barras, en los botones y en la píldora activa. El naranja
+vuelve a ser lo que era en el sitio — la señal de "esto se toca" o "esto
+urge" — y nada más.
+
+Los tres escalones de fondo ya existen en el sitio y son tibios en vez
+de negros: `--paper` (#faf7f2), `--paper-2` (#f3ece2) y `--paper-3`
+(#e9dfd1). Se usan igual que Linear usa sus tres negros.
+
+De la escala: la interfaz del panel corre a 13–14px con Archivo en 400,
+y 500 para lo enfatizado. Las cifras grandes se quedan grandes porque
+son el dato, pero bajan de 800 a 600 y pierden el `font-stretch`. El
+tracking se hace negativo y crece con el tamaño, como en Linear: −0,01em
+en la interfaz, −0,025em en las cifras.
+
+### 14.6 Auditoría de la v2
+
+**Catálogo de tics.** Los doce, uno por uno:
+
+| | |
+|---|---|
+| 1 píldora sobre el titular | ausente |
+| 2 palabra de acento en el titular | ausente |
+| 3 etiqueta de sección numerada | ausente |
+| 4 grid de chips con borde de 1px | las marcas de "Provincia: Alajuela" no llevan borde y **no son decorativas**: dicen qué filtro está puesto y se quitan tocándolas. Es estado, no adorno |
+| 5 par de botones relleno + fantasma | **estaba y se quitó.** Había un `[Filtrar]` fantasma junto a un `[Descargar CSV]` relleno, además con la jerarquía al revés: filtrar se hace mil veces al día y el CSV casi nunca. Ahora los filtros se aplican al cambiarlos y no hay botón; queda un solo botón discreto para el CSV |
+| 6 subrayado de color como énfasis | los subrayados son de enlaces y botones de texto, en gris, no en el acento |
+| 7 tres cards con icono en círculo | ausente |
+| 8 degradado o vidrio | ausente |
+| 9 divisor SVG | ausente |
+| 10 fade-in-up en todo | la única animación es el destello al guardar una celda, que marca un cambio real, y respeta `prefers-reduced-motion` |
+| 11 copy de agencia | "Lo que está esperando", "Ya la atendí", "Dónde para el camión" |
+| 12 radio uniforme + sombra | radio 6px declarado como excepción en §14.4; sombras, ninguna |
+
+Comprobado además contra el archivo: `text-transform: uppercase` aparece
+**una sola vez** (el `th` de la tabla), `font-stretch` sólo en la regla
+que lo devuelve a normal, y el único `border: 1px` es el del campo de
+nota, que es la señal de que se puede escribir ahí.
+
+**Prueba del logo.** Cambiando el logo y los textos, la estructura
+—barra lateral, tarjetas, tabla— sigue sirviendo, y eso es correcto:
+un tablero interno se juzga por si se entiende rápido, no por si es
+irrepetible. Lo que sí es de este cliente es todo lo demás: el fondo de
+papel tibio en vez del gris azulado de tablero, el `--slate` de la
+carrocería en la barra, el naranja del rótulo, y Archivo. Cambiados
+esos cuatro, queda un tablero cualquiera — que es justamente la prueba
+de que están trabajando.
+
+**Prueba del hermano.** No hay otro tablero en `~/Paginas Web`, así que
+no hay molde del que salga. Contra el propio sitio público sí hay
+diferencia deliberada y documentada: allá el h1 va condensado al 68%,
+peso 800 y en versalitas, como está pintado el tanque; acá los títulos
+son texto normal. Una herramienta de trabajo no lleva tipografía de
+rótulo — y ese h1 heredado era buena parte de lo que se sentía mal en
+la v1.

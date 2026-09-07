@@ -160,11 +160,18 @@ que se implementó.
 ## El panel: centro de control
 
 Está en **`/panel`**, con la clave que vive en Cloudflare como *Secret*
-(`CLAVE_PANEL`). Tiene tres pestañas.
+(`CLAVE_PANEL`). Cuatro secciones en una barra lateral, que en el
+teléfono baja a una barra fija abajo.
+
+El diseño sale de `DIRECCION-DE-ARTE.md` §14, contra dos referencias
+medidas: el tablero de Kinsta (la estructura) y Linear (cómo se
+comporta una herramienta que uno tiene abierta todo el día).
 
 ### Resumen
 
-Lo primero que se ve al entrar. Cinco cifras arriba:
+Lo primero que se ve al entrar. Cinco cifras arriba, **y todas se
+tocan**: cada una abre su propia lista ya filtrada. Si dice 2 sin
+atender, tocar el 2 muestra esas dos.
 
 | Tarjeta | Qué dice |
 |---|---|
@@ -180,9 +187,15 @@ cotizaciones. Cada línea trae tres botones — **WhatsApp** con el mensaje
 ya escrito, **Llamar**, y **Ya la atendí**. Lo que lleva más de un día
 se pinta naranja.
 
-Después, una barra por día de los últimos 30, y cuatro desgloses: en qué
-van las cotizaciones, qué servicio se pide, en qué provincia, y por
-dónde entró (Beto, formulario o panel).
+Después, una barra por día de los últimos 30 —con el detalle al pasar
+el mouse, y tocando un día se abre la lista de ese día— y cuatro
+desgloses: en qué van las cotizaciones, qué servicio se pide, en qué
+provincia, y por dónde entró (Beto, formulario o panel). Tocar
+cualquier barra de los tres primeros filtra la lista por eso.
+
+Arriba de la lista queda dicho con palabras qué filtro tiene puesto
+("Provincia: Alajuela") y un enlace para quitarlo. Sin eso, tocar una
+barra sería magia: la lista cambiaría sin explicar por qué.
 
 ### Nueva cotización
 
@@ -220,8 +233,11 @@ En pantalla van sólo las columnas con las que se decide qué hacer. El
 documento**: se sacaron de la tabla para dejarle campo a las tres
 columnas de trabajo.
 
-El filtro de estado se suma al de fechas, y el CSV baja lo que esté
-filtrado (todas las páginas, no sólo la que se está viendo).
+Los filtros —fechas, estado, y los de provincia y servicio que llegan
+desde el resumen— se aplican solos al cambiarlos, sin botón: un
+"Filtrar" que hay que acordarse de apretar es la forma más común de
+mirar una lista equivocada creyendo que está filtrada. El CSV baja lo
+que esté filtrado, todas las páginas y no sólo la que se ve.
 
 ### Por qué WhatsApp es un enlace y no un envío
 
