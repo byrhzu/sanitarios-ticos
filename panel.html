@@ -8,7 +8,7 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="styles.css?v=20260907a">
 <style>
   /* =========================================================
@@ -26,6 +26,24 @@
      ========================================================= */
 
   [hidden] { display: none !important; }
+
+  /* Archivo es la tipografía de la marca y sale del rótulo del camión.
+     Acá no va: es un tipo de cartel, dibujado para leerse a diez metros
+     y en cuerpos grandes, y lo que hay en esta pantalla son cifras
+     chicas en tablas. Inter está dibujada justo para eso —números de
+     ancho fijo, formas abiertas en cuerpos de 12 y 13px— y es la que
+     usan Linear, Vercel, Grafana y casi cualquier tablero serio.
+
+     Que el sitio público y la herramienta interna usen tipografías
+     distintas es a propósito: hacen trabajos opuestos. */
+  :root {
+    --sans:    "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --display: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .panel, .clave-pantalla { font-family: var(--sans); }
+  /* Los números en las cifras y las tablas van de ancho fijo: si no,
+     una columna de montos baila al cambiar de dígito. */
+  .panel { font-feature-settings: "tnum" 1, "cv05" 1; }
 
   /* ---------- Temas ---------- */
   /* Claro: el papel tibio del sitio. Oscuro: el mismo slate de la
@@ -133,7 +151,24 @@
   .lienzo-top { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.3rem; }
   .lienzo-top h1 { font-family: var(--display); font-size: 1.4rem; margin: 0; }
   .lienzo-top .derecha { margin-left: auto; display: flex; align-items: center; gap: .5rem; }
-  .frescura { color: var(--p-tenue); margin-right: .3rem; }
+  .frescura { color: var(--p-tenue); margin-right: .3rem; font-variant-numeric: tabular-nums; }
+
+  /* Los mismos controles de rango arriba del resumen y de las listas,
+     en el mismo lugar y con el mismo aspecto. */
+  .rango { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .rango label { color: var(--p-tenue); }
+  .rango input[type="date"] {
+    font-size: 13px; font-family: inherit; padding: .38rem .5rem; border-radius: 7px;
+    background: var(--p-sup); color: var(--p-txt); border: 1px solid var(--p-linea);
+  }
+  .rango .presets { display: flex; gap: 2px; margin-left: .3rem; }
+  .rango .presets button {
+    padding: .38rem .65rem; border-radius: 7px; color: var(--p-tenue);
+    background: var(--p-sup); font-weight: 500;
+    transition: background .15s var(--ease), color .15s var(--ease);
+  }
+  .rango .presets button:hover { color: var(--p-txt); }
+  .rango .presets button[aria-pressed="true"] { background: var(--p-suave); color: var(--p-acento-t); }
 
   /* Botón redondo de icono. Reemplaza a los enlaces de texto
      "Actualizar" y "Salir": en una herramienta que se usa todos los
@@ -157,7 +192,13 @@
     background: var(--p-sup); border-radius: var(--radio);
     padding: 1.05rem 1.15rem 1.15rem; box-shadow: var(--p-sombra);
   }
-  .tarj + .tarj, .rejilla + .rejilla, .tarj + .rejilla, .rejilla + .tarj { margin-top: 1rem; }
+  /* El margen sólo entre bloques apilados de la vista. Puesto como
+     `.tarj + .tarj` a secas se colaba dentro de las rejillas y le
+     restaba 16px de alto a toda tarjeta que no fuera la primera de su
+     fila — que era por qué "Estado" se veía más alta que sus vecinas y
+     por qué "Pendientes" no cerraba parejo con "Cierre". */
+  .vista > .tarj + .tarj, .rejilla + .rejilla,
+  .tarj + .rejilla, .rejilla + .tarj { margin-top: 1rem; }
   .tarj-h { display: flex; align-items: baseline; gap: .5rem 1rem; flex-wrap: wrap; margin-bottom: .9rem; }
   .tarj-h h2 { font-family: var(--display); font-size: .97rem; margin: 0; }
   .tarj-h .meta { margin-left: auto; color: var(--p-tenue); font-size: .8rem; }
@@ -165,7 +206,17 @@
   .rejilla { display: grid; gap: 1rem; }
   .rejilla.cifras { grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
   .rejilla.cuatro { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
-  .rejilla.dos { grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr); align-items: start; }
+  /* Las barras arrancan todas a la misma altura aunque una lista tenga
+     cinco filas y otra tres: el título arriba y la lista debajo, sin
+     estirarse. */
+  .rejilla.cuatro > .tarj { display: flex; flex-direction: column; }
+  .rejilla.cuatro .barras { align-self: start; width: 100%; }
+  /* Sin `align-items`, que es lo que las dejaba de distinto alto. Las
+     dos tarjetas ocupan lo mismo aunque una tenga una fila y la otra
+     quince; la de pendientes rueda por dentro si se pasa. */
+  .rejilla.dos { grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr); }
+  .rejilla.dos > .tarj { display: flex; flex-direction: column; }
+  #cola { overflow-y: auto; max-height: 22rem; }
   @media (max-width: 1050px) { .rejilla.dos { grid-template-columns: 1fr; } }
 
   /* ---------- Cifras ---------- */
@@ -198,7 +249,7 @@
   .cifra-chispa { display: block; width: calc(100% + 2.2rem); margin: .55rem -1.1rem -1.1rem; height: 40px; }
 
   /* ---------- Aro de cierre ---------- */
-  .aro-caja { display: flex; align-items: center; justify-content: center; padding: .4rem 0 1rem; }
+  .aro-caja { flex: 1; display: flex; align-items: center; justify-content: center; padding: .4rem 0 1rem; }
   .aro { width: 168px; height: 168px; }
   .aro-txt {
     font-family: var(--display); font-weight: 600; font-size: 2.3rem;
@@ -547,6 +598,18 @@
 
     <!-- ================= RESUMEN ================= -->
     <div class="vista" id="vista-resumen">
+      <div class="rango">
+        <label for="r-desde">Desde</label>
+        <input type="date" id="r-desde">
+        <label for="r-hasta">Hasta</label>
+        <input type="date" id="r-hasta">
+        <span class="presets" id="presets">
+          <button type="button" data-dias="7">7 días</button>
+          <button type="button" data-dias="30" aria-pressed="true">30 días</button>
+          <button type="button" data-dias="90">90 días</button>
+        </span>
+      </div>
+
       <p class="estado-linea" id="estado-resumen" role="status" aria-live="polite">Cargando…</p>
 
       <div class="rejilla cifras" id="cifras"></div>
@@ -554,8 +617,8 @@
       <div class="rejilla dos">
         <div class="tarj" id="tarj-cola">
           <div class="tarj-h">
-            <h2>Lo que está esperando</h2>
-            <span class="meta">nadie lo ha tocado todavía</span>
+            <h2>Pendientes</h2>
+            <span class="meta" id="cola-n"></span>
           </div>
           <div id="cola"></div>
         </div>
@@ -567,7 +630,6 @@
         <div class="tarj">
           <div class="tarj-h">
             <h2>Cierre</h2>
-            <span class="meta">de lo ya resuelto</span>
           </div>
           <div class="aro-caja">
             <svg class="aro" id="aro" viewBox="0 0 120 120" role="img" aria-label="Porcentaje de cierre"></svg>
@@ -598,15 +660,15 @@
           <ul class="barras" id="b-embudo"></ul>
         </div>
         <div class="tarj">
-          <div class="tarj-h"><h2>Servicios</h2><span class="meta">30 días</span></div>
+          <div class="tarj-h"><h2>Servicios</h2></div>
           <ul class="barras" id="b-servicios"></ul>
         </div>
         <div class="tarj">
-          <div class="tarj-h"><h2>Ubicaciones</h2><span class="meta">30 días</span></div>
+          <div class="tarj-h"><h2>Ubicaciones</h2></div>
           <ul class="barras" id="b-provincias"></ul>
         </div>
         <div class="tarj">
-          <div class="tarj-h"><h2>Entrada</h2><span class="meta">30 días</span></div>
+          <div class="tarj-h"><h2>Entrada</h2></div>
           <ul class="barras" id="b-origenes"></ul>
         </div>
       </div>
@@ -702,6 +764,8 @@
     alerta:   ico("M12 8v5M12 16.5h.01", '<circle cx="12" cy="12" r="9"/>'),
     dia:      ico("M8 2v4M16 2v4M3 9.5h18", '<rect x="3" y="4" width="18" height="17" rx="2.5"/>'),
     sube:     ico("M22 7.5 13.8 15.7l-4.3-4.3L2 18.9M16 7.5h6v6"),
+    doc:      ico("M14 2.5H7.5a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7zM14 2.5v5h5M9 13.5h6M9 17h4"),
+    bandeja:  ico("M5.4 5.6 2 12.5v5.5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5.5l-3.4-6.9A2 2 0 0 0 16.8 4.5H7.2a2 2 0 0 0-1.8 1.1zM22 12.5h-6l-2 3h-4l-2-3H2"),
     cartera:  ico("M3 6.5v11A2.5 2.5 0 0 0 5.5 20H19a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2H5.5A2.5 2.5 0 0 1 3 6.5zM3 6.5A2.5 2.5 0 0 1 5.5 4H17M17.5 14h.01"),
     luna:     ico("M20.5 13.3A8.6 8.6 0 1 1 10.7 3.5a6.7 6.7 0 0 0 9.8 9.8z"),
     sol:      ico("M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4", '<circle cx="12" cy="12" r="4"/>'),
@@ -765,12 +829,6 @@
   function colones(n) {
     return "₡" + String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   }
-  function corto(n) {
-    n = Number(n || 0);
-    if (n >= 1000000) return "₡" + (n / 1000000).toFixed(1).replace(".", ",") + " M";
-    if (n >= 1000) return "₡" + Math.round(n / 1000) + " k";
-    return "₡" + n;
-  }
 
   var MESES = ["ene","feb","mar","abr","may","jun","jul","ago","set","oct","nov","dic"];
   function fechaCorta(iso) {
@@ -797,13 +855,11 @@
      Resumen
      ========================================================= */
 
-  /* Una tarjeta de cifra. `ir` es a dónde lleva tocarla: toda cifra
-     del tablero abre su propia lista. `chispa` es la serie que va
-     sangrada hasta el borde de abajo — y sólo la llevan las dos
-     tarjetas que cuentan entradas en el tiempo. A un estado ("sin
-     atender") y a una suma ("embudo abierto") no se les dibuja una
-     tendencia porque no la tienen: inventarla en una herramienta de
-     trabajo es peor que dejar el número solo. */
+  /* Una tarjeta de cifra. `ir` es a dónde lleva tocarla: toda cifra del
+     tablero abre su propia lista. `chispa` es la serie que va sangrada
+     hasta el borde de abajo, y sólo la llevan las dos tarjetas que
+     cuentan entradas en el tiempo — a un estado y a una suma no se les
+     dibuja una tendencia que no tienen. */
   function cifra(o) {
     return '<button type="button" class="cifra' + (o.urge ? " urge" : "") + '"' +
       (o.ir ? " data-ir='" + escHtml(JSON.stringify(o.ir)) + "'" : "") + ">" +
@@ -811,86 +867,82 @@
       '<div class="cifra-n">' + escHtml(o.n) + "</div>" +
       '<div class="cifra-t">' + escHtml(o.t) + "</div>" +
       (o.p ? '<div class="cifra-p">' + escHtml(o.p) + "</div>" : "") +
-      (o.chispa ? chispa(o.chispa) : "") +
+      (o.chispa ? chispa(o.chispa, o.color) : "") +
       "</button>";
   }
 
-  /* La chispa: área más línea, una sola serie, un solo color. Se dibuja
-     en una caja de 100×30 y se estira con el viewBox porque acá no hay
-     redondeos que se deformen. */
-  function chispa(vals) {
+  function chispa(vals, color) {
     if (!vals || vals.length < 2) return "";
     var tope = Math.max.apply(null, vals) || 1;
     var W = 100, H = 30, paso = W / (vals.length - 1);
     var pts = vals.map(function (v, i) {
       return (i * paso).toFixed(2) + "," + (H - (v / tope) * (H - 4) - 2).toFixed(2);
     });
+    var c = color || "var(--p-dato1)";
     return '<svg class="cifra-chispa" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" aria-hidden="true">' +
-      '<path d="M0,' + H + "L" + pts.join("L") + "L" + W + "," + H + 'Z" fill="var(--p-dato1)" opacity=".13"/>' +
-      '<path d="M' + pts.join("L") + '" fill="none" stroke="var(--p-dato1)" stroke-width="1.6" ' +
+      '<path d="M0,' + H + "L" + pts.join("L") + "L" + W + "," + H + 'Z" fill="' + c + '" opacity=".13"/>' +
+      '<path d="M' + pts.join("L") + '" fill="none" stroke="' + c + '" stroke-width="1.6" ' +
       'stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>';
   }
 
+  /* Dos de las cuatro cifras miran el rango escogido y dos miran el
+     estado de hoy. "Sin atender" y "Cotizado sin cerrar" no se filtran
+     por fecha a propósito: una cotización de hace dos meses que nadie
+     tocó sigue estando sin atender hoy, y esconderla porque cae fuera
+     del rango sería justamente perderla. */
   function pintarCifras(d) {
     var esperando = d.esperando.total;
-    var hoy = hoyISO();
-    var totales = d.serie.map(function (f) { return f.cot + f.sol; });
-
     $("cifras").innerHTML = [
       cifra({ icono: ICO.alerta, n: String(esperando), t: "Sin atender",
-        p: esperando ? ("el más viejo " + espera(d.esperaMax)) : "todo al día",
+        p: esperando ? ("más antiguo: " + espera(d.esperaMax)) : "",
         urge: esperando > 0, ir: { vista: "cotizaciones", estado: "nueva" } }),
 
-      cifra({ icono: ICO.dia, n: String(d.hoy.cot + d.hoy.sol), t: "Hoy",
-        p: d.hoy.cot + (d.hoy.cot === 1 ? " cotización" : " cotizaciones") + " · " +
-           d.hoy.sol + (d.hoy.sol === 1 ? " solicitud" : " solicitudes"),
-        ir: { vista: "cotizaciones", desde: hoy, hasta: hoy },
-        chispa: totales.slice(-14) }),
+      cifra({ icono: ICO.doc, n: String(d.rango.cot), t: "Cotizaciones",
+        ir: { vista: "cotizaciones", desde: d.desde, hasta: d.hasta },
+        chispa: d.serie.map(function (f) { return f.cot; }),
+        color: "var(--p-dato1)" }),
 
-      cifra({ icono: ICO.sube, n: String(d.mes.cot + d.mes.sol), t: "Últimos 30 días",
-        p: d.mes.cot + " cotizadas · " + d.semana.cot + " en la última semana",
-        ir: { vista: "cotizaciones", desde: haceDias(29), hasta: hoy },
-        chispa: totales }),
+      cifra({ icono: ICO.bandeja, n: String(d.rango.sol), t: "Solicitudes",
+        ir: { vista: "solicitudes", desde: d.desde, hasta: d.hasta },
+        chispa: d.serie.map(function (f) { return f.sol; }),
+        color: "var(--p-dato2)" }),
 
-      cifra({ icono: ICO.cartera, n: corto(d.valor.max), t: "Embudo abierto",
-        p: d.valor.min ? ("desde " + corto(d.valor.min) + ", lo que todavía se puede cerrar")
-                       : "nada abierto",
+      cifra({ icono: ICO.cartera, n: colones(d.abierto.max), t: "Cotizado sin cerrar",
+        p: d.abierto.min ? ("mínimo " + colones(d.abierto.min)) : "",
         ir: { vista: "cotizaciones" } })
     ].join("");
   }
 
-  /* El aro. Un porcentaje solo pide una forma que se lea de un vistazo;
-     una barra de un solo dato no es una gráfica. El trazo arranca
-     arriba y va en sentido del reloj, que es como se lee un medidor. */
+  /* El aro: cuántas de las cotizaciones enviadas en el rango terminaron
+     en trabajo. El porcentaje va sobre lo enviado y no sobre lo ya
+     resuelto — es la lectura que no se infla sola cuando quedan muchas
+     abiertas. */
   function pintarAro(d) {
-    var svg = $("aro");
     var pct = d.cierre === null ? 0 : d.cierre;
     var r = 50, C = 2 * Math.PI * r;
 
-    svg.innerHTML =
+    $("aro").innerHTML =
       '<g transform="rotate(-90 60 60)">' +
         '<circle cx="60" cy="60" r="' + r + '" fill="none" stroke="var(--p-sup2)" stroke-width="9"/>' +
-        '<circle cx="60" cy="60" r="' + r + '" fill="none" stroke="var(--p-dato1)" stroke-width="9" ' +
+        (pct > 0 ? '<circle cx="60" cy="60" r="' + r + '" fill="none" stroke="var(--p-dato1)" stroke-width="9" ' +
           'stroke-linecap="round" stroke-dasharray="' + C.toFixed(1) + '" ' +
-          'stroke-dashoffset="' + (C * (1 - pct / 100)).toFixed(1) + '"/>' +
+          'stroke-dashoffset="' + (C * (1 - pct / 100)).toFixed(1) + '"/>' : "") +
       "</g>" +
-      '<text class="aro-txt" x="60" y="60" text-anchor="middle" dominant-baseline="middle">' +
-        (d.cierre === null ? "—" : pct + "%") + "</text>" +
-      '<text class="aro-sub" x="60" y="80" text-anchor="middle">' +
-        (d.cierre === null ? "sin resolver" : "de " + d.cerradas + " resueltas") + "</text>";
+      '<text class="aro-txt" x="60" y="62" text-anchor="middle" dominant-baseline="middle">' +
+        (d.cierre === null ? "—" : pct + "%") + "</text>";
 
-    var e = d.embudo.cotizaciones;
     $("aro-pie").innerHTML =
-      '<div><small>Hechas</small><b>' + (e.hecha || 0) + "</b></div>" +
-      '<div><small>Perdidas</small><b>' + (e.perdida || 0) + "</b></div>";
+      '<div><small>Enviadas</small><b>' + d.enviadas + "</b></div>" +
+      '<div><small>Cerradas</small><b>' + d.cerradas + "</b></div>";
   }
 
   function pintarCola(d) {
     // Con la cola vacía la tarjeta se queda y lo dice. Esconderla
     // dejaría un hueco en la rejilla y, peor, dejaría la duda de si
     // está vacía o si falló algo.
+    $("cola-n").textContent = d.pendientes.length ? String(d.pendientes.length) : "";
     if (!d.pendientes.length) {
-      $("cola").innerHTML = '<p class="vacio-ok">No hay nada esperando. Todo lo que entró ya se atendió.</p>';
+      $("cola").innerHTML = '<p class="vacio-ok">Sin pendientes.</p>';
       return;
     }
 
@@ -1018,13 +1070,59 @@
     });
   }
 
+  /* El rango del resumen. Vive aparte del de las listas porque son dos
+     preguntas distintas: acá uno mira un periodo, allá busca un
+     registro. Los botones de 7/30/90 son lo que se usa el 95% de las
+     veces; las fechas quedan para el otro 5%. */
+  var rango = { desde: "", hasta: "" };
+
+  function marcarPreset() {
+    var dias = null;
+    if (rango.desde && rango.hasta === hoyISO()) {
+      dias = Math.round(
+        (Date.parse(rango.hasta + "T00:00:00Z") - Date.parse(rango.desde + "T00:00:00Z")) / 86400000
+      ) + 1;
+    }
+    Array.prototype.forEach.call($("presets").children, function (b) {
+      b.setAttribute("aria-pressed", String(Number(b.dataset.dias) === dias));
+    });
+  }
+
+  $("presets").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-dias]");
+    if (!b) return;
+    rango.hasta = hoyISO();
+    rango.desde = haceDias(Number(b.dataset.dias) - 1);
+    resumenCargado = false;
+    cargarResumen();
+  });
+
+  ["r-desde", "r-hasta"].forEach(function (id) {
+    $(id).addEventListener("change", function () {
+      rango.desde = $("r-desde").value;
+      rango.hasta = $("r-hasta").value;
+      resumenCargado = false;
+      cargarResumen();
+    });
+  });
+
   function cargarResumen() {
     $("estado-resumen").textContent = "Cargando…";
     $("estado-resumen").classList.remove("is-error");
-    pedir("/api/panel/resumen")
+    var p = new URLSearchParams();
+    if (rango.desde) p.set("desde", rango.desde);
+    if (rango.hasta) p.set("hasta", rango.hasta);
+    pedir("/api/panel/resumen" + (p.toString() ? "?" + p.toString() : ""))
       .then(function (d) {
         ESTADOS = d.estados;
         llenarFiltroEstados();
+        // El servidor manda el rango que de verdad usó: si no se pidió
+        // ninguno, es el de por defecto, y los controles tienen que
+        // mostrarlo en vez de quedarse en blanco.
+        rango.desde = d.desde; rango.hasta = d.hasta;
+        $("r-desde").value = d.desde;
+        $("r-hasta").value = d.hasta;
+        marcarPreset();
         $("estado-resumen").textContent = "";
         pintarCifras(d);
         pintarCola(d);
@@ -1062,16 +1160,14 @@
      hora exacta no; además se actualiza sola, así que la pantalla
      nunca miente diciendo que está al día cuando lleva media hora. */
   var traidoA = null;
-  function sellar() { traidoA = Date.now(); pintarFrescura(); }
+  function sellar() { traidoA = new Date(); pintarFrescura(); }
   function pintarFrescura() {
     if (!traidoA) return;
-    var m = Math.floor((Date.now() - traidoA) / 60000);
-    var t = m < 1 ? "Recién traído" : m < 60 ? "Hace " + m + " min"
-          : "Hace " + Math.floor(m / 60) + " h";
+    var t = "Actualizado " + String(traidoA.getHours()).padStart(2, "0") +
+            ":" + String(traidoA.getMinutes()).padStart(2, "0");
     $("frescura").textContent = t;
     $("sello").textContent = t;
   }
-  setInterval(pintarFrescura, 30000);
 
   // Cualquier cosa con data-ir lleva a su lista ya filtrada.
   document.addEventListener("click", function (e) {

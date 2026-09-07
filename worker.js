@@ -515,89 +515,105 @@ async function cambiarEstado(request, env) {
    por consulta, y así el tablero abre de una.
    ------------------------------------------------------------- */
 const DIAS_RESUMEN = 30;
+// Tope de puntos que se dibujan. Con más de medio año de barras diarias
+// no se distingue una de otra y la respuesta se hincha sin utilidad.
+const DIAS_TOPE = 186;
+
+function rangoResumen(url) {
+  const hoy = new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
+  let hasta = soloFecha(url.searchParams.get("hasta")) || hoy;
+  let desde = soloFecha(url.searchParams.get("desde"));
+  if (!desde) {
+    const d = new Date(hasta + "T00:00:00Z");
+    d.setUTCDate(d.getUTCDate() - (DIAS_RESUMEN - 1));
+    desde = d.toISOString().slice(0, 10);
+  }
+  if (desde > hasta) { const t = desde; desde = hasta; hasta = t; }
+
+  const dias = Math.round(
+    (Date.parse(hasta + "T00:00:00Z") - Date.parse(desde + "T00:00:00Z")) / 86400000
+  ) + 1;
+  return { desde, hasta, dias: Math.min(Math.max(dias, 1), DIAS_TOPE) };
+}
 
 async function resumenPanel(request, env) {
   if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
 
+  const url = new URL(request.url);
+  const { desde, hasta, dias } = rangoResumen(url);
+
   const dia = `date(creado, '-6 hours')`;
-  const desde = `date('now', '-6 hours', '-${DIAS_RESUMEN - 1} days')`;
-  // Horas que lleva esperando. Sirve para ordenar y para pintar en rojo
-  // lo que ya pasó de un día sin que nadie lo tocara.
+  const enRango = `${dia} BETWEEN ? AND ?`;
+  const R = [desde, hasta];
+  // Horas esperando: sirve para ordenar y para marcar lo que ya pasó de
+  // un día sin que nadie lo tocara.
   const espera = `CAST((julianday('now') - julianday(creado)) * 24 AS INTEGER) AS horas`;
 
-  const q = (sql) => env.DB.prepare(sql);
+  const q = (sql, val) => env.DB.prepare(sql).bind(...(val || []));
 
   try {
     const r = await env.DB.batch([
       // 0 · serie diaria de cotizaciones
-      q(`SELECT ${dia} AS d, COUNT(*) AS n, SUM(monto_min) AS smin, SUM(monto_max) AS smax
-         FROM cotizaciones WHERE ${dia} >= ${desde} GROUP BY d ORDER BY d`),
+      q(`SELECT ${dia} AS d, COUNT(*) AS n FROM cotizaciones WHERE ${enRango} GROUP BY d ORDER BY d`, R),
       // 1 · serie diaria de solicitudes
-      q(`SELECT ${dia} AS d, COUNT(*) AS n
-         FROM solicitudes WHERE ${dia} >= ${desde} GROUP BY d ORDER BY d`),
-      // 2 · embudo de cotizaciones — sin filtro de fecha: una cotización
-      //     de hace dos meses que sigue sin atender importa igual.
-      q(`SELECT estado, COUNT(*) AS n, SUM(monto_min) AS smin, SUM(monto_max) AS smax
-         FROM cotizaciones GROUP BY estado`),
-      // 3 · embudo de solicitudes
-      q(`SELECT estado, COUNT(*) AS n FROM solicitudes GROUP BY estado`),
-      // 4 · lo que está esperando, cotizaciones
+      q(`SELECT ${dia} AS d, COUNT(*) AS n FROM solicitudes WHERE ${enRango} GROUP BY d ORDER BY d`, R),
+      /* 2 · estado de las cotizaciones DEL RANGO. Es lo que pidió el
+             propietario: cuántas se enviaron y cuántas terminaron en
+             venta, contado por estado y no por otra cosa. */
+      q(`SELECT estado, COUNT(*) AS n FROM cotizaciones WHERE ${enRango} GROUP BY estado`, R),
+      // 3 · estado de las solicitudes del rango
+      q(`SELECT estado, COUNT(*) AS n FROM solicitudes WHERE ${enRango} GROUP BY estado`, R),
+      /* 4 y 5 · lo que está esperando. SIN filtro de fecha: una
+             cotización de hace dos meses que nadie tocó sigue estando
+             sin atender hoy, y esconderla porque cae fuera del rango
+             sería justamente perderla. */
       q(`SELECT id, numero, nombre, telefono, servicio, monto_min, monto_max,
                 provincia, canton, ${dia} AS d, ${espera}
          FROM cotizaciones WHERE estado = 'nueva' ORDER BY creado ASC LIMIT 15`),
-      // 5 · lo que está esperando, solicitudes
       q(`SELECT id, nombre, telefono, servicio, zona, ${dia} AS d, ${espera}
          FROM solicitudes WHERE estado = 'nueva' ORDER BY creado ASC LIMIT 15`),
       // 6 · qué se cotiza
-      q(`SELECT servicio AS k, COUNT(*) AS n FROM cotizaciones
-         WHERE ${dia} >= ${desde} GROUP BY k ORDER BY n DESC`),
-      // 7 · dónde queda — esto es lo que dice para dónde van los camiones
-      q(`SELECT COALESCE(provincia, '—') AS k, COUNT(*) AS n FROM cotizaciones
-         WHERE ${dia} >= ${desde} GROUP BY k ORDER BY n DESC`),
-      // 8 · por dónde entró — dice si Beto está sirviendo o no
-      q(`SELECT COALESCE(origen, 'beto') AS k, COUNT(*) AS n FROM cotizaciones
-         WHERE ${dia} >= ${desde} GROUP BY k ORDER BY n DESC`)
+      q(`SELECT servicio AS k, COUNT(*) AS n FROM cotizaciones WHERE ${enRango} GROUP BY k ORDER BY n DESC`, R),
+      // 7 · dónde queda: esto dice para dónde van los camiones
+      q(`SELECT COALESCE(provincia, '—') AS k, COUNT(*) AS n FROM cotizaciones WHERE ${enRango} GROUP BY k ORDER BY n DESC`, R),
+      // 8 · por dónde entró: dice si Beto está sirviendo
+      q(`SELECT COALESCE(origen, 'beto') AS k, COUNT(*) AS n FROM cotizaciones WHERE ${enRango} GROUP BY k ORDER BY n DESC`, R),
+      /* 9 · el monto que sigue vivo. También sin filtro de fecha: es
+             plata que todavía se puede cobrar, no importa cuándo se
+             cotizó. */
+      q(`SELECT SUM(monto_min) AS smin, SUM(monto_max) AS smax FROM cotizaciones
+         WHERE estado NOT IN ('perdida', 'hecha')`),
+      // 10 · cuántas siguen sin atender, en total
+      q(`SELECT
+           (SELECT COUNT(*) FROM cotizaciones WHERE estado = 'nueva') AS cot,
+           (SELECT COUNT(*) FROM solicitudes  WHERE estado = 'nueva') AS sol`)
     ]);
 
     const filas = (i) => (r[i] && r[i].results) || [];
+    const uno = (i) => filas(i)[0] || {};
 
-    // La serie se rellena día por día: los días sin nada tienen que
-    // aparecer en cero, si no la gráfica miente sobre el ritmo.
-    const porDiaCot = new Map(filas(0).map((f) => [f.d, f]));
+    // La serie se rellena día por día: los días sin nada van en cero,
+    // si no la gráfica miente sobre el ritmo.
+    const porDiaCot = new Map(filas(0).map((f) => [f.d, f.n]));
     const porDiaSol = new Map(filas(1).map((f) => [f.d, f.n]));
     const serie = [];
-    const hoyCR = new Date(Date.now() - 6 * 3600 * 1000);
-    for (let i = DIAS_RESUMEN - 1; i >= 0; i--) {
-      const t = new Date(hoyCR.getTime() - i * 86400000);
-      const d = t.toISOString().slice(0, 10);
-      const c = porDiaCot.get(d);
-      serie.push({ d, cot: c ? c.n : 0, sol: porDiaSol.get(d) || 0, max: c ? (c.smax || 0) : 0 });
+    const inicio = Date.parse(desde + "T00:00:00Z");
+    for (let i = 0; i < dias; i++) {
+      const d = new Date(inicio + i * 86400000).toISOString().slice(0, 10);
+      serie.push({ d, cot: porDiaCot.get(d) || 0, sol: porDiaSol.get(d) || 0 });
     }
 
-    const sumar = (campo, n) => serie.slice(-n).reduce((a, f) => a + f[campo], 0);
+    const porEstado = (i) => {
+      const m = {};
+      for (const f of filas(i)) m[f.estado] = f.n;
+      return m;
+    };
+    const estCot = porEstado(2), estSol = porEstado(3);
+    const suma = (m) => Object.keys(m).reduce((a, k) => a + m[k], 0);
 
-    const embudoCot = {};
-    let esperandoCot = 0, valorMin = 0, valorMax = 0, ganadoMin = 0, ganadoMax = 0;
-    for (const f of filas(2)) {
-      embudoCot[f.estado] = f.n;
-      if (f.estado === "nueva") esperandoCot = f.n;
-      // El embudo abierto es lo que todavía se puede cerrar: ni lo
-      // perdido ni lo ya hecho cuentan como plata por venir.
-      if (f.estado !== "perdida" && f.estado !== "hecha") {
-        valorMin += f.smin || 0; valorMax += f.smax || 0;
-      }
-      if (f.estado === "hecha") { ganadoMin += f.smin || 0; ganadoMax += f.smax || 0; }
-    }
-    const embudoSol = {};
-    let esperandoSol = 0;
-    for (const f of filas(3)) {
-      embudoSol[f.estado] = f.n;
-      if (f.estado === "nueva") esperandoSol = f.n;
-    }
+    const enviadas = suma(estCot);
+    const cerradas = estCot.hecha || 0;
 
-    /* Las dos listas de pendientes se mezclan en una sola cola ordenada
-       por antigüedad. Al que atiende no le sirve saber por qué puerta
-       entró cada una: le sirve saber cuál lleva más rato esperando. */
     const pendientes = filas(4).map((f) => ({
       tabla: "cotizaciones", id: f.id, horas: f.horas, fecha: f.d,
       titulo: f.numero || ("Cotización " + f.id),
@@ -625,35 +641,31 @@ async function resumenPanel(request, env) {
         ". ¿Cuándo le queda bien que se lo coordinemos?")
     }))).sort((a, b) => b.horas - a.horas).slice(0, 20);
 
-    const cerradas = (embudoCot.hecha || 0) + (embudoCot.perdida || 0);
+    const abierto = uno(9);
+    const esperando = uno(10);
 
     return json({
       ok: true,
-      dias: DIAS_RESUMEN,
+      desde, hasta, dias,
       serie,
-      hoy:    { cot: sumar("cot", 1),  sol: sumar("sol", 1)  },
-      semana: { cot: sumar("cot", 7),  sol: sumar("sol", 7)  },
-      mes:    { cot: sumar("cot", 30), sol: sumar("sol", 30) },
-      esperando: { cot: esperandoCot, sol: esperandoSol, total: esperandoCot + esperandoSol },
-      // El más viejo sin atender. Si esto pasa de 24, algo se está
-      // quedando en el camino y el tablero tiene que decirlo.
+      // Lo que pasó dentro del rango
+      rango: { cot: suma(estCot), sol: suma(estSol) },
+      enviadas,
+      cerradas,
+      // Porcentaje sobre lo enviado, no sobre lo resuelto: es lo que
+      // pidió el propietario y es la lectura que no se infla sola.
+      cierre: enviadas ? Math.round((cerradas / enviadas) * 100) : null,
+      // Estado de hoy, no del rango
+      esperando: { cot: esperando.cot || 0, sol: esperando.sol || 0,
+                   total: (esperando.cot || 0) + (esperando.sol || 0) },
       esperaMax: pendientes.length ? pendientes[0].horas : 0,
       pendientes,
-      valor: { min: valorMin, max: valorMax },
-      ganado: { min: ganadoMin, max: ganadoMax },
-      // Sobre lo ya resuelto, no sobre el total: las que aún no se han
-      // trabajado no son ni ganadas ni perdidas todavía.
-      cierre: cerradas ? Math.round(((embudoCot.hecha || 0) / cerradas) * 100) : null,
-      cerradas,
-      embudo: { cotizaciones: embudoCot, solicitudes: embudoSol },
-      /* Cada desglose lleva su `id` además de la etiqueta: es el valor con
-         el que el tablero filtra la lista al tocar la barra. El origen no
-         lo lleva porque no se filtra por eso — se mira y ya. */
+      abierto: { min: abierto.smin || 0, max: abierto.smax || 0 },
+      embudo: { cotizaciones: estCot, solicitudes: estSol },
       servicios:  filas(6).map((f) => ({ id: f.k, k: etiqueta(f.k, null, "servicio"), n: f.n })),
       provincias: filas(7).map((f) => ({ id: f.k, k: f.k, n: f.n })),
       origenes:   filas(8).map((f) => ({ k: ORIGENES[f.k] || f.k, n: f.n })),
-      estados: ESTADOS,
-      provisional: TARIFAS.provisional
+      estados: ESTADOS
     });
   } catch (e) {
     console.error("Error al armar el resumen:", e);

@@ -168,6 +168,17 @@ referencias medidas: Kinsta (la estructura), Linear (cómo se comporta
 una herramienta que uno tiene abierta todo el día) y Vuesax (el chip de
 icono, la línea de tendencia y el aro).
 
+**Rango de fechas.** Botones de 7 / 30 / 90 días más dos campos para
+cualquier otro periodo. Manda sobre las cifras de conteo, el aro de
+cierre, la serie diaria y los cuatro desgloses. **No** manda sobre "Sin
+atender" ni sobre "Cotizado sin cerrar": esos son estado de hoy, y una
+cotización vieja sin atender tiene que seguir apareciendo aunque el
+rango no la cubra.
+
+**Tipografía Inter**, no Archivo. Archivo es el tipo de cartel del
+rótulo del camión y sirve para el sitio público; acá hay cifras chicas
+en tablas, que es justo para lo que está dibujada Inter.
+
 **Modo claro y oscuro.** Arranca con lo que tenga puesto el sistema y
 se queda con lo que uno escoja; la elección vive en el navegador. El
 botón está arriba a la derecha.

@@ -769,3 +769,65 @@ otro también.
 **Lo que NO se tocó:** la maquetación del sitio público, sus botones y
 su tipografía de cartel. Están construidos contra el rótulo del camión
 y funcionan; el problema era el widget pegado encima, no la página.
+
+
+## 17. Cuarta pasada: sacarle la voz al tablero
+
+Revisión del propietario sobre capturas marcadas. Lo que señaló, junto,
+tenía un patrón: **el tablero hablaba en vez de mostrar.**
+
+| Decía | Dice |
+|---|---|
+| "Recién traído" / "Hace 3 min" | **Actualizado 14:32** |
+| "todo al día" | nada |
+| "nadie lo ha tocado todavía" | el número de pendientes |
+| "de lo ya resuelto" · "sin resolver" | nada |
+| "Embudo abierto" | **Cotizado sin cerrar** |
+| "desde ₡273 k, lo que todavía se puede cerrar" | **mínimo ₡273.000** |
+| "₡387 k" | **₡387.000** |
+| "Hoy" · "Últimos 30 días" | **Cotizaciones** · **Solicitudes**, sobre el rango escogido |
+| "Hechas / Perdidas" | **Enviadas / Cerradas** |
+
+"Embudo" era jerga de ventas que no significa nada para quien abre
+esto todos los días. Las abreviaturas con k y M ahorran cuatro
+caracteres y obligan a hacer una cuenta mental: en una pantalla de
+plata se escribe la plata.
+
+### 17.1 Tipografía: Inter
+
+Archivo sale del rótulo del camión y es la tipografía de la marca. Es un
+tipo de **cartel**: dibujado para leerse a diez metros y en cuerpos
+grandes. Lo que hay en el panel son cifras chicas en tablas.
+
+Inter está dibujada justo para eso —números de ancho fijo, formas
+abiertas en cuerpos de 12 y 13px— y es la que usan Linear, Vercel y
+Grafana. Que el sitio público y la herramienta usen tipografías
+distintas es a propósito: hacen trabajos opuestos. Es la misma
+conclusión de §15, llevada hasta el final.
+
+### 17.2 Rango de fechas
+
+Botones de 7 / 30 / 90 días, más dos campos de fecha para lo demás. El
+rango manda sobre las dos cifras de conteo, el aro, la serie y los
+cuatro desgloses.
+
+**No manda sobre "Sin atender" ni sobre "Cotizado sin cerrar"**, y es
+deliberado: una cotización de hace dos meses que nadie tocó sigue sin
+atender hoy, y esconderla porque cae fuera del rango sería justamente
+perderla. Son estado de hoy, no historia.
+
+### 17.3 El porcentaje de cierre cambió de denominador
+
+Antes era `hechas / (hechas + perdidas)` — sobre lo ya resuelto. Ahora
+es `cerradas / enviadas`, que es lo que pidió el propietario y es la
+lectura que no se infla sola: con el denominador viejo, dejar
+cotizaciones abiertas para siempre mejoraba el número.
+
+### 17.4 La asimetría eran 16 píxeles
+
+Las dos cosas que el propietario marcó —la tarjeta de "Estado" más alta
+que sus vecinas, y "Pendientes" sin cerrar parejo con "Cierre"— eran el
+mismo error: la regla `.tarj + .tarj { margin-top: 1rem }` se colaba
+dentro de las rejillas y le restaba 16px de alto a toda tarjeta que no
+fuera la primera de su fila. Ahora está limitada a los bloques apilados
+de la vista.
