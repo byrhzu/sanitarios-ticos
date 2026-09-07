@@ -1031,7 +1031,12 @@ async function cotizar(request, env, ctx) {
   const persona = limpiarDatosPersona(cuerpo, ["nombre", "telefono"]);
   if (persona.error) return json({ ok: false, error: persona.error }, 400);
   const { nombre, telefono, cedula, correo } = persona.datos;
-  const origen = ["panel", "formulario"].indexOf(cuerpo.origen) !== -1 ? cuerpo.origen : "beto";
+  /* Decir que una cotización salió del panel es decir que la hizo
+     alguien de la empresa, y de eso dependen las estadísticas de por
+     dónde entra el trabajo. Así que hay que probarlo con la clave; sin
+     ella, la cotización se guarda igual pero como venida de Beto. */
+  let origen = ["panel", "formulario"].indexOf(cuerpo.origen) !== -1 ? cuerpo.origen : "beto";
+  if (origen === "panel" && !claveValida(request, env)) origen = "beto";
 
   let numero = null;
   let enlace = null;
@@ -1066,7 +1071,13 @@ async function cotizar(request, env, ctx) {
     console.error("Error al guardar la cotización:", e);
   }
 
-  const salida = Object.assign({ ok: true, numero: numero, enlace: enlace }, calculo);
+  /* El nombre y el teléfono vuelven ya limpios. Los necesita el panel
+     para armar el WhatsApp con el que se le manda el documento al
+     cliente: lo que la persona escribió podía venir dentro de una frase. */
+  const salida = Object.assign(
+    { ok: true, numero: numero, enlace: enlace, nombre: nombre, telefono: telefono },
+    calculo
+  );
 
   // El aviso sale en segundo plano, como el del formulario.
   ctx.waitUntil(avisarCotizacion(Object.assign({}, salida, {

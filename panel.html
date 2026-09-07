@@ -150,6 +150,42 @@
   .leyenda i.cot { background: var(--orange); }
   .leyenda i.sol { background: var(--slate-3); }
 
+  /* ---------- Nueva cotización ---------- */
+  .nueva-t {
+    font-family: var(--display); font-size: .8rem; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+    margin: 2rem 0 .9rem; padding-bottom: .5rem; border-bottom: 1px solid var(--line);
+  }
+  .nueva-t:first-child { margin-top: 0; }
+  .nueva-rejilla { display: grid; gap: 1rem 1.2rem; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+  .nueva-rejilla .f { margin: 0; }
+  #form-nueva[hidden] { display: none; }
+  #form-nueva { max-width: 58rem; }
+  .opc { font-weight: 400; color: var(--muted); font-size: .78rem; }
+  .nueva-pie { margin-top: 1.8rem; display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
+  .nueva-pie .estado-panel { margin: 0; }
+  select:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* El resultado. Se parece a la cabecera del documento a propósito:
+     es lo mismo que va a ver el cliente cuando abra el enlace. */
+  #nueva-hecha[hidden] { display: none; }
+  .hecha {
+    border: 1px solid var(--line); background: var(--paper);
+    border-top: 6px solid var(--orange); padding: 1.6rem 1.6rem 1.8rem; max-width: 44rem;
+  }
+  .hecha-num {
+    font-family: var(--display); font-size: .74rem; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+  }
+  .hecha-rango {
+    font-family: var(--display); font-weight: 800; font-stretch: 112%;
+    font-size: clamp(1.7rem, 4.5vw, 2.5rem); line-height: 1.1;
+    margin: .5rem 0 .3rem; letter-spacing: -.02em;
+  }
+  .hecha-quien { color: var(--muted); font-size: .9rem; }
+  .hecha-aviso { font-size: .85rem; color: var(--orange-dk); margin-top: .9rem; line-height: 1.5; }
+  .hecha-acciones { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1.4rem; }
+
   /* ---------- Tablas ---------- */
   .filtros { display: grid; gap: .9rem; grid-template-columns: 1fr 1fr 1fr auto auto; align-items: end; margin-bottom: 1.6rem; }
   @media (max-width: 859px) { .filtros { grid-template-columns: 1fr 1fr; } }
@@ -270,6 +306,7 @@
       <button type="button" role="tab" data-vista="resumen" aria-selected="true">Resumen</button>
       <button type="button" role="tab" data-vista="cotizaciones" aria-selected="false">Cotizaciones<span class="cuenta" id="cuenta-cot" hidden></span></button>
       <button type="button" role="tab" data-vista="solicitudes" aria-selected="false">Solicitudes<span class="cuenta" id="cuenta-sol" hidden></span></button>
+      <button type="button" role="tab" data-vista="nueva" aria-selected="false">Nueva cotización</button>
     </div>
 
     <p class="aviso" id="aviso-provisional" hidden>
@@ -318,6 +355,79 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- ============ NUEVA COTIZACIÓN ============
+         Para el cliente que llama o que llega al local: se llena acá y
+         sale la misma cotización que saca Beto, con su número, su
+         documento y su llave. Es la cuarta puerta al mismo motor. -->
+    <div class="vista" id="vista-nueva" hidden>
+      <p class="estado-panel" id="estado-nueva-carga" role="status" aria-live="polite"></p>
+
+      <form id="form-nueva" hidden>
+        <h2 class="nueva-t">Qué se va a hacer</h2>
+        <div class="nueva-rejilla">
+          <div class="f">
+            <label for="n-servicio">Servicio</label>
+            <select id="n-servicio" required></select>
+          </div>
+          <div class="f">
+            <label for="n-perfil">Tipo de propiedad</label>
+            <select id="n-perfil" required></select>
+          </div>
+          <div class="f">
+            <label for="n-ultimo">Último servicio</label>
+            <select id="n-ultimo" required></select>
+          </div>
+          <div class="f">
+            <label for="n-acceso">Dónde para el camión</label>
+            <select id="n-acceso" required></select>
+          </div>
+        </div>
+
+        <h2 class="nueva-t">Dónde queda</h2>
+        <div class="nueva-rejilla">
+          <div class="f">
+            <label for="n-provincia">Provincia</label>
+            <select id="n-provincia" required></select>
+          </div>
+          <div class="f">
+            <label for="n-canton">Cantón</label>
+            <select id="n-canton" required disabled></select>
+          </div>
+          <div class="f">
+            <label for="n-distrito">Distrito</label>
+            <select id="n-distrito" disabled></select>
+          </div>
+        </div>
+
+        <h2 class="nueva-t">A nombre de quién</h2>
+        <div class="nueva-rejilla">
+          <div class="f">
+            <label for="n-nombre">Nombre</label>
+            <input id="n-nombre" type="text" required autocomplete="off">
+          </div>
+          <div class="f">
+            <label for="n-telefono">Teléfono</label>
+            <input id="n-telefono" type="tel" inputmode="tel" required autocomplete="off" placeholder="8888-8888">
+          </div>
+          <div class="f">
+            <label for="n-cedula">Cédula <span class="opc">opcional</span></label>
+            <input id="n-cedula" type="text" autocomplete="off" placeholder="1-2345-6789 o 3-101-123456">
+          </div>
+          <div class="f">
+            <label for="n-correo">Correo <span class="opc">opcional</span></label>
+            <input id="n-correo" type="email" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="nueva-pie">
+          <button class="btn btn-orange" type="submit" id="btn-crear">Crear cotización</button>
+          <p class="estado-panel" id="estado-nueva" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+
+      <div id="nueva-hecha" hidden></div>
     </div>
 
     <!-- ================= TABLAS ================= -->
@@ -392,7 +502,12 @@
 
   /* Cifras. En las tarjetas van cortas porque lo que importa es el orden
      de magnitud: "₡1,4 M" se lee de un vistazo, "₡1.437.500" no. */
-  function colones(n) { return "₡" + Number(n || 0).toLocaleString("es-CR"); }
+  // El mismo formato que usa el servidor: punto de miles. toLocaleString
+  // separa con espacio en algunos navegadores y quedaban dos formas
+  // distintas de escribir el mismo monto en la misma pantalla.
+  function colones(n) {
+    return "₡" + String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
   function corto(n) {
     n = Number(n || 0);
     if (n >= 1000000) return "₡" + (n / 1000000).toFixed(1).replace(".", ",") + " M";
@@ -780,6 +895,162 @@
   });
 
   /* =========================================================
+     Nueva cotización
+
+     Es la cuarta puerta al mismo motor: el formulario, el botón de
+     Beto, la conversación con Beto y esto. Ninguna calcula nada — las
+     cuatro mandan los mismos datos a /api/cotizar y el precio sale del
+     código del servidor. Por eso una cotización hecha por teléfono vale
+     exactamente igual que una que sacó el cliente solo.
+     ========================================================= */
+
+  var OPC = null;   // servicios y sus opciones
+  var GEO = null;   // provincias → cantones → distritos
+
+  function opciones(sel, lista, vacio) {
+    sel.innerHTML = '<option value="">' + escHtml(vacio) + "</option>" +
+      lista.map(function (o) {
+        return '<option value="' + escHtml(o.id) + '">' + escHtml(o.etiqueta) + "</option>";
+      }).join("");
+  }
+
+  // Las tres preguntas del servicio dependen del servicio escogido: un
+  // tanque séptico y una trampa de grasa no se miden con lo mismo.
+  function refrescarServicio() {
+    var id = $("n-servicio").value;
+    var s = id && OPC.servicios[id];
+    ["perfil", "ultimo", "acceso"].forEach(function (campo) {
+      var sel = $("n-" + campo);
+      if (!s) { sel.innerHTML = '<option value="">—</option>'; sel.disabled = true; return; }
+      sel.disabled = false;
+      opciones(sel, s[campo], "Escoja…");
+    });
+  }
+
+  /* La dirección se escoge de la lista oficial, nunca se escribe: de ahí
+     sale la zona que cobra el motor, y "Sn José" escrito a mano no la
+     encuentra. Es la misma lista que usan el formulario y Beto. */
+  function refrescarCanton() {
+    var prov = $("n-provincia").value;
+    var sel = $("n-canton");
+    var lista = prov ? Object.keys(GEO[prov]) : [];
+    sel.disabled = !prov;
+    opciones(sel, lista.map(function (k) { return { id: k, etiqueta: k }; }), "Escoja…");
+    refrescarDistrito();
+  }
+
+  function refrescarDistrito() {
+    var prov = $("n-provincia").value, cant = $("n-canton").value;
+    var sel = $("n-distrito");
+    var lista = (prov && cant && GEO[prov][cant]) || [];
+    sel.disabled = !lista.length;
+    opciones(sel, lista.map(function (k) { return { id: k, etiqueta: k }; }), "Escoja…");
+  }
+
+  function cargarNueva() {
+    if (OPC && GEO) { $("form-nueva").hidden = false; return; }
+    $("estado-nueva-carga").textContent = "Cargando…";
+    Promise.all([pedir("/api/cotizar/opciones"), pedir("/api/geografia")])
+      .then(function (r) {
+        OPC = r[0];
+        GEO = r[1].geografia;
+        opciones($("n-servicio"), Object.keys(OPC.servicios).map(function (k) {
+          return { id: k, etiqueta: OPC.servicios[k].nombre };
+        }), "Escoja…");
+        opciones($("n-provincia"), Object.keys(GEO).map(function (k) {
+          return { id: k, etiqueta: k };
+        }), "Escoja…");
+        refrescarServicio();
+        $("estado-nueva-carga").textContent = "";
+        $("form-nueva").hidden = false;
+      })
+      .catch(function () {
+        $("estado-nueva-carga").textContent = "No se pudieron cargar las opciones. Intente de nuevo.";
+        $("estado-nueva-carga").classList.add("is-error");
+      });
+  }
+
+  function mostrarHecha(d) {
+    var caja = $("nueva-hecha");
+    var tel = String(d.telefono || "").replace(/\D/g, "");
+    var wa = (tel.length === 8 && d.enlace)
+      ? "https://wa.me/506" + tel + "?text=" + encodeURIComponent(
+          "Buenas" + (d.nombre ? " " + String(d.nombre).trim().split(/\s+/)[0] : "") +
+          ", le mando la cotización de Sanitarios Ticos: " + d.enlace)
+      : null;
+
+    var acc = [];
+    if (d.enlace) acc.push('<a class="btn btn-line" href="' + escHtml(d.enlace) + '" target="_blank" rel="noopener">Ver el documento</a>');
+    if (wa) acc.push('<a class="btn btn-orange" href="' + escHtml(wa) + '" target="_blank" rel="noopener">Mandársela por WhatsApp</a>');
+    acc.push('<button type="button" class="btn btn-line" id="btn-otra">Hacer otra</button>');
+
+    caja.innerHTML = '<div class="hecha">' +
+      '<div class="hecha-num">' + escHtml(d.numero || "Cotización creada") + "</div>" +
+      '<div class="hecha-rango">' + escHtml(colones(d.min) + " – " + colones(d.max)) + "</div>" +
+      '<div class="hecha-quien">' + escHtml(d.servicioNombre + " · " + (d.nombre || "")) + "</div>" +
+      (d.provisional
+        ? '<p class="hecha-aviso">Salió con las tarifas provisionales. Antes de dársela por firme al cliente, confirme el precio.</p>'
+        : "") +
+      '<div class="hecha-acciones">' + acc.join("") + "</div>" +
+    "</div>";
+    caja.hidden = false;
+    $("form-nueva").hidden = true;
+    // El resumen ya no dice la verdad: hay una cotización más.
+    resumenCargado = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  $("nueva-hecha").addEventListener("click", function (e) {
+    if (!e.target.closest("#btn-otra")) return;
+    $("form-nueva").reset();
+    refrescarServicio();
+    refrescarCanton();
+    $("nueva-hecha").hidden = true;
+    $("form-nueva").hidden = false;
+    $("estado-nueva").textContent = "";
+    $("n-servicio").focus();
+  });
+
+  $("n-servicio").addEventListener("change", refrescarServicio);
+  $("n-provincia").addEventListener("change", refrescarCanton);
+  $("n-canton").addEventListener("change", refrescarDistrito);
+
+  $("form-nueva").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var aviso = $("estado-nueva");
+    aviso.classList.remove("is-error");
+    aviso.textContent = "Calculando…";
+    $("btn-crear").disabled = true;
+
+    pedir("/api/cotizar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        origen: "panel",
+        servicio:  $("n-servicio").value,
+        perfil:    $("n-perfil").value,
+        ultimo:    $("n-ultimo").value,
+        acceso:    $("n-acceso").value,
+        provincia: $("n-provincia").value,
+        canton:    $("n-canton").value,
+        distrito:  $("n-distrito").value,
+        nombre:    $("n-nombre").value,
+        telefono:  $("n-telefono").value,
+        cedula:    $("n-cedula").value,
+        correo:    $("n-correo").value
+      })
+    })
+      .then(function (d) { aviso.textContent = ""; mostrarHecha(d); })
+      .catch(function (err) {
+        // El servidor devuelve el motivo en español —"Los teléfonos de
+        // Costa Rica llevan 8 dígitos"— así que se muestra tal cual.
+        aviso.textContent = String((err && err.message) || "No se pudo crear la cotización.");
+        aviso.classList.add("is-error");
+      })
+      .then(function () { $("btn-crear").disabled = false; });
+  });
+
+  /* =========================================================
      Navegación y arranque
      ========================================================= */
 
@@ -789,12 +1060,15 @@
     Array.prototype.forEach.call(document.querySelectorAll(".pestanas button"), function (b) {
       b.setAttribute("aria-selected", String(b.dataset.vista === nueva));
     });
-    var esResumen = nueva === "resumen";
-    $("vista-resumen").hidden = !esResumen;
-    $("vista-tabla").hidden = esResumen;
+    var esTabla = nueva === "cotizaciones" || nueva === "solicitudes";
+    $("vista-resumen").hidden = nueva !== "resumen";
+    $("vista-nueva").hidden = nueva !== "nueva";
+    $("vista-tabla").hidden = !esTabla;
 
-    if (esResumen) {
+    if (nueva === "resumen") {
       if (!resumenCargado) cargarResumen();
+    } else if (nueva === "nueva") {
+      cargarNueva();
     } else {
       $("cuerpo-tabla").innerHTML = "";
       cargarTabla();

@@ -184,6 +184,27 @@ Después, una barra por día de los últimos 30, y cuatro desgloses: en qué
 van las cotizaciones, qué servicio se pide, en qué provincia, y por
 dónde entró (Beto, formulario o panel).
 
+### Nueva cotización
+
+Para el cliente que llama por teléfono o que llega al local. Se llenan
+las mismas preguntas que hace Beto —servicio, tipo de propiedad, último
+servicio, acceso, provincia/cantón/distrito, nombre y teléfono— y sale
+**la misma cotización**: con su número, su documento y su llave, guardada
+en la misma tabla y marcada con origen `panel`.
+
+Al terminar aparecen tres botones: ver el documento, **mandársela por
+WhatsApp** al cliente (el mensaje ya trae el enlace), y hacer otra.
+
+Es la cuarta puerta al mismo motor. Ninguna de las cuatro calcula nada:
+el formulario, el botón de Beto, la conversación con Beto y esta mandan
+los mismos datos a `/api/cotizar`, y el precio sale del código del
+servidor. Una cotización hecha por teléfono vale exactamente igual que
+una que sacó el cliente solo.
+
+Decir "origen: panel" **exige la clave**. Sin ella la cotización se
+guarda igual, pero como venida de Beto: de ese dato dependen las
+estadísticas de por dónde entra el trabajo.
+
 ### Cotizaciones y Solicitudes
 
 Las dos tablas de siempre, con tres columnas nuevas pegadas a la derecha
