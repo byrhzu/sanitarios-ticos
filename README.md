@@ -163,9 +163,19 @@ Está en **`/panel`**, con la clave que vive en Cloudflare como *Secret*
 (`CLAVE_PANEL`). Cuatro secciones en una barra lateral, que en el
 teléfono baja a una barra fija abajo.
 
-El diseño sale de `DIRECCION-DE-ARTE.md` §14, contra dos referencias
-medidas: el tablero de Kinsta (la estructura) y Linear (cómo se
-comporta una herramienta que uno tiene abierta todo el día).
+El diseño sale de `DIRECCION-DE-ARTE.md` §14 y §15, contra tres
+referencias medidas: Kinsta (la estructura), Linear (cómo se comporta
+una herramienta que uno tiene abierta todo el día) y Vuesax (el chip de
+icono, la línea de tendencia y el aro).
+
+**Modo claro y oscuro.** Arranca con lo que tenga puesto el sistema y
+se queda con lo que uno escoja; la elección vive en el navegador. El
+botón está arriba a la derecha.
+
+**En el teléfono la lista no es una tabla.** Debajo de 720px cada
+registro es una ficha con el nombre de titular, los datos apilados y
+los botones de WhatsApp y llamar a lo ancho. No hay que arrastrar de
+lado para nada.
 
 ### Resumen
 

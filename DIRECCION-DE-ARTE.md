@@ -648,3 +648,90 @@ peso 800 y en versalitas, como está pintado el tanque; acá los títulos
 son texto normal. Una herramienta de trabajo no lleva tipografía de
 rótulo — y ese h1 heredado era buena parte de lo que se sentía mal en
 la v1.
+
+
+## 15. El panel, tercera versión — impacto y teléfono
+
+### 15.1 La tercera referencia: Vuesax
+
+Tablero de administración oscuro, en índigo profundo con líneas de neón.
+Lo que se leyó de la captura:
+
+- Fondo índigo muy oscuro, tarjetas un escalón más claras, radios ~10px,
+  sombra suave, sin bordes.
+- **Tarjeta de cifra con tres partes:** un chip de icono en cuadrado
+  redondeado arriba, el número grande, la etiqueta, y **una línea de
+  tendencia sangrada hasta el borde de abajo**.
+- **Un aro grande con el porcentaje en el centro**, y debajo un pie de
+  dos celdas separadas por una línea.
+- Cada tarjeta de cifra en un color distinto: morado, verde, rojo,
+  naranja.
+
+**Tomo:** el chip de icono, la línea de tendencia sangrada, el aro con
+su pie de dos celdas, y el fondo oscuro con la tarjeta un escalón
+arriba.
+
+**Descarto:** el índigo y los degradados de neón —son la marca de
+Vuesax y son también lo que hace que todos los tableros de plantilla se
+sientan hermanos— y el color distinto por tarjeta, que es el
+antipatrón de "ocho tonos categóricos cuando la historia es un número".
+
+**Traducido:** el modo oscuro se construye con el slate de la
+carrocería en tres escalones (#10171b fondo, #1a242a tarjeta, #24313a
+realce), no con el morado de nadie. Las cuatro tarjetas comparten el
+mismo naranja.
+
+### 15.2 La regla de la línea de tendencia
+
+Sólo la llevan **las dos tarjetas que cuentan entradas en el tiempo**
+("Hoy" con catorce días, "Últimos 30 días" con treinta). Las otras dos
+—un estado ("sin atender") y una suma ("embudo abierto")— no tienen
+serie, y dibujarles una tendencia inventada en una herramienta de
+trabajo es peor que dejar el número solo.
+
+Que dos tarjetas la lleven y dos no, no es un descuido: es la regla
+hecha visible. Cuando existan los históricos de estado, las otras dos
+la tendrán.
+
+### 15.3 El modo oscuro no es el claro invertido
+
+Los tokens del modo oscuro están escogidos aparte, y los colores de
+dato se volvieron a validar contra la superficie oscura. El naranja de
+marca (#ef6511) **se sale de la banda de luminosidad del modo oscuro**
+por un punto; la serie usa #ec6618, que es el mismo naranja corrido lo
+mínimo para entrar, con #5990cf de segunda serie. Las cinco
+comprobaciones pasan.
+
+### 15.4 En el teléfono no hay tabla
+
+Una lista de diez columnas en 375px obliga a arrastrar de lado hasta el
+final para llegar al botón de WhatsApp — que es lo único que uno vino a
+tocar. Debajo de 720px cada registro es una **ficha**: el nombre de
+titular, los datos apilados con su etiqueta, la nota a lo ancho, y los
+dos botones del tamaño de un dedo.
+
+No son dos maquetados en paralelo: se dibuja uno o el otro según el
+ancho, y se vuelve a dibujar si la ventana cruza el límite.
+
+### 15.5 Las palabras
+
+"Actualizar", "Salir" y la hora exacta eran tres etiquetas de texto que
+no decían gran cosa. Ahora:
+
+- La hora se cambió por **"Recién traído" / "Hace 3 min"**, que responde
+  lo que uno de verdad quiere saber —si lo que está viendo está
+  fresco— y se actualiza sola, así que la pantalla nunca dice que está
+  al día cuando lleva media hora.
+- "Actualizar" y "Salir" son **botones redondos de icono** con su
+  título: en una herramienta de todos los días un icono conocido se
+  toca más rápido que una palabra, y de paso liberan el ancho de la
+  cabecera.
+
+### 15.6 Excepción al catálogo
+
+> **Tic 7 (fila de cards con icono).** Se usa: cada tarjeta de cifra
+> lleva un chip de icono. La referencia que entregó el propietario lo
+> tiene exactamente así, y acá los iconos distinguen cuatro métricas
+> **distintas** de un vistazo en una pantalla que se mira todos los
+> días — no son tres servicios con iconos decorativos. El chip es un
+> cuadrado redondeado, no un círculo, y no hay tres columnas iguales.
