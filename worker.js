@@ -176,11 +176,11 @@ const ORIGENES = { beto: "Beto", panel: "Panel", formulario: "Formulario" };
 
    El orden importa: es el del embudo, y así salen en los botones. */
 const ESTADOS = {
-  nueva:      { etiqueta: "Sin atender", tono: "alerta" },
+  nueva:      { etiqueta: "Sin atender", tono: "espera" },
   contactada: { etiqueta: "Contactada",  tono: "curso"  },
   agendada:   { etiqueta: "Agendada",    tono: "curso"  },
-  hecha:      { etiqueta: "Hecha",       tono: "bien"   },
-  perdida:    { etiqueta: "Perdida",     tono: "gris"   }
+  hecha:      { etiqueta: "Hecha",       tono: "ok"     },
+  perdida:    { etiqueta: "Perdida",     tono: "off"    }
 };
 const ESTADO_INICIAL = "nueva";
 
@@ -314,6 +314,14 @@ const FILTROS_TABLA = {
   cotizaciones: ["estado", "provincia", "servicio"]
 };
 
+/* Contra qué columnas busca el término libre de cada tabla. Son las
+   formas en que alguien recuerda un registro: por quién, por el
+   número, o por el teléfono. */
+const BUSCA_TABLA = {
+  solicitudes:  ["nombre", "telefono", "cedula"],
+  cotizaciones: ["numero", "nombre", "telefono", "cedula"]
+};
+
 function tablaPedida(url) {
   const pedida = url.searchParams.get("tabla");
   return Object.prototype.hasOwnProperty.call(TABLAS_PANEL, pedida) ? pedida : "solicitudes";
@@ -351,6 +359,16 @@ function construirConsulta(url) {
       condiciones.push(campo + ` = ?`);
       valores.push(v);
     }
+  }
+
+  /* Término libre. Los nombres de columna salen del registro de arriba
+     y nunca de la URL; lo que llega de afuera viaja siempre como valor
+     enlazado. */
+  const busca = texto(url.searchParams.get("buscar"), 60);
+  const cols = BUSCA_TABLA[tabla] || [];
+  if (busca && cols.length) {
+    condiciones.push("(" + cols.map((c) => c + " LIKE ?").join(" OR ") + ")");
+    for (const _ of cols) valores.push("%" + busca + "%");
   }
   if (condiciones.length) sql += ` WHERE ` + condiciones.join(" AND ");
   sql += ` ORDER BY creado DESC`;
@@ -718,6 +736,73 @@ async function resumenPanel(request, env) {
   } catch (e) {
     console.error("Error al armar el resumen:", e);
     return json({ ok: false, error: "No se pudo armar el resumen" }, 500);
+  }
+}
+
+/* -------------------------------------------------------------
+   Buscador global
+
+   Una sola caja que encuentra lo mismo que uno buscaría a mano en tres
+   pantallas distintas. El término se compara contra el nombre, el
+   teléfono, la cédula y el número de cotización, que son las cuatro
+   formas en que alguien recuerda a un cliente.
+   ------------------------------------------------------------- */
+async function buscarPanel(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+
+  const q = texto(new URL(request.url).searchParams.get("q"), 60);
+  if (!q || q.length < 2) return json({ ok: true, resultados: [] });
+  const like = "%" + q + "%";
+
+  try {
+    const r = await env.DB.batch([
+      env.DB.prepare(
+        `SELECT id, nombre, telefono, canton, provincia FROM clientes
+         WHERE nombre LIKE ?1 OR telefono LIKE ?1 OR cedula LIKE ?1
+         ORDER BY nombre LIMIT 6`).bind(like),
+      env.DB.prepare(
+        `SELECT id, numero, nombre, telefono, servicio, estado,
+                datetime(creado,'-6 hours') AS creado
+         FROM cotizaciones
+         WHERE numero LIKE ?1 OR nombre LIKE ?1 OR telefono LIKE ?1 OR cedula LIKE ?1
+         ORDER BY creado DESC LIMIT 6`).bind(like),
+      env.DB.prepare(
+        `SELECT id, nombre, telefono, servicio, estado,
+                datetime(creado,'-6 hours') AS creado
+         FROM solicitudes
+         WHERE nombre LIKE ?1 OR telefono LIKE ?1 OR cedula LIKE ?1
+         ORDER BY creado DESC LIMIT 6`).bind(like)
+    ]);
+
+    const filas = (i) => (r[i] && r[i].results) || [];
+    const resultados = [];
+
+    for (const c of filas(0)) {
+      resultados.push({
+        tipo: "cliente", etiqueta: c.nombre,
+        detalle: [c.telefono, [c.canton, c.provincia].filter(Boolean).join(", ")].filter(Boolean).join(" · "),
+        ir: { vista: "cliente", id: c.id }
+      });
+    }
+    for (const c of filas(1)) {
+      resultados.push({
+        tipo: "cotizacion", etiqueta: c.numero || ("Cotización " + c.id),
+        detalle: [c.nombre, etiqueta(c.servicio, null, "servicio"), nombreEstado(c.estado)]
+                 .filter(Boolean).join(" · "),
+        ir: { vista: "cotizaciones", buscar: c.numero || c.telefono || c.nombre }
+      });
+    }
+    for (const c of filas(2)) {
+      resultados.push({
+        tipo: "solicitud", etiqueta: c.nombre || ("Solicitud " + c.id),
+        detalle: [c.telefono, c.servicio, nombreEstado(c.estado)].filter(Boolean).join(" · "),
+        ir: { vista: "solicitudes", buscar: c.telefono || c.nombre }
+      });
+    }
+    return json({ ok: true, resultados });
+  } catch (e) {
+    console.error("Error al buscar:", e);
+    return json({ ok: false, error: "No se pudo buscar" }, 500);
   }
 }
 
@@ -1709,6 +1794,9 @@ export default {
     }
     if (url.pathname === "/api/panel/agenda" && request.method === "GET") {
       return agendaPanel(request, env);
+    }
+    if (url.pathname === "/api/panel/buscar" && request.method === "GET") {
+      return buscarPanel(request, env);
     }
     if (url.pathname === "/api/asistente" && request.method === "POST") {
       return responderAsistente(request, env);

@@ -831,3 +831,49 @@ mismo error: la regla `.tarj + .tarj { margin-top: 1rem }` se colaba
 dentro de las rejillas y le restaba 16px de alto a toda tarjeta que no
 fuera la primera de su fila. Ahora está limitada a los bloques apilados
 de la vista.
+
+
+## 18. Sistema de estados, y el conflicto con el naranja
+
+El brief de rediseño pide dos cosas que en este proyecto chocan:
+
+> 🟠 Naranja: pendiente, requiere atención, próximo a vencer
+> 🔵 Color corporativo: botones principales, elementos activos
+
+Eso funciona cuando el color de la empresa es azul. **Acá el color de
+la empresa es el naranja**, sacado del rótulo del camión. Si el naranja
+significara además "hay un problema", el color de Sanitarios Ticos
+estaría gritando alarma en cada pantalla del panel — y al mismo tiempo
+dejaría de señalar dónde se toca, porque estaría en todos lados.
+
+**Resuelto así:** el naranja es **acción** y nada más. Los cinco
+estados usan una familia aparte, y el de espera usa ámbar, medido a
+26° de tono del naranja de marca para que no se confundan.
+
+| Estado | Claro | Oscuro | Contraste |
+|---|---|---|---|
+| Hecha (ok) | `#e7f3ea` / `#136c3a` | `#63d69b` | 5.69 / 8.74 |
+| Contactada, Agendada (curso) | `#e8eefb` / `#1f56a3` | `#8ab8ef` | 6.19 / 7.66 |
+| Sin atender (espera) | `#f8f0d0` / `#736213` | `#e2ac5a` | 5.27 / 7.73 |
+| Vencido (mal) | `#fbeae9` / `#a82a2a` | `#ef9084` | 5.96 / 6.76 |
+| Perdida (off) | `#ece7e0` / `#655c53` | `#93a1a9` | 5.32 / 5.95 |
+
+Todos pasan 4.5:1 sobre su propia pastilla. Y ninguno depende sólo del
+color: cada pastilla lleva un punto y su palabra, porque quien no
+separa el verde del rojo tiene que poder leer el estado igual.
+
+### 18.1 Los rótulos de grupo de la barra
+
+El brief los pide en versalitas (`PRINCIPAL`, `GESTIÓN`). Van en caja
+normal: es la tercera vez que aparecería esa tipografía, y el
+propietario ya la señaló dos veces como tipografía de máquina. El
+grupo se entiende igual con el rótulo en minúscula y el aire de
+arriba.
+
+### 18.2 "Nueva cotización" sale de la navegación
+
+Estaba como sexto destino de la barra. No es un destino: es la acción
+principal. Pasó a botón sólido naranja en la cabecera —el único
+elemento sólido de ese color en toda la pantalla— y de paso la barra
+del teléfono bajó de seis casillas a cinco, que es donde se vuelve
+cómoda.

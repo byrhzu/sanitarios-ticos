@@ -65,6 +65,29 @@
     --p-dato1:   #ef6511;
     --p-dato2:   #3a6ea5;
     --p-sombra:  0 1px 2px rgba(27,25,23,.04);
+
+    /* Estados. Cinco significados, un color cada uno, iguales en toda
+       la aplicación. Se miden: cada texto pasa 4.5:1 sobre su propia
+       pastilla.
+
+       El naranja de la marca NO es ninguno de estos. Es la única
+       decisión que se sale del brief, y a propósito: el brief supone
+       que el color corporativo es azul y deja el naranja para
+       "pendiente". Acá el naranja ES la marca —sale del rótulo del
+       camión— y si además significara "hay un problema", el color de
+       la empresa estaría gritando alarma en cada pantalla. El naranja
+       queda para las acciones; la espera usa ámbar, a 26° de tono de
+       distancia para que no se confundan. */
+    --est-ok-bg:     #e7f3ea;  --est-ok-tx:     #136c3a;
+    --est-curso-bg:  #e8eefb;  --est-curso-tx:  #1f56a3;
+    --est-espera-bg: #f8f0d0;  --est-espera-tx: #736213;
+    --est-mal-bg:    #fbeae9;  --est-mal-tx:    #a82a2a;
+    --est-off-bg:    #ece7e0;  --est-off-tx:    #655c53;
+
+    /* Escala de espaciado. Todo lo que separa algo sale de acá: sin
+       esto los márgenes se eligen a ojo y ninguna pantalla respira
+       igual que la otra. */
+    --e1: .25rem; --e2: .5rem; --e3: .75rem; --e4: 1rem; --e5: 1.5rem; --e6: 2rem;
   }
   :root[data-tema="oscuro"] {
     --p-fondo:   #10171b;
@@ -85,6 +108,14 @@
     --p-dato1:   #ec6618;
     --p-dato2:   #5990cf;
     --p-sombra:  0 1px 2px rgba(0,0,0,.3);
+
+    /* Los mismos cinco estados, escogidos aparte para el fondo oscuro
+       y medidos contra él: todos pasan 5.9:1 o más. */
+    --est-ok-bg:     rgba(52,199,123,.16);  --est-ok-tx:     #63d69b;
+    --est-curso-bg:  rgba(90,150,230,.18);  --est-curso-tx:  #8ab8ef;
+    --est-espera-bg: rgba(226,172,90,.18);  --est-espera-tx: #e2ac5a;
+    --est-mal-bg:    rgba(239,144,132,.16); --est-mal-tx:    #ef9084;
+    --est-off-bg:    rgba(255,255,255,.08); --est-off-tx:    #93a1a9;
   }
 
   .panel { --barra: 240px; --radio: 10px; }
@@ -118,6 +149,14 @@
   .barra-logo b { font-family: var(--display); font-weight: 600; font-size: .95rem; }
 
   .barra nav { display: flex; flex-direction: column; gap: 2px; padding: 0 .7rem; }
+  /* Los grupos ordenan el recorrido: ver → gestionar → operar. La
+     etiqueta va en caja normal y no en versalitas rastreadas, que es
+     como lo hacen los tableros de plantilla y es lo que el propietario
+     ya señaló dos veces como tipografía de máquina. */
+  .barra nav .grupo-nav {
+    color: rgba(238,242,244,.38); font-size: .74rem; font-weight: 500;
+    padding: 1.1rem .65rem .35rem;
+  }
   .barra nav button {
     display: flex; align-items: center; gap: .7rem; width: 100%;
     padding: .6rem .65rem; border-radius: 8px;
@@ -148,9 +187,37 @@
   .barra-pie img { height: 26px; width: auto; border-radius: 6px; }
 
   .lienzo { flex: 1; min-width: 0; padding: 1.5rem clamp(1rem, 2.2vw, 1.9rem) 4rem; }
-  .lienzo-top { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.3rem; }
+  .lienzo-top { display: flex; align-items: center; gap: var(--e3) var(--e4); flex-wrap: wrap; margin-bottom: var(--e5); }
   .lienzo-top h1 { font-family: var(--display); font-size: 1.4rem; margin: 0; }
-  .lienzo-top .derecha { margin-left: auto; display: flex; align-items: center; gap: .5rem; }
+  .lienzo-top .derecha { margin-left: auto; display: flex; align-items: center; gap: var(--e2); }
+
+  /* Buscador global. Encuentra en una sola caja lo que si no hay que ir
+     a buscar a tres pantallas distintas. */
+  .buscador { position: relative; flex: 1 1 16rem; max-width: 24rem; }
+  .buscador > svg {
+    position: absolute; left: .6rem; top: 50%; transform: translateY(-50%);
+    width: 15px; height: 15px; color: var(--p-tenue); pointer-events: none;
+  }
+  .buscador input {
+    width: 100%; font-family: inherit; font-size: 13.5px;
+    padding: .5rem .7rem .5rem 2rem; border-radius: 8px;
+    background: var(--p-sup); color: var(--p-txt); border: 1px solid var(--p-linea);
+  }
+  .buscador input:focus { border-color: var(--p-acento); outline: none; }
+  .hallazgos {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 40;
+    background: var(--p-sup); border-radius: 10px; padding: var(--e1);
+    box-shadow: 0 12px 32px rgba(0,0,0,.22); max-height: 22rem; overflow-y: auto;
+  }
+  .hallazgos button {
+    display: block; width: 100%; text-align: left;
+    padding: .5rem .6rem; border-radius: 7px;
+  }
+  .hallazgos button:hover, .hallazgos button:focus-visible { background: var(--p-sup2); outline: none; }
+  .hallazgos b { font-weight: 500; }
+  .hallazgos small { display: block; color: var(--p-tenue); margin-top: .1rem; }
+  .hallazgos .nada { padding: .7rem .6rem; color: var(--p-tenue); }
+  .hallazgos .tipo { float: right; color: var(--p-tenue); font-size: .74rem; }
   .frescura { color: var(--p-tenue); margin-right: .3rem; font-variant-numeric: tabular-nums; }
 
   /* Los mismos controles de rango arriba del resumen y de las listas,
@@ -387,12 +454,23 @@
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23909ea6' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
     background-repeat: no-repeat; background-position: right .45rem center; background-size: 8px;
   }
-  select.estado[data-tono="alerta"] { background-color: var(--p-suave); color: var(--p-acento-t); }
-  select.estado[data-tono="curso"]  { background-color: rgba(58,110,165,.16); color: #2c5680; }
-  select.estado[data-tono="bien"]   { background-color: rgba(37,211,102,.18); color: #0d6b35; }
-  select.estado[data-tono="gris"]   { background-color: var(--p-sup2); color: var(--p-tenue); }
-  :root[data-tema="oscuro"] select.estado[data-tono="curso"] { background-color: rgba(89,144,207,.22); color: #9dc4ea; }
-  :root[data-tema="oscuro"] select.estado[data-tono="bien"]  { background-color: rgba(37,211,102,.2); color: #6ee7a0; }
+  /* Un solo lugar define cómo se ve cada estado. El `select` y la
+     pastilla de sólo lectura usan los mismos tokens, así que un estado
+     nunca se ve de un color en una pantalla y de otro en la siguiente. */
+  select.estado[data-tono="espera"], .chip[data-tono="espera"] { background-color: var(--est-espera-bg); color: var(--est-espera-tx); }
+  select.estado[data-tono="curso"],  .chip[data-tono="curso"]  { background-color: var(--est-curso-bg);  color: var(--est-curso-tx); }
+  select.estado[data-tono="ok"],     .chip[data-tono="ok"]     { background-color: var(--est-ok-bg);     color: var(--est-ok-tx); }
+  select.estado[data-tono="mal"],    .chip[data-tono="mal"]    { background-color: var(--est-mal-bg);    color: var(--est-mal-tx); }
+  select.estado[data-tono="off"],    .chip[data-tono="off"]    { background-color: var(--est-off-bg);    color: var(--est-off-tx); }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: .3rem;
+    font-size: .76rem; font-weight: 500; padding: .2rem .5rem; border-radius: 6px;
+    white-space: nowrap;
+  }
+  /* El estado no se distingue sólo por el color: cada uno lleva su
+     punto y su palabra, para quien no separa el verde del rojo. */
+  .chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
   input.nota {
     font-size: .82rem; width: 10.5rem; padding: .3rem .45rem;
@@ -442,7 +520,8 @@
     font-size: .75rem; font-weight: 500; padding: .2rem .5rem; border-radius: 6px;
     background: var(--p-sup2); color: var(--p-tenue); white-space: nowrap;
   }
-  .pastilla.toca { background: var(--p-suave); color: var(--p-acento-t); }
+  .pastilla.toca { background: var(--est-espera-bg); color: var(--est-espera-tx); }
+  .pastilla.vencio { background: var(--est-mal-bg); color: var(--est-mal-tx); }
   .pastilla.mudo { opacity: .65; }
   .cli-linea { color: var(--p-tenue); margin-top: .3rem; }
 
@@ -478,8 +557,8 @@
   .cal span.hueco { visibility: hidden; }
   .cal button:hover { background: var(--p-sup2); }
   .cal button.hoy { box-shadow: inset 0 0 0 1.5px var(--p-linea); font-weight: 600; color: var(--p-txt); }
-  .cal button.con { background: var(--p-suave); color: var(--p-acento-t); font-weight: 600; }
-  .cal button.vencido { background: rgba(224,103,79,.16); color: #c0492f; }
+  .cal button.con { background: var(--est-espera-bg); color: var(--est-espera-tx); font-weight: 600; }
+  .cal button.vencido { background: var(--est-mal-bg); color: var(--est-mal-tx); font-weight: 600; }
   .cal button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--p-acento); }
   .cal i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
   .mes-nav {
@@ -577,7 +656,10 @@
     .barra nav button { position: relative; flex-direction: column; gap: .15rem; justify-content: flex-start; font-size: .62rem; padding: .4rem .1rem; text-align: center; line-height: 1.15; }
     .barra nav button svg { width: 19px; height: 19px; flex-basis: 19px; }
     .barra .pendiente { position: absolute; top: .15rem; left: 52%; margin: 0; }
-    .barra nav .largo { display: none; }
+    .largo { display: none; }
+    .barra nav .grupo-nav { display: none; }
+    .buscador { flex: 1 1 100%; max-width: none; order: 3; }
+    .lienzo-top h1 { flex: 1 1 auto; }
     .lienzo { padding: 1rem .85rem 6rem; }
     .tarj-h .meta { display: none; }
     .tarj-h .meta.siempre { display: inline; }
@@ -592,7 +674,7 @@
     .aro { width: 150px; height: 150px; }
   }
   @media (min-width: 860px) {
-    .barra nav .corto { display: none; }
+    .corto { display: none; }
     /* En escritorio el salir vive en el pie de la barra; repetirlo
        arriba sería el mismo botón dos veces. */
     #btn-salir-movil { display: none; }
@@ -632,6 +714,7 @@
     </div>
 
     <nav role="tablist" aria-label="Secciones del panel">
+      <span class="grupo-nav">Principal</span>
       <button type="button" role="tab" data-vista="resumen" aria-selected="true">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="7" height="8" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/>
@@ -639,6 +722,7 @@
         </svg>
         Resumen
       </button>
+      <span class="grupo-nav">Gestión</span>
       <button type="button" role="tab" data-vista="cotizaciones" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/>
@@ -660,19 +744,13 @@
         </svg>
         Clientes
       </button>
+      <span class="grupo-nav">Operación</span>
       <button type="button" role="tab" data-vista="agenda" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/>
           <path d="M8.5 14h1M11.5 14h1M14.5 14h1M8.5 17.5h1M11.5 17.5h1"/>
         </svg>
         Agenda<span class="pendiente" id="pend-agenda" hidden></span>
-      </button>
-      <button type="button" role="tab" data-vista="nueva" aria-selected="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/>
-          <path d="M14 2v5h5M12 12v6M9 15h6"/>
-        </svg>
-        <span class="largo">Nueva cotización</span><span class="corto">Nueva</span>
       </button>
     </nav>
 
@@ -690,7 +768,23 @@
   <main class="lienzo">
     <div class="lienzo-top">
       <h1 id="titulo-vista">Resumen</h1>
+
+      <div class="buscador">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>
+        </svg>
+        <input type="search" id="buscar" placeholder="Buscar cliente, cotización o solicitud"
+               autocomplete="off" aria-label="Buscar en todo el panel">
+        <div class="hallazgos" id="hallazgos" hidden></div>
+      </div>
+
       <span class="derecha">
+        <button type="button" class="btn-fuerte" id="btn-nueva">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="width:15px;height:15px;">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          <span class="largo">Nueva cotización</span><span class="corto">Nueva</span>
+        </button>
         <span class="frescura" id="frescura"></span>
         <button type="button" class="rueda" id="btn-refrescar" title="Traer lo último" aria-label="Traer lo último">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -992,7 +1086,7 @@
      el resumen escribe acá y salta a la lista, y la lista dice con
      palabras qué filtro tiene puesto. Sin esto, tocar una barra sería
      magia: la lista cambiaría sin explicar por qué. */
-  var filtro = { desde: "", hasta: "", estado: "", provincia: "", servicio: "" };
+  var filtro = { desde: "", hasta: "", estado: "", provincia: "", servicio: "", buscar: "" };
 
   var NOMBRE_VISTA = {
     resumen: "Resumen", cotizaciones: "Cotizaciones", solicitudes: "Solicitudes",
@@ -1366,6 +1460,9 @@
     if (!b) return;
     var ir = JSON.parse(b.dataset.ir);
     var v = ir.vista; delete ir.vista;
+    cerrarHallazgos();
+    $("buscar").value = "";
+    if (v === "cliente") { verCliente(ir.id); return; }
     irA(v, ir);
   });
 
@@ -1388,7 +1485,7 @@
 
   var ETIQ_FILTRO = {
     desde: "Desde", hasta: "Hasta", estado: "Estado",
-    provincia: "Provincia", servicio: "Servicio"
+    provincia: "Provincia", servicio: "Servicio", buscar: "Búsqueda"
   };
 
   function urlConFiltros(base, conPagina) {
@@ -2224,6 +2321,60 @@
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && !$("velo").hidden) cerrarHoja(null);
   });
+
+  /* =========================================================
+     Buscador global
+
+     Una sola caja para lo que si no hay que ir a buscar a tres
+     pantallas. No reemplaza a los filtros de cada lista: responde la
+     otra pregunta, la de "¿dónde quedó este señor?".
+     ========================================================= */
+
+  var buscaReloj = null;
+
+  function cerrarHallazgos() { $("hallazgos").hidden = true; }
+
+  $("buscar").addEventListener("input", function () {
+    var q = $("buscar").value.trim();
+    clearTimeout(buscaReloj);
+    if (q.length < 2) { cerrarHallazgos(); return; }
+    // Se espera a que deje de escribir: una consulta por tecla es una
+    // consulta a la base por cada letra, para nada.
+    buscaReloj = setTimeout(function () {
+      pedir("/api/panel/buscar?q=" + encodeURIComponent(q))
+        .then(function (d) { pintarHallazgos(d.resultados); })
+        .catch(function () { cerrarHallazgos(); });
+    }, 250);
+  });
+
+  var TIPO_HALLAZGO = { cliente: "Cliente", cotizacion: "Cotización", solicitud: "Solicitud" };
+
+  function pintarHallazgos(res) {
+    var caja = $("hallazgos");
+    if (!res.length) {
+      caja.innerHTML = '<p class="nada">Nada con ese dato.</p>';
+      caja.hidden = false;
+      return;
+    }
+    caja.innerHTML = res.map(function (r) {
+      return '<button type="button" data-ir=\'' + escHtml(JSON.stringify(r.ir)) + "'>" +
+        '<span class="tipo">' + escHtml(TIPO_HALLAZGO[r.tipo] || "") + "</span>" +
+        "<b>" + escHtml(r.etiqueta) + "</b>" +
+        (r.detalle ? "<small>" + escHtml(r.detalle) + "</small>" : "") +
+      "</button>";
+    }).join("");
+    caja.hidden = false;
+  }
+
+  // Salir del buscador al tocar fuera o con Escape.
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest(".buscador")) cerrarHallazgos();
+  });
+  $("buscar").addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { cerrarHallazgos(); $("buscar").blur(); }
+  });
+
+  $("btn-nueva").addEventListener("click", function () { irA("nueva", {}); });
 
   /* =========================================================
      Navegación y arranque
