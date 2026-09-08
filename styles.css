@@ -954,16 +954,27 @@ body.fabs-fuera .wa-fab {
   position: absolute; left: .55rem; bottom: 0;
   width: 44px; height: 90px;
 }
+/* Dos envoltorios y no uno: `.frank` se encarga de entrar y salir,
+   `.frank-vivo` de respirar. Si compartieran elemento se pelearían por
+   el mismo `transform` y uno le pisaría el otro. */
+.asistente-fab .frank-vivo {
+  position: absolute; inset: 0;
+  animation: frankRespira 4.2s ease-in-out infinite;
+}
 .asistente-fab .frank img {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  /* Un dibujo de línea encogido a 44px se ensucia si el navegador lo
-     suaviza de más. */
-  image-rendering: auto;
 }
 .asistente-fab .frank-brazo {
-  /* El hombro, medido sobre el dibujo original. */
-  transform-origin: 69.2% 35.3%;
+  /* El hombro, medido sobre el dibujo. El corte del brazo sigue la
+     costura de la manga —no una línea recta— así que la manga se queda
+     en el cuerpo y tapa la juntura mientras el brazo gira. */
+  transform-origin: 76% 33.7%;
   animation: frankSaluda 6s var(--ease-soft) infinite;
+}
+/* Respira. Un pixel y medio en noventa: no se ve, se siente. */
+@keyframes frankRespira {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-1.5px); }
 }
 /* Saluda tres veces y descansa. Un muñeco que se mueve sin parar deja
    de ser simpático a los diez segundos. */
@@ -975,10 +986,29 @@ body.fabs-fuera .wa-fab {
   78% { transform: rotate(-4deg); }
   82% { transform: rotate(-17deg); }
 }
-/* Al pasarle el mouse saluda de una, sin esperar el turno. */
+/* Al pasarle el mouse saluda de una, sin esperar el turno, y se
+   endereza un poco. */
 .asistente-fab:hover .frank-brazo { animation: frankSaluda 1.4s var(--ease-soft) infinite; animation-delay: -.86s; }
+.asistente-fab:hover .frank-vivo { animation-duration: 2.4s; }
+
+/* Al abrir el chat no desaparece de golpe: baja el brazo y se mete
+   detrás del botón. Desaparecer de un frame se lee como un error. */
+.asistente-fab .frank {
+  transition: transform .32s var(--ease), opacity .24s var(--ease);
+}
+.asistente.is-open .asistente-fab .frank.ico-abrir {
+  display: block;
+  transform: translateY(105%);
+  opacity: 0;
+  pointer-events: none;
+}
+.asistente.is-open .asistente-fab .frank-brazo { animation: none; transform: rotate(0deg); }
+.asistente.is-open .asistente-fab { padding-left: 0; }
+
 @media (prefers-reduced-motion: reduce) {
-  .asistente-fab .frank-brazo, .asistente-fab:hover .frank-brazo { animation: none; }
+  .asistente-fab .frank-brazo, .asistente-fab:hover .frank-brazo,
+  .asistente-fab .frank-vivo { animation: none; }
+  .asistente-fab .frank { transition: none; }
 }
 
 .asistente-cab .avatar img { border-radius: 50%; object-fit: cover; }
@@ -1299,7 +1329,10 @@ body.fabs-fuera .wa-fab {
      ancho es fijo — quedaban de 216px con el texto escondido, o sea dos
      manchas de color. El `:not(.frank)` es para que el muñeco no se
      esconda con el texto: acá él ES el botón. */
-  .wa-fab span, .asistente-fab span:not(.frank) { display: none; }
+  /* Sólo el hijo directo, que es la etiqueta. Sin el `>` esta regla
+     también escondía a `.frank-vivo`, el envoltorio que respira, y el
+     botón quedaba vacío en el teléfono. */
+  .wa-fab > span, .asistente-fab > span:not(.frank) { display: none; }
   .wa-fab, .asistente-fab { width: 3.4rem; min-height: 3.4rem; padding: 0; }
   .asistente-fab { padding-left: 0; }
   .asistente-fab .frank { left: 50%; margin-left: -21px; width: 42px; height: 86px; }

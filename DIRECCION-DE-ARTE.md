@@ -922,6 +922,14 @@ solo a los 3,6 segundos.
 
 ## 21. Frank
 
+### 21.0 Se rehizo con el original
+
+El propietario entregó después el **PNG con transparencia de verdad**:
+29.413 píxeles semitransparentes, o sea bordes suavizados. Todo el
+corte se rehízo desde ahí. Lo de abajo queda como registro de qué se
+hizo mientras sólo estaba el JPEG, y de por qué una captura de un PNG
+no sustituye al PNG.
+
 ### 21.1 El archivo llegó sin transparencia
 
 El dibujo entregado es un **JPEG**, y el JPEG no guarda transparencia:
@@ -967,6 +975,29 @@ Dos cosas que costaron y quedan anotadas:
   aparecía una lasca azul oscura al lado de la cabeza. El corte excluye
   todo lo que quede a la izquierda de x=305 por encima de y=210, que es
   donde el brazo ya no está.
+- **El corte recto se veía.** La primera versión partía el hombro con
+  una línea vertical, y al girar el brazo quedaba a la vista. Ahora el
+  corte sigue la **costura de la manga**: se detecta por color dónde
+  empieza la piel en cada fila —el gris de la camisa y el durazno del
+  brazo se separan solos— y se corta cinco píxeles antes para llevarse
+  el contorno. La manga se queda en el cuerpo y tapa la juntura. El
+  hueco que queda debajo se pinta del gris de la camisa sin salirse de
+  la silueta, así que si algo asoma, asoma hombro.
+
+### 21.4 Qué sí se nota a 44px y qué no
+
+A tamaño de botón Frank mide 44×90: la cara son 14px y los ojos dos.
+Se descartaron el parpadeo y el giro de cabeza — a esa escala son
+ruido, no vida. Lo que sí se lee:
+
+- El **saludo** (la mano recorre unos 8px).
+- La **respiración**: pixel y medio, cada 4,2 segundos. No se ve, se
+  siente.
+- Que al **abrir el chat** baje el brazo y se meta detrás del botón en
+  vez de desaparecer de un frame, que se lee como un error.
+
+Si algún día Frank aparece más grande —dentro del panel del chat, o en
+la página de contacto— ahí sí valen el parpadeo y el giro de cabeza.
 
 Saluda tres veces y descansa cuatro segundos. Un muñeco que se mueve
 sin parar deja de ser simpático a los diez segundos. Al pasarle el
