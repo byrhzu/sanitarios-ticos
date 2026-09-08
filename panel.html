@@ -418,6 +418,97 @@
   .estado-linea.is-error { color: #e0674f; }
   .paginacion { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
 
+  /* ---------- Clientes y agenda ---------- */
+  .volver {
+    color: var(--p-tenue); margin-bottom: 1rem; font-weight: 500;
+    display: inline-flex; align-items: center; gap: .3rem;
+  }
+  .volver:hover { color: var(--p-txt); }
+
+  #clientes-barra input[type="search"] {
+    flex: 1; max-width: 26rem; font-family: inherit; font-size: 13.5px;
+    padding: .5rem .7rem; border-radius: 8px;
+    background: var(--p-sup); color: var(--p-txt); border: 1px solid var(--p-linea);
+  }
+  #clientes-barra input:focus { border-color: var(--p-acento); outline: none; }
+
+  .ficha.cli { cursor: pointer; transition: background .15s var(--ease); }
+  .ficha.cli:hover { background: var(--p-sup2); }
+  .cli-top { display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap; }
+  .cli-top b { font-size: 1rem; font-weight: 600; }
+  .cli-top .tel { color: var(--p-tenue); font-variant-numeric: tabular-nums; }
+  .cli-marcas { display: flex; gap: .4rem; margin-left: auto; flex-wrap: wrap; }
+  .pastilla {
+    font-size: .75rem; font-weight: 500; padding: .2rem .5rem; border-radius: 6px;
+    background: var(--p-sup2); color: var(--p-tenue); white-space: nowrap;
+  }
+  .pastilla.toca { background: var(--p-suave); color: var(--p-acento-t); }
+  .pastilla.mudo { opacity: .65; }
+  .cli-linea { color: var(--p-tenue); margin-top: .3rem; }
+
+  /* La ficha del cliente */
+  .perfil-cab { display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+  .perfil-cab h2 { font-size: 1.5rem; font-weight: 600; letter-spacing: -.025em; margin: 0; }
+  .perfil-cab .sub { color: var(--p-tenue); margin-top: .2rem; }
+  .perfil-cab .acc-cab { margin-left: auto; display: flex; gap: .5rem; }
+
+  .hist { list-style: none; margin: 0; padding: 0; }
+  .hist li { display: flex; gap: 1rem; align-items: baseline; flex-wrap: wrap; padding: .7rem 0; border-top: 1px solid var(--p-linea); }
+  .hist li:first-child { border-top: 0; }
+  .hist .f-fecha { font-weight: 500; min-width: 6.5rem; font-variant-numeric: tabular-nums; }
+  .hist .f-que { flex: 1 1 12rem; color: var(--p-txt2); }
+  .hist .f-monto { font-variant-numeric: tabular-nums; font-weight: 500; }
+  .hist .f-prox { color: var(--p-tenue); white-space: nowrap; }
+
+  .marca-check { display: flex; align-items: center; gap: .5rem; margin: 1rem 0 0; cursor: pointer; }
+  .marca-check input { width: 16px; height: 16px; accent-color: var(--p-acento); }
+
+  /* El calendario. Una rejilla de siete, con un punto en los días que
+     tienen algo. El día se toca y filtra la lista de al lado. */
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal .dow {
+    text-align: center; color: var(--p-tenue); font-size: .72rem;
+    font-weight: 500; padding-bottom: .3rem;
+  }
+  .cal button, .cal span.hueco {
+    aspect-ratio: 1 / 1; border-radius: 7px; display: flex;
+    flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    font-variant-numeric: tabular-nums; color: var(--p-txt2);
+  }
+  .cal span.hueco { visibility: hidden; }
+  .cal button:hover { background: var(--p-sup2); }
+  .cal button.hoy { box-shadow: inset 0 0 0 1.5px var(--p-linea); font-weight: 600; color: var(--p-txt); }
+  .cal button.con { background: var(--p-suave); color: var(--p-acento-t); font-weight: 600; }
+  .cal button.vencido { background: rgba(224,103,79,.16); color: #c0492f; }
+  .cal button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--p-acento); }
+  .cal i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+  .mes-nav {
+    color: var(--p-tenue); padding: .18rem .45rem; border-radius: 6px; font-weight: 500;
+  }
+  .mes-nav:hover { background: var(--p-sup2); color: var(--p-txt); }
+
+  .toca-fila { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; padding: .68rem 0; border-top: 1px solid var(--p-linea); }
+  .toca-fila:first-child { border-top: 0; }
+  .toca-quien { flex: 1 1 11rem; min-width: 0; }
+  .toca-quien b { font-weight: 500; }
+  .toca-quien small { display: block; color: var(--p-tenue); margin-top: .1rem; }
+  .toca-cuando { color: var(--p-tenue); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .toca-fila.vencido .toca-cuando { color: var(--p-acento-t); font-weight: 500; }
+  .toca-acc { display: flex; gap: .4rem; margin-left: auto; }
+
+  /* ---------- La hoja modal ---------- */
+  .velo {
+    position: fixed; inset: 0; z-index: 60; display: grid; place-items: center;
+    background: rgba(12,18,22,.55); padding: 1rem;
+  }
+  .hoja {
+    background: var(--p-sup); border-radius: 12px; padding: 1.4rem 1.5rem 1.5rem;
+    width: min(30rem, 100%); box-shadow: 0 24px 60px rgba(0,0,0,.35);
+  }
+  .hoja h2 { font-size: 1.15rem; font-weight: 600; margin: 0; }
+  .hoja .nueva-rejilla { grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); }
+  .hoja-pie { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1.4rem; flex-wrap: wrap; }
+
   /* ---------- Nueva cotización ---------- */
   .grupo { color: var(--p-tenue); font-weight: 500; margin: 1.7rem 0 .85rem; }
   .grupo:first-child { margin-top: 0; }
@@ -478,9 +569,14 @@
     }
     .barra-logo, .barra-pie { display: none; }
     .barra nav { flex-direction: row; width: 100%; padding: .35rem .4rem calc(.35rem + env(safe-area-inset-bottom)); gap: 0; }
-    .barra nav button { flex-direction: column; gap: .18rem; justify-content: center; font-size: .68rem; padding: .45rem .2rem; text-align: center; }
-    .barra nav button svg { width: 20px; height: 20px; flex-basis: 20px; }
-    .barra .pendiente { position: absolute; top: .2rem; left: calc(50% + 4px); margin: 0; }
+    /* Seis destinos en 375px: 62px cada uno. La etiqueta baja de
+       tamaño y la larga se cambia por la corta. */
+    /* `position: relative` para que el contador se cuelgue de SU botón
+       y no de la barra entera, que es lo que lo dejaba flotando en el
+       medio de la pantalla. */
+    .barra nav button { position: relative; flex-direction: column; gap: .15rem; justify-content: flex-start; font-size: .62rem; padding: .4rem .1rem; text-align: center; line-height: 1.15; }
+    .barra nav button svg { width: 19px; height: 19px; flex-basis: 19px; }
+    .barra .pendiente { position: absolute; top: .15rem; left: 52%; margin: 0; }
     .barra nav .largo { display: none; }
     .lienzo { padding: 1rem .85rem 6rem; }
     .tarj-h .meta { display: none; }
@@ -548,14 +644,28 @@
           <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/>
           <path d="M14 2v5h5M9 13h6M9 17h4"/>
         </svg>
-        Cotizaciones<span class="pendiente" id="pend-cot" hidden></span>
+        <span class="largo">Cotizaciones</span><span class="corto">Cotiz.</span><span class="pendiente" id="pend-cot" hidden></span>
       </button>
       <button type="button" role="tab" data-vista="solicitudes" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <path d="M5.4 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.4-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.8 1.1z"/>
           <path d="M22 12h-6l-2 3h-4l-2-3H2"/>
         </svg>
-        Solicitudes<span class="pendiente" id="pend-sol" hidden></span>
+        <span class="largo">Solicitudes</span><span class="corto">Solic.</span><span class="pendiente" id="pend-sol" hidden></span>
+      </button>
+      <button type="button" role="tab" data-vista="clientes" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7.5" r="3.5"/>
+          <path d="M22 20v-1.5a4 4 0 0 0-3-3.9M16.5 4.2a4 4 0 0 1 0 7.1"/>
+        </svg>
+        Clientes
+      </button>
+      <button type="button" role="tab" data-vista="agenda" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/>
+          <path d="M8.5 14h1M11.5 14h1M14.5 14h1M8.5 17.5h1M11.5 17.5h1"/>
+        </svg>
+        Agenda<span class="pendiente" id="pend-agenda" hidden></span>
       </button>
       <button type="button" role="tab" data-vista="nueva" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -704,6 +814,57 @@
       </div>
     </div>
 
+    <!-- ================= CLIENTES =================
+         Quien ya vino una vez. El registro nace solo al marcar una
+         cotización como hecha; acá se corrige, se apaga el recordatorio
+         y se ve todo lo que se le ha hecho. -->
+    <div class="vista" id="vista-clientes" hidden>
+      <div class="rango" id="clientes-barra">
+        <input type="search" id="c-busca" placeholder="Buscar por nombre, teléfono o cédula" aria-label="Buscar cliente">
+      </div>
+      <p class="estado-linea" id="estado-clientes" role="status" aria-live="polite"></p>
+      <div class="fichas" id="lista-clientes"></div>
+      <div class="paginacion" id="clientes-pag" hidden>
+        <button class="btn-suave" type="button" id="cli-antes">&larr; Anteriores</button>
+        <span class="estado-linea" style="margin:0;" id="cli-pag-txt"></span>
+        <button class="btn-suave" type="button" id="cli-despues">Siguientes &rarr;</button>
+      </div>
+    </div>
+
+    <!-- Ficha de un cliente -->
+    <div class="vista" id="vista-cliente" hidden>
+      <button type="button" class="volver" id="cli-volver">&larr; Clientes</button>
+      <div id="cliente-cuerpo"></div>
+    </div>
+
+    <!-- ================= AGENDA =================
+         A quién le toca mantenimiento y cuándo. Sólo cuenta el último
+         trabajo de cada cliente: el reloj arranca de nuevo con el más
+         reciente. -->
+    <div class="vista" id="vista-agenda" hidden>
+      <p class="estado-linea" id="estado-agenda" role="status" aria-live="polite">Cargando…</p>
+      <div class="rejilla cifras" id="agenda-cifras"></div>
+
+      <div class="rejilla dos">
+        <div class="tarj">
+          <div class="tarj-h">
+            <h2 id="cal-titulo"></h2>
+            <span class="meta">
+              <button type="button" class="mes-nav" id="mes-antes" aria-label="Mes anterior">&larr;</button>
+              <button type="button" class="mes-nav" id="mes-hoy">Hoy</button>
+              <button type="button" class="mes-nav" id="mes-despues" aria-label="Mes siguiente">&rarr;</button>
+            </span>
+          </div>
+          <div class="cal" id="cal"></div>
+        </div>
+
+        <div class="tarj">
+          <div class="tarj-h"><h2 id="agenda-titulo">Le toca</h2><span class="meta" id="agenda-n"></span></div>
+          <div id="agenda-lista"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- ============ NUEVA COTIZACIÓN ============ -->
     <div class="vista" id="vista-nueva" hidden>
       <p class="estado-linea" id="estado-nueva-carga" role="status" aria-live="polite"></p>
@@ -745,6 +906,35 @@
   </main>
 </div>
 
+<!-- Se abre al marcar una cotización como hecha. Son los dos datos que
+     el sistema no puede adivinar —cuándo se hizo y cuánto se cobró— y
+     de los que depende el recordatorio de dentro de dos años. -->
+<div class="velo" id="velo" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="hoja-t">
+    <h2 id="hoja-t">Anotar el trabajo</h2>
+    <p class="dim" style="color:var(--p-tenue); margin:.3rem 0 1.1rem;">
+      Con esto queda el cliente registrado y el recordatorio armado.
+    </p>
+    <div class="nueva-rejilla">
+      <div class="f"><label for="h-fecha">Se hizo el</label><input type="date" id="h-fecha"></div>
+      <div class="f"><label for="h-monto">Se cobró <span class="opc">opcional</span></label><input type="number" id="h-monto" inputmode="numeric" placeholder="lo del rango mínimo"></div>
+      <div class="f"><label for="h-meses">Recordar en</label>
+        <select id="h-meses">
+          <option value="12">12 meses</option>
+          <option value="18">18 meses</option>
+          <option value="24" selected>24 meses</option>
+          <option value="36">36 meses</option>
+        </select>
+      </div>
+    </div>
+    <label class="marca-check"><input type="checkbox" id="h-recordar" checked> Mandarle recordatorio cuando toque</label>
+    <div class="hoja-pie">
+      <button type="button" class="btn-suave" id="h-saltar">Sólo marcar como hecha</button>
+      <button type="button" class="btn-fuerte" id="h-guardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -771,7 +961,8 @@
     sol:      ico("M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4", '<circle cx="12" cy="12" r="4"/>'),
     tel:      ico("M15.5 21A13.5 13.5 0 0 1 3 8.5 3 3 0 0 1 6 5.5h1.6a1 1 0 0 1 1 .8l.7 3a1 1 0 0 1-.4 1L7.6 11.6a11 11 0 0 0 4.8 4.8l1.3-1.3a1 1 0 0 1 1-.3l3 .7a1 1 0 0 1 .8 1V18a3 3 0 0 1-3 3z"),
     wa:       '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .1-1.6-.1a13 13 0 0 1-5-4.4c-.4-.6-.9-1.5-.9-2.4s.5-1.4.7-1.6c.2-.2.4-.3.6-.3h.5c.2 0 .4 0 .6.4l.8 1.9c0 .2 0 .3-.1.5l-.4.5c-.1.1-.3.3-.1.6.2.3.7 1.1 1.4 1.8.9.8 1.6 1 1.9 1.2.3.1.4 0 .6-.1l.7-.9c.2-.2.3-.2.6-.1l1.8.9c.3.1.4.2.5.3v1.2Z"/></svg>',
-    visto:    ico("M20 6 9 17l-5-5")
+    visto:    ico("M20 6 9 17l-5-5"),
+    silencio: ico("M11 5 6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6")
   };
 
   /* El tema arranca por lo que tenga puesto el sistema y se queda con
@@ -804,8 +995,8 @@
   var filtro = { desde: "", hasta: "", estado: "", provincia: "", servicio: "" };
 
   var NOMBRE_VISTA = {
-    resumen: "Resumen", cotizaciones: "Cotizaciones",
-    solicitudes: "Solicitudes", nueva: "Nueva cotización"
+    resumen: "Resumen", cotizaciones: "Cotizaciones", solicitudes: "Solicitudes",
+    clientes: "Clientes", cliente: "Cliente", agenda: "Agenda", nueva: "Nueva cotización"
   };
 
   function escHtml(s) {
@@ -1418,11 +1609,13 @@
       });
   }
 
-  function guardar(tabla, id, estado, nota, celda) {
+  function guardar(tabla, id, estado, nota, celda, servicio) {
+    var cuerpo = { tabla: tabla, id: id, estado: estado, nota: nota };
+    if (servicio) cuerpo.servicio = servicio;
     return pedir("/api/panel/estado", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tabla: tabla, id: id, estado: estado, nota: nota })
+      body: JSON.stringify(cuerpo)
     }).then(function () {
       if (celda) {
         celda.classList.remove("guardado");
@@ -1441,15 +1634,47 @@
     var sel = reg.querySelector("select.estado");
     var nota = reg.querySelector("input.nota");
     var marca = e.target.closest("td") || reg;
+    var esEstado = !!e.target.closest("select.estado");
 
-    if (e.target.closest("select.estado")) {
+    if (esEstado) {
       sel.dataset.tono = (ESTADOS[sel.value] || {}).tono || "gris";
     } else if (!e.target.closest("input.nota")) {
       return;
     }
-    guardar(vista, reg.dataset.id, sel ? sel.value : "nueva", nota ? nota.value : "", marca)
-      .catch(function () { alert("No se pudo guardar."); });
+
+    var guardarYa = function (servicio) {
+      return guardar(vista, reg.dataset.id, sel ? sel.value : "nueva",
+                     nota ? nota.value : "", marca, servicio)
+        .catch(function () { alert("No se pudo guardar."); });
+    };
+
+    /* Marcar una cotización como hecha es el único momento en que se
+       sabe que hubo trabajo. Se aprovecha para preguntar las dos cosas
+       que el sistema no puede adivinar —cuándo fue y cuánto se cobró—
+       y con eso queda armado el recordatorio de dentro de dos años. */
+    if (esEstado && sel.value === "hecha" && vista === "cotizaciones") {
+      abrirHoja().then(function (r) {
+        if (r === null) {
+          // Canceló: el estado vuelve a donde estaba y no se guarda nada.
+          sel.value = sel.dataset.antes || "nueva";
+          sel.dataset.tono = (ESTADOS[sel.value] || {}).tono || "gris";
+          return;
+        }
+        guardarYa(r.soloEstado ? null : r).then(function () {
+          if (!r.soloEstado) { agendaCargada = false; }
+        });
+      });
+      return;
+    }
+    guardarYa(null);
   }
+
+  // Se anota dónde estaba el estado antes de tocarlo, para poder
+  // devolverlo si la persona cancela la hoja.
+  document.addEventListener("focusin", function (e) {
+    var sel = e.target.closest("select.estado");
+    if (sel) sel.dataset.antes = sel.value;
+  });
   $("cuerpo-tabla").addEventListener("change", alCambiar);
   $("fichas").addEventListener("change", alCambiar);
 
@@ -1590,6 +1815,416 @@
       .then(function () { $("btn-crear").disabled = false; });
   });
 
+
+  /* =========================================================
+     Clientes
+
+     Quien ya vino una vez. El registro no se llena a mano: nace al
+     marcar una cotización como hecha. Acá se corrige, se apaga el
+     recordatorio y se ve el historial.
+     ========================================================= */
+
+  var CANALES = null;
+  var cliPagina = 1, cliBusca = "", cliReloj = null;
+
+  function fechaLarga(iso) {
+    var p = String(iso || "").split("-");
+    if (p.length !== 3) return "";
+    return Number(p[2]) + " " + MESES[Number(p[1]) - 1] + " " + p[0];
+  }
+
+  /* "en 3 meses" / "hace 2 meses". Los días sueltos no dicen nada
+     cuando se habla de mantenimientos que van a dos años. */
+  function cuando(dias) {
+    dias = Number(dias);
+    var a = Math.abs(dias);
+    var t = a < 31 ? (a + (a === 1 ? " día" : " días"))
+          : a < 365 ? (Math.round(a / 30) + " meses")
+          : (Math.round(a / 365 * 10) / 10 + " años").replace(".", ",");
+    return dias < 0 ? "hace " + t : dias === 0 ? "hoy" : "en " + t;
+  }
+
+  function cargarClientes() {
+    $("estado-clientes").textContent = "Cargando…";
+    $("estado-clientes").classList.remove("is-error");
+    var p = new URLSearchParams();
+    if (cliBusca) p.set("q", cliBusca);
+    if (cliPagina > 1) p.set("pagina", String(cliPagina));
+
+    pedir("/api/panel/clientes" + (p.toString() ? "?" + p.toString() : ""))
+      .then(function (d) {
+        CANALES = d.canales;
+        $("estado-clientes").textContent = d.total
+          ? (d.total === 1 ? "1 cliente." : d.total + " clientes.")
+          : (cliBusca ? "Nadie con ese dato." : "Todavía no hay clientes. El primero aparece al marcar una cotización como hecha.");
+
+        $("lista-clientes").innerHTML = d.clientes.map(function (c) {
+          var marcas = [];
+          if (c.proximo) {
+            var dias = Math.round((Date.parse(c.proximo + "T00:00:00Z") - Date.parse(hoyISO() + "T00:00:00Z")) / 86400000);
+            // "Toca hace 9 días" no se dice. Lo vencido venció.
+            marcas.push('<span class="pastilla' + (dias <= 30 ? " toca" : "") + '">' +
+              escHtml((dias < 0 ? "Venció " : "Toca ") + cuando(dias)) + "</span>");
+          }
+          if (!c.recordatorio) marcas.push('<span class="pastilla mudo">Sin recordatorio</span>');
+
+          var linea = [];
+          if (c.trabajos) linea.push(c.trabajos + (c.trabajos === 1 ? " trabajo" : " trabajos"));
+          if (c.ultimo) linea.push("último " + fechaLarga(c.ultimo));
+          var lugar = [c.canton, c.provincia].filter(Boolean).join(", ");
+          if (lugar) linea.push(lugar);
+
+          return '<article class="ficha cli" data-cliente="' + c.id + '">' +
+            '<div class="cli-top"><b>' + escHtml(c.nombre) + "</b>" +
+              '<span class="tel">' + escHtml(c.telefono) + "</span>" +
+              '<span class="cli-marcas">' + marcas.join("") + "</span></div>" +
+            (linea.length ? '<div class="cli-linea">' + escHtml(linea.join(" · ")) + "</div>" : "") +
+          "</article>";
+        }).join("");
+
+        var hayPaginas = d.paginas > 1;
+        $("clientes-pag").hidden = !hayPaginas;
+        if (hayPaginas) {
+          $("cli-pag-txt").textContent = "Página " + d.pagina + " de " + d.paginas;
+          $("cli-antes").disabled = d.pagina <= 1;
+          $("cli-despues").disabled = d.pagina >= d.paginas;
+        }
+        sellar();
+      })
+      .catch(function () {
+        $("estado-clientes").textContent = "No se pudieron cargar los clientes.";
+        $("estado-clientes").classList.add("is-error");
+      });
+  }
+
+  $("c-busca").addEventListener("input", function () {
+    // Se espera a que deje de escribir: una consulta por tecla llenaría
+    // la base de trabajo para nada.
+    clearTimeout(cliReloj);
+    cliReloj = setTimeout(function () {
+      cliBusca = $("c-busca").value.trim();
+      cliPagina = 1;
+      cargarClientes();
+    }, 300);
+  });
+  $("cli-antes").addEventListener("click", function () { if (cliPagina > 1) { cliPagina--; cargarClientes(); } });
+  $("cli-despues").addEventListener("click", function () { cliPagina++; cargarClientes(); });
+
+  $("lista-clientes").addEventListener("click", function (e) {
+    var f = e.target.closest("[data-cliente]");
+    if (f) verCliente(f.dataset.cliente);
+  });
+  $("cli-volver").addEventListener("click", function () { irA("clientes"); });
+
+  /* La ficha del cliente: sus datos editables arriba y todo lo que se
+     le ha hecho abajo. El historial es lo que permite cotizarle de
+     memoria la próxima vez. */
+  function verCliente(id) {
+    vista = "cliente";
+    $("titulo-vista").textContent = "Cliente";
+    Array.prototype.forEach.call(document.querySelectorAll(".barra nav button"), function (b) {
+      b.setAttribute("aria-selected", String(b.dataset.vista === "clientes"));
+    });
+    ["resumen", "tabla", "nueva", "clientes", "agenda"].forEach(function (v) { $("vista-" + v).hidden = true; });
+    $("vista-cliente").hidden = false;
+    $("cliente-cuerpo").innerHTML = '<p class="estado-linea">Cargando…</p>';
+    window.scrollTo({ top: 0 });
+
+    pedir("/api/panel/cliente?id=" + encodeURIComponent(id))
+      .then(function (d) { pintarCliente(d); })
+      .catch(function () {
+        $("cliente-cuerpo").innerHTML = '<p class="estado-linea is-error">No se pudo cargar el cliente.</p>';
+      });
+  }
+
+  function pintarCliente(d) {
+    var c = d.cliente;
+    var acc = [];
+    if (c.wa) acc.push('<a class="bt wa" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
+    acc.push('<a class="bt" href="tel:+506' + escHtml(String(c.telefono).replace(/\D/g, "")) + '">' + ICO.tel + "Llamar</a>");
+
+    var lugar = [c.distrito, c.canton, c.provincia].filter(Boolean).join(", ");
+    var ops = Object.keys(d.canales).map(function (k) {
+      return '<option value="' + k + '"' + (k === c.canal ? " selected" : "") + ">" + escHtml(d.canales[k]) + "</option>";
+    }).join("");
+
+    var hist = d.servicios.length
+      ? '<ul class="hist">' + d.servicios.map(function (s) {
+          return "<li>" +
+            '<span class="f-fecha">' + escHtml(fechaLarga(s.fecha)) + "</span>" +
+            '<span class="f-que">' + escHtml(s.servicioNombre + (s.detalle ? " · " + s.detalle : "")) + "</span>" +
+            '<span class="f-monto">' + (s.monto ? escHtml(colones(s.monto)) : "—") + "</span>" +
+            '<span class="f-prox">' + (s.proximo ? "toca " + escHtml(fechaLarga(s.proximo)) : "") + "</span>" +
+          "</li>";
+        }).join("") + "</ul>"
+      : '<p class="vacio-ok">Todavía no hay trabajos anotados.</p>';
+
+    $("cliente-cuerpo").innerHTML =
+      '<div class="tarj">' +
+        '<div class="perfil-cab">' +
+          "<div><h2>" + escHtml(c.nombre) + "</h2>" +
+            '<div class="sub">' + escHtml(c.telefono + (lugar ? " · " + lugar : "")) + "</div></div>" +
+          '<div class="acc-cab">' + acc.join("") + "</div>" +
+        "</div>" +
+        '<div class="nueva-rejilla">' +
+          campo("cf-nombre", "Nombre", c.nombre) +
+          campo("cf-cedula", "Cédula", c.cedula) +
+          campo("cf-correo", "Correo", c.correo) +
+          campo("cf-senas", "Señas para llegar", c.senas) +
+          '<div class="f"><label for="cf-canal">Recordar por</label><select id="cf-canal">' + ops + "</select></div>" +
+          '<div class="f"><label for="cf-meses">Cada cuánto</label><select id="cf-meses">' +
+            [12, 18, 24, 36, 48].map(function (m) {
+              return '<option value="' + m + '"' + (m === c.meses ? " selected" : "") + ">" + m + " meses</option>";
+            }).join("") + "</select></div>" +
+        "</div>" +
+        '<div class="f" style="margin-top:.9rem;"><label for="cf-nota">Nota</label>' +
+          '<input type="text" id="cf-nota" value="' + escHtml(c.nota || "") + '"></div>' +
+        '<label class="marca-check"><input type="checkbox" id="cf-rec"' + (c.recordatorio ? " checked" : "") +
+          "> Mandarle recordatorio cuando le toque</label>" +
+        '<div class="nueva-pie">' +
+          '<button type="button" class="btn-fuerte" id="cf-guardar">Guardar</button>' +
+          '<p class="estado-linea" id="cf-aviso" role="status" aria-live="polite"></p>' +
+        "</div>" +
+      "</div>" +
+      '<div class="tarj" style="margin-top:1rem;">' +
+        '<div class="tarj-h"><h2>Historial</h2><span class="meta">' +
+          (d.servicios.length ? d.servicios.length + (d.servicios.length === 1 ? " trabajo" : " trabajos") : "") +
+        "</span></div>" + hist +
+      "</div>";
+
+    $("cf-guardar").addEventListener("click", function () {
+      var aviso = $("cf-aviso");
+      aviso.textContent = "Guardando…";
+      aviso.classList.remove("is-error");
+      pedir("/api/panel/cliente", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: c.id,
+          nombre: $("cf-nombre").value, cedula: $("cf-cedula").value,
+          correo: $("cf-correo").value, senas: $("cf-senas").value,
+          nota: $("cf-nota").value, canal: $("cf-canal").value,
+          meses: Number($("cf-meses").value), recordatorio: $("cf-rec").checked
+        })
+      })
+        .then(function () { aviso.textContent = "Guardado."; agendaCargada = false; })
+        .catch(function () { aviso.textContent = "No se pudo guardar."; aviso.classList.add("is-error"); });
+    });
+  }
+
+  function campo(id, etq, valor) {
+    return '<div class="f"><label for="' + id + '">' + escHtml(etq) + "</label>" +
+           '<input type="text" id="' + id + '" value="' + escHtml(valor || "") + '"></div>';
+  }
+
+  /* =========================================================
+     Agenda
+
+     A quién le toca mantenimiento. El calendario responde "cuándo" y
+     la lista de al lado responde "a quién" — tocar un día une las dos.
+     ========================================================= */
+
+  var AGENDA = null, agendaCargada = false;
+  var calMes = null;                       // primer día del mes mostrado
+  var agendaFiltro = { tipo: "pronto" };   // pronto | vencidos | trimestre | dia
+
+  function cargarAgenda() {
+    $("estado-agenda").textContent = "Cargando…";
+    $("estado-agenda").classList.remove("is-error");
+    pedir("/api/panel/agenda")
+      .then(function (d) {
+        AGENDA = d;
+        agendaCargada = true;
+        $("estado-agenda").textContent = "";
+        if (!calMes) { var h = new Date(); calMes = new Date(h.getFullYear(), h.getMonth(), 1); }
+        pintarAgendaCifras(d);
+        pintarCalendario();
+        pintarAgendaLista();
+        marcar("pend-agenda", d.resumen.vencidos);
+        sellar();
+      })
+      .catch(function () {
+        $("estado-agenda").textContent = "No se pudo cargar la agenda.";
+        $("estado-agenda").classList.add("is-error");
+      });
+  }
+
+  function pintarAgendaCifras(d) {
+    var r = d.resumen;
+    function t(icono, n, etq, pie, urge, filtro) {
+      return '<button type="button" class="cifra' + (urge ? " urge" : "") +
+        '" data-agenda="' + filtro + '">' +
+        '<span class="cifra-chip">' + icono + "</span>" +
+        '<div class="cifra-n">' + n + "</div>" +
+        '<div class="cifra-t">' + escHtml(etq) + "</div>" +
+        (pie ? '<div class="cifra-p">' + escHtml(pie) + "</div>" : "") + "</button>";
+    }
+    $("agenda-cifras").innerHTML =
+      t(ICO.alerta, r.vencidos, "Vencidos", "ya pasó la fecha", r.vencidos > 0, "vencidos") +
+      t(ICO.dia, r.mes, "Este mes", "", false, "pronto") +
+      t(ICO.sube, r.trimestre, "Próximos 90 días", "", false, "trimestre") +
+      t(ICO.silencio, r.apagados, "Sin recordatorio", "no se les escribe", false, "apagados");
+  }
+
+  $("agenda-cifras").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-agenda]");
+    if (!b) return;
+    agendaFiltro = { tipo: b.dataset.agenda };
+    pintarCalendario();
+    pintarAgendaLista();
+  });
+
+  var DOW = ["L", "K", "M", "J", "V", "S", "D"];
+  var MES_LARGO = ["enero","febrero","marzo","abril","mayo","junio",
+                   "julio","agosto","setiembre","octubre","noviembre","diciembre"];
+
+  function pintarCalendario() {
+    var y = calMes.getFullYear(), m = calMes.getMonth();
+    $("cal-titulo").textContent = MES_LARGO[m] + " " + y;
+
+    // Cuántos caen cada día de este mes.
+    var porDia = {};
+    AGENDA.items.forEach(function (i) {
+      if (!i.recordatorio) return;
+      var p = i.proximo.split("-");
+      if (Number(p[0]) === y && Number(p[1]) === m + 1) {
+        porDia[Number(p[2])] = (porDia[Number(p[2])] || 0) + 1;
+      }
+    });
+
+    // La semana arranca el lunes, como el calendario de acá.
+    var primero = new Date(y, m, 1);
+    var corrimiento = (primero.getDay() + 6) % 7;
+    var ultimo = new Date(y, m + 1, 0).getDate();
+    var hoy = new Date(), esMesDeHoy = hoy.getFullYear() === y && hoy.getMonth() === m;
+
+    var celdas = DOW.map(function (d) { return '<span class="dow">' + d + "</span>"; });
+    for (var i = 0; i < corrimiento; i++) celdas.push('<span class="hueco"></span>');
+
+    for (var dia = 1; dia <= ultimo; dia++) {
+      var n = porDia[dia] || 0;
+      var iso = y + "-" + String(m + 1).padStart(2, "0") + "-" + String(dia).padStart(2, "0");
+      var vencido = n > 0 && iso < hoyISO();
+      var cls = ["", n ? (vencido ? "vencido" : "con") : "",
+                 esMesDeHoy && dia === hoy.getDate() ? "hoy" : ""].join(" ").trim();
+      celdas.push('<button type="button" class="' + cls + '" data-dia="' + iso + '"' +
+        (agendaFiltro.tipo === "dia" && agendaFiltro.valor === iso ? ' aria-pressed="true"' : "") +
+        (n ? ' title="' + n + (n === 1 ? " cliente" : " clientes") + '"' : "") + ">" +
+        dia + (n ? "<i></i>" : "") + "</button>");
+    }
+    $("cal").innerHTML = celdas.join("");
+  }
+
+  $("cal").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-dia]");
+    if (!b) return;
+    // Volver a tocar el mismo día lo deselecciona.
+    agendaFiltro = (agendaFiltro.tipo === "dia" && agendaFiltro.valor === b.dataset.dia)
+      ? { tipo: "pronto" } : { tipo: "dia", valor: b.dataset.dia };
+    pintarCalendario();
+    pintarAgendaLista();
+  });
+
+  function moverMes(n) {
+    calMes = new Date(calMes.getFullYear(), calMes.getMonth() + n, 1);
+    pintarCalendario();
+  }
+  $("mes-antes").addEventListener("click", function () { moverMes(-1); });
+  $("mes-despues").addEventListener("click", function () { moverMes(1); });
+  $("mes-hoy").addEventListener("click", function () {
+    var h = new Date();
+    calMes = new Date(h.getFullYear(), h.getMonth(), 1);
+    pintarCalendario();
+  });
+
+  var TITULO_AGENDA = {
+    pronto: "Le toca ahora", vencidos: "Ya se pasó la fecha",
+    trimestre: "Próximos 90 días", apagados: "Sin recordatorio", dia: "Ese día"
+  };
+
+  function pintarAgendaLista() {
+    var f = agendaFiltro;
+    var items = AGENDA.items.filter(function (i) {
+      if (f.tipo === "apagados") return !i.recordatorio;
+      if (!i.recordatorio) return false;
+      if (f.tipo === "vencidos") return i.dias < 0;
+      if (f.tipo === "trimestre") return i.dias >= 0 && i.dias <= 90;
+      if (f.tipo === "dia") return i.proximo === f.valor;
+      return i.dias <= 30;                 // "pronto": lo vencido y lo del mes
+    });
+
+    $("agenda-titulo").textContent = f.tipo === "dia"
+      ? fechaLarga(f.valor) : TITULO_AGENDA[f.tipo];
+    $("agenda-n").textContent = items.length ? String(items.length) : "";
+
+    if (!items.length) {
+      $("agenda-lista").innerHTML = '<p class="vacio-ok">Nadie por acá.</p>';
+      return;
+    }
+
+    $("agenda-lista").innerHTML = items.map(function (i) {
+      var acc = [];
+      if (i.wa && i.canal !== "correo") {
+        acc.push('<a class="bt wa" href="' + escHtml(i.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Recordar</a>");
+      }
+      if (i.correoEnlace && i.canal !== "whatsapp") {
+        acc.push('<a class="bt" href="' + escHtml(i.correoEnlace) + '">Correo</a>');
+      }
+      acc.push('<button type="button" class="bt" data-cliente="' + i.clienteId + '">Ver</button>');
+
+      return '<div class="toca-fila' + (i.dias < 0 ? " vencido" : "") + '">' +
+        '<div class="toca-quien"><b>' + escHtml(i.nombre) + "</b><small>" +
+          escHtml(i.servicio + (i.lugar ? " · " + i.lugar : "") + " · último " + fechaLarga(i.fecha)) +
+        "</small></div>" +
+        '<span class="toca-cuando">' + escHtml(cuando(i.dias)) + "</span>" +
+        '<div class="toca-acc">' + acc.join("") + "</div>" +
+      "</div>";
+    }).join("");
+  }
+
+  $("agenda-lista").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-cliente]");
+    if (b) verCliente(b.dataset.cliente);
+  });
+
+  /* =========================================================
+     La hoja de "anotar el trabajo"
+     ========================================================= */
+
+  var hojaResuelve = null;
+
+  function abrirHoja() {
+    $("h-fecha").value = hoyISO();
+    $("h-monto").value = "";
+    $("h-meses").value = "24";
+    $("h-recordar").checked = true;
+    $("velo").hidden = false;
+    $("h-fecha").focus();
+    return new Promise(function (res) { hojaResuelve = res; });
+  }
+
+  function cerrarHoja(valor) {
+    $("velo").hidden = true;
+    var r = hojaResuelve; hojaResuelve = null;
+    if (r) r(valor);
+  }
+
+  $("h-guardar").addEventListener("click", function () {
+    cerrarHoja({
+      fecha: $("h-fecha").value || hoyISO(),
+      monto: $("h-monto").value,
+      meses: Number($("h-meses").value),
+      recordatorio: $("h-recordar").checked
+    });
+  });
+  $("h-saltar").addEventListener("click", function () { cerrarHoja({ soloEstado: true }); });
+  $("velo").addEventListener("click", function (e) {
+    if (e.target === $("velo")) cerrarHoja(null);      // clic afuera: cancelar
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !$("velo").hidden) cerrarHoja(null);
+  });
+
   /* =========================================================
      Navegación y arranque
      ========================================================= */
@@ -1614,11 +2249,16 @@
     var esTabla = nueva === "cotizaciones" || nueva === "solicitudes";
     $("vista-resumen").hidden = nueva !== "resumen";
     $("vista-nueva").hidden = nueva !== "nueva";
+    $("vista-clientes").hidden = nueva !== "clientes";
+    $("vista-cliente").hidden = true;
+    $("vista-agenda").hidden = nueva !== "agenda";
     $("vista-tabla").hidden = !esTabla;
     window.scrollTo({ top: 0 });
 
     if (nueva === "resumen") { if (!resumenCargado) cargarResumen(); }
     else if (nueva === "nueva") { cargarNueva(); }
+    else if (nueva === "clientes") { cargarClientes(); }
+    else if (nueva === "agenda") { if (!agendaCargada) cargarAgenda(); else pintarAgendaLista(); }
     else { $("cuerpo-tabla").innerHTML = ""; cargarTabla(); }
   }
 
@@ -1654,6 +2294,9 @@
     b.classList.add("girando");
     if (vista === "resumen") { resumenCargado = false; cargarResumen(); }
     else if (vista === "nueva") { cargarNueva(); }
+    else if (vista === "clientes") { cargarClientes(); }
+    else if (vista === "cliente") { /* la ficha se recarga sola al volver */ }
+    else if (vista === "agenda") { agendaCargada = false; cargarAgenda(); }
     else cargarTabla();
   });
 

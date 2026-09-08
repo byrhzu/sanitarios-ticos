@@ -239,6 +239,51 @@ Decir "origen: panel" **exige la clave**. Sin ella la cotización se
 guarda igual, pero como venida de Beto: de ese dato dependen las
 estadísticas de por dónde entra el trabajo.
 
+### Clientes
+
+Quien ya vino una vez. **No hay que llenarlo a mano:** el cliente y el
+trabajo se crean solos al marcar una cotización como *Hecha*, que es
+algo que el propietario ya hace. Ahí se le piden las dos cosas que el
+sistema no puede adivinar — cuándo se hizo y cuánto se cobró — y con
+eso queda armado el recordatorio.
+
+El teléfono es la llave: la cédula mucha gente no la da y el correo se
+pierde, pero el número siempre está. Si alguien vuelve, se reconoce y
+no se duplica.
+
+En la ficha de cada cliente están sus datos, las señas para llegar, el
+historial completo de trabajos con lo que se cobró, y tres controles:
+**si se le manda recordatorio**, **por cuál canal** (WhatsApp, correo o
+ambos) y **cada cuánto** (12, 18, 24, 36 o 48 meses).
+
+### Agenda
+
+A quién le toca mantenimiento. El calendario responde *cuándo* y la
+lista de al lado responde *a quién*; tocar un día une las dos.
+
+Cuatro cifras arriba, todas tocables: **Vencidos**, **Este mes**,
+**Próximos 90 días** y **Sin recordatorio**.
+
+Sólo cuenta el **último** trabajo de cada cliente. Si a alguien se le
+hizo el tanque en 2024 y otra vez en 2026, la fecha del 2024 ya no dice
+nada: el reloj arranca de nuevo con el trabajo más reciente.
+
+Cada fila trae el mensaje de recordatorio ya redactado, con la fecha
+del último servicio adentro. Hoy se manda de un toque desde el WhatsApp
+de la empresa; **mandarlo solo, sin tocar nada, necesita la API de
+WhatsApp de Meta**, que exige verificación de empresa y el dominio ya
+migrado.
+
+### Por qué esto importa más que lo demás
+
+Un tanque séptico se limpia cada dos o tres años. Eso quiere decir que
+**cada trabajo hecho es un cliente futuro con fecha conocida**, y que
+no tener este registro es regalar esa venta. Es lo que convierte un
+negocio de una sola venta en uno que se repite solo.
+
+Las tablas se crean con `tools/crear-clientes-y-servicios.sql`, que se
+pega **una sola vez** en la Console de D1.
+
 ### Cotizaciones y Solicitudes
 
 Las dos tablas de siempre, con tres columnas nuevas pegadas a la derecha

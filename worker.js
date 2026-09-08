@@ -496,10 +496,58 @@ async function cambiarEstado(request, env) {
       .prepare(`UPDATE ${tabla} SET estado = ?, nota = ?, actualizado = datetime('now') WHERE id = ?`)
       .bind(estado, nota, id)
       .run();
-    return json({ ok: true, estado, nota: nota || "" });
+
+    /* Marcar una cotización como hecha es el único momento en que se
+       sabe con certeza que hubo un trabajo. Ahí —y no antes— nace el
+       cliente y se anota el servicio, con lo que el recordatorio de
+       dentro de dos años queda armado sin que nadie tenga que
+       acordarse de nada. */
+    let cliente = null;
+    if (estado === "hecha" && tabla === "cotizaciones" && cuerpo.servicio) {
+      cliente = await registrarDesdeCotizacion(env, id, cuerpo.servicio);
+    }
+
+    return json({ ok: true, estado, nota: nota || "", cliente });
   } catch (e) {
     console.error("Error al cambiar el estado:", e);
     return json({ ok: false, error: "No se pudo guardar" }, 500);
+  }
+}
+
+/* Del registro de la cotización salen los datos del cliente; del
+   formulario que llena el propietario al marcarla, la fecha real del
+   trabajo y lo que cobró. Si esto falla, el estado ya quedó guardado:
+   se pierde el recordatorio, no el trabajo. */
+async function registrarDesdeCotizacion(env, id, extra) {
+  try {
+    const c = await env.DB.prepare(
+      `SELECT numero, servicio, perfil, nombre, telefono, cedula, correo,
+              provincia, canton, distrito, monto_min
+       FROM cotizaciones WHERE id = ?`
+    ).bind(id).first();
+    if (!c) return null;
+
+    const cliente = await guardarCliente(env, c);
+    if (!cliente) return null;
+
+    await guardarServicio(env, cliente.id, {
+      fecha: extra.fecha,
+      servicio: c.servicio,
+      detalle: etiqueta(c.servicio, c.perfil, "perfil"),
+      monto: extra.monto != null && extra.monto !== "" ? extra.monto : c.monto_min,
+      cotizacion: c.numero,
+      meses: extra.meses,
+      nota: extra.nota
+    }, cliente.meses);
+
+    if (extra.recordatorio === false) {
+      await env.DB.prepare(`UPDATE clientes SET recordatorio = 0 WHERE id = ?`)
+        .bind(cliente.id).run();
+    }
+    return { id: cliente.id, nombre: c.nombre };
+  } catch (e) {
+    console.error("No se pudo registrar el cliente/servicio:", e);
+    return null;
   }
 }
 
@@ -670,6 +718,272 @@ async function resumenPanel(request, env) {
   } catch (e) {
     console.error("Error al armar el resumen:", e);
     return json({ ok: false, error: "No se pudo armar el resumen" }, 500);
+  }
+}
+
+/* =============================================================
+   2b. Clientes, servicios hechos y recordatorios
+   =============================================================
+
+   Hasta acá el sistema guardaba lo que ENTRABA. Esto guarda lo que
+   SALIÓ: qué trabajo se hizo, a quién, y cuándo le toca el siguiente.
+
+   Un tanque séptico se limpia cada dos o tres años. Eso quiere decir
+   que cada trabajo hecho es un cliente futuro con fecha conocida — y
+   que no tener este registro es regalar esa venta. Es la razón de ser
+   de esta sección.
+
+   NO HAY QUE ALIMENTARLO A MANO. El cliente y el servicio se crean
+   solos cuando el propietario marca una cotización como "Hecha", que
+   es algo que ya hace. Lo único que se le pide de más es la fecha del
+   trabajo y lo que cobró.
+   ============================================================= */
+
+const CANALES = { whatsapp: "WhatsApp", correo: "Correo", ambos: "WhatsApp y correo" };
+const MESES_LARGO = ["enero","febrero","marzo","abril","mayo","junio",
+                     "julio","agosto","setiembre","octubre","noviembre","diciembre"];
+
+function mesYAno(iso) {
+  const p = String(iso || "").split("-");
+  return p.length >= 2 ? MESES_LARGO[Number(p[1]) - 1] + " de " + p[0] : "";
+}
+
+/* Crea el cliente o lo actualiza si ya existe. El teléfono es la llave:
+   la cédula mucha gente no la da y el correo se pierde, pero el número
+   siempre está. Los datos nuevos sólo pisan a los viejos cuando traen
+   algo — así una cotización sin correo no le borra el correo a alguien
+   que ya lo había dado. */
+async function guardarCliente(env, d) {
+  const tel = normalizarTelefono(d.telefono);
+  if (!tel.ok) return null;
+
+  await env.DB.prepare(
+    `INSERT INTO clientes (nombre, telefono, cedula, correo, provincia, canton, distrito, actualizado)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, datetime('now'))
+     ON CONFLICT(telefono) DO UPDATE SET
+       nombre      = COALESCE(NULLIF(excluded.nombre, ''), clientes.nombre),
+       cedula      = COALESCE(NULLIF(excluded.cedula, ''), clientes.cedula),
+       correo      = COALESCE(NULLIF(excluded.correo, ''), clientes.correo),
+       provincia   = COALESCE(NULLIF(excluded.provincia, ''), clientes.provincia),
+       canton      = COALESCE(NULLIF(excluded.canton, ''), clientes.canton),
+       distrito    = COALESCE(NULLIF(excluded.distrito, ''), clientes.distrito),
+       actualizado = datetime('now')`
+  ).bind(
+    texto(d.nombre, 120) || "Sin nombre", tel.valor, texto(d.cedula, 20) || "",
+    texto(d.correo, 120) || "", texto(d.provincia, 40) || "",
+    texto(d.canton, 60) || "", texto(d.distrito, 80) || ""
+  ).run();
+
+  const fila = await env.DB.prepare(`SELECT id, meses FROM clientes WHERE telefono = ?`)
+    .bind(tel.valor).first();
+  return fila || null;
+}
+
+/* Anota el trabajo y calcula cuándo toca el siguiente. La fecha es la
+   del trabajo, no la del registro: de ella sale el recordatorio, así
+   que anotarla mal corre la fecha dos años. */
+async function guardarServicio(env, clienteId, d, meses) {
+  const m = Number.isFinite(+d.meses) && +d.meses > 0 ? Math.min(+d.meses, 120) : (meses || 24);
+  const fecha = soloFecha(d.fecha) || new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
+
+  await env.DB.prepare(
+    `INSERT INTO servicios (cliente_id, fecha, servicio, detalle, monto, cotizacion, proximo, nota)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, date(?2, '+' || ?7 || ' months'), ?8)`
+  ).bind(
+    clienteId, fecha, texto(d.servicio, 40) || "servicio",
+    texto(d.detalle, 200) || null,
+    Number.isFinite(+d.monto) ? Math.round(+d.monto) : null,
+    texto(d.cotizacion, 30) || null, m, texto(d.nota, 300) || null
+  ).run();
+
+  // Si en el registro se cambió la periodicidad, el cliente se queda
+  // con la nueva: es la que va a usar el próximo trabajo.
+  if (m !== meses) {
+    await env.DB.prepare(`UPDATE clientes SET meses = ?1, actualizado = datetime('now') WHERE id = ?2`)
+      .bind(m, clienteId).run();
+  }
+}
+
+// El texto del recordatorio. Sale del servidor porque es el que tiene
+// la fecha y el servicio; el panel sólo lo abre en WhatsApp.
+function mensajeRecordatorio(f) {
+  const quien = f.nombre ? " " + primerNombre(f.nombre) : "";
+  const donde = f.canton ? " en " + f.canton : "";
+  return "Buenas" + quien + ", le escribo de Sanitarios Ticos. " +
+    "La última vez que le hicimos " + etiqueta(f.servicio, null, "servicio").toLowerCase() +
+    donde + " fue en " + mesYAno(f.fecha) + ", así que ya le toca la siguiente. " +
+    "¿Se la agendamos?";
+}
+
+/* -------------------------------------------------------------
+   Listado de clientes
+   ------------------------------------------------------------- */
+async function listaClientes(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+
+  const url = new URL(request.url);
+  const busca = texto(url.searchParams.get("q"), 60);
+  const pedida = parseInt(url.searchParams.get("pagina"), 10);
+  const pagina = Number.isFinite(pedida) && pedida > 0 ? pedida : 1;
+
+  const donde = busca ? `WHERE c.nombre LIKE ?1 OR c.telefono LIKE ?1 OR c.cedula LIKE ?1` : "";
+  const val = busca ? ["%" + busca + "%"] : [];
+
+  try {
+    const total = await env.DB.prepare(`SELECT COUNT(*) AS n FROM clientes c ${donde}`)
+      .bind(...val).first();
+
+    const { results } = await env.DB.prepare(
+      `SELECT c.id, c.nombre, c.telefono, c.correo, c.provincia, c.canton, c.distrito,
+              c.recordatorio, c.canal, c.meses,
+              COUNT(s.id) AS trabajos,
+              MAX(s.fecha) AS ultimo,
+              MIN(CASE WHEN s.proximo >= date('now','-6 hours') THEN s.proximo END) AS proximo
+       FROM clientes c LEFT JOIN servicios s ON s.cliente_id = c.id
+       ${donde}
+       GROUP BY c.id
+       ORDER BY (c.nombre IS NULL), c.nombre
+       LIMIT ?${val.length + 1} OFFSET ?${val.length + 2}`
+    ).bind(...val, POR_PAGINA, (pagina - 1) * POR_PAGINA).all();
+
+    return json({
+      ok: true,
+      clientes: results.map((c) => Object.assign({}, c, {
+        wa: waDe(c.telefono, "Buenas" + (c.nombre ? " " + primerNombre(c.nombre) : "") +
+                             ", le escribo de Sanitarios Ticos.")
+      })),
+      total: total ? total.n : 0,
+      pagina, porPagina: POR_PAGINA,
+      paginas: Math.max(1, Math.ceil((total ? total.n : 0) / POR_PAGINA)),
+      canales: CANALES
+    });
+  } catch (e) {
+    console.error("Error al listar clientes:", e);
+    return json({ ok: false, error: "No se pudo consultar" }, 500);
+  }
+}
+
+/* -------------------------------------------------------------
+   Un cliente con su historial
+   ------------------------------------------------------------- */
+async function verCliente(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+
+  const id = parseInt(new URL(request.url).searchParams.get("id"), 10);
+  if (!Number.isFinite(id)) return json({ ok: false, error: "Cliente inválido" }, 400);
+
+  try {
+    const c = await env.DB.prepare(`SELECT * FROM clientes WHERE id = ?`).bind(id).first();
+    if (!c) return json({ ok: false, error: "No existe ese cliente" }, 404);
+
+    const { results } = await env.DB.prepare(
+      `SELECT id, fecha, servicio, detalle, monto, cotizacion, proximo, nota
+       FROM servicios WHERE cliente_id = ? ORDER BY fecha DESC, id DESC`
+    ).bind(id).all();
+
+    return json({
+      ok: true,
+      cliente: Object.assign({}, c, {
+        wa: waDe(c.telefono, "Buenas" + (c.nombre ? " " + primerNombre(c.nombre) : "") +
+                             ", le escribo de Sanitarios Ticos.")
+      }),
+      servicios: results.map((s) => Object.assign({}, s, {
+        servicioNombre: etiqueta(s.servicio, null, "servicio")
+      })),
+      canales: CANALES
+    });
+  } catch (e) {
+    console.error("Error al ver el cliente:", e);
+    return json({ ok: false, error: "No se pudo consultar" }, 500);
+  }
+}
+
+/* Guardar los datos de un cliente desde el panel. Sirve para corregir
+   un nombre, apagar el recordatorio o cambiar el canal. */
+async function editarCliente(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+
+  let b;
+  try { b = await request.json(); }
+  catch { return json({ ok: false, error: "Petición mal formada" }, 400); }
+
+  const id = parseInt(b.id, 10);
+  if (!Number.isFinite(id)) return json({ ok: false, error: "Cliente inválido" }, 400);
+
+  const canal = Object.prototype.hasOwnProperty.call(CANALES, b.canal) ? b.canal : "whatsapp";
+  const meses = Number.isFinite(+b.meses) && +b.meses > 0 ? Math.min(+b.meses, 120) : 24;
+
+  try {
+    await env.DB.prepare(
+      `UPDATE clientes SET nombre = ?1, cedula = ?2, correo = ?3, senas = ?4, nota = ?5,
+                           recordatorio = ?6, canal = ?7, meses = ?8, actualizado = datetime('now')
+       WHERE id = ?9`
+    ).bind(
+      texto(b.nombre, 120) || "Sin nombre", texto(b.cedula, 20) || null,
+      texto(b.correo, 120) || null, texto(b.senas, 200) || null, texto(b.nota, 400) || null,
+      b.recordatorio ? 1 : 0, canal, meses, id
+    ).run();
+    return json({ ok: true });
+  } catch (e) {
+    console.error("Error al guardar el cliente:", e);
+    return json({ ok: false, error: "No se pudo guardar" }, 500);
+  }
+}
+
+/* -------------------------------------------------------------
+   La agenda: a quién le toca y cuándo
+
+   Sólo cuenta el ÚLTIMO servicio de cada cliente. Si a alguien se le
+   hizo el tanque en 2024 y otra vez en 2026, la fecha del 2024 ya no
+   dice nada: el reloj arranca de nuevo con el trabajo más reciente.
+   ------------------------------------------------------------- */
+async function agendaPanel(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT s.id, s.fecha, s.servicio, s.detalle, s.monto, s.proximo,
+              c.id AS cliente_id, c.nombre, c.telefono, c.correo,
+              c.provincia, c.canton, c.distrito, c.recordatorio, c.canal, c.meses,
+              CAST(julianday(s.proximo) - julianday(date('now','-6 hours')) AS INTEGER) AS dias
+       FROM servicios s
+       JOIN clientes c ON c.id = s.cliente_id
+       WHERE s.id = (SELECT s2.id FROM servicios s2 WHERE s2.cliente_id = c.id
+                     ORDER BY s2.fecha DESC, s2.id DESC LIMIT 1)
+         AND s.proximo IS NOT NULL
+       ORDER BY s.proximo`
+    ).all();
+
+    const items = results.map((f) => ({
+      id: f.id, clienteId: f.cliente_id, nombre: f.nombre, telefono: f.telefono,
+      correo: f.correo || null,
+      servicio: etiqueta(f.servicio, null, "servicio"),
+      detalle: f.detalle || null,
+      lugar: [f.canton, f.provincia].filter(Boolean).join(", ") || null,
+      fecha: f.fecha, proximo: f.proximo, dias: f.dias,
+      meses: f.meses, canal: f.canal, recordatorio: !!f.recordatorio,
+      wa: f.recordatorio ? waDe(f.telefono, mensajeRecordatorio(f)) : null,
+      correoEnlace: (f.recordatorio && f.correo)
+        ? "mailto:" + encodeURIComponent(f.correo) +
+          "?subject=" + encodeURIComponent("Le toca el mantenimiento — Sanitarios Ticos") +
+          "&body=" + encodeURIComponent(mensajeRecordatorio(f))
+        : null
+    }));
+
+    const activos = items.filter((i) => i.recordatorio);
+    return json({
+      ok: true,
+      items,
+      resumen: {
+        vencidos: activos.filter((i) => i.dias < 0).length,
+        mes:      activos.filter((i) => i.dias >= 0 && i.dias <= 30).length,
+        trimestre:activos.filter((i) => i.dias >= 0 && i.dias <= 90).length,
+        apagados: items.length - activos.length
+      }
+    });
+  } catch (e) {
+    console.error("Error al armar la agenda:", e);
+    return json({ ok: false, error: "No se pudo consultar" }, 500);
   }
 }
 
@@ -1383,6 +1697,18 @@ export default {
     }
     if (url.pathname === "/api/panel/estado" && request.method === "POST") {
       return cambiarEstado(request, env);
+    }
+    if (url.pathname === "/api/panel/clientes" && request.method === "GET") {
+      return listaClientes(request, env);
+    }
+    if (url.pathname === "/api/panel/cliente" && request.method === "GET") {
+      return verCliente(request, env);
+    }
+    if (url.pathname === "/api/panel/cliente" && request.method === "POST") {
+      return editarCliente(request, env);
+    }
+    if (url.pathname === "/api/panel/agenda" && request.method === "GET") {
+      return agendaPanel(request, env);
     }
     if (url.pathname === "/api/asistente" && request.method === "POST") {
       return responderAsistente(request, env);
