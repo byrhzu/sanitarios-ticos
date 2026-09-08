@@ -1010,6 +1010,19 @@ el sitio con la versión vieja durante un año.
 Por eso las capas de Frank llevan sufijo (`frank-cuerpo-2.webp`). Si
 hay que retocarlas otra vez, sube el número — no se sobrescriben.
 
+### 21.3d El avatar de la cabecera
+
+El primer recorte era sólo la cara, y encima cortaba la gorra arriba y
+el mentón abajo: adentro de un círculo se leía como una foto mal
+encuadrada.
+
+El recorte bueno lleva **gorra completa, cara, hombros y el pecho con
+el logo** — que es lo que pidió el propietario — y deja **la mano
+levantada fuera del cuadro**. Con la mano adentro, el círculo la
+cortaba por la mitad y ese pedazo suelto se leía como una mancha.
+
+El avatar subió de 34 a 40px: a 34 el torso no se distinguía.
+
 ### 21.4 Qué sí se nota a 44px y qué no
 
 A tamaño de botón Frank mide 44×90: la cara son 14px y los ojos dos.
