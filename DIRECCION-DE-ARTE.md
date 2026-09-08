@@ -918,3 +918,57 @@ solo a los 3,6 segundos.
   comprobó contra el archivo, no a ojo.
 - Ningún estado depende sólo del color — cada pastilla lleva punto y
   palabra.
+
+
+## 21. Frank
+
+### 21.1 El archivo llegó sin transparencia
+
+El dibujo entregado es un **JPEG**, y el JPEG no guarda transparencia:
+el cuadriculado que se ve no es transparencia, son píxeles grises y
+blancos pintados. Es una captura de pantalla del PNG original.
+
+Se reconstruyó con **relleno por inundación desde los bordes**: se
+arranca en el marco, se avanza por los píxeles neutros y claros, y el
+contorno negro del dibujo hace de dique. Por eso no le abre huecos por
+dentro aunque tenga blancos (los dientes, los ojos) y grises (la
+camisa, el pelo) — un recorte por color sí lo habría perforado.
+
+Salió el 81% de la imagen. El resultado se comprobó compuesto sobre el
+naranja y sobre el fondo oscuro: sin halo y sin huecos.
+
+**Sigue siendo preferible el PNG original.** Esto es una
+reconstrucción, y en los bordes carga lo que el JPEG ya había
+degradado.
+
+### 21.2 No va dentro del botón: se para encima
+
+Un muñeco de 26px encogido dentro de la píldora es una mancha. Frank
+mide 90px de alto sobre un botón de 50: se para en el borde de abajo y
+saca la cabeza y el brazo por arriba.
+
+Eso usa el dibujo por lo que es —una figura de cuerpo entero saludando—
+en vez de recortarlo a una cara, y le da al botón algo que ningún sitio
+genérico tiene. En el teléfono el botón se encoge a un círculo de 54px
+y Frank se queda parado encima igual: ahí él **es** el botón.
+
+### 21.3 El saludo
+
+Son **dos capas** —cuerpo y brazo— cortadas del dibujo y exportadas en
+el mismo lienzo, así que se apilan con `inset: 0` y el hombro cae
+siempre en el mismo punto. El brazo gira sobre ese hombro
+(`transform-origin: 69.2% 35.3%`, medido sobre el original).
+
+Dos cosas que costaron y quedan anotadas:
+
+- **El giro va sólo hacia afuera**, de 0° a −17°. Hacia adentro la mano
+  se le mete en la gorra.
+- **El borde de la gorra se colaba en la capa del brazo** y al girar
+  aparecía una lasca azul oscura al lado de la cabeza. El corte excluye
+  todo lo que quede a la izquierda de x=305 por encima de y=210, que es
+  donde el brazo ya no está.
+
+Saluda tres veces y descansa cuatro segundos. Un muñeco que se mueve
+sin parar deja de ser simpático a los diez segundos. Al pasarle el
+mouse saluda de una, sin esperar el turno, y con
+`prefers-reduced-motion` no se mueve.
