@@ -331,7 +331,10 @@ function tablaPedida(url) {
 // Las fechas se comparan en hora de Costa Rica (UTC-6), que es la
 // única zona horaria del negocio, para que "hoy" signifique lo mismo
 // en el panel que en el reloj del que lo está mirando.
-function construirConsulta(url) {
+/* `sinEstado` sirve para el conteo de las pestañas: hay que contar
+   cuántas hay en CADA estado con los demás filtros puestos, y para eso
+   el estado no puede estar filtrando. */
+function construirConsulta(url, sinEstado) {
   const desde = soloFecha(url.searchParams.get("desde"));
   const hasta = soloFecha(url.searchParams.get("hasta"));
   const tabla = tablaPedida(url);
@@ -354,6 +357,7 @@ function construirConsulta(url) {
     servicio:  (v) => Object.prototype.hasOwnProperty.call(TARIFAS.servicios, v)
   };
   for (const campo of permitidos) {
+    if (sinEstado && campo === "estado") continue;
     const v = url.searchParams.get(campo);
     if (v && valido[campo](v)) {
       condiciones.push(campo + ` = ?`);
@@ -370,10 +374,10 @@ function construirConsulta(url) {
     condiciones.push("(" + cols.map((c) => c + " LIKE ?").join(" OR ") + ")");
     for (const _ of cols) valores.push("%" + busca + "%");
   }
-  if (condiciones.length) sql += ` WHERE ` + condiciones.join(" AND ");
-  sql += ` ORDER BY creado DESC`;
+  const donde = condiciones.length ? ` WHERE ` + condiciones.join(" AND ") : "";
+  sql += donde + ` ORDER BY creado DESC`;
 
-  return { sql, valores, desde, hasta, tabla };
+  return { sql, valores, desde, hasta, tabla, donde };
 }
 
 /* Cuántas filas por página. Con 50 solicitudes no se notaba, pero el
@@ -407,6 +411,17 @@ async function listaPanel(request, env) {
       .bind(...valores, POR_PAGINA, desplazamiento)
       .all();
 
+    /* Cuántas hay en cada estado con los demás filtros puestos. Es lo
+       que hace que las pestañas digan un número en vez de ser cinco
+       botones a ciegas — y que uno sepa que no hay nada perdido en
+       "Agendadas" sin tener que entrar a mirar. */
+    const sinEst = construirConsulta(url, true);
+    const conteo = await env.DB
+      .prepare(`SELECT estado, COUNT(*) AS n FROM ${tabla}${sinEst.donde} GROUP BY estado`)
+      .bind(...sinEst.valores).all();
+    const conteos = {};
+    for (const f of conteo.results || []) conteos[f.estado] = f.n;
+
     const vista = TABLAS_PANEL[tabla].vista;
     const origen = url.origin;
     return json({
@@ -426,6 +441,7 @@ async function listaPanel(request, env) {
       // Un aviso arriba de la tabla vale más que una marca en cada
       // fila: mientras las tarifas sean las provisionales, lo son todas.
       hayProvisionales: results.some((f) => f.provisional),
+      conteos,
       total: total,
       pagina: pagina,
       porPagina: POR_PAGINA,

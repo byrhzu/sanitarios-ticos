@@ -399,7 +399,28 @@
   .b-rell { height: 100%; background: var(--p-dato1); border-radius: 3px; }
 
   /* ---------- Listas ---------- */
+  /* Pestañas de estado. La línea de abajo hace de riel: el activo se
+     marca con el naranja y el resto se queda en gris, sin cajas. */
+  .pest-est {
+    display: flex; gap: .2rem; flex-wrap: wrap;
+    border-bottom: 1px solid var(--p-linea); margin-bottom: var(--e4);
+  }
+  .pest-est button {
+    padding: .55rem .75rem; color: var(--p-tenue); font-weight: 500;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color .15s var(--ease), border-color .15s var(--ease);
+  }
+  .pest-est button:hover { color: var(--p-txt); }
+  .pest-est button[aria-selected="true"] { color: var(--p-txt); border-bottom-color: var(--p-acento); }
+  .pest-est .n {
+    margin-left: .35rem; font-variant-numeric: tabular-nums;
+    color: var(--p-tenue); font-size: .8rem;
+  }
+  .pest-est button[aria-selected="true"] .n { color: var(--p-acento-t); }
+  .pest-est .n:empty { display: none; }
+
   .filtros { display: flex; gap: .8rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 1rem; }
+  .filtros input[type="search"] { width: 100%; }
   .filtros .f { margin: 0; }
   .filtros .f label { font-size: .78rem; color: var(--p-tenue); }
   .filtros input, .filtros select {
@@ -620,6 +641,46 @@
   .hoja-pie { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1.4rem; flex-wrap: wrap; }
 
   /* ---------- Nueva cotización ---------- */
+  /* El riel de pasos. El número se tacha con un visto cuando ya se
+     pasó, para que se vea el avance y no sólo dónde se está. */
+  .pasos {
+    display: flex; list-style: none; margin: 0 0 var(--e5); padding: 0;
+    gap: var(--e2); flex-wrap: wrap;
+  }
+  .pasos li {
+    display: flex; align-items: center; gap: .45rem;
+    color: var(--p-tenue); font-weight: 500; flex: 1 1 7rem;
+  }
+  .pasos li::before {
+    content: attr(data-n);
+    width: 22px; height: 22px; border-radius: 50%; flex: 0 0 22px;
+    display: grid; place-items: center; font-size: .75rem;
+    background: var(--p-sup2); color: var(--p-tenue);
+  }
+  .pasos li[data-estado="ahora"] { color: var(--p-txt); }
+  .pasos li[data-estado="ahora"]::before { background: var(--p-acento); color: #fff; }
+  .pasos li[data-estado="listo"] { color: var(--p-txt2); }
+  .pasos li[data-estado="listo"]::before { content: "✓"; background: var(--est-ok-bg); color: var(--est-ok-tx); }
+
+  .paso[hidden] { display: none; }
+  .nueva-pie { justify-content: flex-start; }
+
+  .ya-existe {
+    margin-top: var(--e4); padding: .8rem .9rem; border-radius: 8px;
+    background: var(--est-curso-bg); color: var(--est-curso-tx);
+    display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap;
+  }
+  .ya-existe b { font-weight: 600; }
+  .ya-existe button {
+    margin-left: auto; font-weight: 600; text-decoration: underline;
+    text-underline-offset: 3px; color: inherit;
+  }
+
+  .repaso { margin: 0; display: grid; gap: .1rem; }
+  .repaso > div { display: flex; gap: var(--e4); padding: .55rem 0; border-top: 1px solid var(--p-linea); }
+  .repaso > div:first-child { border-top: 0; }
+  .repaso dt { color: var(--p-tenue); flex: 0 0 9rem; }
+  .repaso dd { margin: 0; color: var(--p-txt); min-width: 0; overflow-wrap: anywhere; }
   .grupo { color: var(--p-tenue); font-weight: 500; margin: 1.7rem 0 .85rem; }
   .grupo:first-child { margin-top: 0; }
   .nueva-rejilla { display: grid; gap: .9rem 1.1rem; grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr)); }
@@ -933,10 +994,21 @@
 
     <!-- ================= TABLAS ================= -->
     <div class="vista" id="vista-tabla" hidden>
+      <!-- Las pestañas responden "¿cuántas hay en cada punto del
+           embudo?" antes de que uno tenga que abrir ninguna. -->
+      <div class="pest-est" id="pest-est" role="tablist" aria-label="Filtrar por estado"></div>
+
       <div class="filtros">
+        <div class="f" style="flex:1 1 14rem; max-width:22rem;">
+          <!-- Se llama distinto que el buscador de arriba a propósito:
+               son dos cajas parecidas a 20cm de distancia y hacen cosas
+               distintas — una filtra lo que ya está en pantalla, la
+               otra busca en todo el panel. -->
+          <label for="l-busca">Filtrar esta lista</label>
+          <input type="search" id="l-busca" placeholder="Nombre, teléfono, cédula o número">
+        </div>
         <div class="f"><label for="desde">Desde</label><input type="date" id="desde"></div>
         <div class="f"><label for="hasta">Hasta</label><input type="date" id="hasta"></div>
-        <div class="f"><label for="f-estado">Estado</label><select id="f-estado"><option value="">Todos</option></select></div>
         <span class="empuje">
           <button class="btn-suave" type="button" id="btn-csv">Descargar CSV</button>
         </span>
@@ -1018,31 +1090,57 @@
 
       <form id="form-nueva" hidden>
         <div class="tarj">
-          <p class="grupo">Servicio a cotizar</p>
-          <div class="nueva-rejilla">
-            <div class="f"><label for="n-servicio">Servicio</label><select id="n-servicio" required></select></div>
-            <div class="f"><label for="n-perfil">Tipo de propiedad</label><select id="n-perfil" required></select></div>
-            <div class="f"><label for="n-ultimo">Último servicio</label><select id="n-ultimo" required></select></div>
-            <div class="f"><label for="n-acceso">Dónde para el camión</label><select id="n-acceso" required></select></div>
-          </div>
+          <!-- Cuatro pasos en vez de una pared de once campos. Cada uno
+               responde una pregunta y no se puede pasar sin contestarla,
+               que es lo que evita llegar al final con un hueco. -->
+          <ol class="pasos" id="pasos">
+            <li data-n="1">Servicio</li>
+            <li data-n="2">Ubicación</li>
+            <li data-n="3">Cliente</li>
+            <li data-n="4">Confirmar</li>
+          </ol>
 
-          <p class="grupo">Ubicación</p>
-          <div class="nueva-rejilla">
-            <div class="f"><label for="n-provincia">Provincia</label><select id="n-provincia" required></select></div>
-            <div class="f"><label for="n-canton">Cantón</label><select id="n-canton" required disabled></select></div>
-            <div class="f"><label for="n-distrito">Distrito</label><select id="n-distrito" disabled></select></div>
-          </div>
+          <section class="paso" data-paso="1">
+            <p class="grupo">¿Qué necesita?</p>
+            <div class="nueva-rejilla">
+              <div class="f"><label for="n-servicio">Servicio</label><select id="n-servicio" required></select></div>
+              <div class="f"><label for="n-perfil">Tipo de propiedad</label><select id="n-perfil" required></select></div>
+              <div class="f"><label for="n-ultimo">Último servicio</label><select id="n-ultimo" required></select></div>
+              <div class="f"><label for="n-acceso">Dónde para el camión</label><select id="n-acceso" required></select></div>
+            </div>
+          </section>
 
-          <p class="grupo">Cotizar a nombre de</p>
-          <div class="nueva-rejilla">
-            <div class="f"><label for="n-nombre">Nombre</label><input id="n-nombre" type="text" required autocomplete="off"></div>
-            <div class="f"><label for="n-telefono">Teléfono</label><input id="n-telefono" type="tel" inputmode="tel" required autocomplete="off" placeholder="8888-8888"></div>
-            <div class="f"><label for="n-cedula">Cédula <span class="opc">opcional</span></label><input id="n-cedula" type="text" autocomplete="off" placeholder="1-2345-6789 o 3-101-123456"></div>
-            <div class="f"><label for="n-correo">Correo <span class="opc">opcional</span></label><input id="n-correo" type="email" autocomplete="off"></div>
-          </div>
+          <section class="paso" data-paso="2" hidden>
+            <p class="grupo">¿Dónde queda?</p>
+            <div class="nueva-rejilla">
+              <div class="f"><label for="n-provincia">Provincia</label><select id="n-provincia" required></select></div>
+              <div class="f"><label for="n-canton">Cantón</label><select id="n-canton" required disabled></select></div>
+              <div class="f"><label for="n-distrito">Distrito</label><select id="n-distrito" disabled></select></div>
+            </div>
+          </section>
+
+          <section class="paso" data-paso="3" hidden>
+            <p class="grupo">¿A nombre de quién?</p>
+            <div class="nueva-rejilla">
+              <div class="f"><label for="n-telefono">Teléfono</label><input id="n-telefono" type="tel" inputmode="tel" required autocomplete="off" placeholder="8888-8888"></div>
+              <div class="f"><label for="n-nombre">Nombre</label><input id="n-nombre" type="text" required autocomplete="off"></div>
+              <div class="f"><label for="n-cedula">Cédula <span class="opc">opcional</span></label><input id="n-cedula" type="text" autocomplete="off" placeholder="1-2345-6789 o 3-101-123456"></div>
+              <div class="f"><label for="n-correo">Correo <span class="opc">opcional</span></label><input id="n-correo" type="email" autocomplete="off"></div>
+            </div>
+            <!-- Si el teléfono ya está registrado, se ofrece traer sus
+                 datos en vez de volver a escribirlos y crear un doble. -->
+            <div class="ya-existe" id="ya-existe" hidden></div>
+          </section>
+
+          <section class="paso" data-paso="4" hidden>
+            <p class="grupo">Revise antes de crearla</p>
+            <dl class="repaso" id="repaso"></dl>
+          </section>
 
           <div class="nueva-pie">
-            <button class="btn-fuerte" type="submit" id="btn-crear">Crear cotización</button>
+            <button class="btn-suave" type="button" id="p-atras" hidden>&larr; Atrás</button>
+            <button class="btn-fuerte" type="button" id="p-siguiente">Siguiente &rarr;</button>
+            <button class="btn-fuerte" type="submit" id="btn-crear" hidden>Crear cotización</button>
             <p class="estado-linea" id="estado-nueva" role="status" aria-live="polite"></p>
           </div>
         </div>
@@ -1105,7 +1203,8 @@
     wa:       '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .1-1.6-.1a13 13 0 0 1-5-4.4c-.4-.6-.9-1.5-.9-2.4s.5-1.4.7-1.6c.2-.2.4-.3.6-.3h.5c.2 0 .4 0 .6.4l.8 1.9c0 .2 0 .3-.1.5l-.4.5c-.1.1-.3.3-.1.6.2.3.7 1.1 1.4 1.8.9.8 1.6 1 1.9 1.2.3.1.4 0 .6-.1l.7-.9c.2-.2.3-.2.6-.1l1.8.9c.3.1.4.2.5.3v1.2Z"/></svg>',
     visto:    ico("M20 6 9 17l-5-5"),
     silencio: ico("M11 5 6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6"),
-    flecha:   ico("M5 12h13m-5-6 6 6-6 6")
+    flecha:   ico("M5 12h13m-5-6 6 6-6 6"),
+    mas:      ico("M12 5v14M5 12h14")
   };
 
   /* El tema arranca por lo que tenga puesto el sistema y se queda con
@@ -1459,14 +1558,32 @@
     });
   })();
 
-  function llenarFiltroEstados() {
-    if (!ESTADOS || $("f-estado").options.length > 1) return;
-    Object.keys(ESTADOS).forEach(function (k) {
-      var o = document.createElement("option");
-      o.value = k; o.textContent = ESTADOS[k].etiqueta;
-      $("f-estado").appendChild(o);
-    });
+  /* Las pestañas se repintan con cada carga porque los números cambian
+     con los demás filtros: "Hechas 13" en todo el año no es "Hechas 13"
+     en la última semana. */
+  function pintarPestanasEstado(d) {
+    if (!ESTADOS) return;
+    var c = d.conteos || {};
+    var total = Object.keys(c).reduce(function (a, k) { return a + c[k]; }, 0);
+    var botones = [{ k: "", etq: "Todas", n: total }].concat(
+      Object.keys(ESTADOS).map(function (k) {
+        return { k: k, etq: ESTADOS[k].etiqueta, n: c[k] || 0 };
+      }));
+
+    $("pest-est").innerHTML = botones.map(function (b) {
+      return '<button type="button" role="tab" data-est="' + b.k + '"' +
+        (filtro.estado === b.k ? ' aria-selected="true"' : ' aria-selected="false"') + ">" +
+        escHtml(b.etq) + '<span class="n">' + (b.n || "") + "</span></button>";
+    }).join("");
   }
+
+  $("pest-est").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-est]");
+    if (!b || b.dataset.est === filtro.estado) return;
+    filtro.estado = b.dataset.est;
+    pagina = 1;
+    cargarTabla();
+  });
 
   /* El rango del resumen. Vive aparte del de las listas porque son dos
      preguntas distintas: acá uno mira un periodo, allá busca un
@@ -1513,7 +1630,6 @@
     pedir("/api/panel/resumen" + (p.toString() ? "?" + p.toString() : ""))
       .then(function (d) {
         ESTADOS = d.estados;
-        llenarFiltroEstados();
         // El servidor manda el rango que de verdad usó: si no se pidió
         // ninguno, es el de por defecto, y los controles tienen que
         // mostrarlo en vez de quedarse en blanco.
@@ -1616,7 +1732,10 @@
      que la de ayer — y poder deshacerlo de un toque. */
   function pintarAplicado() {
     var caja = $("aplicado");
-    var puestos = Object.keys(filtro).filter(function (k) { return filtro[k]; });
+    var puestos = Object.keys(filtro).filter(function (k) {
+      // El estado no va de marca: ya lo dice la pestaña que está activa.
+      return filtro[k] && k !== "estado";
+    });
     if (!puestos.length) { caja.hidden = true; return; }
 
     caja.innerHTML = puestos.map(function (k) {
@@ -1640,7 +1759,7 @@
   function sincronizarControles() {
     $("desde").value = filtro.desde;
     $("hasta").value = filtro.hasta;
-    $("f-estado").value = filtro.estado;
+    $("l-busca").value = filtro.buscar;
   }
 
   function pintarPaginacion(d) {
@@ -1808,8 +1927,8 @@
     pedir(urlConFiltros("/api/panel/solicitudes", true))
       .then(function (d) {
         ESTADOS = d.estados || ESTADOS;
-        llenarFiltroEstados();
         ultimaLista = d;
+        pintarPestanasEstado(d);
         dibujarLista();
         pintarPaginacion(d);
         pintarAplicado();
@@ -1899,6 +2018,9 @@
      ========================================================= */
 
   var OPC = null, GEO = null;
+  // Cliente que quedó esperando para llenar el formulario. Se guarda
+  // acá porque la vista puede tardar en cargar sus opciones.
+  var prellenar = null;
 
   function opciones(sel, lista, vacio) {
     sel.innerHTML = '<option value="">' + escHtml(vacio) + "</option>" +
@@ -1936,8 +2058,39 @@
     opciones(sel, lista.map(function (k) { return { id: k, etiqueta: k }; }), "Escoja…");
   }
 
+  /* Traer un cliente al formulario. La ubicación se copia porque casi
+     siempre el trabajo es en la misma propiedad; si no lo es, se
+     cambia en el paso dos, que es donde se está mirando. */
+  function aplicarPrellenado() {
+    var c = prellenar; prellenar = null;
+    if (!c) return;
+    // Se limpia primero: si no, arrastra el servicio de la cotización
+    // anterior y uno la manda con el dato equivocado sin darse cuenta.
+    $("form-nueva").reset();
+    refrescarServicio();
+    $("n-nombre").value = c.nombre || "";
+    $("n-telefono").value = c.telefono || "";
+    $("n-cedula").value = c.cedula || "";
+    $("n-correo").value = c.correo || "";
+    if (c.provincia && GEO[c.provincia]) {
+      $("n-provincia").value = c.provincia; refrescarCanton();
+      if (c.canton && GEO[c.provincia][c.canton]) {
+        $("n-canton").value = c.canton; refrescarDistrito();
+        if (c.distrito) $("n-distrito").value = c.distrito;
+      }
+    }
+    $("ya-existe").innerHTML = "<span>Cotización para <b>" + escHtml(c.nombre) +
+      "</b>. Falta escoger el servicio.</span>";
+    $("ya-existe").hidden = false;
+  }
+
   function cargarNueva() {
-    if (OPC && GEO) { $("form-nueva").hidden = false; return; }
+    if (OPC && GEO) {
+      $("form-nueva").hidden = false;
+      aplicarPrellenado();
+      mostrarPaso(prellenar ? paso : 1);
+      return;
+    }
     $("estado-nueva-carga").textContent = "Cargando…";
     Promise.all([pedir("/api/cotizar/opciones"), pedir("/api/geografia")])
       .then(function (r) {
@@ -1951,6 +2104,8 @@
         refrescarServicio();
         $("estado-nueva-carga").textContent = "";
         $("form-nueva").hidden = false;
+        aplicarPrellenado();
+        mostrarPaso(1);
       })
       .catch(function () {
         $("estado-nueva-carga").textContent = "No se pudieron cargar las opciones. Intente de nuevo.";
@@ -1987,10 +2142,138 @@
     $("form-nueva").reset();
     refrescarServicio();
     refrescarCanton();
+    $("ya-existe").hidden = true;
     $("nueva-hecha").hidden = true;
     $("form-nueva").hidden = false;
+    mostrarPaso(1);
+  });
+
+  /* ---------- El recorrido por pasos ---------- */
+
+  var paso = 1;
+  var TOTAL_PASOS = 4;
+
+  // Qué hay que tener contestado para poder seguir. Se comprueba acá y
+  // no al final: llegar al paso cuatro y descubrir que falta el cantón
+  // obliga a devolverse a buscarlo.
+  var REQUIERE = {
+    1: [["n-servicio", "el servicio"], ["n-perfil", "el tipo de propiedad"],
+        ["n-ultimo", "cuándo fue el último servicio"], ["n-acceso", "dónde para el camión"]],
+    2: [["n-provincia", "la provincia"], ["n-canton", "el cantón"]],
+    3: [["n-telefono", "el teléfono"], ["n-nombre", "el nombre"]]
+  };
+
+  function faltaEnPaso(n) {
+    var lista = REQUIERE[n] || [];
+    for (var i = 0; i < lista.length; i++) {
+      if (!$(lista[i][0]).value.trim()) return lista[i];
+    }
+    return null;
+  }
+
+  function mostrarPaso(n) {
+    paso = Math.max(1, Math.min(TOTAL_PASOS, n));
+    Array.prototype.forEach.call(document.querySelectorAll(".paso"), function (sec) {
+      sec.hidden = Number(sec.dataset.paso) !== paso;
+    });
+    Array.prototype.forEach.call($("pasos").children, function (li) {
+      var n2 = Number(li.dataset.n);
+      li.dataset.estado = n2 === paso ? "ahora" : n2 < paso ? "listo" : "";
+    });
+    $("p-atras").hidden = paso === 1;
+    $("p-siguiente").hidden = paso === TOTAL_PASOS;
+    $("btn-crear").hidden = paso !== TOTAL_PASOS;
     $("estado-nueva").textContent = "";
-    $("n-servicio").focus();
+    if (paso === TOTAL_PASOS) pintarRepaso();
+    var primero = document.querySelector('.paso[data-paso="' + paso + '"] select, .paso[data-paso="' + paso + '"] input');
+    if (primero) primero.focus();
+  }
+
+  $("p-siguiente").addEventListener("click", function () {
+    var falta = faltaEnPaso(paso);
+    if (falta) {
+      $("estado-nueva").textContent = "Falta " + falta[1] + ".";
+      $("estado-nueva").classList.add("is-error");
+      $(falta[0]).focus();
+      return;
+    }
+    $("estado-nueva").classList.remove("is-error");
+    mostrarPaso(paso + 1);
+  });
+  $("p-atras").addEventListener("click", function () { mostrarPaso(paso - 1); });
+  $("pasos").addEventListener("click", function (e) {
+    // Sólo se puede saltar hacia atrás: hacia adelante hay que contestar.
+    var li = e.target.closest("li[data-n]");
+    if (li && Number(li.dataset.n) < paso) mostrarPaso(Number(li.dataset.n));
+  });
+
+  function textoOpcion(id) {
+    var sel = $(id);
+    return sel.selectedIndex > 0 ? sel.options[sel.selectedIndex].textContent : "—";
+  }
+
+  function pintarRepaso() {
+    var lugar = [$("n-distrito").value, $("n-canton").value, $("n-provincia").value]
+      .filter(Boolean).join(", ");
+    var filas = [
+      ["Servicio", textoOpcion("n-servicio")],
+      ["Propiedad", textoOpcion("n-perfil")],
+      ["Último servicio", textoOpcion("n-ultimo")],
+      ["Acceso", textoOpcion("n-acceso")],
+      ["Ubicación", lugar || "—"],
+      ["Cliente", $("n-nombre").value || "—"],
+      ["Teléfono", $("n-telefono").value || "—"],
+      ["Cédula", $("n-cedula").value || "—"],
+      ["Correo", $("n-correo").value || "—"]
+    ];
+    $("repaso").innerHTML = filas.map(function (f) {
+      return "<div><dt>" + escHtml(f[0]) + "</dt><dd>" + escHtml(f[1]) + "</dd></div>";
+    }).join("");
+  }
+
+  /* Si el teléfono ya está registrado, se ofrece traer los datos en vez
+     de volver a escribirlos. Es lo que evita terminar con el mismo
+     señor tres veces con el nombre escrito distinto. */
+  var yaReloj = null;
+  $("n-telefono").addEventListener("input", function () {
+    var d = $("n-telefono").value.replace(/\D/g, "");
+    $("ya-existe").hidden = true;
+    if (d.length !== 8) return;
+    clearTimeout(yaReloj);
+    yaReloj = setTimeout(function () {
+      pedir("/api/panel/buscar?q=" + encodeURIComponent(d))
+        .then(function (r) {
+          var c = (r.resultados || []).filter(function (x) { return x.tipo === "cliente"; })[0];
+          if (!c) return;
+          $("ya-existe").innerHTML = "<span>Ya está registrado: <b>" + escHtml(c.etiqueta) +
+            "</b></span><button type=\"button\" id=\"usar-cliente\" data-id=\"" + c.ir.id + "\">Traer sus datos</button>";
+          $("ya-existe").hidden = false;
+        })
+        .catch(function () {});
+    }, 350);
+  });
+
+  $("ya-existe").addEventListener("click", function (e) {
+    var b = e.target.closest("#usar-cliente");
+    if (!b) return;
+    pedir("/api/panel/cliente?id=" + encodeURIComponent(b.dataset.id))
+      .then(function (d) {
+        var c = d.cliente;
+        $("n-nombre").value = c.nombre || "";
+        $("n-cedula").value = c.cedula || "";
+        $("n-correo").value = c.correo || "";
+        // La ubicación del cliente sólo se trae si el paso anterior
+        // quedó en blanco: el trabajo puede ser en otra propiedad.
+        if (!$("n-provincia").value && c.provincia && GEO[c.provincia]) {
+          $("n-provincia").value = c.provincia; refrescarCanton();
+          if (c.canton && GEO[c.provincia][c.canton]) {
+            $("n-canton").value = c.canton; refrescarDistrito();
+            if (c.distrito) $("n-distrito").value = c.distrito;
+          }
+        }
+        $("ya-existe").innerHTML = "<span>Datos traídos de <b>" + escHtml(c.nombre) + "</b>.</span>";
+      })
+      .catch(function () {});
   });
 
   $("n-servicio").addEventListener("change", refrescarServicio);
@@ -2156,6 +2439,7 @@
     var acc = [];
     if (c.wa) acc.push('<a class="bt wa" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
     acc.push('<a class="bt" href="tel:+506' + escHtml(String(c.telefono).replace(/\D/g, "")) + '">' + ICO.tel + "Llamar</a>");
+    acc.unshift('<button type="button" class="bt fuerte" id="cf-cotizar">' + ICO.mas + "Nueva cotización</button>");
 
     var lugar = [c.distrito, c.canton, c.provincia].filter(Boolean).join(", ");
     var ops = Object.keys(d.canales).map(function (k) {
@@ -2205,6 +2489,11 @@
           (d.servicios.length ? d.servicios.length + (d.servicios.length === 1 ? " trabajo" : " trabajos") : "") +
         "</span></div>" + hist +
       "</div>";
+
+    $("cf-cotizar").addEventListener("click", function () {
+      prellenar = c;
+      irA("nueva", {});
+    });
 
     $("cf-guardar").addEventListener("click", function () {
       var aviso = $("cf-aviso");
@@ -2506,7 +2795,10 @@
     if (e.key === "Escape") { cerrarHallazgos(); $("buscar").blur(); }
   });
 
-  $("btn-nueva").addEventListener("click", function () { irA("nueva", {}); });
+  $("btn-nueva").addEventListener("click", function () {
+    prellenar = null;
+    irA("nueva", {});
+  });
 
   /* =========================================================
      Navegación y arranque
@@ -2566,14 +2858,23 @@
   /* Los filtros se aplican al cambiarlos, sin botón. Un "Filtrar" que
      hay que acordarse de apretar es la forma más común de mirar una
      lista equivocada creyendo que está filtrada. */
-  ["desde", "hasta", "f-estado"].forEach(function (id) {
+  ["desde", "hasta"].forEach(function (id) {
     $(id).addEventListener("change", function () {
       filtro.desde = $("desde").value;
       filtro.hasta = $("hasta").value;
-      filtro.estado = $("f-estado").value;
       pagina = 1;
       cargarTabla();
     });
+  });
+
+  var listaReloj = null;
+  $("l-busca").addEventListener("input", function () {
+    clearTimeout(listaReloj);
+    listaReloj = setTimeout(function () {
+      filtro.buscar = $("l-busca").value.trim();
+      pagina = 1;
+      cargarTabla();
+    }, 300);
   });
 
   $("btn-antes").addEventListener("click", function () { if (pagina > 1) { pagina--; cargarTabla(); } });

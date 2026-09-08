@@ -235,8 +235,19 @@ barra sería magia: la lista cambiaría sin explicar por qué.
 
 ### Nueva cotización
 
-Para el cliente que llama por teléfono o que llega al local. Se llenan
-las mismas preguntas que hace Beto —servicio, tipo de propiedad, último
+Cuatro pasos, no una pared de once campos: **Servicio → Ubicación →
+Cliente → Confirmar**. No se puede avanzar sin contestar lo del paso,
+que es lo que evita llegar al final con un hueco; hacia atrás se salta
+libremente tocando el riel de arriba.
+
+En el paso del cliente, al escribir un teléfono ya registrado aparece
+**"Ya está registrado: ... — Traer sus datos"**. Es lo que evita
+terminar con el mismo señor tres veces con el nombre escrito distinto.
+
+Desde la ficha de un cliente, el botón **Nueva cotización** abre el
+formulario con sus datos y su ubicación ya puestos.
+
+Se llenan las mismas preguntas que hace Beto —servicio, tipo de propiedad, último
 servicio, acceso, provincia/cantón/distrito, nombre y teléfono— y sale
 **la misma cotización**: con su número, su documento y su llave, guardada
 en la misma tabla y marcada con origen `panel`.
@@ -320,11 +331,17 @@ En pantalla van sólo las columnas con las que se decide qué hacer. El
 documento**: se sacaron de la tabla para dejarle campo a las tres
 columnas de trabajo.
 
-Los filtros —fechas, estado, y los de provincia y servicio que llegan
-desde el resumen— se aplican solos al cambiarlos, sin botón: un
-"Filtrar" que hay que acordarse de apretar es la forma más común de
-mirar una lista equivocada creyendo que está filtrada. El CSV baja lo
-que esté filtrado, todas las páginas y no sólo la que se ve.
+Arriba van las **pestañas de estado con su conteo** —Todas, Sin
+atender, Contactada, Agendada, Hecha, Perdida— que responden "¿cuántas
+hay en cada punto?" antes de abrir ninguna. Los números respetan los
+demás filtros: "Hecha 13" en todo el año no es "Hecha 13" en la última
+semana.
+
+Debajo, un campo para **filtrar esa lista** (nombre, teléfono, cédula o
+número) y el rango de fechas. Todo se aplica solo al cambiarlo, sin
+botón: un "Filtrar" que hay que acordarse de apretar es la forma más
+común de mirar una lista equivocada creyendo que está filtrada. El CSV
+baja lo que esté filtrado, todas las páginas y no sólo la que se ve.
 
 ### Por qué WhatsApp es un enlace y no un envío
 
