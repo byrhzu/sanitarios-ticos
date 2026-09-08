@@ -984,6 +984,32 @@ Dos cosas que costaron y quedan anotadas:
   hueco que queda debajo se pinta del gris de la camisa sin salirse de
   la silueta, así que si algo asoma, asoma hombro.
 
+### 21.3b El parche gris sobre el fondo claro
+
+Frank sobresale 40px del botón, así que **el hombro queda por encima
+del botón, contra el papel de la página**. Ahí el relleno gris con que
+se tapaba el hueco se veía como un parche pegado — un bloque de color
+plano sin contorno, flotando junto al brazo.
+
+La corrección no fue rellenar mejor: fue **dejarle al cuerpo el
+contorno oscuro del brazo**. Ahora la piel se va con la capa que gira y
+la línea se queda, así que el hombro termina en un trazo dibujado y no
+en un corte de color. Ya no hace falta ningún relleno.
+
+Además las dos capas **se solapan tres píxeles**: el brazo se lleva un
+poco de más hacia adentro pero el cuerpo no lo suelta. Ese solape es lo
+que evita que al girar se abra una rendija entre la piel y el hombro.
+
+### 21.3c La caché de un año
+
+`_headers` sirve `/assets/img/*` con `max-age=31536000, immutable`, y
+el propio archivo dice por qué: **las imágenes cambian de nombre cuando
+cambian**. Sobrescribirlas con el mismo nombre deja a quien ya visitó
+el sitio con la versión vieja durante un año.
+
+Por eso las capas de Frank llevan sufijo (`frank-cuerpo-2.webp`). Si
+hay que retocarlas otra vez, sube el número — no se sobrescriben.
+
 ### 21.4 Qué sí se nota a 44px y qué no
 
 A tamaño de botón Frank mide 44×90: la cara son 14px y los ojos dos.
