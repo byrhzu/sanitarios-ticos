@@ -608,6 +608,14 @@ async function resumenPanel(request, env) {
   const url = new URL(request.url);
   const { desde, hasta, dias } = rangoResumen(url);
 
+  // El mismo largo, pegado hacia atrás: si el rango son 30 días, el
+  // periodo anterior son los 30 anteriores a `desde`.
+  const previo = (function () {
+    const fin = new Date(Date.parse(desde + "T00:00:00Z") - 86400000);
+    const ini = new Date(fin.getTime() - (dias - 1) * 86400000);
+    return { desde: ini.toISOString().slice(0, 10), hasta: fin.toISOString().slice(0, 10) };
+  })();
+
   const dia = `date(creado, '-6 hours')`;
   const enRango = `${dia} BETWEEN ? AND ?`;
   const R = [desde, hasta];
@@ -652,7 +660,39 @@ async function resumenPanel(request, env) {
       // 10 · cuántas siguen sin atender, en total
       q(`SELECT
            (SELECT COUNT(*) FROM cotizaciones WHERE estado = 'nueva') AS cot,
-           (SELECT COUNT(*) FROM solicitudes  WHERE estado = 'nueva') AS sol`)
+           (SELECT COUNT(*) FROM solicitudes  WHERE estado = 'nueva') AS sol`),
+      /* 11 · lo cobrado en el rango. Sale de los trabajos anotados, que
+             es plata real recibida — no del rango de las cotizaciones,
+             que es una estimación de algo que puede no pasar. */
+      q(`SELECT COUNT(*) AS n, COALESCE(SUM(monto), 0) AS s
+         FROM servicios WHERE fecha BETWEEN ? AND ?`, R),
+      /* 12 · el mismo periodo, corrido hacia atrás. Sin esto un número
+             solo no dice nada: 38 cotizaciones puede ser un buen mes o
+             la mitad del anterior. */
+      q(`SELECT
+           (SELECT COUNT(*) FROM cotizaciones WHERE ${dia} BETWEEN ?1 AND ?2) AS cot,
+           (SELECT COUNT(*) FROM solicitudes  WHERE ${dia} BETWEEN ?1 AND ?2) AS sol,
+           (SELECT COALESCE(SUM(monto),0) FROM servicios WHERE fecha BETWEEN ?1 AND ?2) AS ing`,
+        [previo.desde, previo.hasta]),
+      // 13 · solicitudes que llevan más de un día sin que nadie las toque
+      q(`SELECT COUNT(*) AS n FROM solicitudes
+         WHERE estado = 'nueva' AND creado < datetime('now', '-24 hours')`),
+      /* 14 · cotizaciones abiertas que se están venciendo. La vigencia
+             son ${TARIFAS.vigenciaDias} días; se avisa cinco antes. */
+      q(`SELECT COUNT(*) AS n FROM cotizaciones
+         WHERE estado IN ('nueva', 'contactada')
+           AND ${dia} <= date('now', '-6 hours', '-${Math.max(1, TARIFAS.vigenciaDias - 5)} days')`),
+      /* 15 · los mantenimientos que vienen. Sólo el último trabajo de
+             cada cliente y sólo si tiene el recordatorio prendido. */
+      q(`SELECT s.proximo, s.fecha, s.servicio, c.id AS cliente_id, c.nombre,
+                c.telefono, c.canton, c.provincia,
+                CAST(julianday(s.proximo) - julianday(date('now','-6 hours')) AS INTEGER) AS dias
+         FROM servicios s JOIN clientes c ON c.id = s.cliente_id
+         WHERE s.id = (SELECT s2.id FROM servicios s2 WHERE s2.cliente_id = c.id
+                       ORDER BY s2.fecha DESC, s2.id DESC LIMIT 1)
+           AND s.proximo IS NOT NULL AND c.recordatorio = 1
+           AND s.proximo <= date('now', '-6 hours', '+45 days')
+         ORDER BY s.proximo LIMIT 8`)
     ]);
 
     const filas = (i) => (r[i] && r[i].results) || [];
@@ -709,6 +749,57 @@ async function resumenPanel(request, env) {
 
     const abierto = uno(9);
     const esperando = uno(10);
+    const cobrado = uno(11);
+    const antes = uno(12);
+    const solViejas = (uno(13).n) || 0;
+    const porVencer = (uno(14).n) || 0;
+
+    // Variación contra el periodo anterior. Sin base no hay porcentaje:
+    // pasar de 0 a 5 no es "subió 500%", es que antes no había nada.
+    const variacion = (hoy, ayer) => (ayer > 0 ? Math.round(((hoy - ayer) / ayer) * 100) : null);
+
+    const proximos = filas(15).map((f) => ({
+      clienteId: f.cliente_id, nombre: f.nombre, telefono: f.telefono,
+      servicio: etiqueta(f.servicio, null, "servicio"),
+      lugar: [f.canton, f.provincia].filter(Boolean).join(", ") || null,
+      proximo: f.proximo, dias: f.dias
+    }));
+
+    /* Lo que hay que hacer hoy, en una sola lista. El panel deja de ser
+       una pantalla donde uno mira números y pasa a decir qué sigue.
+       Cada línea es un conteo con su destino: no se listan los
+       registros uno por uno porque la pregunta acá es "cuánto hay",
+       no "cuál es". */
+    const atencion = [];
+    if (esperando.cot) atencion.push({
+      grado: "alto", n: esperando.cot,
+      texto: esperando.cot === 1 ? "cotización sin responder" : "cotizaciones sin responder",
+      ir: { vista: "cotizaciones", estado: "nueva" }
+    });
+    if (solViejas) atencion.push({
+      grado: "alto", n: solViejas,
+      texto: solViejas === 1 ? "solicitud lleva más de un día esperando"
+                             : "solicitudes llevan más de un día esperando",
+      ir: { vista: "solicitudes", estado: "nueva" }
+    });
+    const vencidos = proximos.filter((p) => p.dias < 0).length;
+    if (vencidos) atencion.push({
+      grado: "alto", n: vencidos,
+      texto: vencidos === 1 ? "mantenimiento se pasó de fecha" : "mantenimientos se pasaron de fecha",
+      ir: { vista: "agenda" }
+    });
+    if (porVencer) atencion.push({
+      grado: "medio", n: porVencer,
+      texto: porVencer === 1 ? "cotización está por vencerse" : "cotizaciones están por vencerse",
+      ir: { vista: "cotizaciones", estado: "nueva" }
+    });
+    const estaSemana = proximos.filter((p) => p.dias >= 0 && p.dias <= 7).length;
+    if (estaSemana) atencion.push({
+      grado: "medio", n: estaSemana,
+      texto: estaSemana === 1 ? "cliente cumple mantenimiento esta semana"
+                              : "clientes cumplen mantenimiento esta semana",
+      ir: { vista: "agenda" }
+    });
 
     return json({
       ok: true,
@@ -716,6 +807,18 @@ async function resumenPanel(request, env) {
       serie,
       // Lo que pasó dentro del rango
       rango: { cot: suma(estCot), sol: suma(estSol) },
+      ingresos: { monto: cobrado.s || 0, trabajos: cobrado.n || 0 },
+      previo: {
+        desde: previo.desde, hasta: previo.hasta,
+        cot: antes.cot || 0, sol: antes.sol || 0, ing: antes.ing || 0
+      },
+      variacion: {
+        cot: variacion(suma(estCot), antes.cot || 0),
+        sol: variacion(suma(estSol), antes.sol || 0),
+        ing: variacion(cobrado.s || 0, antes.ing || 0)
+      },
+      atencion,
+      proximos,
       enviadas,
       cerradas,
       // Porcentaje sobre lo enviado, no sobre lo resuelto: es lo que
@@ -825,6 +928,12 @@ async function buscarPanel(request, env) {
    ============================================================= */
 
 const CANALES = { whatsapp: "WhatsApp", correo: "Correo", ambos: "WhatsApp y correo" };
+
+/* Cada cuánto se repite un servicio. Va de tres meses porque una trampa
+   de grasa de restaurante se limpia trimestral, no cada dos años como
+   un tanque séptico de casa. La lista es cerrada: es lo que se acepta
+   del panel y lo que se ofrece en los menús, de un solo lugar. */
+const PERIODOS = [3, 6, 9, 12, 18, 24, 36, 48];
 const MESES_LARGO = ["enero","febrero","marzo","abril","mayo","junio",
                      "julio","agosto","setiembre","octubre","noviembre","diciembre"];
 
@@ -868,7 +977,7 @@ async function guardarCliente(env, d) {
    del trabajo, no la del registro: de ella sale el recordatorio, así
    que anotarla mal corre la fecha dos años. */
 async function guardarServicio(env, clienteId, d, meses) {
-  const m = Number.isFinite(+d.meses) && +d.meses > 0 ? Math.min(+d.meses, 120) : (meses || 24);
+  const m = PERIODOS.indexOf(+d.meses) !== -1 ? +d.meses : (meses || 24);
   const fecha = soloFecha(d.fecha) || new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
 
   await env.DB.prepare(
@@ -940,7 +1049,8 @@ async function listaClientes(request, env) {
       total: total ? total.n : 0,
       pagina, porPagina: POR_PAGINA,
       paginas: Math.max(1, Math.ceil((total ? total.n : 0) / POR_PAGINA)),
-      canales: CANALES
+      canales: CANALES,
+      periodos: PERIODOS
     });
   } catch (e) {
     console.error("Error al listar clientes:", e);
@@ -975,7 +1085,8 @@ async function verCliente(request, env) {
       servicios: results.map((s) => Object.assign({}, s, {
         servicioNombre: etiqueta(s.servicio, null, "servicio")
       })),
-      canales: CANALES
+      canales: CANALES,
+      periodos: PERIODOS
     });
   } catch (e) {
     console.error("Error al ver el cliente:", e);
@@ -996,7 +1107,7 @@ async function editarCliente(request, env) {
   if (!Number.isFinite(id)) return json({ ok: false, error: "Cliente inválido" }, 400);
 
   const canal = Object.prototype.hasOwnProperty.call(CANALES, b.canal) ? b.canal : "whatsapp";
-  const meses = Number.isFinite(+b.meses) && +b.meses > 0 ? Math.min(+b.meses, 120) : 24;
+  const meses = PERIODOS.indexOf(+b.meses) !== -1 ? +b.meses : 24;
 
   try {
     await env.DB.prepare(
@@ -1008,7 +1119,22 @@ async function editarCliente(request, env) {
       texto(b.correo, 120) || null, texto(b.senas, 200) || null, texto(b.nota, 400) || null,
       b.recordatorio ? 1 : 0, canal, meses, id
     ).run();
-    return json({ ok: true });
+
+    /* Cambiar cada cuánto se le hace el servicio tiene que mover la
+       fecha que ya estaba calculada. Sin esto uno ponía "6 meses" y la
+       agenda seguía mostrando los 24 con que se registró — el ajuste
+       sólo servía para el trabajo siguiente, que es dentro de dos años.
+
+       Se recalcula ÚNICAMENTE el último servicio: es el que manda la
+       agenda. Los anteriores son historia y dicen lo que era cierto
+       cuando se hicieron. */
+    await env.DB.prepare(
+      `UPDATE servicios SET proximo = date(fecha, '+' || ?1 || ' months')
+       WHERE id = (SELECT s.id FROM servicios s WHERE s.cliente_id = ?2
+                   ORDER BY s.fecha DESC, s.id DESC LIMIT 1)`
+    ).bind(meses, id).run();
+
+    return json({ ok: true, meses });
   } catch (e) {
     console.error("Error al guardar el cliente:", e);
     return json({ ok: false, error: "No se pudo guardar" }, 500);

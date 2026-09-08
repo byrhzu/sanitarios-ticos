@@ -188,7 +188,10 @@
 
   .lienzo { flex: 1; min-width: 0; padding: 1.5rem clamp(1rem, 2.2vw, 1.9rem) 4rem; }
   .lienzo-top { display: flex; align-items: center; gap: var(--e3) var(--e4); flex-wrap: wrap; margin-bottom: var(--e5); }
+  .titulo-caja { min-width: 0; }
   .lienzo-top h1 { font-family: var(--display); font-size: 1.4rem; margin: 0; }
+  .sub-titulo { display: block; color: var(--p-tenue); font-size: .82rem; margin-top: .15rem; }
+  .sub-titulo:empty { display: none; }
   .lienzo-top .derecha { margin-left: auto; display: flex; align-items: center; gap: var(--e2); }
 
   /* Buscador global. Encuentra en una sola caja lo que si no hay que ir
@@ -271,7 +274,11 @@
   .tarj-h .meta { margin-left: auto; color: var(--p-tenue); font-size: .8rem; }
 
   .rejilla { display: grid; gap: 1rem; }
-  .rejilla.cifras { grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
+  /* Dos o cuatro, nunca tres. Con `auto-fit` la cuarta tarjeta caía
+     sola en una segunda fila en las pantallas de laptop angostas, y una
+     fila de KPIs con un huérfano se lee como si faltara algo. */
+  .rejilla.cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: 1120px) { .rejilla.cifras { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   .rejilla.cuatro { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
   /* Las barras arrancan todas a la misma altura aunque una lista tenga
      cinco filas y otra tres: el título arriba y la lista debajo, sin
@@ -566,7 +573,31 @@
   }
   .mes-nav:hover { background: var(--p-sup2); color: var(--p-txt); }
 
+  /* Requiere atención. La cifra a la izquierda, la frase en medio y la
+     flecha a la derecha: se lee "3 cotizaciones sin responder →" de un
+     golpe y la fila entera es el botón. */
+  .aten {
+    display: flex; align-items: center; gap: var(--e3); width: 100%;
+    padding: .6rem .5rem; border-radius: 8px; text-align: left;
+    transition: background .15s var(--ease);
+  }
+  .aten + .aten { border-top: 1px solid var(--p-linea); border-radius: 0; }
+  .aten:hover { background: var(--p-sup2); }
+  .aten-n {
+    flex: 0 0 auto; min-width: 1.9rem; height: 1.9rem; border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 600; font-variant-numeric: tabular-nums; padding: 0 .4rem;
+  }
+  .aten-n[data-grado="alto"]  { background: var(--est-mal-bg);    color: var(--est-mal-tx); }
+  .aten-n[data-grado="medio"] { background: var(--est-espera-bg); color: var(--est-espera-tx); }
+  .aten-t { flex: 1; min-width: 0; }
+  .aten-ir { color: var(--p-tenue); display: inline-flex; }
+  .aten-ir svg { width: 16px; height: 16px; }
+  .aten:hover .aten-ir { color: var(--p-acento-t); }
+
   .toca-fila { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; padding: .68rem 0; border-top: 1px solid var(--p-linea); }
+  .toca-fila[data-ir] { cursor: pointer; margin: 0 -.5rem; padding-left: .5rem; padding-right: .5rem; border-radius: 8px; }
+  .toca-fila[data-ir]:hover { background: var(--p-sup2); }
   .toca-fila:first-child { border-top: 0; }
   .toca-quien { flex: 1 1 11rem; min-width: 0; }
   .toca-quien b { font-weight: 500; }
@@ -663,7 +694,12 @@
     .lienzo { padding: 1rem .85rem 6rem; }
     .tarj-h .meta { display: none; }
     .tarj-h .meta.siempre { display: inline; }
-    .rejilla.cifras { grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: .7rem; }
+    .rejilla.cifras { gap: .7rem; }
+    /* En dos columnas de 375px, "₡1.340.000" a 1.9rem se sale de la
+       tarjeta. Bajan todas por igual: si sólo bajara la del monto, las
+       cuatro cifras dejarían de compararse entre sí de un vistazo. */
+    .cifra-n { font-size: 1.45rem; letter-spacing: -.03em; }
+    .cifra { padding: .85rem .9rem .95rem; }
     .filtros { gap: .6rem; }
     .filtros .f { flex: 1 1 7rem; }
     .filtros .f input, .filtros .f select { width: 100%; }
@@ -767,7 +803,10 @@
 
   <main class="lienzo">
     <div class="lienzo-top">
-      <h1 id="titulo-vista">Resumen</h1>
+      <div class="titulo-caja">
+        <h1 id="titulo-vista">Resumen</h1>
+        <span class="sub-titulo" id="sub-titulo"></span>
+      </div>
 
       <div class="buscador">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
@@ -818,6 +857,42 @@
 
       <div class="rejilla cifras" id="cifras"></div>
 
+      <!-- Lo primero que hay que hacer hoy. El panel deja de ser una
+           pantalla donde uno mira números y pasa a decir qué sigue. -->
+      <div class="tarj" id="tarj-atencion" hidden>
+        <div class="tarj-h">
+          <h2>Requiere atención</h2>
+          <span class="meta" id="atencion-n"></span>
+        </div>
+        <div id="atencion"></div>
+      </div>
+
+      <div class="rejilla dos">
+        <div class="tarj">
+          <div class="tarj-h">
+            <h2>Actividad</h2>
+            <span class="meta siempre" id="serie-rango"></span>
+          </div>
+          <div class="leyenda">
+            <span><i class="cot"></i>Cotizaciones</span>
+            <span><i class="sol"></i>Solicitudes</span>
+          </div>
+          <div class="serie-caja">
+            <svg class="serie" id="serie" role="img" aria-label="Entradas por día"></svg>
+            <div class="globo" id="globo" role="status" aria-live="polite"></div>
+          </div>
+          <div class="serie-eje"><span id="serie-ini"></span><span id="serie-fin"></span></div>
+        </div>
+
+        <div class="tarj">
+          <div class="tarj-h"><h2>Cierre</h2></div>
+          <div class="aro-caja">
+            <svg class="aro" id="aro" viewBox="0 0 120 120" role="img" aria-label="Porcentaje de cierre"></svg>
+          </div>
+          <div class="aro-pie" id="aro-pie"></div>
+        </div>
+      </div>
+
       <div class="rejilla dos">
         <div class="tarj" id="tarj-cola">
           <div class="tarj-h">
@@ -827,35 +902,13 @@
           <div id="cola"></div>
         </div>
 
-        <!-- El aro sale de la referencia: un porcentaje solo pide una
-             forma que se lea de un vistazo, y una barra de un solo
-             dato no es una gráfica. Debajo, las dos mitades que lo
-             componen, separadas por una línea. -->
         <div class="tarj">
           <div class="tarj-h">
-            <h2>Cierre</h2>
+            <h2>Próximos servicios</h2>
+            <span class="meta" id="proximos-n"></span>
           </div>
-          <div class="aro-caja">
-            <svg class="aro" id="aro" viewBox="0 0 120 120" role="img" aria-label="Porcentaje de cierre"></svg>
-          </div>
-          <div class="aro-pie" id="aro-pie"></div>
+          <div id="proximos"></div>
         </div>
-      </div>
-
-      <div class="tarj">
-        <div class="tarj-h">
-          <h2>Entradas por día</h2>
-          <span class="meta siempre" id="serie-rango"></span>
-        </div>
-        <div class="leyenda">
-          <span><i class="cot"></i>Cotizaciones</span>
-          <span><i class="sol"></i>Solicitudes</span>
-        </div>
-        <div class="serie-caja">
-          <svg class="serie" id="serie" role="img" aria-label="Entradas por día en los últimos 30 días"></svg>
-          <div class="globo" id="globo" role="status" aria-live="polite"></div>
-        </div>
-        <div class="serie-eje"><span id="serie-ini"></span><span id="serie-fin"></span></div>
       </div>
 
       <div class="rejilla cuatro">
@@ -1013,12 +1066,7 @@
       <div class="f"><label for="h-fecha">Se hizo el</label><input type="date" id="h-fecha"></div>
       <div class="f"><label for="h-monto">Se cobró <span class="opc">opcional</span></label><input type="number" id="h-monto" inputmode="numeric" placeholder="lo del rango mínimo"></div>
       <div class="f"><label for="h-meses">Recordar en</label>
-        <select id="h-meses">
-          <option value="12">12 meses</option>
-          <option value="18">18 meses</option>
-          <option value="24" selected>24 meses</option>
-          <option value="36">36 meses</option>
-        </select>
+        <select id="h-meses"></select>
       </div>
     </div>
     <label class="marca-check"><input type="checkbox" id="h-recordar" checked> Mandarle recordatorio cuando toque</label>
@@ -1056,7 +1104,8 @@
     tel:      ico("M15.5 21A13.5 13.5 0 0 1 3 8.5 3 3 0 0 1 6 5.5h1.6a1 1 0 0 1 1 .8l.7 3a1 1 0 0 1-.4 1L7.6 11.6a11 11 0 0 0 4.8 4.8l1.3-1.3a1 1 0 0 1 1-.3l3 .7a1 1 0 0 1 .8 1V18a3 3 0 0 1-3 3z"),
     wa:       '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .1-1.6-.1a13 13 0 0 1-5-4.4c-.4-.6-.9-1.5-.9-2.4s.5-1.4.7-1.6c.2-.2.4-.3.6-.3h.5c.2 0 .4 0 .6.4l.8 1.9c0 .2 0 .3-.1.5l-.4.5c-.1.1-.3.3-.1.6.2.3.7 1.1 1.4 1.8.9.8 1.6 1 1.9 1.2.3.1.4 0 .6-.1l.7-.9c.2-.2.3-.2.6-.1l1.8.9c.3.1.4.2.5.3v1.2Z"/></svg>',
     visto:    ico("M20 6 9 17l-5-5"),
-    silencio: ico("M11 5 6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6")
+    silencio: ico("M11 5 6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6"),
+    flecha:   ico("M5 12h13m-5-6 6 6-6 6")
   };
 
   /* El tema arranca por lo que tenga puesto el sistema y se queda con
@@ -1116,6 +1165,8 @@
   }
 
   var MESES = ["ene","feb","mar","abr","may","jun","jul","ago","set","oct","nov","dic"];
+  var MES_LARGO = ["enero","febrero","marzo","abril","mayo","junio",
+                   "julio","agosto","setiembre","octubre","noviembre","diciembre"];
   function fechaCorta(iso) {
     var p = String(iso || "").split("-");
     return p.length === 3 ? (Number(p[2]) + " " + MESES[Number(p[1]) - 1]) : "";
@@ -1127,6 +1178,17 @@
     var d = Math.floor(horas / 24);
     return "hace " + d + (d === 1 ? " día" : " días");
   }
+  function saludo() {
+    var h = new Date().getHours();
+    return h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
+  }
+
+  var DIAS_SEM = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  function fechaDeHoy() {
+    var h = new Date();
+    return DIAS_SEM[h.getDay()] + " " + h.getDate() + " de " + MES_LARGO[h.getMonth()] + ", " + h.getFullYear();
+  }
+
   function hoyISO() {
     var t = new Date(Date.now() - 6 * 3600 * 1000);   // hora de Costa Rica
     return t.toISOString().slice(0, 10);
@@ -1175,27 +1237,78 @@
      por fecha a propósito: una cotización de hace dos meses que nadie
      tocó sigue estando sin atender hoy, y esconderla porque cae fuera
      del rango sería justamente perderla. */
+  /* La variación contra el periodo anterior. Un número solo no dice
+     nada: 38 cotizaciones puede ser un buen mes o la mitad del
+     anterior. Si no hay con qué comparar, no se inventa un porcentaje. */
+  function delta(v) {
+    if (v === null || v === undefined) return "";
+    if (v === 0) return "igual que el periodo anterior";
+    return (v > 0 ? "▲ " : "▼ ") + Math.abs(v) + "% contra el periodo anterior";
+  }
+
   function pintarCifras(d) {
     var esperando = d.esperando.total;
     $("cifras").innerHTML = [
+      cifra({ icono: ICO.doc, n: String(d.rango.cot), t: "Cotizaciones",
+        p: delta(d.variacion.cot),
+        ir: { vista: "cotizaciones", desde: d.desde, hasta: d.hasta },
+        chispa: d.serie.map(function (f) { return f.cot; }), color: "var(--p-dato1)" }),
+
+      cifra({ icono: ICO.bandeja, n: String(d.rango.sol), t: "Solicitudes",
+        p: delta(d.variacion.sol),
+        ir: { vista: "solicitudes", desde: d.desde, hasta: d.hasta },
+        chispa: d.serie.map(function (f) { return f.sol; }), color: "var(--p-dato2)" }),
+
       cifra({ icono: ICO.alerta, n: String(esperando), t: "Sin atender",
         p: esperando ? ("más antiguo: " + espera(d.esperaMax)) : "",
         urge: esperando > 0, ir: { vista: "cotizaciones", estado: "nueva" } }),
 
-      cifra({ icono: ICO.doc, n: String(d.rango.cot), t: "Cotizaciones",
-        ir: { vista: "cotizaciones", desde: d.desde, hasta: d.hasta },
-        chispa: d.serie.map(function (f) { return f.cot; }),
-        color: "var(--p-dato1)" }),
-
-      cifra({ icono: ICO.bandeja, n: String(d.rango.sol), t: "Solicitudes",
-        ir: { vista: "solicitudes", desde: d.desde, hasta: d.hasta },
-        chispa: d.serie.map(function (f) { return f.sol; }),
-        color: "var(--p-dato2)" }),
-
-      cifra({ icono: ICO.cartera, n: colones(d.abierto.max), t: "Cotizado sin cerrar",
-        p: d.abierto.min ? ("mínimo " + colones(d.abierto.min)) : "",
-        ir: { vista: "cotizaciones" } })
+      /* Ingresos sale de los trabajos anotados, que es plata recibida.
+         No del rango de las cotizaciones, que es una estimación de algo
+         que puede no pasar. */
+      cifra({ icono: ICO.cartera, n: colones(d.ingresos.monto), t: "Cobrado",
+        p: d.ingresos.trabajos
+             ? (d.ingresos.trabajos + (d.ingresos.trabajos === 1 ? " trabajo · " : " trabajos · ") + delta(d.variacion.ing))
+             : "todavía no hay trabajos anotados en este rango",
+        ir: { vista: "clientes" } })
     ].join("");
+  }
+
+  /* Requiere atención. Cada línea es un conteo con su destino: la
+     pregunta acá es "cuánto hay", no "cuál es" — para eso está la
+     lista a la que lleva. */
+  function pintarAtencion(d) {
+    var caja = $("tarj-atencion");
+    if (!d.atencion.length) { caja.hidden = true; return; }
+    caja.hidden = false;
+    $("atencion-n").textContent = d.atencion.length === 1 ? "1 cosa" : d.atencion.length + " cosas";
+
+    $("atencion").innerHTML = d.atencion.map(function (a) {
+      return '<button type="button" class="aten" data-ir=\'' + escHtml(JSON.stringify(a.ir)) + "'>" +
+        '<span class="aten-n" data-grado="' + a.grado + '">' + a.n + "</span>" +
+        '<span class="aten-t">' + escHtml(a.texto) + "</span>" +
+        '<span class="aten-ir">' + ICO.flecha + "</span>" +
+      "</button>";
+    }).join("");
+  }
+
+  /* Próximos servicios. Es la otra mitad de "qué viene": los
+     pendientes miran hacia atrás, esto mira hacia adelante. */
+  function pintarProximos(d) {
+    $("proximos-n").textContent = d.proximos.length ? String(d.proximos.length) : "";
+    if (!d.proximos.length) {
+      $("proximos").innerHTML = '<p class="vacio-ok">Nada en los próximos 45 días. ' +
+        'Acá van a aparecer los clientes a los que les toque mantenimiento.</p>';
+      return;
+    }
+    $("proximos").innerHTML = d.proximos.map(function (p) {
+      return '<div class="toca-fila' + (p.dias < 0 ? " vencido" : "") + '" data-ir=\'' +
+        escHtml(JSON.stringify({ vista: "cliente", id: p.clienteId })) + "'>" +
+        '<div class="toca-quien"><b>' + escHtml(p.nombre) + "</b><small>" +
+          escHtml(p.servicio + (p.lugar ? " · " + p.lugar : "")) + "</small></div>" +
+        '<span class="toca-cuando">' + escHtml(cuando(p.dias)) + "</span>" +
+      "</div>";
+    }).join("");
   }
 
   /* El aro: cuántas de las cotizaciones enviadas en el rango terminaron
@@ -1410,7 +1523,9 @@
         marcarPreset();
         $("estado-resumen").textContent = "";
         pintarCifras(d);
+        pintarAtencion(d);
         pintarCola(d);
+        pintarProximos(d);
         pintarAro(d);
         pintarSerie(d);
 
@@ -1921,7 +2036,7 @@
      recordatorio y se ve el historial.
      ========================================================= */
 
-  var CANALES = null;
+  var CANALES = null, PERIODOS_SRV = null;
   var cliPagina = 1, cliBusca = "", cliReloj = null;
 
   function fechaLarga(iso) {
@@ -1951,6 +2066,7 @@
     pedir("/api/panel/clientes" + (p.toString() ? "?" + p.toString() : ""))
       .then(function (d) {
         CANALES = d.canales;
+        if (d.periodos) { PERIODOS_SRV = d.periodos; PERIODOS = d.periodos; }
         $("estado-clientes").textContent = d.total
           ? (d.total === 1 ? "1 cliente." : d.total + " clientes.")
           : (cliBusca ? "Nadie con ese dato." : "Todavía no hay clientes. El primero aparece al marcar una cotización como hecha.");
@@ -2019,6 +2135,7 @@
   function verCliente(id) {
     vista = "cliente";
     $("titulo-vista").textContent = "Cliente";
+    $("sub-titulo").textContent = "";
     Array.prototype.forEach.call(document.querySelectorAll(".barra nav button"), function (b) {
       b.setAttribute("aria-selected", String(b.dataset.vista === "clientes"));
     });
@@ -2070,8 +2187,8 @@
           campo("cf-senas", "Señas para llegar", c.senas) +
           '<div class="f"><label for="cf-canal">Recordar por</label><select id="cf-canal">' + ops + "</select></div>" +
           '<div class="f"><label for="cf-meses">Cada cuánto</label><select id="cf-meses">' +
-            [12, 18, 24, 36, 48].map(function (m) {
-              return '<option value="' + m + '"' + (m === c.meses ? " selected" : "") + ">" + m + " meses</option>";
+            (d.periodos || [24]).map(function (m) {
+              return '<option value="' + m + '"' + (m === c.meses ? " selected" : "") + ">" + textoPeriodo(m) + "</option>";
             }).join("") + "</select></div>" +
         "</div>" +
         '<div class="f" style="margin-top:.9rem;"><label for="cf-nota">Nota</label>' +
@@ -2104,9 +2221,19 @@
           meses: Number($("cf-meses").value), recordatorio: $("cf-rec").checked
         })
       })
-        .then(function () { aviso.textContent = "Guardado."; agendaCargada = false; })
+        .then(function (r) {
+          aviso.textContent = "Guardado. La próxima fecha se recalculó a " + textoPeriodo(r.meses) + ".";
+          agendaCargada = false;
+        })
         .catch(function () { aviso.textContent = "No se pudo guardar."; aviso.classList.add("is-error"); });
     });
+  }
+
+  /* Un año se dice "1 año", no "12 meses". Con periodicidades que ahora
+     van de 3 a 48, escribirlo todo en meses obliga a dividir de cabeza. */
+  function textoPeriodo(m) {
+    if (m % 12 === 0) { var a = m / 12; return a + (a === 1 ? " año" : " años"); }
+    return m + " meses";
   }
 
   function campo(id, etq, valor) {
@@ -2172,8 +2299,6 @@
   });
 
   var DOW = ["L", "K", "M", "J", "V", "S", "D"];
-  var MES_LARGO = ["enero","febrero","marzo","abril","mayo","junio",
-                   "julio","agosto","setiembre","octubre","noviembre","diciembre"];
 
   function pintarCalendario() {
     var y = calMes.getFullYear(), m = calMes.getMonth();
@@ -2290,7 +2415,14 @@
 
   var hojaResuelve = null;
 
+  // La lista viene con las opciones del cotizador, que es lo primero
+  // que carga el panel; si todavía no llegó, se usa el mínimo seguro.
+  var PERIODOS = [3, 6, 9, 12, 18, 24, 36, 48];
+
   function abrirHoja() {
+    $("h-meses").innerHTML = PERIODOS.map(function (m) {
+      return '<option value="' + m + '"' + (m === 24 ? " selected" : "") + ">" + textoPeriodo(m) + "</option>";
+    }).join("");
     $("h-fecha").value = hoyISO();
     $("h-monto").value = "";
     $("h-meses").value = "24";
@@ -2395,7 +2527,16 @@
     Array.prototype.forEach.call(document.querySelectorAll(".barra nav button"), function (b) {
       b.setAttribute("aria-selected", String(b.dataset.vista === nueva));
     });
-    $("titulo-vista").textContent = NOMBRE_VISTA[nueva] || "Panel";
+    /* El resumen saluda; las demás pantallas se nombran. Un "Buenos
+       días" en la lista de cotizaciones sería ruido — ahí uno vino a
+       trabajar, no a que lo saluden. */
+    if (nueva === "resumen") {
+      $("titulo-vista").textContent = saludo() + ", Leitón";
+      $("sub-titulo").textContent = fechaDeHoy();
+    } else {
+      $("titulo-vista").textContent = NOMBRE_VISTA[nueva] || "Panel";
+      $("sub-titulo").textContent = "";
+    }
 
     var esTabla = nueva === "cotizaciones" || nueva === "solicitudes";
     $("vista-resumen").hidden = nueva !== "resumen";

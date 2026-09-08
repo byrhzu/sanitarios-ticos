@@ -190,9 +190,24 @@ lado para nada.
 
 ### Resumen
 
-Lo primero que se ve al entrar. Cinco cifras arriba, **y todas se
-tocan**: cada una abre su propia lista ya filtrada. Si dice 2 sin
-atender, tocar el 2 muestra esas dos.
+Abre saludando y con la fecha. Debajo, en este orden — que es el orden
+de lo que hay que saber:
+
+1. **Cuatro cifras**: cotizaciones y solicitudes del rango, cada una
+   con su variación contra el periodo anterior; lo que sigue sin
+   atender; y lo **cobrado**, que sale de los trabajos anotados y no
+   del rango de las cotizaciones, porque eso último es una estimación
+   de algo que puede no pasar.
+2. **Requiere atención** — la única sección que dice qué *hacer*:
+   cotizaciones sin responder, solicitudes de más de un día,
+   mantenimientos pasados de fecha, cotizaciones por vencerse. Cada
+   línea lleva a su lista.
+3. **Actividad** y **Cierre**.
+4. **Pendientes** y **Próximos servicios**.
+5. Los cuatro desgloses.
+
+Todas las cifras se tocan: cada una abre su propia lista ya filtrada.
+Si dice 2 sin atender, tocar el 2 muestra esas dos.
 
 | Tarjeta | Qué dice |
 |---|---|
@@ -254,7 +269,13 @@ no se duplica.
 En la ficha de cada cliente están sus datos, las señas para llegar, el
 historial completo de trabajos con lo que se cobró, y tres controles:
 **si se le manda recordatorio**, **por cuál canal** (WhatsApp, correo o
-ambos) y **cada cuánto** (12, 18, 24, 36 o 48 meses).
+ambos) y **cada cuánto**: 3, 6, 9, 12, 18, 24, 36 o 48 meses. Arranca
+en tres porque una trampa de grasa de restaurante se limpia trimestral,
+no cada dos años como un tanque séptico de casa.
+
+Cambiar la periodicidad **recalcula la fecha ya guardada** del último
+trabajo. Antes no lo hacía: uno ponía seis meses y la agenda seguía
+mostrando los veinticuatro con que se registró.
 
 ### Agenda
 
