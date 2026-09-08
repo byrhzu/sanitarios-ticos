@@ -627,6 +627,50 @@
   .toca-fila.vencido .toca-cuando { color: var(--p-acento-t); font-weight: 500; }
   .toca-acc { display: flex; gap: .4rem; margin-left: auto; }
 
+  /* ---------- Avisos ----------
+     Reemplazan al alert() del navegador, que congela la página, no se
+     puede leer con lector de pantalla en su sitio y se ve igual en
+     todas las webs del mundo. Estos aparecen abajo, no tapan nada y se
+     van solos. */
+  .avisos {
+    position: fixed; left: 50%; bottom: 1.2rem; transform: translateX(-50%);
+    z-index: 70; display: flex; flex-direction: column; gap: .5rem;
+    align-items: center; pointer-events: none; padding: 0 1rem; max-width: 100%;
+  }
+  .aviso-uno {
+    display: flex; align-items: center; gap: .55rem;
+    background: var(--p-barra); color: var(--p-barra-t);
+    padding: .6rem .9rem; border-radius: 9px; font-weight: 500;
+    box-shadow: 0 10px 30px rgba(0,0,0,.28);
+    animation: subeAviso .22s var(--ease);
+  }
+  .aviso-uno svg { width: 15px; height: 15px; flex: 0 0 15px; }
+  .aviso-uno[data-tipo="ok"]  svg { color: #63d69b; }
+  .aviso-uno[data-tipo="mal"] svg { color: #ef9084; }
+  .aviso-uno.se-va { animation: bajaAviso .2s var(--ease) forwards; }
+  @keyframes subeAviso { from { opacity: 0; transform: translateY(8px); } }
+  @keyframes bajaAviso { to { opacity: 0; transform: translateY(6px); } }
+  @media (max-width: 859px) { .avisos { bottom: 4.6rem; } }
+
+  /* ---------- Esqueletos ----------
+     Mientras carga se dibuja la forma de lo que viene, no la palabra
+     "Cargando". Así la pantalla no salta cuando llegan los datos y se
+     ve de una qué tan larga va a ser. */
+  .hueso { background: var(--p-sup2); border-radius: 6px; animation: latir 1.4s ease-in-out infinite; }
+  @keyframes latir { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+  .hueso-linea { height: .8rem; }
+  .esq-cifra { background: var(--p-sup); border-radius: var(--radio); padding: 1rem 1.1rem 1.1rem; box-shadow: var(--p-sombra); }
+  .esq-fila { display: flex; align-items: center; gap: var(--e4); padding: .8rem 0; border-top: 1px solid var(--p-linea); }
+  .esq-fila:first-child { border-top: 0; }
+
+  /* ---------- Foco ----------
+     Un contorno propio y visible: el del navegador desaparecía sobre
+     los fondos oscuros. Sólo con `:focus-visible`, así que aparece al
+     navegar con teclado y no al hacer clic. */
+  .panel :focus-visible, .clave-caja :focus-visible, .hoja :focus-visible {
+    outline: 2px solid var(--p-acento); outline-offset: 2px; border-radius: 5px;
+  }
+
   /* ---------- La hoja modal ---------- */
   .velo {
     position: fixed; inset: 0; z-index: 60; display: grid; place-items: center;
@@ -1154,6 +1198,8 @@
 <!-- Se abre al marcar una cotización como hecha. Son los dos datos que
      el sistema no puede adivinar —cuándo se hizo y cuánto se cobró— y
      de los que depende el recordatorio de dentro de dos años. -->
+<div class="avisos" id="avisos" role="status" aria-live="polite"></div>
+
 <div class="velo" id="velo" hidden>
   <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="hoja-t">
     <h2 id="hoja-t">Anotar el trabajo</h2>
@@ -1247,6 +1293,41 @@
     });
   }
 
+  /* Un aviso que aparece abajo, no tapa nada y se va solo. El alert()
+     del navegador congela la página entera para decir una línea. */
+  function avisar(texto, tipo) {
+    var d = document.createElement("div");
+    d.className = "aviso-uno";
+    d.dataset.tipo = tipo || "ok";
+    d.innerHTML = (tipo === "mal" ? ICO.alerta : ICO.visto) + "<span></span>";
+    d.lastChild.textContent = texto;
+    $("avisos").appendChild(d);
+    setTimeout(function () {
+      d.classList.add("se-va");
+      setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 220);
+    }, 3600);
+  }
+
+  /* Esqueletos. Mientras carga se dibuja la forma de lo que viene: la
+     pantalla no salta cuando llegan los datos y se ve de una qué tan
+     larga va a ser la lista. */
+  function hueso(ancho, alto) {
+    return '<span class="hueso hueso-linea" style="display:block;width:' + ancho +
+           (alto ? ";height:" + alto : "") + '"></span>';
+  }
+  function esqCifras() {
+    var una = '<div class="esq-cifra">' + hueso("32px", "32px") +
+      '<div style="height:.7rem"></div>' + hueso("55%", "1.6rem") +
+      '<div style="height:.5rem"></div>' + hueso("70%") + "</div>";
+    return una + una + una + una;
+  }
+  function esqFilas(n) {
+    var una = '<div class="esq-fila"><span style="flex:1">' + hueso("45%") +
+      '<div style="height:.4rem"></div>' + hueso("70%") + "</span>" +
+      hueso("4.5rem", "1.6rem") + "</div>";
+    return new Array(n + 1).join(una);
+  }
+
   function pedir(ruta, opciones) {
     var o = opciones || {};
     o.headers = Object.assign({ "X-Clave": clave }, o.headers || {});
@@ -1319,7 +1400,10 @@
 
   function chispa(vals, color) {
     if (!vals || vals.length < 2) return "";
-    var tope = Math.max.apply(null, vals) || 1;
+    var tope = Math.max.apply(null, vals);
+    // Sin nada que mostrar no se dibuja: una línea plana pegada al
+    // borde de abajo parece un dato, y no lo es.
+    if (!tope) return "";
     var W = 100, H = 30, paso = W / (vals.length - 1);
     var pts = vals.map(function (v, i) {
       return (i * paso).toFixed(2) + "," + (H - (v / tope) * (H - 4) - 2).toFixed(2);
@@ -1528,6 +1612,18 @@
       return out + "</g>";
     });
 
+    // Un gráfico de treinta ceros no dice "no hay datos", dice "está
+    // roto". Se dice con palabras.
+    if (!tope || tope === 1 && s.every(function (f) { return !f.cot && !f.sol; })) {
+      svg.innerHTML = '<text x="' + (W / 2) + '" y="' + (H / 2) +
+        '" text-anchor="middle" dominant-baseline="middle" ' +
+        'style="fill:var(--p-tenue);font-size:13px">Sin entradas en este rango</text>';
+      $("serie-ini").textContent = fechaCorta(s[0].d);
+      $("serie-fin").textContent = fechaCorta(s[s.length - 1].d);
+      $("serie-rango").textContent = fechaCorta(s[0].d) + " – " + fechaCorta(s[s.length - 1].d);
+      return;
+    }
+
     svg.innerHTML = piezas.join("");
     $("serie-ini").textContent = fechaCorta(s[0].d);
     $("serie-fin").textContent = fechaCorta(s[s.length - 1].d);
@@ -1622,8 +1718,13 @@
   });
 
   function cargarResumen() {
-    $("estado-resumen").textContent = "Cargando…";
+    $("estado-resumen").textContent = "";
     $("estado-resumen").classList.remove("is-error");
+    if (!resumenCargado) {
+      $("cifras").innerHTML = esqCifras();
+      $("cola").innerHTML = esqFilas(3);
+      $("proximos").innerHTML = esqFilas(3);
+    }
     var p = new URLSearchParams();
     if (rango.desde) p.set("desde", rango.desde);
     if (rango.hasta) p.set("hasta", rango.hasta);
@@ -1707,7 +1808,7 @@
         item.parentNode.removeChild(item);
         if (!$("cola").children.length) $("tarj-cola").hidden = true;
       })
-      .catch(function () { b.disabled = false; alert("No se pudo guardar."); });
+      .catch(function () { b.disabled = false; avisar("No se pudo guardar.", "mal"); });
   });
 
   /* =========================================================
@@ -1767,7 +1868,16 @@
     var total = d.total || 0, paginas = d.paginas || 1;
     if (!total) {
       caja.hidden = true;
-      $("estado-lista").textContent = "No hay nada que cumpla con eso.";
+      /* No es lo mismo "todavía no ha entrado nada" que "el filtro no
+         encontró nada": lo primero se arregla esperando y lo segundo
+         quitando el filtro. Decir "no hay nada" para las dos deja a uno
+         sin saber cuál de las dos es. */
+      var hayFiltro = Object.keys(filtro).some(function (k) { return filtro[k]; });
+      $("estado-lista").textContent = hayFiltro
+        ? "Nada con esos filtros."
+        : (vista === "cotizaciones"
+            ? "Todavía no se ha emitido ninguna cotización."
+            : "Todavía no ha entrado ninguna solicitud por el formulario.");
       return;
     }
     var primera = (d.pagina - 1) * d.porPagina + 1;
@@ -1848,7 +1958,7 @@
 
   function pintarFichas(d) {
     if (!d.filas.length) {
-      $("fichas").innerHTML = '<p class="vacio-ok">No hay nada que cumpla con eso.</p>';
+      $("fichas").innerHTML = "";
       return;
     }
     var enc = d.encabezado || [];
@@ -1921,8 +2031,11 @@
   }
 
   function cargarTabla() {
-    $("estado-lista").textContent = "Cargando…";
+    $("estado-lista").textContent = "";
     $("estado-lista").classList.remove("is-error");
+    $("tabla-wrap").hidden = true;
+    $("fichas").hidden = false;
+    $("fichas").innerHTML = esqFilas(4);
     pintarAplicado();
     pedir(urlConFiltros("/api/panel/solicitudes", true))
       .then(function (d) {
@@ -1976,7 +2089,7 @@
     var guardarYa = function (servicio) {
       return guardar(vista, reg.dataset.id, sel ? sel.value : "nueva",
                      nota ? nota.value : "", marca, servicio)
-        .catch(function () { alert("No se pudo guardar."); });
+        .catch(function () { avisar("No se pudo guardar.", "mal"); });
     };
 
     /* Marcar una cotización como hecha es el único momento en que se
@@ -1992,7 +2105,10 @@
           return;
         }
         guardarYa(r.soloEstado ? null : r).then(function () {
-          if (!r.soloEstado) { agendaCargada = false; }
+          if (r.soloEstado) { avisar("Marcada como hecha."); return; }
+          agendaCargada = false;
+          resumenCargado = false;
+          avisar("Trabajo anotado. El cliente y su recordatorio quedaron listos.");
         });
       });
       return;
@@ -2300,7 +2416,12 @@
         cedula: $("n-cedula").value, correo: $("n-correo").value
       })
     })
-      .then(function (d) { aviso.textContent = ""; mostrarHecha(d); })
+      .then(function (d) {
+        aviso.textContent = "";
+        resumenCargado = false;
+        mostrarHecha(d);
+        avisar("Cotización " + (d.numero || "") + " creada.");
+      })
       .catch(function (err) {
         // El servidor contesta el motivo en español —"Los teléfonos de
         // Costa Rica llevan 8 dígitos"— así que se muestra tal cual.
@@ -2340,8 +2461,9 @@
   }
 
   function cargarClientes() {
-    $("estado-clientes").textContent = "Cargando…";
+    $("estado-clientes").textContent = "";
     $("estado-clientes").classList.remove("is-error");
+    $("lista-clientes").innerHTML = esqFilas(4);
     var p = new URLSearchParams();
     if (cliBusca) p.set("q", cliBusca);
     if (cliPagina > 1) p.set("pagina", String(cliPagina));
@@ -2511,10 +2633,14 @@
         })
       })
         .then(function (r) {
-          aviso.textContent = "Guardado. La próxima fecha se recalculó a " + textoPeriodo(r.meses) + ".";
+          aviso.textContent = "";
           agendaCargada = false;
+          avisar("Guardado. La próxima fecha quedó a " + textoPeriodo(r.meses) + ".");
         })
-        .catch(function () { aviso.textContent = "No se pudo guardar."; aviso.classList.add("is-error"); });
+        .catch(function () {
+          aviso.textContent = "";
+          avisar("No se pudo guardar el cliente.", "mal");
+        });
     });
   }
 
@@ -2542,8 +2668,12 @@
   var agendaFiltro = { tipo: "pronto" };   // pronto | vencidos | trimestre | dia
 
   function cargarAgenda() {
-    $("estado-agenda").textContent = "Cargando…";
+    $("estado-agenda").textContent = "";
     $("estado-agenda").classList.remove("is-error");
+    if (!agendaCargada) {
+      $("agenda-cifras").innerHTML = esqCifras();
+      $("agenda-lista").innerHTML = esqFilas(3);
+    }
     pedir("/api/panel/agenda")
       .then(function (d) {
         AGENDA = d;
@@ -2702,13 +2832,16 @@
      La hoja de "anotar el trabajo"
      ========================================================= */
 
-  var hojaResuelve = null;
+  var hojaResuelve = null, hojaVolverA = null;
 
   // La lista viene con las opciones del cotizador, que es lo primero
   // que carga el panel; si todavía no llegó, se usa el mínimo seguro.
   var PERIODOS = [3, 6, 9, 12, 18, 24, 36, 48];
 
   function abrirHoja() {
+    // Se anota dónde estaba el teclado para devolverlo al cerrar: si no,
+    // el foco queda en el aire y quien navega con teclado se pierde.
+    hojaVolverA = document.activeElement;
     $("h-meses").innerHTML = PERIODOS.map(function (m) {
       return '<option value="' + m + '"' + (m === 24 ? " selected" : "") + ">" + textoPeriodo(m) + "</option>";
     }).join("");
@@ -2723,9 +2856,23 @@
 
   function cerrarHoja(valor) {
     $("velo").hidden = true;
+    if (hojaVolverA && hojaVolverA.focus) hojaVolverA.focus();
+    hojaVolverA = null;
     var r = hojaResuelve; hojaResuelve = null;
     if (r) r(valor);
   }
+
+  /* El tabulador se queda adentro mientras la hoja está abierta. Sin
+     esto se sale a la página de atrás, que está tapada, y quien navega
+     con teclado deja de ver dónde va el foco. */
+  $("velo").addEventListener("keydown", function (e) {
+    if (e.key !== "Tab") return;
+    var focables = $("velo").querySelectorAll("input, select, button");
+    if (!focables.length) return;
+    var primero = focables[0], ultimo = focables[focables.length - 1];
+    if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+    else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+  });
 
   $("h-guardar").addEventListener("click", function () {
     cerrarHoja({

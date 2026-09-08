@@ -877,3 +877,44 @@ principal. Pasó a botón sólido naranja en la cabecera —el único
 elemento sólido de ese color en toda la pantalla— y de paso la barra
 del teléfono bajó de seis casillas a cinco, que es donde se vuelve
 cómoda.
+
+
+## 19. Estados de carga, de vacío y de error
+
+Tres momentos que casi siempre se dejan de último y son los que
+deciden si una herramienta se siente terminada.
+
+**Cargando.** Se dibuja la forma de lo que viene, no la palabra
+"Cargando". Así la pantalla no salta cuando llegan los datos y se ve de
+una qué tan larga va a ser la lista. Los bloques laten en opacidad, sin
+el barrido de brillo que traen las librerías — respeta
+`prefers-reduced-motion` por la regla general de §17.
+
+**Vacío.** No es lo mismo *"todavía no ha entrado nada"* que *"el
+filtro no encontró nada"*: lo primero se arregla esperando y lo segundo
+quitando el filtro. Decir "no hay nada" para las dos deja a uno sin
+saber cuál es. Cada lista distingue las dos, y el gráfico sin datos lo
+dice con palabras en vez de dibujar treinta ceros, que no se leen como
+"no hay nada" sino como "está roto". Las líneas de tendencia
+desaparecen cuando su serie está en cero: una línea plana pegada al
+borde parece un dato.
+
+**Error y confirmación.** Fuera el `alert()` del navegador, que congela
+la página, se ve igual en todas las webs del mundo y no dice dónde
+pasó. En su lugar, un aviso que aparece abajo, no tapa nada y se va
+solo a los 3,6 segundos.
+
+## 20. Teclado
+
+- **Foco propio y visible**: contorno naranja de 2px con separación. El
+  del navegador se perdía sobre los fondos oscuros. Va con
+  `:focus-visible`, así que aparece al navegar con teclado y no al
+  hacer clic.
+- **La hoja modal atrapa el tabulador** mientras está abierta y
+  **devuelve el foco** a donde estaba al cerrarse. Sin lo primero el
+  foco se va a la página de atrás, que está tapada; sin lo segundo
+  queda en el aire.
+- Ningún botón de sólo icono se quedó sin nombre accesible: se
+  comprobó contra el archivo, no a ojo.
+- Ningún estado depende sólo del color — cada pastilla lleva punto y
+  palabra.
