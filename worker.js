@@ -165,7 +165,7 @@ function claveValida(request, env) {
    endpoint para que el nombre de la tabla nunca salga de la URL: lo
    que llega de afuera sólo sirve para escoger de esta lista, así que
    no hay forma de inyectar SQL por el nombre. */
-const ORIGENES = { beto: "Beto", panel: "Panel", formulario: "Formulario" };
+const ORIGENES = { beto: "Frank", panel: "Panel", formulario: "Formulario" };
 
 /* En qué va cada solicitud y cada cotización.
 
@@ -666,7 +666,7 @@ async function resumenPanel(request, env) {
       q(`SELECT servicio AS k, COUNT(*) AS n FROM cotizaciones WHERE ${enRango} GROUP BY k ORDER BY n DESC`, R),
       // 7 · dónde queda: esto dice para dónde van los camiones
       q(`SELECT COALESCE(provincia, '—') AS k, COUNT(*) AS n FROM cotizaciones WHERE ${enRango} GROUP BY k ORDER BY n DESC`, R),
-      // 8 · por dónde entró: dice si Beto está sirviendo
+      // 8 · por dónde entró: dice si Frank está sirviendo
       q(`SELECT COALESCE(origen, 'beto') AS k, COUNT(*) AS n FROM cotizaciones WHERE ${enRango} GROUP BY k ORDER BY n DESC`, R),
       /* 9 · el monto que sigue vivo. También sin filtro de fecha: es
              plata que todavía se puede cobrar, no importa cuándo se
@@ -1220,11 +1220,11 @@ async function agendaPanel(request, env) {
 
    POR QUÉ ESTO NO LO CALCULA BETO
    --------------------------------
-   Beto conversa y recoge los datos; el precio lo saca este código.
+   Frank conversa y recoge los datos; el precio lo saca este código.
    Un modelo de lenguaje haciendo cuentas se equivoca tarde o temprano,
    y una cotización equivocada la paga la empresa: o come la diferencia
    o queda como que hizo carnada. Acá la aritmética siempre da igual, y
-   cambiar un precio es editar la tabla de abajo, no reescribir a Beto.
+   cambiar un precio es editar la tabla de abajo, no reescribir a Frank.
 
    CÓMO SE LE DA LA VUELTA AL TAMAÑO DEL TANQUE
    ---------------------------------------------
@@ -1538,7 +1538,7 @@ async function avisarCotizacion(datos, env) {
     ["Nombre", datos.nombre || "—"],
     ["Teléfono", datos.telefono || "—"],
     ["Zona", ZONAS[datos.zona] || datos.zona],
-    ["Origen", datos.origen === "panel" ? "Panel interno" : "Chat de Beto"]
+    ["Origen", datos.origen === "panel" ? "Panel interno" : "Chat de Frank"]
   ].map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:#7d736a;">${k}</td><td style="padding:4px 0;"><b>${escaparHtml(String(v))}</b></td></tr>`).join("");
 
   const aviso = datos.provisional
@@ -1552,7 +1552,7 @@ async function avisarCotizacion(datos, env) {
     to: [env.CORREO_AVISO],
     subject: `Cotización ${datos.numero} — ${colones(datos.min)} a ${colones(datos.max)}`,
     html: `<div style="font-family:system-ui,sans-serif;color:#1b1917;">
-             <h2 style="margin:0 0 12px;font-size:18px;">Beto emitió una cotización</h2>
+             <h2 style="margin:0 0 12px;font-size:18px;">Frank emitió una cotización</h2>
              <table style="border-collapse:collapse;font-size:14px;">${filas}</table>
              ${aviso}
            </div>`
@@ -1609,7 +1609,7 @@ async function cotizar(request, env, ctx) {
   /* Decir que una cotización salió del panel es decir que la hizo
      alguien de la empresa, y de eso dependen las estadísticas de por
      dónde entra el trabajo. Así que hay que probarlo con la clave; sin
-     ella, la cotización se guarda igual pero como venida de Beto. */
+     ella, la cotización se guarda igual pero como venida de Frank. */
   let origen = ["panel", "formulario"].indexOf(cuerpo.origen) !== -1 ? cuerpo.origen : "beto";
   if (origen === "panel" && !claveValida(request, env)) origen = "beto";
 
@@ -1762,7 +1762,7 @@ function opcionesCotizacion() {
 
 // Todo lo que el asistente sabe. Si contesta algo que no está acá,
 // está inventando — por eso las reglas son estrictas.
-const CONOCIMIENTO_ASISTENTE = `Eres Beto, el asistente virtual del sitio web de Sanitarios Ticos (Grupo Ticos Sanitarios S.A.), una empresa costarricense de limpieza de tanques sépticos y manejo de aguas residuales.
+const CONOCIMIENTO_ASISTENTE = `Eres Frank, el asistente virtual del sitio web de Sanitarios Ticos (Grupo Ticos Sanitarios S.A.), una empresa costarricense de limpieza de tanques sépticos y manejo de aguas residuales.
 
 TU PERSONALIDAD: sos costarricense de pura cepa, cercano y con buen humor, pero sin dejar de ser útil ni profesional — la gente te escribe porque tiene un problema real con su tanque, así que primero ayudás y después bromeás. Hablás de "usted" (nunca de "vos" ni de "tú").
 
@@ -1774,7 +1774,7 @@ CÓMO HABLAR "TICO" SIN QUE SUENE FORZADO:
 
 BROMAS: podés bromear o hacer un chiste corto únicamente cuando la conversación se sale del tema de la empresa (alguien pregunta algo ajeno, o bromea primero), y siempre con la intención de traer la charla de vuelta a los tanques sépticos y los servicios. No bromees dentro de una respuesta que sí es sobre el negocio — ahí la prioridad es resolver la duda, con claridad y buen trato, no hacer reír.
 
-Si alguien le pregunta su nombre, dice que se llama Beto.
+Si alguien le pregunta su nombre, dice que se llama Frank.
 
 SERVICIOS QUE OFRECE LA EMPRESA:
 1. Limpieza de tanques sépticos — con camión cisterna y sistema de succión.
@@ -1805,7 +1805,7 @@ REGLAS QUE DEBES SEGUIR SIEMPRE:
 - NUNCA inventes datos que no estén arriba: no inventes certificaciones, promociones, plazos exactos de llegada ni disponibilidad de camiones en tiempo real.
 - Si es una emergencia (derrame, tanque rebalsado ahora mismo), recomiende llamar directo al 2440-1110 en vez de seguir escribiendo.
 - Si preguntan algo que no tiene nada que ver con la empresa (temas ajenos, otras marcas, cultura general, etc.), NO responda esa pregunta aunque sepa la respuesta. Puede seguirle la broma con un comentario corto y de buen humor, pero sin contestar realmente lo que preguntaron, y siempre cerrando la respuesta con el regreso al tema: los servicios de la empresa.
-- No es una persona real: si preguntan, aclare que es un asistente virtual (Beto es un nombre, no significa que sea un empleado de carne y hueso).`;
+- No es una persona real: si preguntan, aclare que es un asistente virtual (Frank es un nombre, no significa que sea un empleado de carne y hueso).`;
 
 // Se intenta primero el modelo más liviano; si falla, el siguiente.
 const MODELOS_GEMINI = ["gemini-3.5-flash-lite", "gemini-3.6-flash"];
@@ -1869,7 +1869,7 @@ async function usoDelDiaYSumar(env) {
 
 async function responderAsistente(request, env) {
   if (!env.GEMINI_API_KEY) {
-    return json({ ok: true, reply: "Beto todavía está en configuración, pura vida igual: mientras tanto escríbanos por WhatsApp o llame al 2440-1110 — le respondemos enseguida." });
+    return json({ ok: true, reply: "Frank todavía está en configuración, pura vida igual: mientras tanto escríbanos por WhatsApp o llame al 2440-1110 — le respondemos enseguida." });
   }
 
   let cuerpo;
@@ -1884,7 +1884,7 @@ async function responderAsistente(request, env) {
 
   const usados = await usoDelDiaYSumar(env);
   if (usados > TOPE_MENSAJES_DIA) {
-    return json({ ok: true, reply: "Diay, hoy Beto ha tenido tela que cortar y está descansando un toque. Escríbanos por WhatsApp o llame al 2440-1110, ahí sí le atendemos al toque." });
+    return json({ ok: true, reply: "Diay, hoy Frank ha tenido tela que cortar y está descansando un toque. Escríbanos por WhatsApp o llame al 2440-1110, ahí sí le atendemos al toque." });
   }
 
   // Historial corto: sólo los últimos mensajes, para no mandar de más.
@@ -1896,7 +1896,7 @@ async function responderAsistente(request, env) {
 
   const respuesta = await llamarGemini(env, mensajes);
   if (!respuesta) {
-    return json({ ok: true, reply: "Uy, Beto no pudo responder justo ahora. Puede escribirnos por WhatsApp o llamar al 2440-1110, con gusto le ayudamos." });
+    return json({ ok: true, reply: "Uy, Frank no pudo responder justo ahora. Puede escribirnos por WhatsApp o llamar al 2440-1110, con gusto le ayudamos." });
   }
 
   return json({ ok: true, reply: respuesta });

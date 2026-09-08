@@ -505,6 +505,20 @@ cédula tiene que verse incompleto, no verse bien.
 
 ## Asistente de preguntas
 
+**Se llama Frank.** Antes se llamaba Beto; el cambio es sólo de nombre
+visible. En la base de datos el origen de una cotización se sigue
+guardando con la clave `beto`, y **eso no se toca**: renombrarla dejaría
+huérfanas todas las cotizaciones ya emitidas. Lo único que cambió es la
+etiqueta que se muestra.
+
+**Pendiente:** el dibujo del personaje. El botón tiene el hueco listo
+(`.asistente-fab .cara`, recorte circular de 26px); cuando llegue el
+archivo se cambia el `src` en las seis páginas y ya. La animación de
+saludo espera al dibujo a propósito — sin ver dónde queda el brazo ni
+cuánto margen transparente trae, cualquier animación habría que
+rehacerla.
+
+
 Pensado para ayudar a que la visita se convierta en cliente sin reemplazar
 la cotización real.
 

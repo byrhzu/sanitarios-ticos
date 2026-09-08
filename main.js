@@ -325,7 +325,7 @@
         // El texto que se guarda en la solicitud y el código que
         // entiende el motor son cosas distintas: "Limpieza y destaqueo
         // de tuberías" es lo que lee una persona, "destaqueo" es lo que
-        // busca la tabla de tarifas. Confundirlos hacía que Beto se
+        // busca la tabla de tarifas. Confundirlos hacía que Frank se
         // saltara la pregunta con un servicio que no existía.
         servicioCotiza: (form.servicio.selectedOptions &&
                          form.servicio.selectedOptions[0] &&
@@ -518,7 +518,7 @@
       var boton = document.createElement("button");
       boton.type = "button";
       boton.className = "btn btn-line";
-      boton.textContent = "Seguir con Beto";
+      boton.textContent = "Seguir con Frank";
       boton.addEventListener("click", function () {
         document.dispatchEvent(new CustomEvent("cotizar-con-datos", {
           detail: {
@@ -598,7 +598,7 @@
       pase.hidden = false;
     }
 
-    // Convierte lo que Beto escribe en los mismos enlaces que ya
+    // Convierte lo que Frank escribe en los mismos enlaces que ya
     // existen como botones en el sitio: los teléfonos abren para
     // llamar y "cotización"/"WhatsApp" abren WhatsApp con el mensaje
     // ya armado — así no hay que copiar el número a mano.
@@ -660,7 +660,7 @@
     function saludarSiHaceFalta() {
       if (yaSaludo) return;
       yaSaludo = true;
-      agregarMensaje("¡Pura vida! Soy Beto, el asistente virtual de Sanitarios Ticos. Con toda la pata le ayudo con dudas sobre nuestros servicios, cobertura y cómo pedir una cotización.", false);
+      agregarMensaje("¡Pura vida! Soy Frank, el asistente virtual de Sanitarios Ticos. Con toda la pata le ayudo con dudas sobre nuestros servicios, cobertura y cómo pedir una cotización.", false);
     }
 
     function abrirPanel() {
@@ -701,7 +701,7 @@
 
       // Si el cotizador está esperando un dato escrito, lo que la
       // persona teclea es la respuesta a esa pregunta, no una consulta
-      // nueva para Beto.
+      // nueva para Frank.
       if (esperando) {
         agregarMensaje(pregunta, true);
         input.value = "";
@@ -716,7 +716,7 @@
       input.value = "";
 
       // Se ofrece el traspaso apenas escribe, sin esperar la respuesta:
-      // si Beto falla o tarda, el camino a una persona ya está ahí.
+      // si Frank falla o tarda, el camino a una persona ya está ahí.
       mensajesMios.push(pregunta);
       refrescarPase();
 
@@ -732,7 +732,7 @@
           cargando.remove();
           var respuesta = (d && d.reply) || "No pude responder justo ahora. Puede escribirnos por WhatsApp o llamar al 2440-1110.";
 
-          // Cuando alguien pide una cotización conversando, Beto cierra
+          // Cuando alguien pide una cotización conversando, Frank cierra
           // su respuesta con esta marca. Se quita del texto y se arranca
           // el mismo cuestionario del botón: da igual por dónde entró,
           // termina en una cotización de verdad.
@@ -763,7 +763,7 @@
     }
 
     /* -------- Cotizador ---------------------------------------------
-       Beto conversa, pero el precio NO lo inventa él: estas preguntas
+       Frank conversa, pero el precio NO lo inventa él: estas preguntas
        recogen los datos y el servidor hace la cuenta. Un modelo de
        lenguaje haciendo aritmética se equivoca tarde o temprano, y una
        cotización equivocada la paga la empresa.
@@ -773,7 +773,7 @@
        predice el volumen igual de bien.
 
        Hay tres formas de llegar acá —el botón, una conversación con
-       Beto, o el formulario de contacto— y las tres terminan en la
+       Frank, o el formulario de contacto— y las tres terminan en la
        misma cotización guardada. */
 
     var opciones = null;      // tarifas y preguntas, del servidor
@@ -851,7 +851,7 @@
     function siguientePaso() {
       // Lo que ya se sabe no se vuelve a preguntar. Es lo que permite
       // que el formulario de contacto entregue el nombre, el teléfono y
-      // la dirección, y Beto sólo pida lo que falta para el precio.
+      // la dirección, y Frank sólo pida lo que falta para el precio.
       while (pasoActual < PASOS.length && respuestas[PASOS[pasoActual].clave]) {
         var p = PASOS[pasoActual];
         // Un dato heredado que no esté en la lista no sirve: mejor
@@ -884,7 +884,7 @@
 
           /* La gente contesta con frases —"escríbame al 8888-8888"— y
              guardar la frase entera la mete en un documento formal. Se
-             saca el dato; si no se puede, Beto lo dice y pregunta otra
+             saca el dato; si no se puede, Frank lo dice y pregunta otra
              vez, que es lo que haría alguien al teléfono. */
           if (paso.formato) {
             var r = CR[paso.formato](valor);
@@ -921,7 +921,7 @@
       });
     }
 
-    /* Antes de mandar nada, Beto repite lo que entendió. Es el paso que
+    /* Antes de mandar nada, Frank repite lo que entendió. Es el paso que
        convierte esto en una conversación con alguien y no en un envío a
        ciegas — y de paso atrapa el dedo gordo en el teléfono. */
     function confirmar() {
@@ -1036,7 +1036,7 @@
       if (cajaCotiza) cajaCotiza.hidden = false;
     }
 
-    /* `desdeChat` es cuando la persona lo pidió conversando: ahí Beto ya
+    /* `desdeChat` es cuando la persona lo pidió conversando: ahí Frank ya
        dijo lo suyo en su respuesta y repetir la presentación sonaría a
        máquina contestando dos veces. */
     function arrancarCotizador(desdeChat, previos) {
@@ -1102,7 +1102,7 @@
     }
 
     /* Tercera puerta de entrada: el formulario de contacto. Manda lo que
-       ya recogió y Beto continúa desde ahí. Va por evento y no por
+       ya recogió y Frank continúa desde ahí. Va por evento y no por
        llamada directa porque el formulario vive en su propio ámbito y
        sólo existe en una de las seis páginas. */
     document.addEventListener("cotizar-con-datos", function (e) {

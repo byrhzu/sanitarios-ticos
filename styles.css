@@ -900,11 +900,27 @@ body.fabs-fuera .wa-fab {
   pointer-events: none;
 }
 
+/* Los dos botones flotantes comparten caja: mismo alto, mismo ancho
+   mínimo, mismo radio. Antes tenían el padding distinto por dos
+   centésimas y se veían desalineados uno encima del otro sin que se
+   supiera por qué. La geometría vive acá y cada uno pone su color. */
+.asistente-fab, .wa-fab {
+  display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
+  /* Ancho fijo, no mínimo: con `min-width` cada uno crecía lo que le
+     pedía su contenido —la cara de Frank pesa más que el icono de
+     WhatsApp— y quedaban desiguales por tres píxeles. */
+  width: 12rem;
+  min-height: 3.1rem;
+  padding: .7rem 1.2rem;
+  /* Redondeados a pedido del propietario. El problema del botón viejo
+     nunca fue el radio: era el degradado de tres paradas, el anillo
+     latiendo y el icono de destello. Eso no vuelve. */
+  border-radius: 999px;
+  font-family: var(--display); font-weight: 700; font-size: .88rem;
+}
+
 .asistente-fab {
   position: relative;
-  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-  min-width: 11rem;
-  padding: .75rem 1.15rem .75rem .95rem;
   /* Beto era una píldora flotante con degradado naranja, anillo que
      late sin parar y un destello de icono. Eso es el chatbot que trae
      puesto cualquier sitio generado — seis tics del catálogo en un solo
@@ -913,12 +929,15 @@ body.fabs-fuera .wa-fab {
      Ahora es rectangular como todos los botones del sitio, de un solo
      naranja plano, y la cara es la mascota del camión: lo único de acá
      que no puede estar en ningún otro lado. */
-  border-radius: 0;
   background: var(--orange);
   color: var(--ink);
-  font-family: var(--display); font-weight: 700; font-size: .88rem;
   box-shadow: 0 6px 20px rgba(27,25,23,.24);
   transition: transform .3s var(--ease), box-shadow .3s var(--ease), background-color .25s var(--ease);
+}
+/* El hueco del personaje. Cuando llegue el dibujo de Frank sólo cambia
+   el `src` en las seis páginas; el tamaño y el recorte ya están. */
+.asistente-fab .cara, .asistente-cab .avatar img {
+  border-radius: 50%; object-fit: cover; object-position: center top;
 }
 .asistente-fab:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(27,25,23,.3); background: var(--orange-dk); color: var(--paper); }
 .asistente-fab .cara { width: 26px; height: 26px; display: block; }
@@ -952,8 +971,8 @@ body.fabs-fuera .wa-fab {
   display: flex; align-items: center; gap: .7rem;
 }
 .asistente-cab .avatar {
-  width: 34px; height: 34px; flex: 0 0 auto;
-  display: grid; place-items: center;
+  width: 34px; height: 34px; flex: 0 0 auto; border-radius: 50%;
+  display: grid; place-items: center; overflow: hidden;
   background: var(--orange);
 }
 .asistente-cab .avatar img { width: 30px; height: 30px; display: block; }
@@ -1147,13 +1166,8 @@ body.fabs-fuera .wa-fab {
 /* WhatsApp flotante */
 .wa-fab {
   position: fixed; right: 1rem; bottom: 1rem; z-index: 80;
-  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-  min-width: 11rem;
-  padding: .8rem 1.15rem .8rem .95rem;
-  border-radius: 0;
   background: var(--wa);
   color: #06331b;
-  font-family: var(--display); font-weight: 700; font-size: .88rem;
   box-shadow: 0 6px 20px rgba(27,25,23,.24);
   transition: transform .3s var(--ease), box-shadow .3s var(--ease);
 }

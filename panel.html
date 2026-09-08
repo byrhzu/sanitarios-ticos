@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=20260907a">
+<link rel="stylesheet" href="styles.css?v=20260908a">
 <style>
   /* =========================================================
      Panel interno — v3
@@ -2129,7 +2129,7 @@
      Nueva cotización
 
      Es la cuarta puerta al mismo motor: el formulario, el botón de
-     Beto, la conversación con Beto y esto. Ninguna calcula nada — las
+     Frank, la conversación con Frank y esto. Ninguna calcula nada — las
      cuatro mandan los mismos datos a /api/cotizar.
      ========================================================= */
 
@@ -2158,7 +2158,7 @@
 
   /* La dirección se escoge de la lista oficial, nunca se escribe: de
      ahí sale la zona que cobra el motor, y "Sn José" a mano no la
-     encuentra. Misma lista que usan el formulario y Beto. */
+     encuentra. Misma lista que usan el formulario y Frank. */
   function refrescarCanton() {
     var prov = $("n-provincia").value, sel = $("n-canton");
     var lista = prov ? Object.keys(GEO[prov]) : [];
