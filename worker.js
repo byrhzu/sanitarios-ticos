@@ -1251,9 +1251,9 @@ async function agendaPanel(request, env) {
 const TARIFAS = {
   provisional: true,
 
-  // null = sin confirmar. El propietario tiene que decir si sus precios
-  // ya llevan el IVA adentro o si se suma aparte.
-  iva: { incluido: null, tasa: 0.13 },
+  // Confirmado por el propietario: los montos de abajo YA llevan el IVA
+  // adentro. No se suma nada al final.
+  iva: { incluido: true, tasa: 0.13 },
 
   vigenciaDias: 15,
 
@@ -1497,7 +1497,7 @@ function limpiarDatosPersona(cuerpo, obligatorios) {
 const EMPRESA = {
   nombre: "Sanitarios Ticos",
   razonSocial: "Grupo Ticos Sanitarios S.A.",
-  cedula: null,           // ⚠ PENDIENTE: cédula jurídica del propietario
+  cedula: "3-101-702385",
   telefonos: ["2440-1110", "2265-4150"],
   whatsapp: "8341-7547",
   correo: "info@sanitariosticos.com",
