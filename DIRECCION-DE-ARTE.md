@@ -1166,3 +1166,44 @@ lista de servicios por el teléfono y el WhatsApp. Si el envío falla, el mensaj
 dice qué pasó y ofrece el 2440-1110. Una página de precios que se cae en
 silencio es una venta perdida; una que dice "llámenos" es una venta por otro
 canal.
+
+## 23. La segunda tanda de fotos
+
+Llegaron nueve fotos y dos videos del propietario. No se armó ninguna
+sección nueva con ellas: se metieron en los huecos que el sitio ya tenía.
+
+**Dónde entraron.**
+
+| Foto | Dónde | Por qué ahí |
+|---|---|---|
+| `trampa-sotano` | banda de Trampas de grasa (servicios) y su fila en el inicio | Era la única banda con placa de icono en vez de foto. La foto muestra justo lo que dice el texto: mantenimiento dentro de un edificio comercial, fuera del horario |
+| `cisterna-edificio` | encabezado de Nosotros | Ese encabezado repetía la foto del inicio. Ahora cada página abre con una imagen distinta |
+| `camion-rotulado` | teja grande de "En el campo" | Repetía otra vez la misma cisterna. Esta tiene el rótulo legible: teléfonos y dominio |
+| `planta-tratamiento` | teja 5 | El mosaico no tenía ninguna foto de planta, y el sitio ofrece el servicio |
+| `cisterna-parqueo` | teja 6 | Segundo camión, rotulado, en un edificio comercial |
+
+El mosaico nació de cuatro tejas y se le agregó una fila de dos mitades
+con el mismo alto que la teja grande, para que las nuevas no quedaran
+como dos rendijas anchas de 190px.
+
+**Lo que se descartó, y por qué.**
+
+- **La del Burger King.** Identifica a un cliente. El propietario ya había
+  descartado poner logos de clientes; una foto de su local hace lo mismo
+  sin el logo.
+- **`IMG_3764` y `IMG_3407.MOV`.** Ampliadas se ve que el camión cisterna
+  del encuadre es **azul y de otra empresa**, con los teléfonos de ella
+  pintados. Publicarlas sería pagarle publicidad a la competencia. Se
+  alcanzaron a generar los WebP y hubo que borrarlos.
+- **La del Banco Nacional.** 960×960 y el camión sale de lejos; las otras
+  del mismo camión son mejores.
+
+**Regla que salió de acá:** antes de publicar una foto de campo hay que
+ampliarla y leer lo que está rotulado dentro del encuadre —camiones,
+chalecos, fachadas—. A tamaño de miniatura, el camión azul parecía
+nuestro.
+
+**El EXIF se borra al convertir.** Son fotos tomadas en propiedades de
+clientes y el EXIF del teléfono lleva las coordenadas GPS. Pillow no lo
+escribe si no se le pasa, pero sí hay que aplicar `exif_transpose` antes,
+o las verticales salen acostadas.
