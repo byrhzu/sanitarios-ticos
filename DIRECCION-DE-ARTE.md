@@ -952,12 +952,18 @@ degradado.
 ### 21.2 No va dentro del botón: se para encima
 
 Un muñeco de 26px encogido dentro de la píldora es una mancha. Frank
-mide 90px de alto sobre un botón de 50: se para en el borde de abajo y
-saca la cabeza y el brazo por arriba.
+mide **74px de alto sobre un botón de 46**: se para en el borde de
+abajo y saca la cabeza y el brazo por arriba.
+
+Empezó más grande —90 sobre 50, con el botón de 216px— y se apretó
+porque los dos flotantes viven sobre el contenido y a ese tamaño le
+quedaban encima a una columna entera de datos. El ancho del botón
+(11,75rem) sale de la cuenta y no del ojo: la etiqueta mide 114px,
+Frank y su aire se comen 3,25rem y quedan 1,2rem de margen.
 
 Eso usa el dibujo por lo que es —una figura de cuerpo entero saludando—
 en vez de recortarlo a una cara, y le da al botón algo que ningún sitio
-genérico tiene. En el teléfono el botón se encoge a un círculo de 54px
+genérico tiene. En el teléfono el botón se encoge a un círculo de 50px
 y Frank se queda parado encima igual: ahí él **es** el botón.
 
 ### 21.3 El saludo

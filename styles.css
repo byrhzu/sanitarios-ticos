@@ -909,12 +909,16 @@ body.fabs-fuera .wa-fab {
   /* Ancho fijo, no mínimo: con `min-width` cada uno crecía lo que le
      pedía su contenido —la cara de Frank pesa más que el icono de
      WhatsApp— y quedaban desiguales por tres píxeles. */
-  /* 13.5rem y no 12: Frank se come 3,9rem por la izquierda y con el
-     ancho anterior "Hablar con Frank" se partía en dos líneas, lo que
-     le subía el alto al botón y lo desigualaba del de WhatsApp. */
-  width: 13.5rem;
-  min-height: 3.1rem;
-  padding: .7rem 1.2rem;
+  /* El ancho sale de la cuenta, no del ojo: la etiqueta "Hablar con
+     Frank" mide 114px, Frank y su aire se comen 3,25rem por la
+     izquierda y quedan 1,2rem de margen derecho. Con 11,75rem sobra lo
+     justo para que nunca se parta en dos líneas.
+
+     Se apretó a propósito: los dos botones flotan sobre el contenido y
+     a 13,5rem le tapaban una columna entera de datos. */
+  width: 11.75rem;
+  min-height: 2.85rem;
+  padding: .6rem 1.2rem;
   /* Redondeados a pedido del propietario. El problema del botón viejo
      nunca fue el radio: era el degradado de tres paradas, el anillo
      latiendo y el icono de destello. Eso no vuelve. */
@@ -949,10 +953,10 @@ body.fabs-fuera .wa-fab {
    que se apilan con inset:0 y el hombro cae siempre en el mismo punto.
    El brazo gira sobre ese hombro y saluda de verdad.
    --------------------------------------------------------------- */
-.asistente-fab { padding-left: 3.9rem; }
+.asistente-fab { padding-left: 3.25rem; }
 .asistente-fab .frank {
-  position: absolute; left: .55rem; bottom: 0;
-  width: 44px; height: 90px;
+  position: absolute; left: .5rem; bottom: 0;
+  width: 36px; height: 74px;
 }
 /* Dos envoltorios y no uno: `.frank` se encarga de entrar y salir,
    `.frank-vivo` de respirar. Si compartieran elemento se pelearían por
@@ -1335,9 +1339,9 @@ body.fabs-fuera .wa-fab {
      también escondía a `.frank-vivo`, el envoltorio que respira, y el
      botón quedaba vacío en el teléfono. */
   .wa-fab > span, .asistente-fab > span:not(.frank) { display: none; }
-  .wa-fab, .asistente-fab { width: 3.4rem; min-height: 3.4rem; padding: 0; }
+  .wa-fab, .asistente-fab { width: 3.1rem; min-height: 3.1rem; padding: 0; }
   .asistente-fab { padding-left: 0; }
-  .asistente-fab .frank { left: 50%; margin-left: -21px; width: 42px; height: 86px; }
+  .asistente-fab .frank { left: 50%; margin-left: -18px; width: 36px; height: 74px; }
   .foot-end { flex-direction: column; }
 
   /* Los cuatro datos en 2×2. Apilados uno debajo de otro ocupaban
