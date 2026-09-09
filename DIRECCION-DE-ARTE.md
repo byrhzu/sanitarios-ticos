@@ -1247,3 +1247,48 @@ inicio; en Nosotros sigue, con otro contenido.
 **La barra de arriba** pasa a decir «Cobertura en todo el país», sin el
 detalle del GAM. Ese detalle vive en la sección de cobertura, que es donde
 alguien lo busca; en una barra que aparece en todas las páginas era ruido.
+
+## 25. Tres desalineaciones que Byron cazó a ojo
+
+Las tres eran reales y las tres se midieron antes de tocar nada. Vale la
+pena anotar el patrón: **el ojo de Byron detecta diferencias de espaciado
+que en el CSS no se ven, porque el espacio lo estaban poniendo dos
+propiedades distintas sin que nadie las sumara.**
+
+**El punto como separador de lista, otra vez.** En «Casas / Comercios /
+Industria» los oficios iban separados por `·`. Byron: *"sigue siendo un
+punto, el cual hace notar que es de inteligencia artificial"*. Y tiene
+razón: nadie escribe así fuera de una interfaz. Ahora van con comas y una
+`y` final, como los escribiría una persona — que además es lo que ya
+hacía la lista de cantones de la cobertura, así que también se ganó
+coherencia.
+
+**Queda una excepción declarada:** `2440-1110 · 2265-4150`, en la cinta y
+en los datos de contacto. Ahí el punto separa **dos números de teléfono**,
+no ítems de una lista; una coma entre dos números se lee como parte del
+número.
+
+**`.hq`: el rótulo de ancho libre no alinea.** `.hq b` tenía
+`min-width: 7rem` (112px) y «Gran Área Metropolitana» mide 214px: el
+rótulo se partía en dos líneas, la caja crecía, y su texto arrancaba
+**44,9px más a la derecha** que el de «Resto del país». Medido en el
+navegador.
+
+Corregido cambiando el `flex` por una **rejilla de dos columnas**
+(`14rem 1fr`). Con una rejilla las dos filas arrancan en el mismo sitio
+pase lo que pase con el largo del rótulo, que es la garantía que un
+`min-width` no da. En celular se apila.
+
+**Regla que sale de acá:** en una lista de rótulo + texto, la columna del
+rótulo se define con rejilla, no con `min-width`. `.data` ya lo hacía bien
+por casualidad —sus rótulos son cortos—, pero es la misma trampa esperando.
+
+**El pie: una columna con otro ritmo.** Las columnas Servicios y Empresa
+tenían los ítems a 8px uno de otro. La de Contacto iba 8, 8, 8, 8 y de
+repente **14,4**, dos veces: dos `<span>` con un `margin-top: .4rem`
+puesto a mano en el atributo `style`, que se sumaba al `gap` del flex.
+
+Se fundieron los dos en un solo bloque y se quitó el margen suelto. Las
+tres columnas quedan en 8px parejos. De paso salió que esa columna todavía
+anunciaba «Alajuela · Heredia · San José», que era lo que quedaba de las
+sedes.

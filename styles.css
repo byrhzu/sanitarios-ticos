@@ -570,10 +570,11 @@ strong, b { font-weight: 600; }
 .reach h2 { font-size: clamp(1.9rem, 4vw, 3rem); }
 .hq { display: grid; gap: 0; }
 .hq li {
-  display: flex; align-items: baseline; gap: 1rem;
+  display: grid; grid-template-columns: 14rem 1fr;
+  align-items: baseline; gap: 1rem;
   padding-block: 1.05rem;
 }
-.hq b { font-family: var(--display); font-size: 1.15rem; min-width: 7rem; }
+.hq b { font-family: var(--display); font-size: 1.15rem; }
 .hq span { font-size: .88rem; color: rgba(250,247,242,.6); }
 .reach-note {
   margin-top: 1.6rem; padding: 1.2rem 1.3rem;
@@ -1213,6 +1214,7 @@ body.fabs-fuera .wa-fab {
 }
 
 @media (max-width: 719px) {
+  .hq li { grid-template-columns: 1fr; gap: .3rem; }
   .bar-in { justify-content: center; padding-block: .4rem; }
   .bar-in > span:first-child { display: none; }
   .bar-links { gap: .9rem; font-size: .78rem; }

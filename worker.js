@@ -1552,7 +1552,7 @@ const EMPRESA = {
   sitio: "sanitariosticos.com",
   /* Va bajo el nombre en el documento imprimible. Ya no son sedes: es
      un negocio de área de servicio, va donde el cliente. */
-  cobertura: "Gran Área Metropolitana · Y el resto del país, coordinando"
+  cobertura: "Cobertura en todo el país"
 };
 
 /* Qué mueve cada respuesta. Va debajo del dato en el documento, para que
