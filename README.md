@@ -666,51 +666,42 @@ Console de D1). Protege la cuota gratuita de Google; no hay límite por
 visitante todavía, sólo el tope general del día.
 
 
-## Los mapas
+## La cobertura
 
-Las páginas **Nosotros** y **Contacto** llevan un mapa de Google en la sección
-«Dónde estamos». Es un `iframe` normal, **sin clave de API y sin costo**, y carga
-sólo cuando el visitante llega a esa parte de la página.
+**Nosotros** y **Contacto** llevan la sección «El Gran Área Metropolitana, todos
+los días»: la lista de provincias con sus cantones, y debajo la nota de que fuera
+del GAM también se da servicio coordinando la fecha.
 
-Al lado hay tres tarjetas, una por sede. **Al pulsar una tarjeta el mapa cambia**
-a esa ubicación y se actualizan la dirección y el botón «Abrir en Google Maps».
-Funciona con el ratón y con el teclado; sin JavaScript se ve la primera sede y
-cada tarjeta conserva su enlace «Cómo llegar».
+Es una lista de texto, sin mapa. Antes había un mapa de Google con tres tarjetas
+—una por sede— y un selector en `main.js` que cambiaba el `iframe` al pulsar cada
+tarjeta. Se quitó todo, junto con su CSS, porque **las tres sedes no existían**:
+lo que hay es un predio en Alajuela donde se guardan los tres camiones. Publicar
+tres direcciones que no son locales era una afirmación falsa, y además chocaba
+con cómo se registra el negocio en Google (ver ZONAS-Y-SEO-LOCAL.md).
 
-Sedes configuradas:
+### Cambiar la lista de cantones
 
-| Sede | Ubicación en el mapa |
-|---|---|
-| Heredia | San Joaquín de Flores — 100 m sur del Restaurante Caracoles de Colores (`10.0057727, -84.1580225`) |
-| Alajuela | Llano, Provincia de Alajuela (búsqueda por nombre) |
-| San José | Tibás (`9.9557932, -84.0854432`) |
+En `nosotros.html` y `contacto.html`, dentro de `<section id="cobertura">`, hay
+un `<ul class="data franjas">` con un `<li>` por provincia:
 
-### Cambiar o afinar una ubicación
+```html
+<li><small>Heredia</small><span>Heredia, San Joaquín de Flores, Belén, …</span></li>
+```
 
-En `nosotros.html` y `contacto.html`, cada tarjeta es un `<article class="sede">`
-con estos atributos:
+Se cambia el texto y ya. Los dos archivos tienen el bloque idéntico: **si cambia
+uno, cambie el otro.**
 
-- `data-embed` — la URL del mapa que se muestra
-- `data-ruta` — el enlace de «Cómo llegar»
-- `data-dir` y `data-ref` — el texto que aparece bajo el mapa
+Cuando existan las páginas de zona, cada cantón de esta lista es candidato a
+llevar enlace a la suya.
 
-Para mover un pin a un punto exacto: abra Google Maps, clic derecho sobre el
-lugar → copiar coordenadas, y sustituya los números en `data-embed`
-(`?q=LAT,LNG&hl=es&z=16&output=embed`) y en `data-ruta`
-(`?api=1&destination=LAT,LNG`). Hay que hacerlo en los dos archivos.
+### Si algún día hay una dirección pública
 
-### Ver los tres pines a la vez
+Hoy no se publica ninguna dirección, a propósito: es un negocio que va donde el
+cliente, no un local que recibe visitas, y en Google la dirección va oculta. Si
+eso cambia, el lugar para ponerla son los datos estructurados de `index.html`
+(el bloque `address`, que hoy sólo lleva cantón y provincia) y la ficha de datos
+de `contacto.html`.
 
-El mapa incrustado gratuito sólo admite **un pin**. Para mostrar los tres
-simultáneamente, como hacía el sitio anterior, hay dos caminos:
-
-1. **Google My Maps** (gratis, recomendado): crear un mapa en
-   <https://mymaps.google.com>, poner los tres pines, hacerlo público y pegar
-   aquí su enlace «Insertar en mi sitio».
-2. **Maps JavaScript API**: requiere una clave de Google con facturación activa.
-
-La franja final «Todo Costa Rica» es la que deja claro que la cobertura es
-nacional; conviene no quitarla.
 
 ## Antes de publicar
 

@@ -118,10 +118,10 @@ h1 {
    al lado del h1. Estas piezas van en el corte de titular. */
 .btn, .marquee span, .pull, .clientes, .arrow,
 .fact strong, .fact b, .row-t h3,
-.hq b, .mapa-dato b, .mapa-dato small, .sede-pick, .qa summary,
+.hq b, .qa summary,
 .data a, .data span, .data small, .foot .foot-t, .foot h4,
 .cover-kick, .cover-stamp strong, .asistente-cab strong,
-.urgente-t, .urgente-tel, .f label, .sede-nota b, .marcas b {
+.urgente-t, .urgente-tel, .f label, .marcas b {
   font-stretch: var(--ancho-titular);
 }
 
@@ -457,7 +457,6 @@ strong, b { font-weight: 600; }
 }
 .fact { display: grid; align-content: start; }
 
-
 .fact strong {
   font-family: var(--display); font-weight: 700;
   font-size: clamp(2rem, 3.2vw, 2.7rem); line-height: 1;
@@ -575,101 +574,6 @@ strong, b { font-weight: 600; }
 }
 .reach-note b { color: var(--ink); }
 .block-dark .reach-note b { color: var(--paper); }
-
-/* --- Mapa y sedes --- */
-.mapa-grid { display: grid; gap: 1.4rem; align-items: start; }
-
-.mapa { background: var(--paper-2); }
-.mapa-frame { position: relative; aspect-ratio: 4/3; background: var(--paper-3); }
-.mapa-frame iframe {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  border: 0;
-  filter: saturate(.92) contrast(1.02);
-  /* Al cambiar de sede, el mapa se recarga y parpadeaba en gris. Con el
-     fundido el cambio se lee como una transición y no como un fallo. */
-  transition: opacity .35s var(--ease);
-}
-.mapa-frame.cargando iframe { opacity: 0; }
-.mapa-foot {
-  display: flex; flex-wrap: wrap; gap: 1rem;
-  align-items: center; justify-content: space-between;
-  padding: 1.1rem 1.2rem;
-  font-size: .92rem;
-}
-.mapa-dato { display: grid; gap: .1rem; }
-.mapa-dato small {
-  font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--orange-dk); font-weight: 600;
-}
-.mapa-dato b { font-family: var(--display); font-size: 1rem; }
-.mapa-dato .dim { font-size: .87rem; }
-
-.sedes { display: grid; gap: 0; }
-
-.sede {
-  position: relative;
-  background: var(--paper);
-  padding: 1.25rem 1.35rem;
-  transition: background-color .3s var(--ease);
-}
-.sede h3 {
-  font-size: 1.15rem; margin-bottom: .5rem;
-  display: flex; align-items: center; gap: .55rem;
-}
-.sede h3::before {
-  content: ""; width: 9px; height: 9px; flex: 0 0 auto;
-  background: #b6ada4;   /* decorativo, no es texto */
-  transition: background-color .3s var(--ease), transform .3s var(--ease);
-}
-.sede-dir { font-size: .93rem; color: var(--ink-2); margin-bottom: .6rem; }
-.sede-dir a { color: var(--orange-dk); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
-.sede-zonas { font-size: .85rem; color: var(--muted); }
-
-.sede-acciones {
-  display: flex; flex-wrap: wrap; align-items: center;
-  gap: .5rem 1.1rem; margin-bottom: .75rem;
-}
-.sede-pick {
-  font-family: var(--display); font-weight: 600; font-size: .88rem;
-  color: var(--ink);
-  border: 1px solid var(--line-2);
-  padding: .34rem .8rem;
-  /* El texto cambia a "Viendo en el mapa" al elegirla, que es más largo.
-     Reservando el ancho del estado más largo, la fila no se recorre al
-     tocar de una sede a otra. */
-  min-width: 9.2rem;
-  transition: background-color .25s var(--ease), color .25s var(--ease), border-color .25s var(--ease);
-}
-.sede-pick:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); }
-
-/* Sede seleccionada: la que se está viendo en el mapa */
-.sede.is-active { background: var(--orange-tint); }
-.sede.is-active::before {
-  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-  background: var(--orange);
-}
-.sede.is-active h3::before { background: var(--orange); transform: scale(1.15); }
-.sede.is-active .sede-pick {
-  background: var(--orange); border-color: var(--orange); color: var(--ink);
-  pointer-events: none;
-}
-
-/* Con JS, toda la tarjeta responde al clic */
-.js .sedes[data-js] .sede[data-sede] { cursor: pointer; }
-.js .sedes[data-js] .sede[data-sede]:hover:not(.is-active) { background: var(--paper-2); }
-
-/* La cobertura fuera del Valle Central: una nota, no una tarjeta más.
-   Dentro de la lista de sedes parecía una cuarta opción seleccionable
-   que no reaccionaba al tocarla. */
-.sede-nota {
-  margin-top: .9rem;
-  padding-left: .9rem;
-  border-left: 3px solid var(--orange);
-  font-size: .89rem; color: var(--muted);
-  text-wrap: pretty;
-}
-.sede-nota b { color: var(--ink); font-weight: 600; }
 
 /* --- Prueba / galería --- */
 .shots { display: grid; grid-template-columns: 1fr; gap: .8rem; }
@@ -1316,31 +1220,6 @@ body.fabs-fuera .wa-fab {
   .burger { display: flex; }
   .row-peek { display: none; }
 
-  /* Selector de sede compacto.
-     Bajo el mapa ya se muestran la dirección, la referencia y el "Cómo
-     llegar" de la sede que se está viendo. Repetir todo eso dentro de
-     cada tarjeta convertía la lista en una tira larguísima de scroll en
-     el celular, sólo para elegir entre tres.
-     Aquí cada tarjeta se queda con lo único que sirve para ELEGIR: el
-     nombre, un botón corto y las zonas que cubre —que es lo que la
-     persona anda buscando ("¿me cubren a mí?")—. Lo demás se lee bajo
-     el mapa, donde siempre corresponde a la sede activa. */
-  .sede {
-    display: grid; grid-template-columns: 1fr auto;
-    align-items: center; gap: .3rem .8rem;
-    padding: .85rem 1rem;
-  }
-  .sede h3 { grid-column: 1; grid-row: 1; margin-bottom: 0; font-size: 1.02rem; }
-  .sede-acciones { grid-column: 2; grid-row: 1; margin-bottom: 0; }
-  .sede-zonas { grid-column: 1 / -1; font-size: .82rem; }
-
-  /* La dirección y el "Cómo llegar" viven bajo el mapa. */
-  .sede-dir { display: none; }
-  .sede-acciones .arrow { display: none; }
-
-  /* El botón se queda: sin él sólo quedaría el toque en la tarjeta, que
-     no existe para quien navega con teclado o lector de pantalla. */
-  .sede-pick { padding: .3rem .7rem; font-size: .82rem; }
 }
 
 @media (max-width: 719px) {
@@ -1371,7 +1250,7 @@ body.fabs-fuera .wa-fab {
   .foot-end { flex-direction: column; }
 
   /* Los cuatro datos en 2×2. Apilados uno debajo de otro ocupaban
-     media pantalla de puro scroll para decir "2 camiones, 3 sedes". */
+     media pantalla de puro scroll para decir "3 camiones, 24/7". */
   .fact strong { font-size: 1.9rem; }
   .fact b { margin-top: .5rem; font-size: .7rem; letter-spacing: .1em; }
   .fact span { font-size: .82rem; }
@@ -1435,8 +1314,6 @@ body.fabs-fuera .wa-fab {
   .reach { grid-template-columns: 1fr 1fr; }
   .split { display: grid; grid-template-columns: 1fr 1.15fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: start; }
   .split-sticky { position: sticky; top: 110px; }
-  .mapa-grid { grid-template-columns: 1.15fr 1fr; gap: 1.6rem; }
-  .mapa-frame { aspect-ratio: 16/12; }
 }
 
 /* Sangrado de la imagen de portada hasta el borde del viewport */
@@ -1579,6 +1456,4 @@ body.fabs-fuera .wa-fab {
      quitándole la animación a sus pseudoelementos. */
   ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
   .qa details::details-content { transition: none; }
-  .mapa-frame iframe { transition: none; }
-  .mapa-frame.cargando iframe { opacity: 1; }
 }

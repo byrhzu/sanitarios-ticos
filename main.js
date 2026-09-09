@@ -118,77 +118,6 @@
     });
   }
 
-  /* ---------- Selector de sede: la tarjeta cambia el mapa ---------- */
-  function initMapa() {
-    var wrap = $("[data-mapa]");
-    if (!wrap) return;
-
-    var frame = $("[data-mapa-frame]", wrap);
-    var sedes = $$(".sede[data-sede]", wrap);
-    if (!frame || sedes.length < 2) return;
-
-    var elSede = $("[data-mapa-sede]", wrap);
-    var elDir  = $("[data-mapa-dir]", wrap);
-    var elRef  = $("[data-mapa-ref]", wrap);
-    var elRuta = $("[data-mapa-ruta]", wrap);
-
-    // Marca el contenedor para que el CSS active el cursor sobre la tarjeta
-    var lista = sedes[0].parentElement;
-    if (lista) lista.setAttribute("data-js", "1");
-
-    function elegir(sede) {
-      if (sede.classList.contains("is-active")) return;
-
-      sedes.forEach(function (s) {
-        var activa = s === sede;
-        s.classList.toggle("is-active", activa);
-        var btn = $("[data-sede-pick]", s);
-        if (btn) {
-          btn.setAttribute("aria-pressed", activa ? "true" : "false");
-          btn.textContent = activa ? "Viendo en el mapa" : "Ver en el mapa";
-        }
-      });
-
-      var nombre = sede.getAttribute("data-nombre");
-
-      // El mapa tarda en recargar y mientras tanto parpadeaba en gris,
-      // que se lee como un fallo. Se funde a la salida y se vuelve a
-      // mostrar cuando el nuevo mapa terminó de cargar. El temporizador
-      // es la red de seguridad: si el "load" no llega (sin internet, o
-      // Google tardando), el mapa reaparece igual y no queda en blanco.
-      var caja = frame.parentElement;
-      if (caja) {
-        caja.classList.add("cargando");
-        var mostrar = function () {
-          caja.classList.remove("cargando");
-          frame.removeEventListener("load", mostrar);
-        };
-        frame.addEventListener("load", mostrar);
-        setTimeout(mostrar, 2500);
-      }
-
-      frame.setAttribute("src", sede.getAttribute("data-embed"));
-      frame.setAttribute("title", "Ubicación de Sanitarios Ticos en " + nombre);
-      if (elSede) elSede.textContent = "Sede " + nombre;
-      if (elDir)  elDir.textContent  = sede.getAttribute("data-dir");
-      if (elRef)  elRef.textContent  = sede.getAttribute("data-ref") || "";
-      if (elRuta) elRuta.href        = sede.getAttribute("data-ruta");
-    }
-
-    sedes.forEach(function (s) {
-      var btn = $("[data-sede-pick]", s);
-      if (btn) {
-        btn.setAttribute("aria-pressed", s.classList.contains("is-active") ? "true" : "false");
-        if (s.classList.contains("is-active")) btn.textContent = "Viendo en el mapa";
-      }
-      // El botón ya funciona con teclado; el clic en la tarjeta es un extra
-      s.addEventListener("click", function (e) {
-        if (e.target.closest("a")) return;   // los enlaces siguen su camino
-        elegir(s);
-      });
-    });
-  }
-
   /* ---------- Parallax discreto de la foto de portada ----------
      Antes esto necesitaba GSAP + ScrollTrigger (44 KB comprimidos)
      para un desplazamiento del 6 %. Ahora son unas pocas líneas:
@@ -1242,7 +1171,6 @@
     safe(initReveals, "initReveals");
     safe(initFaq, "initFaq");
     safe(initAsistente, "initAsistente");
-    safe(initMapa, "initMapa");
     safe(initForm, "initForm");
     safe(initYear, "initYear");
     safe(initFabsAlBajar, "initFabsAlBajar");

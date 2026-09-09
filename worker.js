@@ -1550,7 +1550,9 @@ const EMPRESA = {
   whatsapp: "8341-7547",
   correo: "info@sanitariosticos.com",
   sitio: "sanitariosticos.com",
-  sedes: "Alajuela · Heredia · San José"
+  /* Va bajo el nombre en el documento imprimible. Ya no son sedes: es
+     un negocio de área de servicio, va donde el cliente. */
+  cobertura: "Gran Área Metropolitana · Y el resto del país, coordinando"
 };
 
 /* Qué mueve cada respuesta. Va debajo del dato en el documento, para que
@@ -1879,7 +1881,7 @@ SERVICIOS QUE OFRECE LA EMPRESA:
 4. Construcción de tanques sépticos, drenajes y plantas de tratamiento.
 5. Alquiler de tanques plásticos — para construcciones y eventos, con entrega y limpiezas calendarizadas.
 
-COBERTURA: sedes en Alajuela, Heredia (San Joaquín de Flores) y San José. Dan servicio en TODO Costa Rica (Guanacaste, Puntarenas, Limón, Cartago, Zona Norte, Zona Sur), coordinando la visita según la ruta.
+COBERTURA: es un negocio que va donde el cliente; no hay local ni sala de espera y NUNCA invite a nadie a visitar una oficina. La zona de trabajo diaria es el GRAN ÁREA METROPOLITANA: San José, Heredia, Alajuela y Cartago con sus cantones. Ahí llegan rápido y en emergencia el mismo día. Fuera del GAM (Guanacaste, Puntarenas, Limón, Zona Norte, Zona Sur) también dan servicio, coordinando la fecha según la ruta del camión. Los camiones son TRES cisternas propias. No diga que tienen sedes ni sucursales.
 
 CONTACTO: teléfonos 2440-1110 y 2265-4150, WhatsApp 8341-7547, correo info@sanitariosticos.com. Atienden emergencias el mismo día.
 

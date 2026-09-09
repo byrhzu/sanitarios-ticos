@@ -55,33 +55,73 @@ la palanca.
 
 ---
 
-## 3 · La palanca de verdad: tres fichas, no una
+## 3 · Una sola ficha, y por qué
 
-La empresa tiene tres sedes: **Alajuela**, **Heredia (San Joaquín de
-Flores)** y **San José (Tibás)**.
+**Corrección de lo que decía antes esta guía.** Se había recomendado abrir tres
+fichas, una por sede. Al revisarlo con el dueño resultó que **las tres sedes no
+existen**: lo que hay es un predio en **Alajuela**, con rótulo, donde se guardan
+los tres camiones. Las direcciones de Heredia y San José no eran locales de
+operación.
 
-Si cada una es un local real —con personal, con rótulo, donde de verdad
-opera el negocio— cada una **puede tener su propia ficha de Google**. Eso
-son **tres puntos en el mapa en vez de uno**, y como la distancia se mide
-desde el negocio hasta quien busca, son tres centros de posicionamiento
-en lugar de uno.
+Entonces: **una sola ficha**, con la dirección de Alajuela. Abrir tres fichas
+para un solo lugar real es suspensión segura, y recuperar una ficha suspendida
+toma semanas.
 
-Eso pesa muchísimo más que agregar zonas a una sola ficha.
+Eso también obligó a corregir la página web, que anunciaba tres sedes con
+dirección y mapa. Ya no las anuncia: ahora habla de cobertura.
 
-**La advertencia, y es seria:** las tres tienen que ser reales y
-verificables. Google suspende las fichas inventadas, y recuperar una
-ficha suspendida es un viacrucis de semanas. Si alguna de las tres es
-nada más una dirección de papel, **no le abra ficha**: póngala como área
-de servicio de otra.
+### Es un "negocio de área de servicio"
 
----
+Es la figura de los fontaneros, los cerrajeros móviles y los servicios de
+limpieza: los que van donde el cliente en vez de recibirlo. Google los soporta
+de forma explícita.
+
+- Se registra una dirección real —el predio de los camiones— y **se marca como
+  oculta**. El público sólo ve las zonas de cobertura.
+- No hace falta local, ni sala de espera, ni rótulo comercial en la calle.
+- La dirección sigue contando para la **distancia**, que es uno de los tres
+  factores de posicionamiento. Por eso importa que sea la de verdad.
+
+### La verificación por video
+
+Google pide un video que muestre tres cosas
+([documentación](https://support.google.com/business/answer/14271705)):
+
+1. **Que usted está en esa dirección** — rótulos de calle, referencias del
+   vecindario.
+2. **Que el negocio opera** — herramientas, equipo, vehículos rotulados.
+3. **Que usted lo administra** — abrir con llave el portón o el camión, o un
+   documento del negocio con el mismo nombre de la ficha.
+
+Requisitos: **una sola toma, sin cortes, sin editar, mínimo 30 segundos**,
+grabado y subido **desde el celular**, dentro de la aplicación del perfil.
+
+Un guion que funciona para este caso:
+
+1. Empezar en la calle, enfocando el rótulo de la calle y alguna referencia.
+2. Caminar hacia el predio y enfocar **el rótulo de la empresa**, que se lea.
+3. **Abrir el portón con la llave, en cámara.** Ese gesto prueba el acceso.
+4. Enfocar los tres camiones hasta que se lean el nombre y los teléfonos.
+5. Mostrar el equipo: mangueras, bomba, cabezales de succión.
+6. Cerrar con una factura o un recibo donde se lea "Grupo Ticos Sanitarios S.A.".
+
+De día, sin apagar la cámara. Si se corta, se empieza de nuevo.
+
+**Lo que no hay que hacer nunca:** oficinas virtuales, apartados postales, la
+casa de un familiar o de un chofer para "cubrir" otra zona. Google las detecta
+y suspende.
+
+**Si lo rechazan** —pasa, sobre todo la primera vez—: se puede volver a grabar
+y reenviar, y se puede apelar explicando que es un negocio de área de servicio.
+En algunos países ofrecen verificación por videollamada en vivo con un agente,
+que para este caso suele ser más fácil.
 
 ## 4 · Cómo armar el perímetro, en la práctica
 
 No piense en una cuadrícula. Piense en **tres manchas**, una alrededor de
-cada sede, que se traslapan en el medio.
+Alajuela, que es donde están los camiones.
 
-Para cada sede, haga esta lista con el dueño y con los choferes:
+Haga esta lista con el dueño y con los choferes:
 
 1. **Los cantones donde ya se trabaja lleno.** Los que dan trabajo casi
    todas las semanas. Estos son los importantes.
@@ -139,9 +179,9 @@ Para que las dos cosas se sostengan entre sí:
   teléfono tienen que estar escritos igual en la ficha y en la página.
   "Grupo Ticos Sanitarios S.A." en un lado y "Sanitarios Ticos SA" en el
   otro le resta a las dos.
-- **Cada ficha enlaza a lo más específico que exista.** Si hay tres
-  fichas y hay página de esa zona, la ficha de Heredia apunta a la
-  página de Heredia, no al inicio.
+- **La ficha enlaza al inicio del sitio.** Cuando existan las páginas de
+  zona, las publicaciones y los servicios dentro de la ficha pueden
+  apuntar a la página de cada zona.
 - **La categoría principal es lo que más pesa en relevancia.** Que sea la
   de servicios de tanques sépticos, no una genérica de "fontanería".
   Y llene la lista de servicios dentro de la ficha.
@@ -157,10 +197,9 @@ Para que las dos cosas se sostengan entre sí:
 
 ## 7 · El orden
 
-1. Decidir si las tres sedes califican para ficha propia. Si sí, abrir
-   las que faltan.
-2. Limpiar y rehacer el área de servicio de cada ficha, con el método
-   del punto 4.
+1. Verificar la ficha única, con la dirección del predio de Alajuela y la
+   dirección marcada como oculta. Ver el punto 3.
+2. Limpiar y rehacer el área de servicio, con el método del punto 4.
 3. Revisar categoría principal, categorías secundarias, servicios,
    horario (24/7), fotos y teléfonos.
 4. Pasarme la lista de zonas **y el material de cada una** (punto 8).
@@ -177,7 +216,7 @@ Sin esto salen diez páginas que solo se diferencian en el nombre del
 cantón, que es el problema que estamos tratando de arreglar. Pregúntele
 al dueño y a los choferes — ellos lo saben:
 
-- **Cuál sede la cubre** y cuánto se tardan en llegar.
+- **Cuánto se tardan en llegar** desde Alajuela.
 - **Qué tipo de propiedad predomina:** casas de familia, condominios,
   sodas y restaurantes, lecherías, fincas, edificios.
 - **Algo típico de esa zona.** Tanques viejos de block. Terreno con el
