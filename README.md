@@ -372,6 +372,59 @@ empresa: o come la diferencia o queda como que hizo carnada.
 Para el cliente se siente igual —"Beto me cotizó"— pero la aritmética siempre
 da bien, y cambiar un precio es editar una tabla, no reescribir a Beto.
 
+### Los precios
+
+Son los reales, entregados por el propietario el 8 de setiembre de 2026.
+Cada monto del código salió de él; donde no hay número no se inventa
+uno — se dice "desde".
+
+**Tanque séptico.** El precio sale del **tamaño**. Como casi nadie sabe
+los litros de su tanque, no se pregunta el tamaño: se pregunta la
+**forma**, y de ahí la medida. La forma se ve saliendo al patio.
+
+| Forma | Medida | Precio |
+|---|---|---|
+| Redondo, de cemento | 2 m de fondo × 1 m de diámetro | ₡40.000 |
+| Hueco de tierra | 4 m · 5 m · 6 m | ₡90.000 · ₡110.000 · ₡140.000 |
+| Tanque plástico | 750 · 1000 · 1500 · 2000 · 2500 L | ₡40.000 · ₡60.000 · ₡90.000 · ₡120.000 · ₡140.000 |
+| Cuadrado de block | 1,5³ m · 2³ m | ₡70.000 · ₡100.000 |
+
+A eso se le suma el tiempo sin limpiar: **1–2 años nada, 3–4 años
+₡5.000, 5 o más ₡10.000.**
+
+**Los otros servicios** van con precio de tabla, sin preguntas sobre el
+trabajo:
+
+| Servicio | Precio |
+|---|---|
+| Limpieza de trampa de grasa | ₡35.000 – 40.000 |
+| Limpieza de tanque de grasa | desde ₡50.000 |
+| Destaqueo de tuberías | ₡30.000 – 35.000 |
+| Alquiler de tanque plástico | ₡15.000 por día, mínimo 8 días |
+
+Los rangos son la variación del trabajo **dentro de la misma zona**, no
+de la distancia.
+
+### Por qué no hay recargo por distancia
+
+Porque el propietario decidió que el cliente no lo vea. El negocio
+apunta a llenar los camiones dentro de las zonas que ya cubre, no a
+viajar; para lo que cae fuera, el precio base es el mismo y **el
+recargo lo pone él** antes de dar el precio en firme.
+
+Meterlo en la fórmula habría sido inventar un número que él no dio, y
+además mostrarle al cliente algo que no quiere mostrarle. La zona se
+sigue guardando en cada cotización para poder estudiarla después y
+afinar el perímetro.
+
+### "Desde" no es lo mismo que un rango
+
+Un rango de cero de ancho —"₡65.000 – ₡65.000"— finge una precisión que
+no existe y se lee raro. Cuando el mínimo y el máximo coinciden, todo
+el sistema escribe **"desde ₡65.000"**: el chat, el panel, el WhatsApp
+y el documento. La decisión vive en una sola función (`montoTexto`)
+para que no puedan contradecirse.
+
 ### Cómo se le da la vuelta al tamaño del tanque
 
 Casi nadie sabe cuántos litros tiene su tanque. Pero todo el mundo sabe cuánta

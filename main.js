@@ -259,6 +259,16 @@
      de persona lleva 9 dígitos, la jurídica 10 empezando con 3, y el
      DIMEX 11 o 12. */
   var CR = {
+    /* Cuántos días de alquiler. La gente contesta "unos 15" o "15 días",
+       así que se saca el número de la frase igual que el teléfono. */
+    dias: function (entrada) {
+      var d = String(entrada == null ? "" : entrada).match(/\d+/);
+      var n = d ? parseInt(d[0], 10) : NaN;
+      if (!n) return { ok: false, error: "No entendí cuántos días." };
+      if (n > 365) return { ok: false, error: "Para más de un año mejor lo hablamos por teléfono." };
+      return { ok: true, valor: String(n) };
+    },
+
     telefono: function (entrada) {
       var texto = String(entrada == null ? "" : entrada);
       var rx = /(?:\+?506[\s.-]*)?(\d[\d\s.-]{6,}\d)/g, m, d;
@@ -786,11 +796,35 @@
     /* El orden no es casual: primero lo que se contesta tocando un
        botón, y de último lo que hay que escribir. Quien abandona a
        mitad, abandona en la parte aburrida, no en la primera pregunta. */
-    var PASOS = [
-      { clave: "servicio",  tipo: "ops",  pregunta: "¿Qué servicio necesita?" },
-      { clave: "perfil",    tipo: "ops",  pregunta: "¿Para qué tipo de propiedad?" },
-      { clave: "ultimo",    tipo: "ops",  pregunta: "¿Hace cuánto se le hizo el servicio por última vez?" },
-      { clave: "acceso",    tipo: "ops",  pregunta: "¿Qué tan cerca puede parquear el camión?" },
+    /* Las preguntas del trabajo dependen del servicio: un tanque séptico
+       necesita saber su forma y su medida, un alquiler cuántos días, y
+       un destaqueo nada — el precio ya está en tabla. Por eso la lista
+       no es fija: se arma cuando la persona escoge el servicio. */
+    function pasosDelTrabajo() {
+      var svc = opciones.servicios[respuestas.servicio];
+      if (!svc) return [];
+      if (svc.tipo === "tanque") {
+        return [
+          { clave: "forma", tipo: "ops",
+            pregunta: "¿Qué forma tiene el tanque? Si no está seguro, asómese al patio: con verlo basta." },
+          { clave: "medida", tipo: "ops", pregunta: "¿Y de qué medida es?" },
+          { clave: "antiguedad", tipo: "ops",
+            pregunta: "¿Hace cuánto se le hizo la última limpieza?" }
+        ];
+      }
+      if (svc.tipo === "alquiler") {
+        return [{ clave: "dias", tipo: "texto", formato: "dias",
+          pregunta: "¿Por cuántos días lo necesita? El mínimo son " + (svc.diasMinimo || 8) + "." }];
+      }
+      return [];
+    }
+
+    function armarPasos() {
+      return [{ clave: "servicio", tipo: "ops", pregunta: "¿Qué servicio necesita?" }]
+        .concat(pasosDelTrabajo(), PASOS_FIJOS);
+    }
+
+    var PASOS_FIJOS = [
       { clave: "provincia", tipo: "ops",  pregunta: "¿En qué provincia queda?" },
       { clave: "canton",    tipo: "ops",  pregunta: "¿Y en qué cantón?" },
       { clave: "distrito",  tipo: "ops",   pregunta: "¿Y el distrito?" },
@@ -803,6 +837,8 @@
       { clave: "correo",    tipo: "texto", formato: "correo", opcional: true,
         pregunta: "¿Y su correo? Si no usa, escriba «no tengo»." }
     ];
+
+    var PASOS = armarPasos();
 
     // Lo que la persona escribe para decir "ese dato no se lo doy".
     var SIN_DATO = /^(no|no tengo|ninguno|ninguna|despu[eé]s|luego|paso|omitir|nada|-)$/i;
@@ -825,7 +861,19 @@
         return comoOpciones(cantones[respuestas.canton] || []);
       }
       var svc = opciones.servicios[respuestas.servicio];
-      return svc ? svc[clave] : [];
+      if (!svc) return [];
+      if (clave === "forma") {
+        return (svc.formas || []).map(function (f) {
+          return { id: f.id, etiqueta: f.etiqueta };
+        });
+      }
+      if (clave === "medida") {
+        // Las medidas viven dentro de la forma que ya se escogió.
+        var f = (svc.formas || []).filter(function (x) { return x.id === respuestas.forma; })[0];
+        return f ? f.medidas : [];
+      }
+      if (clave === "antiguedad") return svc.antiguedad || [];
+      return svc[clave] || [];
     }
 
     /* Fila de botones dentro del hilo. Al elegir, la fila se reemplaza
@@ -916,6 +964,14 @@
       }
       pintarOpciones(lista, function (op) {
         respuestas[paso.clave] = op.id;
+        // Escoger el servicio cambia qué se pregunta después; escoger
+        // la forma cambia qué medidas hay. En los dos casos hay que
+        // rearmar la lista antes de seguir.
+        if (paso.clave === "servicio") {
+          delete respuestas.forma; delete respuestas.medida;
+          delete respuestas.antiguedad; delete respuestas.dias;
+          PASOS = armarPasos();
+        }
         pasoActual++;
         siguientePaso();
       });
@@ -929,12 +985,25 @@
       var lineas = [
         "Perfecto. Déjeme repetirle lo que anoté:",
         "",
-        "Servicio: " + (svc ? svc.nombre : respuestas.servicio),
+        "Servicio: " + (svc ? svc.nombre : respuestas.servicio)
+      ];
+      // Lo del trabajo sólo si el servicio lo pidió.
+      if (respuestas.forma) {
+        var lf = opcionesDelPaso("forma").filter(function (o) { return o.id === respuestas.forma; })[0];
+        var lm = opcionesDelPaso("medida").filter(function (o) { return o.id === respuestas.medida; })[0];
+        lineas.push("Tanque: " + [lf && lf.etiqueta, lm && lm.etiqueta].filter(Boolean).join(", "));
+      }
+      if (respuestas.antiguedad) {
+        var la = opcionesDelPaso("antiguedad").filter(function (o) { return o.id === respuestas.antiguedad; })[0];
+        if (la) lineas.push("Última limpieza: " + la.etiqueta);
+      }
+      if (respuestas.dias) lineas.push("Días de alquiler: " + respuestas.dias);
+      lineas = lineas.concat([
         "Dirección: " + [respuestas.distrito, respuestas.canton, respuestas.provincia]
           .filter(Boolean).join(", "),
         "A nombre de: " + (respuestas.nombre || "—"),
         "Teléfono: " + (respuestas.telefono || "—")
-      ];
+      ]);
       if (respuestas.cedula) lineas.push("Cédula: " + respuestas.cedula);
       if (respuestas.correo) lineas.push("Correo: " + respuestas.correo);
       lineas.push("", "¿Está todo bien?");
@@ -984,9 +1053,14 @@
     }
 
     function mostrarCotizacion(d) {
+      /* Cuando el mínimo y el máximo son iguales no es un rango de cero
+         de ancho: es un piso. Se dice "desde", que es lo que significa. */
+      var esDesde = d.desde || d.min === d.max;
       var partes = [
-        "Le sale entre " + colones(d.min) + " y " + colones(d.max) + " por el servicio de " +
-        d.servicioNombre.toLowerCase() + "."
+        (esDesde
+          ? "Le sale desde " + colones(d.min)
+          : "Le sale entre " + colones(d.min) + " y " + colones(d.max)) +
+        " por el servicio de " + d.servicioNombre.toLowerCase() + "."
       ];
 
       // Mientras las tarifas sean las provisionales, se dice. Callarlo
@@ -998,7 +1072,9 @@
         );
       } else {
         partes.push(
-          "Es un rango orientativo. El precio exacto se lo confirmamos antes de salir, sin costo."
+          esDesde
+            ? "El precio final se lo confirmamos antes de salir, sin costo."
+            : "Es un rango orientativo. El precio exacto se lo confirmamos antes de salir, sin costo."
         );
       }
       if (d.numero) partes.push("Su cotización quedó con el número " + d.numero + ".");
@@ -1024,7 +1100,8 @@
 
       mensajesMios.push(
         "Cotización " + (d.numero || "") + ": " + d.servicioNombre +
-        ", entre " + colones(d.min) + " y " + colones(d.max)
+        (esDesde ? ", desde " + colones(d.min)
+                 : ", entre " + colones(d.min) + " y " + colones(d.max))
       );
       refrescarPase();
       terminar();

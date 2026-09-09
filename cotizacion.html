@@ -406,7 +406,7 @@ body {
         <div class="lin iva"><span>IVA</span><span id="iva"></span></div>
       </div>
       <div class="rango">
-        <p class="et">Rango estimado</p>
+        <p class="et" id="rango-et">Rango estimado</p>
         <p class="cifra" id="cifra"></p>
         <p class="nota">El precio en firme se confirma antes de salir, sin costo y sin compromiso.</p>
       </div>
@@ -556,11 +556,18 @@ body {
 
     // Servicio y montos
     $("servicio").textContent = d.servicio;
-    var rango = d.minTexto + " – " + d.maxTexto;
+
+    /* Hay servicios con rango de verdad —el destaqueo va de 30 a 35
+       mil— y otros que sólo tienen piso, como el tanque séptico, donde
+       el precio sale del tamaño. Escribir "₡65.000 – ₡65.000" en esos
+       sería fingir un rango que no existe. */
+    var esDesde = d.desde || d.min === d.max;
+    var rango = esDesde ? "Desde " + d.minTexto : d.minTexto + " – " + d.maxTexto;
+    $("rango-et").textContent = esDesde ? "Precio estimado" : "Rango estimado";
     $("monto-fila").textContent = rango;
     $("cifra").textContent = rango;
     $("min").textContent = d.minTexto;
-    $("max").textContent = d.maxTexto;
+    $("max").textContent = esDesde ? "—" : d.maxTexto;
     $("iva").textContent = d.ivaIncluido === null
       ? "Por confirmar"
       : (d.ivaIncluido ? "Incluido" : "Se suma aparte");

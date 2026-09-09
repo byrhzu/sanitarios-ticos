@@ -1146,12 +1146,17 @@
 
           <section class="paso" data-paso="1">
             <p class="grupo">¿Qué necesita?</p>
+            <!-- Lo que se pregunta depende del servicio: un tanque
+                 séptico necesita forma, medida y antigüedad; un alquiler
+                 los días; los demás nada, porque tienen precio de tabla. -->
             <div class="nueva-rejilla">
               <div class="f"><label for="n-servicio">Servicio</label><select id="n-servicio" required></select></div>
-              <div class="f"><label for="n-perfil">Tipo de propiedad</label><select id="n-perfil" required></select></div>
-              <div class="f"><label for="n-ultimo">Último servicio</label><select id="n-ultimo" required></select></div>
-              <div class="f"><label for="n-acceso">Dónde para el camión</label><select id="n-acceso" required></select></div>
+              <div class="f" id="campo-forma" hidden><label for="n-forma">Forma del tanque</label><select id="n-forma"></select></div>
+              <div class="f" id="campo-medida" hidden><label for="n-medida">Medida</label><select id="n-medida"></select></div>
+              <div class="f" id="campo-antiguedad" hidden><label for="n-antiguedad">Última limpieza</label><select id="n-antiguedad"></select></div>
+              <div class="f" id="campo-dias" hidden><label for="n-dias">Días de alquiler</label><input type="number" id="n-dias" inputmode="numeric" min="8" value="8"></div>
             </div>
+            <p class="vacio-ok" id="sin-preguntas" hidden>Este servicio tiene precio de tabla: no hay nada más que preguntar acá.</p>
           </section>
 
           <section class="paso" data-paso="2" hidden>
@@ -2146,14 +2151,35 @@
   }
 
   function refrescarServicio() {
-    var id = $("n-servicio").value;
-    var s = id && OPC.servicios[id];
-    ["perfil", "ultimo", "acceso"].forEach(function (campo) {
-      var sel = $("n-" + campo);
-      if (!s) { sel.innerHTML = '<option value="">—</option>'; sel.disabled = true; return; }
-      sel.disabled = false;
-      opciones(sel, s[campo], "Escoja…");
-    });
+    var s = OPC.servicios[$("n-servicio").value];
+    var tipo = s ? s.tipo : null;
+
+    $("campo-forma").hidden = tipo !== "tanque";
+    $("campo-medida").hidden = tipo !== "tanque";
+    $("campo-antiguedad").hidden = tipo !== "tanque";
+    $("campo-dias").hidden = tipo !== "alquiler";
+    $("sin-preguntas").hidden = tipo !== "fijo";
+
+    if (tipo === "tanque") {
+      opciones($("n-forma"), s.formas.map(function (f) {
+        return { id: f.id, etiqueta: f.etiqueta };
+      }), "Escoja…");
+      opciones($("n-antiguedad"), s.antiguedad, "Escoja…");
+      refrescarMedida();
+    }
+    if (tipo === "alquiler") {
+      $("n-dias").min = s.diasMinimo;
+      if (!$("n-dias").value || +$("n-dias").value < s.diasMinimo) $("n-dias").value = s.diasMinimo;
+    }
+  }
+
+  // Las medidas viven dentro de la forma que se haya escogido.
+  function refrescarMedida() {
+    var s = OPC.servicios[$("n-servicio").value];
+    var f = s && s.formas && s.formas.filter(function (x) {
+      return x.id === $("n-forma").value;
+    })[0];
+    opciones($("n-medida"), f ? f.medidas : [], "Escoja…");
   }
 
   /* La dirección se escoge de la lista oficial, nunca se escribe: de
@@ -2244,7 +2270,9 @@
 
     $("nueva-hecha").innerHTML = '<div class="tarj">' +
       '<div class="hecha-num">' + escHtml(d.numero || "Cotización creada") + "</div>" +
-      '<div class="hecha-rango">' + escHtml(colones(d.min) + " – " + colones(d.max)) + "</div>" +
+      '<div class="hecha-rango">' +
+        escHtml(d.desde || d.min === d.max ? "Desde " + colones(d.min)
+                                          : colones(d.min) + " – " + colones(d.max)) + "</div>" +
       '<div class="hecha-quien">' + escHtml(d.servicioNombre + " · " + (d.nombre || "")) + "</div>" +
       '<div class="hecha-acc">' + acc.join("") + "</div></div>";
     $("nueva-hecha").hidden = false;
@@ -2273,14 +2301,24 @@
   // no al final: llegar al paso cuatro y descubrir que falta el cantón
   // obliga a devolverse a buscarlo.
   var REQUIERE = {
-    1: [["n-servicio", "el servicio"], ["n-perfil", "el tipo de propiedad"],
-        ["n-ultimo", "cuándo fue el último servicio"], ["n-acceso", "dónde para el camión"]],
     2: [["n-provincia", "la provincia"], ["n-canton", "el cantón"]],
     3: [["n-telefono", "el teléfono"], ["n-nombre", "el nombre"]]
   };
 
+  // El primer paso pide cosas distintas según el servicio, así que su
+  // lista se arma en el momento en vez de estar escrita arriba.
+  function requiereDelPrimerPaso() {
+    var lista = [["n-servicio", "el servicio"]];
+    var s = OPC && OPC.servicios[$("n-servicio").value];
+    if (s && s.tipo === "tanque") {
+      lista.push(["n-forma", "la forma del tanque"], ["n-medida", "la medida"],
+                 ["n-antiguedad", "cuándo fue la última limpieza"]);
+    }
+    return lista;
+  }
+
   function faltaEnPaso(n) {
-    var lista = REQUIERE[n] || [];
+    var lista = n === 1 ? requiereDelPrimerPaso() : (REQUIERE[n] || []);
     for (var i = 0; i < lista.length; i++) {
       if (!$(lista[i][0]).value.trim()) return lista[i];
     }
@@ -2331,17 +2369,20 @@
   function pintarRepaso() {
     var lugar = [$("n-distrito").value, $("n-canton").value, $("n-provincia").value]
       .filter(Boolean).join(", ");
-    var filas = [
-      ["Servicio", textoOpcion("n-servicio")],
-      ["Propiedad", textoOpcion("n-perfil")],
-      ["Último servicio", textoOpcion("n-ultimo")],
-      ["Acceso", textoOpcion("n-acceso")],
+    var filas = [["Servicio", textoOpcion("n-servicio")]];
+    if (!$("campo-forma").hidden) {
+      filas.push(["Forma del tanque", textoOpcion("n-forma")],
+                 ["Medida", textoOpcion("n-medida")],
+                 ["Última limpieza", textoOpcion("n-antiguedad")]);
+    }
+    if (!$("campo-dias").hidden) filas.push(["Días de alquiler", $("n-dias").value || "—"]);
+    filas = filas.concat([
       ["Ubicación", lugar || "—"],
       ["Cliente", $("n-nombre").value || "—"],
       ["Teléfono", $("n-telefono").value || "—"],
       ["Cédula", $("n-cedula").value || "—"],
       ["Correo", $("n-correo").value || "—"]
-    ];
+    ]);
     $("repaso").innerHTML = filas.map(function (f) {
       return "<div><dt>" + escHtml(f[0]) + "</dt><dd>" + escHtml(f[1]) + "</dd></div>";
     }).join("");
@@ -2393,6 +2434,7 @@
   });
 
   $("n-servicio").addEventListener("change", refrescarServicio);
+  $("n-forma").addEventListener("change", refrescarMedida);
   $("n-provincia").addEventListener("change", refrescarCanton);
   $("n-canton").addEventListener("change", refrescarDistrito);
 
@@ -2408,8 +2450,9 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         origen: "panel",
-        servicio: $("n-servicio").value, perfil: $("n-perfil").value,
-        ultimo: $("n-ultimo").value, acceso: $("n-acceso").value,
+        servicio: $("n-servicio").value,
+        forma: $("n-forma").value, medida: $("n-medida").value,
+        antiguedad: $("n-antiguedad").value, dias: $("n-dias").value,
         provincia: $("n-provincia").value, canton: $("n-canton").value,
         distrito: $("n-distrito").value,
         nombre: $("n-nombre").value, telefono: $("n-telefono").value,

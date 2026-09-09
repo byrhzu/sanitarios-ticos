@@ -243,14 +243,14 @@ const TABLAS_PANEL = {
     }
   },
   cotizaciones: {
-    columnas: `id, numero, datetime(creado, '-6 hours') AS creado, servicio, perfil,
-               ultimo, acceso, zona, monto_min, monto_max, provisional,
+    columnas: `id, numero, datetime(creado, '-6 hours') AS creado, servicio, forma,
+               medida, ultimo, dias, zona, monto_min, monto_max, provisional,
                origen, nombre, telefono, cedula, correo, provincia, canton, distrito,
                llave, estado, nota`,
     csv: {
       archivo: "cotizaciones",
       encabezado: ["Número", "Fecha (Costa Rica)", "Estado", "Nota", "Servicio", "Mínimo", "Máximo",
-                   "Propiedad", "Último servicio", "Acceso",
+                   "Forma del tanque", "Medida", "Último servicio",
                    "Provincia", "Cantón", "Distrito", "Cobro de zona",
                    "Precios provisionales", "Origen",
                    "Nombre", "Cédula", "Teléfono", "Correo"],
@@ -258,8 +258,8 @@ const TABLAS_PANEL = {
         f.numero || "", f.creado, nombreEstado(f.estado), f.nota || "",
         etiqueta(f.servicio, null, "servicio"),
         f.monto_min, f.monto_max,
-        etiqueta(f.servicio, f.perfil, "perfil"), etiqueta(f.servicio, f.ultimo, "ultimo"),
-        etiqueta(f.servicio, f.acceso, "acceso"),
+        etiqueta(f.servicio, f.forma, "forma"), etiqueta(f.servicio, f.medida, "medida"),
+        etiqueta(f.servicio, f.ultimo, "ultimo"),
         f.provincia || "", f.canton || "", f.distrito || "", etiqueta(null, f.zona, "zona"),
         f.provisional ? "Sí" : "No", ORIGENES[f.origen] || f.origen || "",
         f.nombre || "", f.cedula || "", f.telefono || "", f.correo || ""
@@ -277,7 +277,7 @@ const TABLAS_PANEL = {
          CSV y en el documento: sacarlos de acá es lo que deja espacio
          para el estado y el botón de WhatsApp, que es lo que uno de
          verdad viene a tocar. */
-      encabezado: ["Número", "Fecha", "Cliente", "Servicio", "Rango", "Propiedad", "Zona"],
+      encabezado: ["Número", "Fecha", "Cliente", "Servicio", "Rango", "Detalle", "Zona"],
       ancha: 5,
       meta: (f) => ({
         id: f.id,
@@ -288,8 +288,8 @@ const TABLAS_PANEL = {
         wa: waDe(f.telefono,
           "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") + ", le escribo de " +
           "Sanitarios Ticos por su cotización " + (f.numero || "") + ": " +
-          etiqueta(f.servicio, null, "servicio").toLowerCase() + ", entre " +
-          colones(f.monto_min) + " y " + colones(f.monto_max) +
+          etiqueta(f.servicio, null, "servicio").toLowerCase() + ", " +
+          montoTexto(f.monto_min, f.monto_max) +
           ". ¿Le sirve que se lo coordinemos esta semana?")
       }),
       fila: (f) => [
@@ -297,8 +297,8 @@ const TABLAS_PANEL = {
         f.creado,
         f.nombre || "—",
         etiqueta(f.servicio, null, "servicio"),
-        colones(f.monto_min) + " – " + colones(f.monto_max),
-        etiqueta(f.servicio, f.perfil, "perfil"),
+        montoTexto(f.monto_min, f.monto_max),
+        detalleTrabajo(f),
         zonaTexto(f.provincia, f.canton, f.distrito) || etiqueta(null, f.zona, "zona")
       ]
     }
@@ -555,7 +555,7 @@ async function cambiarEstado(request, env) {
 async function registrarDesdeCotizacion(env, id, extra) {
   try {
     const c = await env.DB.prepare(
-      `SELECT numero, servicio, perfil, nombre, telefono, cedula, correo,
+      `SELECT numero, servicio, forma, medida, ultimo, dias, nombre, telefono, cedula, correo,
               provincia, canton, distrito, monto_min
        FROM cotizaciones WHERE id = ?`
     ).bind(id).first();
@@ -567,7 +567,7 @@ async function registrarDesdeCotizacion(env, id, extra) {
     await guardarServicio(env, cliente.id, {
       fecha: extra.fecha,
       servicio: c.servicio,
-      detalle: etiqueta(c.servicio, c.perfil, "perfil"),
+      detalle: detalleTrabajo(c),
       monto: extra.monto != null && extra.monto !== "" ? extra.monto : c.monto_min,
       cotizacion: c.numero,
       meses: extra.meses,
@@ -741,14 +741,14 @@ async function resumenPanel(request, env) {
       titulo: f.numero || ("Cotización " + f.id),
       nombre: f.nombre || "Sin nombre",
       detalle: etiqueta(f.servicio, null, "servicio") + " · " +
-               colones(f.monto_min) + "–" + colones(f.monto_max),
+               montoTexto(f.monto_min, f.monto_max),
       lugar: [f.canton, f.provincia].filter(Boolean).join(", ") || null,
       tel: f.telefono || null,
       wa: waDe(f.telefono,
         "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") + ", le escribo de " +
         "Sanitarios Ticos por su cotización " + (f.numero || "") + ": " +
         etiqueta(f.servicio, null, "servicio").toLowerCase() + ", entre " +
-        colones(f.monto_min) + " y " + colones(f.monto_max) +
+        montoTexto(f.monto_min, f.monto_max) +
         ". ¿Le sirve que se lo coordinemos esta semana?")
     })).concat(filas(5).map((f) => ({
       tabla: "solicitudes", id: f.id, horas: f.horas, fecha: f.d,
@@ -1248,164 +1248,212 @@ async function agendaPanel(request, env) {
 // estimación y `tools/modo-publicacion.py` se niega a pasar el sitio a
 // producción. Es a propósito: cotizar de verdad con precios inventados
 // es peor que no cotizar.
+/* Precios reales, entregados por el propietario el 8 de setiembre de 2026.
+   Ya no son provisionales: cada monto de acá salió de él, y donde no hay
+   número no se inventa uno — se dice "desde". */
 const TARIFAS = {
-  provisional: true,
+  provisional: false,
 
-  // Confirmado por el propietario: los montos de abajo YA llevan el IVA
-  // adentro. No se suma nada al final.
+  // Confirmado: los montos ya llevan el IVA adentro. No se suma nada.
   iva: { incluido: true, tasa: 0.13 },
 
   vigenciaDias: 15,
 
-  // Recargo por salir del GAM. El camión igual sale; lo que
-  // cambia es el tiempo de ruta.
-  zona: { valle: 1, resto: 1.25 },
+  /* Cuánto sube por el tiempo sin limpiar. Más años es más lodo
+     compactado, que es más trabajo. Sólo aplica al tanque séptico. */
+  antiguedad: {
+    "1a2":  { etiqueta: "Hace 1 o 2 años",          monto: 0 },
+    "3a4":  { etiqueta: "Hace 3 o 4 años",          monto: 5000 },
+    "5mas": { etiqueta: "5 años o más, o no sabe",  monto: 10000 }
+  },
 
   servicios: {
+    /* El precio del tanque séptico sale del TAMAÑO. Como casi nadie lo
+       sabe en litros, no se pregunta el tamaño: se pregunta la FORMA, y
+       de ahí la medida. La forma se ve saliendo al patio; los litros no.
+       La inversión es del propietario y es mejor que la que había. */
     "tanques-septicos": {
       nombre: "Limpieza de tanque séptico",
-      // Por debajo de esto no vale la pena sacar la cisterna.
-      minimo: 40000,
-      // El perfil sustituye a la pregunta "¿de qué tamaño es su tanque?"
-      perfil: {
-        "casa-pequena":   { etiqueta: "Casa de 1 a 4 personas",           rango: [45000, 60000] },
-        "casa-mediana":   { etiqueta: "Casa de 5 a 8 personas",           rango: [60000, 85000] },
-        "casa-grande":    { etiqueta: "Casa de 9 personas o más",         rango: [85000, 115000] },
-        "negocio-pequeno":{ etiqueta: "Soda, oficina o local pequeño",    rango: [70000, 100000] },
-        "negocio-grande": { etiqueta: "Restaurante, hotel o escuela",     rango: [110000, 165000] },
-        "industria":      { etiqueta: "Industria o condominio",           rango: [160000, 260000] }
-      },
-      // Más años sin limpiar = más lodo compactado = más trabajo.
-      ultimo: {
-        "menos2": { etiqueta: "Hace menos de 2 años", monto: 0 },
-        "2a4":    { etiqueta: "Entre 2 y 4 años",     monto: 8000 },
-        "mas5":   { etiqueta: "Hace 5 años o más",    monto: 18000 },
-        "nose":   { etiqueta: "Nunca, o no sé",       monto: 12000 }
-      },
-      // Metros de manguera desde donde puede parquear el camión.
-      acceso: {
-        "directo": { etiqueta: "El camión llega al tanque",  monto: 0 },
-        "corta":   { etiqueta: "Hasta 30 metros de manguera", monto: 9000 },
-        "larga":   { etiqueta: "Más de 30 metros",            monto: 22000 }
+      formas: {
+        redondo: {
+          etiqueta: "Redondo, de cemento",
+          medidas: {
+            "2x1": { etiqueta: "2 m de fondo por 1 m de diámetro", precio: 40000 }
+          }
+        },
+        tierra: {
+          etiqueta: "Hueco de tierra",
+          medidas: {
+            "4m": { etiqueta: "4 metros de fondo", precio: 90000 },
+            "5m": { etiqueta: "5 metros de fondo", precio: 110000 },
+            "6m": { etiqueta: "6 metros de fondo", precio: 140000 }
+          }
+        },
+        plastico: {
+          etiqueta: "Tanque plástico",
+          medidas: {
+            "750":  { etiqueta: "750 litros",   precio: 40000 },
+            "1000": { etiqueta: "1000 litros",  precio: 60000 },
+            "1500": { etiqueta: "1500 litros",  precio: 90000 },
+            "2000": { etiqueta: "2000 litros",  precio: 120000 },
+            "2500": { etiqueta: "2500 litros",  precio: 140000 }
+          }
+        },
+        block: {
+          etiqueta: "Cuadrado, hecho en block",
+          medidas: {
+            "1.5": { etiqueta: "1,5 × 1,5 × 1,5 metros", precio: 70000 },
+            "2":   { etiqueta: "2 × 2 × 2 metros",       precio: 100000 }
+          }
+        }
       }
     },
 
+    /* Estos tres van con precio de tabla. Donde hay rango, el rango es
+       la variación del trabajo DENTRO de la misma zona — no la
+       distancia. Eso lo aclaró el propietario y cambia todo: la
+       distancia no entra en la cuenta automática. */
     "trampas-grasa": {
       nombre: "Limpieza de trampa de grasa",
-      minimo: 30000,
-      perfil: {
-        "negocio-pequeno":{ etiqueta: "Soda o cafetería",              rango: [30000, 45000] },
-        "negocio-grande": { etiqueta: "Restaurante",                   rango: [45000, 75000] },
-        "industria":      { etiqueta: "Comedor industrial o cadena",   rango: [75000, 130000] }
-      },
-      ultimo: {
-        "menos2": { etiqueta: "Con mantenimiento al día",  monto: 0 },
-        "2a4":    { etiqueta: "Hace varios meses",         monto: 7000 },
-        "mas5":   { etiqueta: "Hace más de un año",        monto: 16000 },
-        "nose":   { etiqueta: "Nunca, o no sé",            monto: 10000 }
-      },
-      acceso: {
-        "directo": { etiqueta: "El camión llega a la trampa", monto: 0 },
-        "corta":   { etiqueta: "Hasta 30 metros de manguera", monto: 8000 },
-        "larga":   { etiqueta: "Más de 30 metros",            monto: 18000 }
-      }
+      rango: [35000, 40000]
+    },
+    "tanques-grasa": {
+      nombre: "Limpieza de tanque de grasa",
+      desde: 50000
+    },
+    "destaqueo": {
+      nombre: "Destaqueo de tuberías",
+      rango: [30000, 35000]
     },
 
-    "destaqueo": {
-      nombre: "Destaqueo de tubería con sonda eléctrica",
-      // El destaqueo NO lleva cisterna: va la sonda, que es otro equipo
-      // y otro costo de movilizar. Su mínimo es mucho más bajo.
-      minimo: 20000,
-      perfil: {
-        "casa-pequena":   { etiqueta: "Tubería fina — baño o cocina",     rango: [22000, 35000] },
-        "casa-mediana":   { etiqueta: "Varias salidas de la casa",        rango: [32000, 50000] },
-        "negocio-grande": { etiqueta: "Colector principal o bajante",     rango: [50000, 85000] },
-        "industria":      { etiqueta: "Red de edificio o condominio",     rango: [85000, 150000] }
-      },
-      ultimo: {
-        "menos2": { etiqueta: "Se tapa de vez en cuando", monto: 0 },
-        "2a4":    { etiqueta: "Se tapa seguido",          monto: 6000 },
-        "mas5":   { etiqueta: "Está tapado del todo",     monto: 14000 },
-        "nose":   { etiqueta: "No sé",                    monto: 6000 }
-      },
-      acceso: {
-        "directo": { etiqueta: "El registro está a la vista",  monto: 0 },
-        "corta":   { etiqueta: "Hay que buscar el registro",   monto: 7000 },
-        "larga":   { etiqueta: "No se sabe dónde está",        monto: 15000 }
-      }
+    // El alquiler se cobra por día con un piso de ocho.
+    "alquiler-tanques": {
+      nombre: "Alquiler de tanque plástico",
+      porDia: 15000,
+      diasMinimo: 8
     }
   }
 };
 
-// ₡ con punto de miles, como se escribe en Costa Rica.
-// toLocaleString("es-CR") separa con espacio, que acá no se usa.
+/* ¿POR QUÉ NO HAY RECARGO POR DISTANCIA ACÁ?
+
+   Porque el propietario decidió que el cliente no lo vea. El negocio
+   apunta a llenar los camiones dentro de las zonas que ya cubre, no a
+   viajar; para lo que cae fuera, el precio base es el mismo y el
+   recargo lo pone él antes de dar el precio en firme.
+
+   Meterlo en la fórmula habría sido inventar un número que él no dio, y
+   además mostrarle al cliente algo que no quiere mostrarle. La zona se
+   sigue guardando en cada cotización para poder estudiarla después. */
+
 function colones(n) {
   return "₡" + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
-/* Calcula el rango. Devuelve `null` si algún dato no corresponde a las
-   opciones conocidas — nunca adivina, porque un precio adivinado es
-   exactamente lo que estamos tratando de evitar. */
-/* Traduce los códigos guardados ("casa-mediana") al texto que lee una
-   persona ("Casa de 5 a 8 personas"). La base guarda el código y no la
-   etiqueta a propósito: si mañana se reescribe el texto de una opción,
-   las cotizaciones viejas se leen con la redacción nueva en vez de
-   quedar congeladas con la vieja. Si el código ya no existe en la
-   tabla, se muestra tal cual en vez de un vacío — así se nota. */
 const ZONAS = { valle: "Dentro del GAM y alrededores", resto: "Fuera del GAM" };
 
+/* Una línea que describe el trabajo, para las listas y el historial del
+   cliente. Cada servicio guarda cosas distintas —el tanque su forma y
+   medida, el alquiler sus días— así que se arma con lo que haya. */
+/* Cómo se escribe lo cotizado. Cuando el mínimo y el máximo son
+   iguales no es un rango de cero de ancho: es un piso, y se dice
+   "desde". Vive en un solo lugar para que el panel, el WhatsApp y el
+   correo no se contradigan. */
+function montoTexto(min, max) {
+  return min === max ? "desde " + colones(min) : colones(min) + " – " + colones(max);
+}
+
+function detalleTrabajo(f) {
+  const partes = [];
+  if (f.forma)  partes.push(etiqueta(f.servicio, f.forma, "forma"));
+  if (f.medida) partes.push(etiqueta(f.servicio, f.medida, "medida"));
+  if (f.dias)   partes.push(f.dias + " días");
+  return partes.join(", ") || etiqueta(f.servicio, null, "servicio");
+}
+
+/* Traduce un código guardado a lo que se lee en pantalla. Los campos
+   `perfil` y `acceso` son de la estructura vieja: no se traducen, pero
+   se dejan pasar porque hay cotizaciones ya emitidas con ellos y no se
+   les puede borrar el detalle. */
 function etiqueta(servicio, codigo, campo) {
   if (campo === "zona") return ZONAS[codigo] || codigo || "";
+  if (campo === "antiguedad" || campo === "ultimo") {
+    const a = TARIFAS.antiguedad[codigo];
+    return a ? a.etiqueta : (codigo || "");
+  }
   const svc = TARIFAS.servicios[servicio];
   if (!svc) return codigo || "";
   if (campo === "servicio") return svc.nombre;
-  const opcion = svc[campo] && svc[campo][codigo];
-  return opcion ? opcion.etiqueta : (codigo || "");
+
+  if (campo === "forma") {
+    const f = svc.formas && svc.formas[codigo];
+    return f ? f.etiqueta : (codigo || "");
+  }
+  if (campo === "medida") {
+    // Las medidas viven dentro de cada forma, pero sus códigos no se
+    // repiten entre formas, así que se pueden buscar sin saber cuál era.
+    for (const f of Object.values(svc.formas || {})) {
+      if (f.medidas[codigo]) return f.medidas[codigo].etiqueta;
+    }
+    return codigo || "";
+  }
+  return codigo || "";
 }
 
 function calcularCotizacion(entrada) {
   const svc = TARIFAS.servicios[entrada.servicio];
   if (!svc) return null;
 
-  const perfil = svc.perfil[entrada.perfil];
-  const ultimo = svc.ultimo[entrada.ultimo];
-  const acceso = svc.acceso[entrada.acceso];
-  const factorZona = TARIFAS.zona[entrada.zona];
-  if (!perfil || !ultimo || !acceso || !factorZona) return null;
+  let min = null, max = null, diasAlquiler = null;
+  const desglose = [];
 
-  const extras = ultimo.monto + acceso.monto;
-  let min = (perfil.rango[0] + extras) * factorZona;
-  let max = (perfil.rango[1] + extras) * factorZona;
+  if (svc.formas) {
+    // Tanque séptico: forma → medida → antigüedad.
+    const forma = svc.formas[entrada.forma];
+    if (!forma) return null;
+    const medida = forma.medidas[entrada.medida];
+    if (!medida) return null;
+    const anos = TARIFAS.antiguedad[entrada.antiguedad];
+    if (!anos) return null;
 
-  // Si el mínimo del servicio levanta el piso, el techo sube lo mismo.
-  // Aplastar el techo contra el piso daría rangos tipo "de ₡40.000 a
-  // ₡40.000", que se leen como precio cerrado y no como estimación.
-  const alza = Math.max(0, (svc.minimo || 0) - min);
-  min += alza;
-  max += alza;
+    min = medida.precio + anos.monto;
+    desglose.push({ concepto: forma.etiqueta + ", " + medida.etiqueta, monto: medida.precio });
+    if (anos.monto) desglose.push({ concepto: anos.etiqueta, monto: anos.monto });
 
-  // Se redondea a miles: un rango con cifras exactas aparenta una
-  // precisión que una estimación no tiene.
-  const aMiles = (v) => Math.round(v / 1000) * 1000;
+  } else if (svc.rango) {
+    min = svc.rango[0];
+    max = svc.rango[1];
+    desglose.push({ concepto: svc.nombre, monto: null });
 
-  const desglose = [
-    { concepto: perfil.etiqueta, monto: null },
-    { concepto: ultimo.etiqueta, monto: ultimo.monto },
-    { concepto: acceso.etiqueta, monto: acceso.monto }
-  ];
-  if (factorZona !== 1) {
+  } else if (svc.desde) {
+    min = svc.desde;
+    desglose.push({ concepto: svc.nombre, monto: null });
+
+  } else if (svc.porDia) {
+    const pedidos = parseInt(entrada.dias, 10);
+    const dias = Number.isFinite(pedidos) && pedidos > svc.diasMinimo
+      ? Math.min(pedidos, 365) : svc.diasMinimo;
+    min = svc.porDia * dias;
+    diasAlquiler = dias;
     desglose.push({
-      concepto: "Fuera del GAM (ruta más larga)",
-      monto: null,
-      factor: factorZona
+      concepto: dias + " días de alquiler, a " + colones(svc.porDia) + " por día",
+      monto: min
     });
   }
 
+  if (min == null) return null;
+
+  /* `max` en null quiere decir "desde": es un piso, no un rango. Se
+     guarda igual al mínimo porque la columna de la base no acepta
+     nulos, y quien muestra el dato entiende que min igual a max es un
+     "desde" y no un rango de cero de ancho. */
   return {
     servicio: entrada.servicio,
     servicioNombre: svc.nombre,
-    min: aMiles(min),
-    max: aMiles(max),
+    min: min,
+    max: max == null ? min : max,
+    desde: max == null,
+    dias: diasAlquiler,
     desglose: desglose,
     provisional: TARIFAS.provisional,
     ivaIncluido: TARIFAS.iva.incluido,
@@ -1508,6 +1556,10 @@ const EMPRESA = {
 /* Qué mueve cada respuesta. Va debajo del dato en el documento, para que
    el cliente entienda de dónde sale el rango en vez de tener que creerlo. */
 const PORQUE = {
+  forma: "De la forma sale el tamaño, que es lo que cobra",
+  medida: "El tamaño del tanque es lo que decide el precio",
+  antiguedad: "Entre más tiempo pasa, más lodo hay que sacar",
+  dias: "Se cobra por día, con un mínimo de ocho",
   perfil: "Estima el volumen del tanque",
   ultimo: "Entre más tiempo pasa, más lodo hay que sacar",
   acceso: "Metros de manguera desde donde para el camión",
@@ -1591,10 +1643,16 @@ async function cotizar(request, env, ctx) {
 
   const entrada = {
     servicio: texto(cuerpo.servicio, 40),
-    perfil: texto(cuerpo.perfil, 40),
-    ultimo: texto(cuerpo.ultimo, 40),
-    acceso: texto(cuerpo.acceso, 40),
-    // La zona no se pregunta: sale del cantón, que la persona ya dio.
+    // Tanque séptico
+    forma: texto(cuerpo.forma, 40),
+    medida: texto(cuerpo.medida, 40),
+    antiguedad: texto(cuerpo.antiguedad, 40),
+    // Alquiler
+    dias: cuerpo.dias,
+    /* La zona sale del cantón, que la persona ya dio. NO entra en el
+       precio: el recargo por distancia lo pone el encargado y el cliente
+       no lo ve. Se guarda para poder estudiar después de dónde viene el
+       trabajo y afinar el perímetro. */
     zona: zonaDeProvincia(provincia)
   };
 
@@ -1619,13 +1677,17 @@ async function cotizar(request, env, ctx) {
   try {
     const res = await env.DB.prepare(
       `INSERT INTO cotizaciones
-         (servicio, perfil, ultimo, acceso, zona, monto_min, monto_max,
+         (servicio, forma, medida, ultimo, dias, zona, monto_min, monto_max,
           provisional, origen, nombre, telefono, llave,
           cedula, correo, provincia, canton, distrito)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12,
-               ?13, ?14, ?15, ?16, ?17)`
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13,
+               ?14, ?15, ?16, ?17, ?18)`
     ).bind(
-      entrada.servicio, entrada.perfil, entrada.ultimo, entrada.acceso, entrada.zona,
+      // `ultimo` guarda la antigüedad: es la misma pregunta de siempre
+      // —hace cuánto fue el último servicio— con otro nombre en el
+      // código, así que no hace falta una columna nueva.
+      entrada.servicio, entrada.forma || null, entrada.medida || null,
+      entrada.antiguedad || null, calculo.dias || null, entrada.zona,
       calculo.min, calculo.max, calculo.provisional ? 1 : 0, origen, nombre, telefono, llave,
       cedula, correo, provincia, canton, distrito
     ).run();
@@ -1675,9 +1737,9 @@ async function verCotizacion(request, env) {
   let f;
   try {
     f = await env.DB.prepare(
-      `SELECT numero, datetime(creado, '-6 hours') AS creado, servicio, perfil,
-              ultimo, acceso, zona, monto_min, monto_max, provisional, nombre, telefono,
-              cedula, correo, provincia, canton, distrito
+      `SELECT numero, datetime(creado, '-6 hours') AS creado, servicio, forma, medida,
+              ultimo, dias, perfil, acceso, zona, monto_min, monto_max, provisional,
+              nombre, telefono, cedula, correo, provincia, canton, distrito
          FROM cotizaciones
         WHERE numero = ?1 AND llave = ?2`
     ).bind(numero, llave).first();
@@ -1714,16 +1776,36 @@ async function verCotizacion(request, env) {
       correo: f.correo || null,
       zonaTexto: zonaTexto(f.provincia, f.canton, f.distrito)
     },
-    // Las cuatro respuestas con las que se calculó, cada una con lo que
-    // mueve. Es el reemplazo honesto de las líneas de una factura: no
-    // tenemos artículos, tenemos motivos.
-    base: [
-      { campo: "Propiedad",       valor: etiqueta(f.servicio, f.perfil, "perfil"), porque: PORQUE.perfil },
-      { campo: "Último servicio", valor: etiqueta(f.servicio, f.ultimo, "ultimo"), porque: PORQUE.ultimo },
-      { campo: "Acceso",          valor: etiqueta(f.servicio, f.acceso, "acceso"), porque: PORQUE.acceso },
-      { campo: "Zona",            valor: etiqueta(null, f.zona, "zona"),           porque: PORQUE.zona }
-    ]
+    // Es un "desde" cuando no hay techo: el mínimo y el máximo iguales
+    // no son un rango de cero de ancho, son un piso.
+    desde: f.monto_min === f.monto_max,
+    /* Las respuestas con las que se calculó, cada una con lo que mueve.
+       Es el reemplazo honesto de las líneas de una factura: no tenemos
+       artículos, tenemos motivos.
+
+       Se arma con lo que cada servicio guardó — un tanque tiene forma y
+       medida, un alquiler tiene días, un destaqueo no tiene nada de
+       esto — y la zona sólo aparece si se sabe. La distancia nunca se
+       menciona: el recargo lo decide el encargado y el cliente no lo ve. */
+    base: baseDelCalculo(f)
   });
+}
+
+function baseDelCalculo(f) {
+  const filas = [];
+  const poner = (campo, valor, porque) => { if (valor) filas.push({ campo, valor, porque }); };
+
+  poner("Forma del tanque", f.forma  && etiqueta(f.servicio, f.forma, "forma"),   PORQUE.forma);
+  poner("Tamaño",           f.medida && etiqueta(f.servicio, f.medida, "medida"), PORQUE.medida);
+  poner("Último servicio",  f.ultimo && etiqueta(f.servicio, f.ultimo, "ultimo"), PORQUE.antiguedad);
+  poner("Días de alquiler", f.dias   && (f.dias + " días"),                       PORQUE.dias);
+
+  // Cotizaciones viejas, emitidas con la estructura anterior.
+  poner("Propiedad", f.perfil && etiqueta(f.servicio, f.perfil, "perfil"), PORQUE.perfil);
+  poner("Acceso",    f.acceso && etiqueta(f.servicio, f.acceso, "acceso"), PORQUE.acceso);
+
+  poner("Zona", etiqueta(null, f.zona, "zona"), PORQUE.zona);
+  return filas;
 }
 
 /* Suma días a una fecha "AAAA-MM-DD" sin arrastrar la hora local. */
@@ -1738,20 +1820,32 @@ function sumarDias(iso, dias) {
 function opcionesCotizacion() {
   const servicios = {};
   for (const [id, s] of Object.entries(TARIFAS.servicios)) {
-    servicios[id] = {
-      nombre: s.nombre,
-      perfil: Object.entries(s.perfil).map(([k, v]) => ({ id: k, etiqueta: v.etiqueta })),
-      ultimo: Object.entries(s.ultimo).map(([k, v]) => ({ id: k, etiqueta: v.etiqueta })),
-      acceso: Object.entries(s.acceso).map(([k, v]) => ({ id: k, etiqueta: v.etiqueta }))
-    };
+    const o = { nombre: s.nombre };
+    if (s.formas) {
+      // Tanque séptico: forma, después medida, después hace cuánto.
+      o.tipo = "tanque";
+      o.formas = Object.entries(s.formas).map(([k, f]) => ({
+        id: k, etiqueta: f.etiqueta,
+        medidas: Object.entries(f.medidas).map(([mk, m]) => ({ id: mk, etiqueta: m.etiqueta }))
+      }));
+      o.antiguedad = Object.entries(TARIFAS.antiguedad)
+        .map(([k, a]) => ({ id: k, etiqueta: a.etiqueta }));
+    } else if (s.porDia) {
+      o.tipo = "alquiler";
+      o.porDia = s.porDia;
+      o.diasMinimo = s.diasMinimo;
+    } else {
+      // Precio de tabla: no hay nada que preguntar sobre el trabajo.
+      o.tipo = "fijo";
+    }
+    servicios[id] = o;
   }
   return json({
     ok: true,
     provisional: TARIFAS.provisional,
     servicios: servicios,
-    // La zona ya no es una pregunta: se deduce del cantón. La lista de
-    // lugares viaja aparte, en /api/geografia, porque es grande y no
-    // cambia nunca — así el navegador la guarda y no la vuelve a pedir.
+    /* La lista de lugares viaja aparte, en /api/geografia: son ~490
+       distritos, no cambia nunca y así el navegador la guarda. */
     geografia: "/api/geografia"
   });
 }
