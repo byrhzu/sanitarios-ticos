@@ -116,7 +116,7 @@ h1 {
 
 /* Todo lo que use la familia de display en versión ancha se ve blando
    al lado del h1. Estas piezas van en el corte de titular. */
-.btn, .marquee span, .pull, .clientes, .arrow,
+.btn, .marquee span, .pull, .arrow,
 .fact strong, .fact b, .row-t h3,
 .hq b, .qa summary,
 .data a, .data span, .data small, .foot .foot-t, .foot h4,
@@ -336,13 +336,22 @@ strong, b { font-weight: 600; }
 }
 .marquee-track:hover { animation-play-state: paused; }
 .marquee span {
-  display: inline-flex; align-items: center; gap: .8rem;
+  display: inline-flex; align-items: center;
   font-family: var(--display); font-weight: 600;
   font-size: .88rem; letter-spacing: .08em; text-transform: uppercase;
-  padding: .7rem 1.6rem;
+  padding: .7rem 0;
   white-space: nowrap;
 }
-.marquee span::after { content: "◆"; font-size: .55em; opacity: .55; }
+/* El separador pone TODO el espacio, y el mismo de cada lado. Antes el
+   espacio salía del gap por la izquierda (.8rem) y de dos paddings por
+   la derecha (3.2rem), así que el rombo quedaba pegado al texto que
+   terminaba en vez de en medio de los dos. */
+.marquee span::after {
+  content: "◆"; font-size: .55em; opacity: .55;
+  margin: 0 1.6rem;
+  /* La letra ◆ no llena su caja: sin esto se apoya un pelo abajo. */
+  position: relative; top: -.05em;
+}
 @keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
 /* =============================================================
@@ -633,25 +642,6 @@ strong, b { font-weight: 600; }
    para leer de corrido, ahora se lee de corrido — un solo párrafo en la
    tipografía de titulares, separado por puntos naranja. Ocupa la mitad
    del alto y se ve como una frase pensada, no como una barra de UI. */
-.clientes {
-  font-family: var(--display); font-weight: 600;
-  font-size: clamp(1.05rem, 2vw, 1.35rem);
-  line-height: 1.7; letter-spacing: -.015em;
-  color: var(--ink-2);
-  max-width: 54rem;
-  text-wrap: pretty;
-}
-/* Cada oficio no se parte a la mitad ("Restaurantes y / sodas" se lee
-   fatal) y el punto va PEGADO al que termina, no al que empieza: si el
-   separador abre línea, el margen izquierdo queda como un serrucho. */
-.clientes li { display: inline; white-space: nowrap; }
-.clientes li:not(:last-child)::after {
-  content: "·";
-  margin: 0 .5rem 0 .55rem;
-  color: var(--orange);
-  font-weight: 700;
-}
-
 /* --- Aviso de emergencia (cierre de portada) --- */
 .urgente {
   display: flex; flex-wrap: wrap; align-items: center; gap: .7rem 1.4rem;
@@ -1281,7 +1271,6 @@ body.fabs-fuera .wa-fab {
   .shots { gap: .5rem; }
   .row { padding-block: 1.05rem; }
   .signals { line-height: 1.62; }
-  .clientes { line-height: 1.62; }
   .urgente { margin-bottom: 1.8rem; padding: 1rem 1.1rem; }
 
   .bar-links a, .foot-col a, .data a, .arrow {

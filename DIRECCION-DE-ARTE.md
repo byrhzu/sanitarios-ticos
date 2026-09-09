@@ -1207,3 +1207,43 @@ nuestro.
 clientes y el EXIF del teléfono lleva las coordenadas GPS. Pillow no lo
 escribe si no se le pasa, pero sí hay que aplicar `exif_transpose` antes,
 o las verticales salen acostadas.
+
+## 24. Cuatro correcciones del inicio (2026-09-09)
+
+**El rombo de la cinta naranja no estaba en medio.** Byron lo notó a ojo y
+tenía razón: el espacio lo ponían dos cosas distintas. Por la izquierda, el
+`gap` del `inline-flex` (.8rem). Por la derecha, el `padding` derecho del
+`span` más el `padding` izquierdo del siguiente (1.6 + 1.6 = 3.2rem). El
+rombo quedaba pegado al texto que terminaba.
+
+Corregido pasando **todo el espacio al separador**: el `span` pierde el
+padding horizontal y el `::after` lleva `margin: 0 1.6rem`. Medido en el
+navegador: el centro del rombo cae a 0,2px del punto medio entre los dos
+textos. Se le sumó `top: -.05em` porque el glifo ◆ no llena su caja y se
+apoyaba un pelo abajo.
+
+**«De una casa de familia a una planta industrial».** Eran nueve oficios en
+una sola tirada separados por puntos naranja, debajo de un titular y un
+párrafo. Byron: *"parecen tres textos puestos nada más por ahí"*. Y sí: el
+tercer elemento no tenía estructura, era un párrafo disfrazado de lista.
+
+Ahora son **tres franjas ordenadas de menor a mayor** —Casas, Comercios,
+Industria—, con el mismo `.data franjas` que ya usan los datos de contacto y
+la cobertura. Cero CSS nuevo.
+
+La decisión es rastreable a dos cosas del spec: §7, que manda separar listas
+con franjas alternas en vez de líneas; y §5, que declara la **escala** como el
+único sistema de énfasis del sitio. Acá el contenido ya traía una escala —lo
+dice el propio titular— y no se estaba viendo. Ordenarla es hacerle caso al
+titular.
+
+Se descartaron las dos salidas automáticas: la rejilla de chips con borde
+(tic 4) y las tres tarjetas con icono (tic 7). El catálogo pide exactamente
+lo contrario para este caso: *"una lista de verdad, con tipografía grande"*.
+
+**Fuera la sección «No subcontratamos».** Decidido por Byron. Se quitó del
+inicio; en Nosotros sigue, con otro contenido.
+
+**La barra de arriba** pasa a decir «Cobertura en todo el país», sin el
+detalle del GAM. Ese detalle vive en la sección de cobertura, que es donde
+alguien lo busca; en una barra que aparece en todas las páginas era ruido.
