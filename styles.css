@@ -1453,6 +1453,118 @@ body.fabs-fuera .wa-fab {
 /* =============================================================
    10. Reduced-motion — sólo lo intrusivo
    ============================================================= */
+
+/* =====================================================================
+   Cotizador público (/cotizar)
+   Las mismas piezas del sitio —papel, tinta, naranja de acción— en
+   formato de una pregunta a la vez. No es un formulario largo: es una
+   conversación con botones, para que se pueda contestar de pie en el
+   patio, con el teléfono en una mano.
+   Ver DIRECCION-DE-ARTE.md §22.
+   ===================================================================== */
+.cot-caja {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: clamp(1.2rem, 3.5vw, 2.2rem);
+  box-shadow: 0 1px 2px rgba(27,25,23,.04), 0 12px 32px -22px rgba(27,25,23,.4);
+}
+
+/* Riel de pasos. Los números son la promesa de que esto se acaba. */
+.cot-rail { display: flex; align-items: center; gap: .45rem; margin-bottom: 1.6rem; flex-wrap: wrap; }
+.cot-rail li {
+  display: flex; align-items: center; gap: .45rem;
+  font-size: .8rem; color: var(--muted); font-weight: 600;
+}
+.cot-rail li::before {
+  content: attr(data-n);
+  width: 1.6rem; height: 1.6rem; flex: 0 0 auto;
+  display: grid; place-items: center;
+  border-radius: 50%; border: 1px solid var(--line-2);
+  font-size: .78rem; color: var(--muted); background: var(--paper);
+}
+.cot-rail li + li::after { content: none; }
+.cot-rail li:not(:last-child) { padding-right: .45rem; border-right: 1px solid var(--line); }
+/* [hidden] pierde contra el display explícito de arriba. */
+.cot-rail li[hidden] { display: none; }
+.cot-rail li.is-hecho::before {
+  content: "✓"; background: var(--ink); border-color: var(--ink); color: var(--paper);
+}
+.cot-rail li.is-ahora { color: var(--ink); }
+.cot-rail li.is-ahora::before { background: var(--orange); border-color: var(--orange); color: var(--ink); }
+@media (max-width: 600px) {
+  .cot-rail li { font-size: 0; gap: 0; padding-right: .3rem; }
+  .cot-rail li::before { font-size: .78rem; }
+}
+
+.cot-paso[hidden] { display: none !important; }
+.cot-pregunta { font-size: clamp(1.25rem, 2.6vw, 1.6rem); font-stretch: var(--ancho-titular); margin: 0 0 .35rem; }
+.cot-ayuda { color: var(--muted); font-size: .92rem; margin: 0 0 1.1rem; max-width: 44rem; }
+
+.cot-grupo + .cot-grupo { margin-top: 1.6rem; padding-top: 1.4rem; border-top: 1px solid var(--line); }
+.cot-grupo h3 { font-size: .95rem; font-stretch: var(--ancho-texto); margin: 0 0 .7rem; color: var(--ink-2); }
+
+.cot-ops { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.cot-op {
+  display: grid; gap: .18rem; text-align: left;
+  padding: .85rem 1rem; min-height: 3.4rem;
+  background: var(--paper); border: 1px solid var(--line-2); border-radius: 12px;
+  font: inherit; color: var(--ink); cursor: pointer;
+  transition: border-color .18s var(--ease-soft), background .18s var(--ease-soft), transform .18s var(--ease-soft);
+}
+.cot-op:hover { border-color: var(--ink); background: var(--white); }
+.cot-op:active { transform: translateY(1px); }
+.cot-op b { font-weight: 600; font-size: .98rem; }
+.cot-op small { color: var(--muted); font-size: .82rem; }
+.cot-op.is-elegido { border-color: var(--orange); background: var(--orange-tint); }
+.cot-op.is-elegido b::after { content: " ✓"; color: var(--orange-dk); }
+
+.cot-nav {
+  display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+  margin-top: 1.6rem; padding-top: 1.2rem; border-top: 1px solid var(--line);
+}
+.cot-atras {
+  background: none; border: 0; padding: .5rem 0; font: inherit;
+  color: var(--muted); font-weight: 600; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.cot-atras:hover { color: var(--ink); }
+.cot-nav .btn { margin-left: auto; }
+.cot-msg { font-size: .88rem; font-weight: 500; color: var(--orange-dk); min-height: 1.2em; flex-basis: 100%; }
+.cot-msg.is-error { color: #c0392b; }
+
+/* Resultado. El monto manda; todo lo demás lo acompaña. */
+.cot-monto {
+  font-family: var(--display); font-stretch: var(--ancho-cartel); font-weight: 700;
+  font-size: clamp(2.3rem, 7vw, 3.6rem); line-height: 1; letter-spacing: -.01em;
+  margin: .2rem 0 .5rem;
+}
+/* Sin mayúsculas rastreadas: son la firma tipográfica que Byron ya
+   rechazó dos veces. Basta con que sea pequeño y gris. */
+.cot-monto small { display: block; font-size: .82rem; font-stretch: var(--ancho-texto); font-weight: 600; color: var(--muted); letter-spacing: .01em; margin-bottom: .45rem; }
+.cot-oficial {
+  background: var(--orange-tint); border-left: 3px solid var(--orange);
+  padding: .85rem 1rem; border-radius: 0 10px 10px 0; color: var(--ink-2);
+  font-size: .92rem; margin: 1.2rem 0;
+}
+.cot-oficial b { color: var(--ink); }
+.cot-desglose { width: 100%; border-collapse: collapse; font-size: .92rem; margin-top: .4rem; }
+.cot-desglose th { text-align: left; font-weight: 600; color: var(--muted); font-size: .8rem; padding-bottom: .4rem; }
+.cot-desglose td { padding: .5rem 0; border-top: 1px solid var(--line); }
+.cot-desglose td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cot-acciones { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 1.4rem; }
+.cot-numero { font-size: .88rem; color: var(--muted); margin-top: 1.2rem; }
+.cot-numero b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* Cargando: el botón se apaga y dice qué está pasando. */
+.cot-caja[aria-busy="true"] .cot-op,
+.cot-caja[aria-busy="true"] .btn { pointer-events: none; opacity: .55; }
+
+@media (max-width: 720px) {
+  .cot-ops { grid-template-columns: 1fr; }
+  .cot-acciones .btn { width: 100%; justify-content: center; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .marquee-track { animation: none; }

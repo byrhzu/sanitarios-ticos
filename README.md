@@ -362,6 +362,43 @@ Console). Agrega `estado`, `nota` y `actualizado` a las dos tablas.
 
 ## Cotizaciones
 
+### Las tres puertas al precio
+
+Hay tres formas de llegar a una cotización, y las tres terminan en la
+misma cuenta del servidor (`/api/cotizar`), en la misma tabla y con el
+mismo documento imprimible. Lo único que cambia es la columna `origen`,
+que sirve para saber por dónde entra el trabajo:
+
+| Puerta | Dónde | `origen` |
+|---|---|---|
+| El chat de Frank | cualquier página, botón naranja | `beto` |
+| El cotizador público | `/cotizar` (`cotizador.js`) | `formulario` |
+| El panel | `panel.html`, "+ Nueva cotización" | `panel` |
+
+`panel` es el único que hay que probar: decir que una cotización la hizo
+alguien de la empresa cambia las estadísticas, así que sin la clave del
+panel se guarda como `beto`. El valor `beto` **no se renombra** aunque el
+personaje ahora se llame Frank: renombrarlo dejaría huérfanas las
+cotizaciones ya emitidas.
+
+El cotizador público existe porque no todo el mundo quiere conversar con
+un asistente para saber cuánto sale limpiar un tanque. Ver
+DIRECCION-DE-ARTE.md §22.
+
+### Quién da el precio oficial
+
+El monto que calcula el servidor es un **estimado automático**. El precio
+oficial lo da **el encargado**, antes de empezar el trabajo.
+
+Esto no es una etapa de transición mientras se afinan las tarifas: es
+como funciona el negocio y va a seguir siendo así, porque en sitio
+aparecen cosas que un formulario no ve. Por eso la frase está redactada
+en presente permanente en las cuatro bocas por donde sale el monto —el
+chat, el cotizador público, el documento imprimible y el correo al
+encargado— y no depende de la bandera `provisional`, que es otra cosa
+(esa marca si las tarifas del código todavía no vienen del propietario, y
+hoy está en `false`).
+
 ### Por qué Beto no calcula el precio
 
 Beto conversa y recoge los datos; **el precio lo saca código normal**, en

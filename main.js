@@ -1071,10 +1071,12 @@
           "damos por teléfono, siempre antes de salir y sin costo."
         );
       } else {
+        /* No es un "por ahora": el precio oficial SIEMPRE lo da el
+           encargado. Decirlo como si fuera provisional haría creer que
+           algún día el número automático va a ser el definitivo. */
         partes.push(
-          esDesde
-            ? "El precio final se lo confirmamos antes de salir, sin costo."
-            : "Es un rango orientativo. El precio exacto se lo confirmamos antes de salir, sin costo."
+          (esDesde ? "Es un estimado automático." : "Es un rango estimado automáticamente.") +
+          " El precio oficial se lo da el encargado antes de empezar, sin costo."
         );
       }
       if (d.numero) partes.push("Su cotización quedó con el número " + d.numero + ".");

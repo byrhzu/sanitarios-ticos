@@ -1085,3 +1085,84 @@ Comprobado posicionando las dos animaciones en instantes idénticos y
 leyendo el ángulo: 0°, −13,1°, −17°, −7°, −4° a los 0, 120, 240, 360 y
 480 ms en las dos. La respiración tampoco se acelera; el cuerpo no
 tiene por qué cambiar de ritmo porque uno pase el mouse.
+
+## 22. El cotizador público (/cotizar)
+
+**El problema.** Hasta ahora sólo había dos puertas al precio: preguntarle a
+Frank en el chat, o llenar el formulario de contacto y esperar a que alguien
+escriba. La primera obliga a conversar con un robot; la segunda no da ningún
+número. Faltaba la puerta del medio: contestar cuatro cosas y ver el monto.
+
+**Referencia.** El propio sitio. No se fue a buscar afuera porque el sistema ya
+estaba resuelto —papel cálido, tinta, naranja de acción, Archivo con eje de
+ancho— y una página nueva con vocabulario propio se habría visto pegada. Lo
+único que se tomó de fuera es la forma del cotizador de seguros y de envíos:
+una pregunta a la vez, con el riel de pasos arriba para que se vea cuánto falta.
+
+### 22.1 Una pregunta a la vez, no un formulario largo
+
+Un formulario de diez campos se contesta sentado en una computadora. Esto se
+contesta de pie en el patio, con el teléfono en una mano y viendo el tanque.
+Por eso las respuestas son botones grandes (`.cot-op`, mínimo 3.4rem de alto) y
+no `select`s: se aciertan con el pulgar.
+
+Las excepciones son deliberadas. La provincia, el cantón y el distrito sí van
+en `select` —son cientos de opciones, no caben en botones— y los datos
+personales van en el formulario normal del sitio (`.form`, `.f`), porque
+escribir un nombre es escribir un nombre.
+
+### 22.2 El riel
+
+Cuatro círculos numerados arriba de la caja. Es la única promesa que se le hace
+a alguien que no sabe en qué se metió: esto se acaba en cuatro. El paso hecho
+se marca con un ✓ en tinta; el vivo, con el naranja de acción.
+
+El largo del riel cambia según el servicio: una trampa de grasa tiene precio de
+tabla y no hay nada que preguntar sobre el trabajo, así que ese paso desaparece
+y quedan tres. Antes de escoger servicio el riel muestra cuatro, porque casi
+todos los servicios lo llevan y es peor que el riel se acorte bajo los pies.
+
+En pantallas de menos de 600px las etiquetas se van y quedan sólo los números:
+cuatro círculos caben, "Servicio · El trabajo · Dónde queda · Sus datos" no.
+
+**Trampa pisada otra vez:** `[hidden]` pierde contra el `display: flex` de
+`.cot-rail li`. Hay que escribir `.cot-rail li[hidden] { display: none }`.
+
+### 22.3 El paso del trabajo se revela solo
+
+La forma del tanque, el tamaño y la antigüedad viven en una sola pantalla, pero
+el tamaño no aparece hasta que se escoge la forma, y la antigüedad no aparece
+hasta que se escoge el tamaño. Es la misma cascada de provincia → cantón →
+distrito, y por la misma razón: las medidas dependen de la forma.
+
+Cambiar de servicio borra lo contestado del trabajo anterior. No es limpieza
+cosmética: mandar la forma de otro servicio daría un precio equivocado sin que
+nadie se diera cuenta. Es el mismo error que ya se había cometido en el panel
+con el formulario que arrastraba el servicio anterior.
+
+### 22.4 El resultado, y quién manda
+
+El monto va en el corte de cartel (`--ancho-cartel`), del tamaño de un h1. Es
+lo que la persona vino a ver.
+
+Inmediatamente debajo, en la caja naranja suave, va lo que **no** se puede
+esconder en letra chica: el monto es un estimado automático y **el precio
+oficial lo da el encargado**. Está redactado en presente permanente, no como
+una transición: no es que "por ahora" se confirme por teléfono y algún día el
+número automático vaya a ser el definitivo. Nunca lo va a ser, porque en sitio
+aparecen cosas que un formulario no ve. Decirlo como provisional sería mentir
+sobre cómo funciona el negocio.
+
+Esa misma redacción se replicó en las otras tres bocas por donde sale el monto:
+el chat de Frank (`mostrarCotizacion`), el documento imprimible
+(`cotizacion.html`, la nota del rango y las condiciones) y el correo de aviso
+al encargado (`avisarCotizacion`), donde además el recordatorio ya no depende
+de que las tarifas sean provisionales: sale siempre.
+
+### 22.5 Fallar en voz alta
+
+Si los endpoints no cargan, el cotizador no se queda girando: reemplaza la
+lista de servicios por el teléfono y el WhatsApp. Si el envío falla, el mensaje
+dice qué pasó y ofrece el 2440-1110. Una página de precios que se cae en
+silencio es una venta perdida; una que dice "llámenos" es una venta por otro
+canal.
