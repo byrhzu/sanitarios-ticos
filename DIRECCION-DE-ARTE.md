@@ -1045,6 +1045,18 @@ Si algún día Frank aparece más grande —dentro del panel del chat, o en
 la página de contacto— ahí sí valen el parpadeo y el giro de cabeza.
 
 Saluda tres veces y descansa cuatro segundos. Un muñeco que se mueve
-sin parar deja de ser simpático a los diez segundos. Al pasarle el
-mouse saluda de una, sin esperar el turno, y con
+sin parar deja de ser simpático a los diez segundos. Con
 `prefers-reduced-motion` no se mueve.
+
+**El hover no cambia la velocidad, sólo se salta la espera.** La
+primera versión comprimía el ciclo entero —descanso incluido— de 6s a
+1,4s, así que el gesto salía cuatro veces más rápido y la mano parecía
+un limpiaparabrisas. Ahora hay dos keyframes: el ciclo largo, y el
+mismo gesto solo, con los porcentajes reescalados (el 62% pasa a ser el
+0 y el 90% el 100) y con la duración que ese tramo ocupaba dentro del
+ciclo — 28% de 6s son 1,68s.
+
+Comprobado posicionando las dos animaciones en instantes idénticos y
+leyendo el ángulo: 0°, −13,1°, −17°, −7°, −4° a los 0, 120, 240, 360 y
+480 ms en las dos. La respiración tampoco se acelera; el cuerpo no
+tiene por qué cambiar de ritmo porque uno pase el mouse.

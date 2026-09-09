@@ -990,10 +990,29 @@ body.fabs-fuera .wa-fab {
   78% { transform: rotate(-4deg); }
   82% { transform: rotate(-17deg); }
 }
-/* Al pasarle el mouse saluda de una, sin esperar el turno, y se
-   endereza un poco. */
-.asistente-fab:hover .frank-brazo { animation: frankSaluda 1.4s var(--ease-soft) infinite; animation-delay: -.86s; }
-.asistente-fab:hover .frank-vivo { animation-duration: 2.4s; }
+/* El mismo gesto, sin el descanso. Los porcentajes son los de arriba
+   reescalados: el 62% pasa a ser el 0 y el 90% el 100, y la duración
+   es la que ese tramo ocupaba dentro del ciclo largo — 28% de 6s son
+   1,68s. Así la mano se mueve EXACTAMENTE a la misma velocidad, sólo
+   que sin esperar el turno. */
+@keyframes frankSaludaYa {
+  0%, 100%  { transform: rotate(0deg); }
+  14.3%     { transform: rotate(-17deg); }
+  28.6%     { transform: rotate(-4deg); }
+  42.9%     { transform: rotate(-17deg); }
+  57.1%     { transform: rotate(-4deg); }
+  71.4%     { transform: rotate(-17deg); }
+}
+/* Al pasarle el mouse saluda de una, sin esperar el turno — pero al
+   mismo ritmo.
+
+   Antes acá se comprimía el ciclo entero a 1,4s, descanso incluido, y
+   el gesto salía cuatro veces más rápido: la mano parecía un
+   limpiaparabrisas. La respiración tampoco se acelera; el cuerpo no
+   tiene por qué cambiar de ritmo porque uno pase el mouse. */
+.asistente-fab:hover .frank-brazo {
+  animation: frankSaludaYa 1.68s var(--ease-soft) infinite;
+}
 
 /* Al abrir el chat no desaparece de golpe: baja el brazo y se mete
    detrás del botón. Desaparecer de un frame se lee como un error. */
@@ -1011,7 +1030,7 @@ body.fabs-fuera .wa-fab {
 
 @media (prefers-reduced-motion: reduce) {
   .asistente-fab .frank-brazo, .asistente-fab:hover .frank-brazo,
-  .asistente-fab .frank-vivo { animation: none; }
+  .asistente-fab .frank-vivo { animation: none !important; }
   .asistente-fab .frank { transition: none; }
 }
 
