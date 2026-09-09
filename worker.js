@@ -2003,9 +2003,51 @@ async function responderAsistente(request, env) {
    Entrada
    ============================================================= */
 
+/* =============================================================
+   Direcciones viejas del sitio de Wix
+   -------------------------------------------------------------
+   El sitio que vivía en sanitariosticos.com tenía quince páginas,
+   diez de ellas de zona ("limpieza de tanques sépticos Heredia",
+   etc.). Google todavía las tiene indexadas. Si el dominio pasa a
+   apuntar acá y esas direcciones dan 404, se pierde de un solo golpe
+   el posicionamiento que la empresa ya tenía.
+
+   Un 301 le dice a Google "esto se mudó aquí" y traslada parte del
+   valor a la página nueva. Parte, no todo: mandar diez páginas de
+   zona a una sola de servicios pierde la especificidad por la que
+   rankeaban. La solución de verdad es rehacer las páginas de zona
+   —el "perímetro" que quedó pendiente—; mientras tanto, esto evita
+   el 404, que es lo peor de los dos males.
+
+   Las direcciones vienen cortadas a 34 caracteres porque así las
+   generaba Wix. No son errores de copia.
+   ============================================================= */
+const REDIRECCIONES_WIX = {
+  "/limpieza-de-tanques-septicos-heredi": "/servicios#tanques-septicos",
+  "/limpieza-de-tanques-septicos-alajue": "/servicios#tanques-septicos",
+  "/limpieza-de-tanques-septicos-san-jo": "/servicios#tanques-septicos",
+  "/tanques-septicos-y-drenajes-san-joa": "/servicios#tanques-septicos",
+  "/limpieza-de-tuberias-san-joaquin-de": "/servicios#destaqueo",
+  "/destaqueo-de-tuberias-san-joaquin-f": "/servicios#destaqueo",
+  "/limpieza-de-trampas-de-grasa-san-jo": "/servicios#trampas",
+  "/construccion-de-drenajes-san-joaqui": "/servicios#construccion",
+  "/construccion-de-plantas-de-tratamie": "/servicios#construccion",
+  "/construccion-de-tanques-septicos-sa": "/servicios#construccion",
+  "/aprende-mas-sanitarios-ticos": "/nosotros",
+  "/blog": "/"
+};
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    /* Lo primero de todo: las direcciones que vienen del sitio viejo.
+       Se compara en minúsculas y sin la barra final, que es como llegan
+       desde Google y desde los enlaces que otros sitios ya publicaron. */
+    const vieja = url.pathname.toLowerCase().replace(/\/+$/, "") || "/";
+    if (Object.prototype.hasOwnProperty.call(REDIRECCIONES_WIX, vieja)) {
+      return Response.redirect(url.origin + REDIRECCIONES_WIX[vieja], 301);
+    }
 
     if (url.pathname === "/api/solicitud" && request.method === "POST") {
       return guardarSolicitud(request, env, ctx);
