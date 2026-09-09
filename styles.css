@@ -969,10 +969,13 @@ body.fabs-fuera .wa-fab {
   position: absolute; inset: 0; width: 100%; height: 100%;
 }
 .asistente-fab .frank-brazo {
-  /* El hombro, medido sobre el dibujo. El corte del brazo sigue la
-     costura de la manga —no una línea recta— así que la manga se queda
-     en el cuerpo y tapa la juntura mientras el brazo gira. */
-  transform-origin: 76% 33.7%;
+  /* El CODO, no el hombro. La gente saluda desde el codo, y además eso
+     resuelve la juntura de raíz: el hombro nunca se mueve, así que no
+     hay hueco que destapar, y si al girar se abriera una rendija,
+     detrás hay piel del mismo brazo — no fondo de página. El borde del
+     corte va desvanecido, así que la transición entre las dos capas de
+     piel no tiene línea que ver. */
+  transform-origin: 86.2% 28.8%;
   animation: frankSaluda 6s var(--ease-soft) infinite;
 }
 /* Respira. Un pixel y medio en noventa: no se ve, se siente. */
@@ -982,13 +985,17 @@ body.fabs-fuera .wa-fab {
 }
 /* Saluda tres veces y descansa. Un muñeco que se mueve sin parar deja
    de ser simpático a los diez segundos. */
+/* Ahora el saludo va para los dos lados, que es como se saluda de
+   verdad. Antes el brazo sólo podía abrirse hacia afuera porque al ir
+   hacia adentro la mano se metía en la gorra; girando desde el codo el
+   recorrido es corto y eso ya no pasa. */
 @keyframes frankSaluda {
   0%, 62%, 90%, 100% { transform: rotate(0deg); }
-  66% { transform: rotate(-17deg); }
-  70% { transform: rotate(-4deg); }
-  74% { transform: rotate(-17deg); }
-  78% { transform: rotate(-4deg); }
-  82% { transform: rotate(-17deg); }
+  66% { transform: rotate(12deg); }
+  70% { transform: rotate(-10deg); }
+  74% { transform: rotate(12deg); }
+  78% { transform: rotate(-10deg); }
+  82% { transform: rotate(12deg); }
 }
 /* El mismo gesto, sin el descanso. Los porcentajes son los de arriba
    reescalados: el 62% pasa a ser el 0 y el 90% el 100, y la duración
@@ -997,11 +1004,11 @@ body.fabs-fuera .wa-fab {
    que sin esperar el turno. */
 @keyframes frankSaludaYa {
   0%, 100%  { transform: rotate(0deg); }
-  14.3%     { transform: rotate(-17deg); }
-  28.6%     { transform: rotate(-4deg); }
-  42.9%     { transform: rotate(-17deg); }
-  57.1%     { transform: rotate(-4deg); }
-  71.4%     { transform: rotate(-17deg); }
+  14.3%     { transform: rotate(12deg); }
+  28.6%     { transform: rotate(-10deg); }
+  42.9%     { transform: rotate(12deg); }
+  57.1%     { transform: rotate(-10deg); }
+  71.4%     { transform: rotate(12deg); }
 }
 /* Al pasarle el mouse saluda de una, sin esperar el turno — pero al
    mismo ritmo.

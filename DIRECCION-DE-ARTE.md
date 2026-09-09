@@ -1029,6 +1029,31 @@ cortaba por la mitad y ese pedazo suelto se leía como una mancha.
 
 El avatar subió de 34 a 40px: a 34 el torso no se distinguía.
 
+### 21.3e La solución definitiva: el codo, no el hombro
+
+Todo lo de arriba fueron parches a un problema mal planteado. Cortar
+por el hombro obliga a dejarle al cuerpo **un hueco con la forma exacta
+del brazo en reposo**, así que cualquier giro lo destapa — y detrás de
+ese hueco está el fondo de la página. Por eso reaparecía la juntura
+por más que se afinara el corte.
+
+**La gente no saluda desde el hombro: saluda desde el codo.** Cortando
+ahí se resuelve solo:
+
+- El hombro **no se mueve**, así que no hay nada que destapar.
+- Si al girar se abre una rendija, detrás hay **piel del mismo brazo**,
+  no fondo. Un error de un píxel deja de importar.
+- El cuerpo conserva 22px por encima del corte, de modo que siempre hay
+  material debajo del antebrazo.
+- El borde del corte va **desvanecido en veinte píxeles**: como las dos
+  capas son la misma piel, la transición no tiene línea que ver.
+
+Y de paso el saludo mejora: ahora va **para los dos lados** (+12°,
+−10°). Desde el hombro sólo podía abrirse hacia afuera, porque hacia
+adentro la mano se metía en la gorra.
+
+El pivote es `86.2% 28.8%`, medido sobre el dibujo.
+
 ### 21.4 Qué sí se nota a 44px y qué no
 
 A tamaño de botón Frank mide 44×90: la cara son 14px y los ojos dos.
