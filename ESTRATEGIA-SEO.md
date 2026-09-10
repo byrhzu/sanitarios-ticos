@@ -59,14 +59,30 @@ La misma persona hace clic tres veces más cuando el resultado le confirma
 que la empresa está donde ella está. Por eso los títulos nuevos llevan el
 lugar, y por eso las páginas de zona valen la pena.
 
-### 4. La gente busca el precio y no lo encuentra
+### 4. La gente busca el precio, y hay que contestarle sin publicarlo
 
 «precio limpieza tanque séptico costa rica»: **986 impresiones al año,
-0,9% de clics, posición 6,8**. Sale, y nadie entra — porque el sitio no
-decía el precio en ninguna parte.
+0,9% de clics, posición 6,8**. Sale, y casi nadie entra.
 
-Publicar la tabla es la respuesta directa a esa consulta, y es lo que
-ninguna competencia hace.
+**Las tarifas no se publican.** Es decisión del propietario: el precio se
+da por cotización, no en abierto. Se llegó a montar la tabla completa y se
+quitó.
+
+Eso no significa renunciar a la consulta. La página madre se llama
+«¿Cuánto cuesta limpiar un tanque séptico?» y la contesta de verdad:
+explica que el monto sale del tamaño y de la antigüedad, aclara lo que
+**no** lo cambia —la distancia dentro del GAM, el acceso, la hora— y manda
+al cotizador, que da el monto exacto en un minuto.
+
+Se pierde algo de clic, porque un número en la descripción es más
+llamativo que una promesa. Se gana el dato del cliente, que es de lo que
+vive el negocio: quien cotiza deja nombre y teléfono y queda en el panel.
+
+**Nota aparte:** las tarifas viven en `worker.js`, dentro de la constante
+`TARIFAS`, y el repositorio de GitHub es **público**. Cualquiera que abra
+`worker.js` las ve. Si de verdad no deben estar a la vista, hay que poner
+el repositorio en privado — Cloudflare despliega igual desde un repo
+privado.
 
 ---
 
@@ -75,7 +91,7 @@ ninguna competencia hace.
 ### Arquitectura: una madre y sus zonas
 
 ```
-/limpieza-de-tanques-septicos          ← la madre, con la tabla de precios
+/limpieza-de-tanques-septicos          ← la madre, «¿cuánto cuesta?»
     /limpieza-de-tanques-septicos-heredia
     /limpieza-de-tanques-septicos-alajuela
     /limpieza-de-tanques-septicos-san-jose
@@ -86,17 +102,15 @@ ninguna competencia hace.
 /servicios                             ← el índice, que enlaza a las cinco
 ```
 
-**Las de zona no repiten la tabla de precios.** Llevan lo suyo —los
-cantones, el tiempo de llegada, cómo es el trabajo ahí, sus propias
-preguntas— y enlazan a la madre para el precio. Así no son diez copias
-con el nombre cambiado, que es lo que Google trata como relleno y lo que
-hacía el sitio de Wix.
+**Las de zona no repiten a la madre.** Llevan lo suyo —los cantones, el
+tiempo de llegada, cómo es el trabajo ahí, sus propias preguntas— y
+enlazan hacia arriba. Así no son tres copias con el nombre cambiado, que
+es lo que Google trata como relleno y lo que hacía el sitio de Wix.
 
 ### Cada página lleva
 
 - Un solo `h1`, con la consulta en el encabezado.
-- Título de menos de 68 caracteres, con el lugar y el precio o la
-  velocidad.
+- Título de menos de 68 caracteres, con el lugar y la velocidad.
 - Descripción de 140-160 caracteres que da una razón concreta para entrar.
 - `Service`, `FAQPage` y `BreadcrumbList` en datos estructurados. El
   `FAQPage` puede hacer que las preguntas salgan desplegadas en Google.
