@@ -1357,3 +1357,14 @@ tanques de **agua potable**, no de aguas residuales (el título decía una
 cosa y el texto otra); Cartago sale del GAM; Alajuela y San José se
 recortan a los cantones cercanos al centro; y el discurso de Nosotros deja
 de hablar de intermediarios ajenos para hablar de lo propio.
+
+**El mapa de la barra.** Byron mandó la silueta de Costa Rica en blanco
+sobre negro sólido. Puesta tal cual sobre la pizarra de la barra habría
+sido un recuadro negro, así que se le pasó la **luminosidad al canal
+alfa**: el blanco queda opaco, el negro transparente y el borde suavizado.
+Sirve sobre cualquier fondo y pesa 0,8 KB.
+
+Va a 22px de alto (1,75em sobre los 12,8px de la barra), con el archivo a
+44px para que no se vea borrosa en retina. Más chica deja de leerse como
+Costa Rica; se probaron 19, 22 y 26. En celular desaparece con el resto de
+esa línea, que ya estaba oculta.

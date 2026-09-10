@@ -247,7 +247,18 @@ strong, b { font-weight: 600; }
   display: flex; align-items: center; justify-content: space-between;
   gap: 1rem; min-height: 38px; flex-wrap: wrap;
 }
-.bar-in > span:first-child { color: rgba(250,247,242,.6); }
+/* La silueta del país al lado de "Cobertura en todo el país". El PNG
+   venía en blanco sobre negro sólido: se le pasó la luminosidad al canal
+   alfa, así que ahora es una silueta blanca que sirve sobre la pizarra
+   de la barra sin recuadro negro. */
+.bar-in > span:first-child {
+  color: rgba(250,247,242,.6);
+  display: inline-flex; align-items: center; gap: .55rem;
+}
+/* 1.75em sobre los 12,8px de la barra son 22px: a menos que eso la
+   silueta deja de leerse como Costa Rica. El archivo mide 44px de alto,
+   el doble, para que no se vea borrosa en pantallas retina. */
+.bar-mapa { height: 1.75em; width: auto; flex: 0 0 auto; opacity: .88; }
 .bar-links { display: flex; align-items: center; gap: 1.15rem; }
 .bar-links a { display: inline-flex; align-items: center; gap: .4rem; transition: color .2s var(--ease); }
 .bar-links a:hover { color: var(--orange-lt); }
