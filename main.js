@@ -476,7 +476,7 @@
     if (mailLink) {
       mailLink.addEventListener("click", function () {
         var v = readValues();
-        var subject = "Solicitud de cotización" + (v.servicio ? " — " + v.servicio : "");
+        var subject = "Solicitud de cotización" + (v.servicio ? " · " + v.servicio : "");
         mailLink.href = "mailto:" + email +
           "?subject=" + encodeURIComponent(subject) +
           "&body=" + encodeURIComponent(buildMessage(v));
@@ -945,7 +945,7 @@
         function (op) {
           if (op.id === "si") return pedirPrecio();
           agregarMensaje(
-            "Con gusto, empecemos de nuevo — es más rápido que andar buscando cuál fue.",
+            "Con gusto, empecemos de nuevo: es más rápido que andar buscando cuál fue.",
             false, true
           );
           arrancarCotizador(true);

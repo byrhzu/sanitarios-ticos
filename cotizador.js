@@ -122,11 +122,6 @@
       var t = document.createElement("b");
       t.textContent = op.etiqueta;
       b.appendChild(t);
-      if (op.nota) {
-        var s = document.createElement("small");
-        s.textContent = op.nota;
-        b.appendChild(s);
-      }
       b.addEventListener("click", function () { alElegir(op); });
       contenedor.appendChild(b);
     });
@@ -135,12 +130,11 @@
   /* ---------- paso 1: servicio ---------- */
 
   function pintarServicios() {
+    /* Sólo el nombre del servicio. El subtexto que llevaba antes
+       —"precio directo, sin más preguntas"— no ayudaba a escoger y
+       hacía que la lista pareciera una interfaz generada. */
     var lista = Object.keys(opciones.servicios).map(function (id) {
-      var s = opciones.servicios[id];
-      var nota = s.tipo === "alquiler"
-        ? "Se cobra por día, con un mínimo de " + s.diasMinimo + " días"
-        : (s.tipo === "tanque" ? "Le preguntamos la forma y el tamaño" : "Precio directo, sin más preguntas");
-      return { id: id, etiqueta: s.nombre, nota: nota };
+      return { id: id, etiqueta: opciones.servicios[id].nombre };
     });
     pintarOps($("[data-cot-servicios]"), lista, respuestas.servicio, function (op) {
       // Cambiar de servicio invalida lo que se había contestado del

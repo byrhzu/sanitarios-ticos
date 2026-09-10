@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260909h">
+<link rel="stylesheet" href="styles.css?v=20260910b">
 <script>document.documentElement.classList.add("js");setTimeout(function(){var d=document.documentElement;if(!d.classList.contains("is-ready"))d.classList.add("rv-rescate");},3000);</script>
 </head>
 <body>
@@ -44,7 +44,7 @@
 
 <header class="head" data-head>
   <div class="head-in">
-    <a class="logo" href="/" aria-label="Sanitarios Ticos — inicio">
+    <a class="logo" href="/" aria-label="Sanitarios Ticos, inicio">
       <img src="assets/img/logo-horizontal.webp" alt="Sanitarios Ticos" width="853" height="150">
     </a>
     <nav class="menu" id="menu" aria-label="Navegación principal">
@@ -93,9 +93,9 @@
       <h2 style="font-size:1.2rem; margin-bottom:.6rem;">Con quién los compartimos</h2>
       <p style="color:var(--ink-2); margin-bottom:.8rem;">Para poder ofrecerle el servicio, algunos datos pasan por proveedores que actúan como encargados del tratamiento, nunca como dueños de la información:</p>
       <ul style="display:grid; gap:.5rem; color:var(--ink-2); padding-left:1.2rem; list-style:disc;">
-        <li><strong>Cloudflare</strong> — la infraestructura donde vive el sitio y la base de datos.</li>
-        <li><strong>Resend</strong> — el servicio que nos avisa por correo cuando llega una solicitud nueva.</li>
-        <li><strong>Google (Gemini)</strong> — si utiliza el asistente de chat, su mensaje se procesa con esta inteligencia artificial para poder responderle. En su versión gratuita, Google puede usar ese contenido para mejorar sus modelos; le pedimos no escribir información sensible en el chat.</li>
+        <li><strong>Cloudflare</strong>: la infraestructura donde vive el sitio y la base de datos.</li>
+        <li><strong>Resend</strong>: el servicio que nos avisa por correo cuando llega una solicitud nueva.</li>
+        <li><strong>Google (Gemini)</strong>: si utiliza el asistente de chat, su mensaje se procesa con esta inteligencia artificial para poder responderle. En su versión gratuita, Google puede usar ese contenido para mejorar sus modelos; le pedimos no escribir información sensible en el chat.</li>
       </ul>
     </article>
 
@@ -144,7 +144,7 @@
       <a href="/destaqueo-de-tuberias">Destaqueo de tuberías</a>
       <a href="/limpieza-de-trampas-de-grasa">Trampas de grasa y diesel</a>
       <a href="/construccion-de-tanques-septicos-y-drenajes">Construcción y drenajes</a>
-      <a href="/alquiler-de-tanques-plasticos">Alquiler de tanques plásticos</a>
+      <a href="/alquiler-de-tanques-plasticos">Alquiler de tanques de agua</a>
     </nav>
 
     <nav class="foot-col" aria-label="Empresa">
@@ -168,7 +168,7 @@
   </div>
 
   <div class="wrap-wide foot-end">
-    <p>© <span data-year>2026</span> Grupo Ticos Sanitarios S.A. — Todos los derechos reservados.</p>
+    <p>© <span data-year>2026</span> Grupo Ticos Sanitarios S.A. Todos los derechos reservados.</p>
     <p>Limpieza de tanques sépticos en Costa Rica</p>
   </div>
 </footer>
@@ -197,28 +197,32 @@
     <!-- Cotizador. Frank conversa, pero el precio lo calcula el servidor:
          estos botones recogen los datos y worker.js hace la cuenta.
          Ver README, sección "Cotizaciones". -->
-    <div class="asistente-cotiza" data-asistente-cotiza>
-      <button type="button" data-asistente-cotizar>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg>
-        Cotizar ahora
-      </button>
+    <div class="asistente-acciones">
+      <div class="asistente-cotiza" data-asistente-cotiza>
+        <button type="button" data-asistente-cotizar>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg>
+          Cotizar ahora
+        </button>
+      </div>
+
+      <!-- Traspaso a WhatsApp: aparece apenas la persona escribe algo, y
+           lleva en el mensaje lo que ya le contó a Frank, para que no tenga
+           que repetirlo. Lo arma main.js en cada envío. -->
+      <div class="asistente-pase" data-asistente-pase hidden>
+        <a data-asistente-wa href="https://wa.me/50683417547" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.6A8.4 8.4 0 0 0 6.9 4.9a8.3 8.3 0 0 0-1.6 9.8L4 20l5.5-1.3a8.4 8.4 0 0 0 11-7.1Z"/></svg>
+          Con una persona
+        </a>
+      </div>
     </div>
 
-    <!-- Traspaso a WhatsApp: aparece apenas la persona escribe algo, y
-         lleva en el mensaje lo que ya le contó a Frank, para que no tenga
-         que repetirlo. Lo arma main.js en cada envío. -->
-    <div class="asistente-pase" data-asistente-pase hidden>
-      <a data-asistente-wa href="https://wa.me/50683417547" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.6A8.4 8.4 0 0 0 6.9 4.9a8.3 8.3 0 0 0-1.6 9.8L4 20l5.5-1.3a8.4 8.4 0 0 0 11-7.1Z"/></svg>
-        Seguir con una persona por WhatsApp
-      </a>
-    </div>
     <form class="asistente-form" data-asistente-form>
       <input type="text" placeholder="Escriba su pregunta…" data-asistente-input aria-label="Escriba su pregunta" autocomplete="off">
       <button type="submit" aria-label="Enviar">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
       </button>
     </form>
+
     <p class="asistente-aviso">Frank responde con inteligencia artificial, pura vida. <a href="/privacidad" target="_blank">Política de privacidad</a>.</p>
   </div>
 </div>

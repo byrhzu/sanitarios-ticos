@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260909h">
+<link rel="stylesheet" href="styles.css?v=20260910b">
 <script>document.documentElement.classList.add("js");setTimeout(function(){var d=document.documentElement;if(!d.classList.contains("is-ready"))d.classList.add("rv-rescate");},3000);</script>
 </head>
 <body>
@@ -44,7 +44,7 @@
 
 <header class="head" data-head>
   <div class="head-in">
-    <a class="logo" href="/" aria-label="Sanitarios Ticos — inicio">
+    <a class="logo" href="/" aria-label="Sanitarios Ticos, inicio">
       <img src="assets/img/logo-horizontal.webp" alt="Sanitarios Ticos" width="853" height="150">
     </a>
     <nav class="menu" id="menu" aria-label="Navegación principal">
@@ -66,7 +66,7 @@
   <div class="wrap">
     <div class="split">
       <h1 class="rv" style="font-size:clamp(2.2rem,5.4vw,3.8rem); max-width:12ch;">Su precio, en un minuto</h1>
-      <p class="lead rv">Conteste unas preguntas cortas y le calculamos el monto de una vez, con nuestras tarifas reales. Le queda un documento con su número, que puede guardar o mandarnos por WhatsApp. <strong>El precio oficial se lo da el encargado</strong> antes de empezar el trabajo — así es siempre, porque en sitio pueden aparecer cosas que un formulario no ve.</p>
+      <p class="lead rv">Conteste unas preguntas cortas y le calculamos el monto de una vez, con nuestras tarifas reales. Le queda un documento con su número, que puede guardar o mandarnos por WhatsApp. <strong>El precio oficial se lo da el encargado</strong> antes de empezar el trabajo. Así es siempre, porque en sitio pueden aparecer cosas que un formulario no ve.</p>
     </div>
   </div>
 </section>
@@ -85,7 +85,7 @@
       <!-- Paso 1 · qué necesita -->
       <div class="cot-paso" data-cot-paso="servicio">
         <h2 class="cot-pregunta">¿Qué servicio necesita?</h2>
-        <p class="cot-ayuda">Escoja el que más se parezca a lo suyo. Si no está seguro, escríbanos y lo vemos juntos.</p>
+        <p class="cot-ayuda">Escoja el que más se parezca a lo suyo.</p>
         <div class="cot-ops" data-cot-servicios>
           <p class="dim">Cargando los servicios…</p>
         </div>
@@ -132,7 +132,7 @@
       <!-- Paso 3 · dónde queda -->
       <div class="cot-paso" data-cot-paso="lugar" hidden>
         <h2 class="cot-pregunta">¿Dónde queda la propiedad?</h2>
-        <p class="cot-ayuda">Lo usamos para organizar la ruta del camión. Si queda fuera del Gran Área Metropolitana, el encargado se lo dice al confirmarle el precio.</p>
+        <p class="cot-ayuda">Lo usamos para organizar la ruta del camión.</p>
         <form class="form" data-cot-lugar novalidate>
           <div class="f">
             <label for="cot-provincia">Provincia</label>
@@ -162,7 +162,7 @@
       <!-- Paso 4 · quién es -->
       <div class="cot-paso" data-cot-paso="datos" hidden>
         <h2 class="cot-pregunta">¿A nombre de quién la emitimos?</h2>
-        <p class="cot-ayuda">El documento sale con su nombre y su número de cotización. La cédula y el correo son opcionales.</p>
+        <p class="cot-ayuda">La cédula y el correo son opcionales.</p>
         <form class="form" data-cot-datos novalidate>
           <div class="f">
             <label for="cot-nombre">Nombre</label>
@@ -195,7 +195,7 @@
       <!-- Resultado -->
       <div class="cot-paso" data-cot-paso="resultado" hidden>
         <h2 class="cot-pregunta" data-cot-servicio-nombre>Su cotización</h2>
-        <p class="cot-monto" data-cot-monto><small data-cot-monto-et>Precio estimado</small>—</p>
+        <p class="cot-monto" data-cot-monto><small data-cot-monto-et>Precio estimado</small>&nbsp;</p>
 
         <div class="cot-oficial">
           <b>Este monto es un estimado automático.</b> El precio oficial se lo da el
@@ -226,25 +226,9 @@
 
     </div>
 
-    <p class="form-alt" style="margin-top:1.2rem;">¿Prefiere que le pregunten paso a paso? Frank, el asistente del sitio, hace la misma cotización conversando — está en el botón naranja de abajo. Y si su caso no calza en las opciones, <a href="/contacto">escríbanos por el formulario</a> o llame al <a href="tel:+50624401110">2440-1110</a>.</p>
+    <p class="form-alt" style="margin-top:1.2rem;">¿Prefiere que le pregunten paso a paso? Frank, el asistente del sitio, hace la misma cotización conversando, en el botón naranja de abajo. Y si su caso no calza en las opciones, <a href="/contacto">escríbanos por el formulario</a> o llame al <a href="tel:+50624401110">2440-1110</a>.</p>
   </div>
 </section>
-
-<section class="block block-paper2">
-  <div class="wrap">
-    <div class="split" style="margin-bottom:2rem;">
-      <h2 class="rv" style="font-size:clamp(1.9rem,4.2vw,2.9rem); max-width:14ch;">Cómo se arma el precio</h2>
-      <p class="lead rv">No hay letra menuda. Estas son las tres cosas que mueven el monto, y las mismas que le vamos a preguntar.</p>
-    </div>
-    <ul class="data franjas">
-      <li><small>La forma y el tamaño</small><span>Un tanque plástico de 750 litros y un hueco de tierra de seis metros no dan el mismo trabajo. Por eso preguntamos la forma: se ve desde el patio, sin medir nada.</span></li>
-      <li><small>Hace cuánto se limpió</small><span>Entre más tiempo pasa, más compactado viene el lodo y más tarda el equipo. Un tanque de cinco años o más lleva un recargo fijo, que le mostramos aparte.</span></li>
-      <li><small>Dónde queda</small><span>El monto que ve es el de nuestro perímetro de trabajo. Si la propiedad queda más lejos, el encargado le dice el ajuste al confirmarle el precio — nunca aparece una sorpresa el día del servicio.</span></li>
-      <li><small>El IVA</small><span>Va incluido en el monto. Lo que ve es lo que se paga.</span></li>
-    </ul>
-  </div>
-</section>
-
 
 </main>
 
@@ -268,7 +252,7 @@
       <a href="/destaqueo-de-tuberias">Destaqueo de tuberías</a>
       <a href="/limpieza-de-trampas-de-grasa">Trampas de grasa y diesel</a>
       <a href="/construccion-de-tanques-septicos-y-drenajes">Construcción y drenajes</a>
-      <a href="/alquiler-de-tanques-plasticos">Alquiler de tanques plásticos</a>
+      <a href="/alquiler-de-tanques-plasticos">Alquiler de tanques de agua</a>
     </nav>
 
     <nav class="foot-col" aria-label="Empresa">
@@ -292,7 +276,7 @@
   </div>
 
   <div class="wrap-wide foot-end">
-    <p>© <span data-year>2026</span> Grupo Ticos Sanitarios S.A. — Todos los derechos reservados.</p>
+    <p>© <span data-year>2026</span> Grupo Ticos Sanitarios S.A. Todos los derechos reservados.</p>
     <p>Limpieza de tanques sépticos en Costa Rica</p>
   </div>
 </footer>
@@ -321,28 +305,32 @@
     <!-- Cotizador. Frank conversa, pero el precio lo calcula el servidor:
          estos botones recogen los datos y worker.js hace la cuenta.
          Ver README, sección "Cotizaciones". -->
-    <div class="asistente-cotiza" data-asistente-cotiza>
-      <button type="button" data-asistente-cotizar>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg>
-        Cotizar ahora
-      </button>
+    <div class="asistente-acciones">
+      <div class="asistente-cotiza" data-asistente-cotiza>
+        <button type="button" data-asistente-cotizar>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg>
+          Cotizar ahora
+        </button>
+      </div>
+
+      <!-- Traspaso a WhatsApp: aparece apenas la persona escribe algo, y
+           lleva en el mensaje lo que ya le contó a Frank, para que no tenga
+           que repetirlo. Lo arma main.js en cada envío. -->
+      <div class="asistente-pase" data-asistente-pase hidden>
+        <a data-asistente-wa href="https://wa.me/50683417547" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.6A8.4 8.4 0 0 0 6.9 4.9a8.3 8.3 0 0 0-1.6 9.8L4 20l5.5-1.3a8.4 8.4 0 0 0 11-7.1Z"/></svg>
+          Con una persona
+        </a>
+      </div>
     </div>
 
-    <!-- Traspaso a WhatsApp: aparece apenas la persona escribe algo, y
-         lleva en el mensaje lo que ya le contó a Frank, para que no tenga
-         que repetirlo. Lo arma main.js en cada envío. -->
-    <div class="asistente-pase" data-asistente-pase hidden>
-      <a data-asistente-wa href="https://wa.me/50683417547" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.6A8.4 8.4 0 0 0 6.9 4.9a8.3 8.3 0 0 0-1.6 9.8L4 20l5.5-1.3a8.4 8.4 0 0 0 11-7.1Z"/></svg>
-        Seguir con una persona por WhatsApp
-      </a>
-    </div>
     <form class="asistente-form" data-asistente-form>
       <input type="text" placeholder="Escriba su pregunta…" data-asistente-input aria-label="Escriba su pregunta" autocomplete="off">
       <button type="submit" aria-label="Enviar">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
       </button>
     </form>
+
     <p class="asistente-aviso">Frank responde con inteligencia artificial, pura vida. <a href="/privacidad" target="_blank">Política de privacidad</a>.</p>
   </div>
 </div>
@@ -353,6 +341,6 @@
 </a>
 <script defer src="lib/manifest.js"></script>
 <script defer src="main.js?v=20260909a"></script>
-<script defer src="cotizador.js?v=20260909a"></script>
+<script defer src="cotizador.js?v=20260910a"></script>
 </body>
 </html>

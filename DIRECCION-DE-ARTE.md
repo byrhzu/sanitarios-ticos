@@ -1315,3 +1315,45 @@ cada nombre.
 La escala es lo único que separa esta lista de la de cobertura, y es
 coherente con §5: acá los nombres **son** el contenido de la sección; en la
 cobertura son un dato de apoyo bajo un titular que ya lo dijo todo.
+
+## 27. Correcciones finales (2026-09-10)
+
+Byron mandó un documento con dieciséis correcciones. Las que dejan regla:
+
+**La raya larga (—) fuera de todo el sitio.** Cincuenta apariciones. Es una
+de las firmas más claras de texto generado por máquina: nadie escribe así
+a mano en español. Se cambiaron por la puntuación que usaría una persona
+—coma, dos puntos, punto o paréntesis— según el caso. Frank también lleva
+ahora la instrucción de no usarla, porque él escribe solo.
+
+**Dos secciones seguidas del mismo tono son un hueco, no un respiro.** El
+sitio no lleva líneas divisorias (§7), así que lo único que separa una
+sección de otra es el cambio de fondo. Cuando el fondo se repite, lo que
+queda es el respiro de abajo de una más el de arriba de la siguiente:
+unos 224px de nada. Regla nueva: **cuando el tono se repite, la segunda
+sección no vuelve a abrir espacio.** Tres selectores en el CSS, ningún
+cambio de color.
+
+**Los botones del cotizador eran el tic 4.** Una rejilla de recuadros con
+borde de 1px y radio pequeño: "una lista disfrazada de interfaz", dice el
+catálogo. Byron lo dijo con otras palabras: *"esos cuadros se ven full
+creados por IA"*. Pasan a ser franjas alternas con el nombre en tipografía
+de titular, que es como el sitio separa listas desde el 2026-09-01. Y
+pierden el subtexto ("Precio directo, sin más preguntas"), que no ayudaba
+a escoger y era puro relleno de interfaz.
+
+**El chat de Frank.** Esquinas redondeadas (18px), botón de enviar
+circular para que combine con el campo, que ya era una píldora, y las dos
+acciones —cotizar y WhatsApp— compartiendo una sola fila en vez de dos
+bandas apiladas. Se recuperan unos 45px de alto en un panel que no llega
+a 500.
+
+**Se elimina el tic 2 donde quedaba.** `.pull em` pintaba de naranja un
+trozo del titular en Nosotros y en Servicios. Estaba declarado como
+prohibido en la tabla de tics desde el principio y se había quedado.
+
+**Lo que se corrigió del contenido, no del diseño:** el alquiler es de
+tanques de **agua potable**, no de aguas residuales (el título decía una
+cosa y el texto otra); Cartago sale del GAM; Alajuela y San José se
+recortan a los cantones cercanos al centro; y el discurso de Nosotros deja
+de hablar de intermediarios ajenos para hablar de lo propio.

@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260909h">
+<link rel="stylesheet" href="styles.css?v=20260910b">
 <script>document.documentElement.classList.add("js");setTimeout(function(){var d=document.documentElement;if(!d.classList.contains("is-ready"))d.classList.add("rv-rescate");},3000);</script>
 
 <script type="application/ld+json">
@@ -51,10 +51,6 @@
     {
       "@type": "AdministrativeArea",
       "name": "Provincia de San José"
-    },
-    {
-      "@type": "AdministrativeArea",
-      "name": "Provincia de Cartago"
     },
     {
       "@type": "Country",
@@ -151,7 +147,7 @@
 
 <header class="head" data-head>
   <div class="head-in">
-    <a class="logo" href="/" aria-label="Sanitarios Ticos — inicio">
+    <a class="logo" href="/" aria-label="Sanitarios Ticos, inicio">
       <img src="assets/img/logo-horizontal.webp" alt="Sanitarios Ticos" width="853" height="150">
     </a>
     <nav class="menu" id="menu" aria-label="Navegación principal">
@@ -199,7 +195,7 @@
       <p class="lead rv">No es lo mismo, y confundirlos sale caro. Si destapa la tubería pero el tanque está lleno, el problema vuelve en días.</p>
     </div>
     <ul class="data franjas rv">
-      <li><small>Es un tapón</small><span>Un solo desagüe drena lento o se devuelve —la pila de la cocina, un lavatorio, una ducha— y el resto de la casa está bien</span></li>
+      <li><small>Es un tapón</small><span>Un solo desagüe drena lento o se devuelve (la pila de la cocina, un lavatorio, una ducha) y el resto de la casa está bien</span></li>
       <li><small>Es el tanque</small><span>Se devuelven varios desagües a la vez, hay mal olor en el patio o zonas húmedas sobre el drenaje. Ahí lo que hace falta es <a href="/limpieza-de-tanques-septicos">limpiar el tanque séptico</a></span></li>
       <li><small>Son los dos</small><span>Pasa seguido: el tanque saturado tapa la tubería. Se limpia el tanque y se destapa, en la misma visita</span></li>
     </ul>
@@ -270,9 +266,8 @@
       </div>
       <ul class="hq franjas rv">
         <li><b>Heredia</b><span>Heredia, San Joaquín de Flores, Belén, Santo Domingo, San Pablo, Barva, San Rafael, San Isidro y Santa Bárbara.</span></li>
-        <li><b>Alajuela</b><span>Alajuela, La Garita, Atenas, Poás, Grecia, Naranjo, Palmares y San Ramón.</span></li>
-        <li><b>San José</b><span>San José, Escazú, Santa Ana, Curridabat, Montes de Oca, Moravia, Tibás, Goicoechea, Coronado, Alajuelita y Desamparados.</span></li>
-        <li><b>Cartago</b><span>Cartago, La Unión, Tres Ríos, Oreamuno, El Guarco y Paraíso.</span></li>
+        <li><b>Alajuela</b><span>Alajuela centro, Río Segundo, La Garita, San Antonio del Tejar y Atenas.</span></li>
+        <li><b>San José</b><span>San José centro, Escazú, Santa Ana, Tibás, Moravia, Goicoechea, Montes de Oca y Curridabat.</span></li>
         <li><b>Resto del país</b><span>Guanacaste, Puntarenas, Limón, Zona Norte y Zona Sur, coordinando la visita.</span></li>
       </ul>
     </div>
@@ -318,7 +313,7 @@
       <a href="/destaqueo-de-tuberias">Destaqueo de tuberías</a>
       <a href="/limpieza-de-trampas-de-grasa">Trampas de grasa y diesel</a>
       <a href="/construccion-de-tanques-septicos-y-drenajes">Construcción y drenajes</a>
-      <a href="/alquiler-de-tanques-plasticos">Alquiler de tanques plásticos</a>
+      <a href="/alquiler-de-tanques-plasticos">Alquiler de tanques de agua</a>
     </nav>
 
     <nav class="foot-col" aria-label="Empresa">
@@ -342,7 +337,7 @@
   </div>
 
   <div class="wrap-wide foot-end">
-    <p>© <span data-year>2026</span> Grupo Ticos Sanitarios S.A. — Todos los derechos reservados.</p>
+    <p>© <span data-year>2026</span> Grupo Ticos Sanitarios S.A. Todos los derechos reservados.</p>
     <p>Limpieza de tanques sépticos en Costa Rica</p>
   </div>
 </footer>
@@ -371,28 +366,32 @@
     <!-- Cotizador. Frank conversa, pero el precio lo calcula el servidor:
          estos botones recogen los datos y worker.js hace la cuenta.
          Ver README, sección "Cotizaciones". -->
-    <div class="asistente-cotiza" data-asistente-cotiza>
-      <button type="button" data-asistente-cotizar>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg>
-        Cotizar ahora
-      </button>
+    <div class="asistente-acciones">
+      <div class="asistente-cotiza" data-asistente-cotiza>
+        <button type="button" data-asistente-cotizar>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg>
+          Cotizar ahora
+        </button>
+      </div>
+
+      <!-- Traspaso a WhatsApp: aparece apenas la persona escribe algo, y
+           lleva en el mensaje lo que ya le contó a Frank, para que no tenga
+           que repetirlo. Lo arma main.js en cada envío. -->
+      <div class="asistente-pase" data-asistente-pase hidden>
+        <a data-asistente-wa href="https://wa.me/50683417547" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.6A8.4 8.4 0 0 0 6.9 4.9a8.3 8.3 0 0 0-1.6 9.8L4 20l5.5-1.3a8.4 8.4 0 0 0 11-7.1Z"/></svg>
+          Con una persona
+        </a>
+      </div>
     </div>
 
-    <!-- Traspaso a WhatsApp: aparece apenas la persona escribe algo, y
-         lleva en el mensaje lo que ya le contó a Frank, para que no tenga
-         que repetirlo. Lo arma main.js en cada envío. -->
-    <div class="asistente-pase" data-asistente-pase hidden>
-      <a data-asistente-wa href="https://wa.me/50683417547" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.6A8.4 8.4 0 0 0 6.9 4.9a8.3 8.3 0 0 0-1.6 9.8L4 20l5.5-1.3a8.4 8.4 0 0 0 11-7.1Z"/></svg>
-        Seguir con una persona por WhatsApp
-      </a>
-    </div>
     <form class="asistente-form" data-asistente-form>
       <input type="text" placeholder="Escriba su pregunta…" data-asistente-input aria-label="Escriba su pregunta" autocomplete="off">
       <button type="submit" aria-label="Enviar">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
       </button>
     </form>
+
     <p class="asistente-aviso">Frank responde con inteligencia artificial, pura vida. <a href="/privacidad" target="_blank">Política de privacidad</a>.</p>
   </div>
 </div>

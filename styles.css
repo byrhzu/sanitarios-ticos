@@ -358,6 +358,15 @@ strong, b { font-weight: 600; }
    6. Bloques
    ============================================================= */
 .block { padding-block: clamp(3.8rem, 8vw, 7rem); }
+
+/* Dos secciones seguidas del mismo tono se leían como un hueco enorme:
+   el respiro de abajo de una más el de arriba de la siguiente, sin nada
+   que las separe a la vista. Cuando el tono se repite, la segunda no
+   vuelve a abrir espacio; con el de la primera alcanza y sobra.
+   Ver DIRECCION-DE-ARTE.md §27. */
+.block:not(.block-paper2):not(.block-dark) + .block:not(.block-paper2):not(.block-dark),
+.block-paper2 + .block-paper2,
+.block-dark + .block-dark { padding-top: 0; }
 .block-tight { padding-block: clamp(2.6rem, 5vw, 4rem); }
 .block-paper2 { background: var(--paper-2); }
 .block-dark { background: var(--slate); color: var(--paper); }
@@ -950,7 +959,7 @@ body.fabs-fuera .wa-fab {
   position: absolute; right: 0; bottom: calc(100% + .8rem);
   width: min(23rem, calc(100vw - 2rem));
   background: var(--paper);
-  border-radius: 0;
+  border-radius: 18px;
   overflow: hidden;
   box-shadow: 0 20px 50px rgba(27,25,23,.26);
   display: flex; flex-direction: column;
@@ -1090,15 +1099,20 @@ body.fabs-fuera .wa-fab {
   display: flex;
   border-top: 1px solid var(--line);
   background: var(--orange-soft);
+  flex: 1 1 0; min-width: 0;
 }
 .asistente-cotiza button {
-  display: flex; align-items: center; justify-content: center; gap: .5rem;
-  width: 100%; min-height: 44px; padding: .72rem .9rem;
-  font-family: var(--display); font-weight: 600; font-size: .84rem;
-  color: var(--orange-dk);
+  display: flex; align-items: center; justify-content: center; gap: .45rem;
+  width: 100%; min-height: 42px; padding: .6rem .7rem;
+  font-family: var(--display); font-weight: 600; font-size: .82rem;
+  color: var(--orange-dk); white-space: nowrap;
   transition: background-color .2s var(--ease);
 }
 .asistente-cotiza button:hover { background: rgba(214,88,20,.14); }
+
+/* Las dos acciones comparten una sola fila. */
+.asistente-acciones { display: flex; }
+.asistente-acciones > *:first-child:not([hidden]) + * { border-left: 1px solid var(--line); }
 .asistente-cotiza svg {
   width: 16px; height: 16px; flex: 0 0 auto;
   fill: none; stroke: currentColor; stroke-width: 1.9;
@@ -1113,12 +1127,14 @@ body.fabs-fuera .wa-fab {
   display: flex;
   border-top: 1px solid var(--line);
   background: var(--paper-2);
+  flex: 1 1 0; min-width: 0;
 }
 .asistente-pase a {
   display: flex; align-items: center; justify-content: center; gap: .5rem;
-  width: 100%; min-height: 44px; padding: .72rem .9rem;
-  font-family: var(--display); font-weight: 600; font-size: .84rem;
+  width: 100%; min-height: 42px; padding: .6rem .7rem;
+  font-family: var(--display); font-weight: 600; font-size: .82rem;
   color: #0a6b32;  /* 5.7:1 sobre el papel-2 del panel */
+  white-space: nowrap;
   transition: background-color .2s var(--ease);
 }
 .asistente-pase a:hover { background: rgba(37,211,102,.14); }
@@ -1142,12 +1158,16 @@ body.fabs-fuera .wa-fab {
   background: var(--paper-2);
 }
 .asistente-form input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-soft); background: var(--paper); }
+/* El campo es una píldora y el botón era un cuadrado: no combinaban.
+   Ahora es un círculo del mismo alto. */
 .asistente-form button {
   width: 40px; height: 40px; flex: 0 0 auto;
   display: grid; place-items: center;
   background: var(--orange); color: var(--ink);
+  border-radius: 50%;
   transition: transform .2s var(--ease), background-color .2s var(--ease);
 }
+.asistente-form button:hover { background: var(--orange-dk); color: var(--paper); }
 .asistente-form button:hover { background: var(--orange-dk); color: var(--paper); }
 .asistente-form button:active { transform: scale(.94); }
 .asistente-form button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -1376,19 +1396,23 @@ body.fabs-fuera .wa-fab {
 .cot-grupo + .cot-grupo { margin-top: 1.6rem; padding-top: 1.4rem; border-top: 1px solid var(--line); }
 .cot-grupo h3 { font-size: .95rem; font-stretch: var(--ancho-texto); margin: 0 0 .7rem; color: var(--ink-2); }
 
-.cot-ops { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.cot-ops { display: grid; gap: 0; }
 .cot-op {
-  display: grid; gap: .18rem; text-align: left;
-  padding: .85rem 1rem; min-height: 3.4rem;
-  background: var(--paper); border: 1px solid var(--line-2); border-radius: 12px;
+  display: flex; align-items: baseline; gap: .8rem;
+  width: 100%; text-align: left;
+  padding: 1.05rem 1.1rem;
+  background: none; border: 0; border-radius: 0;
   font: inherit; color: var(--ink); cursor: pointer;
-  transition: border-color .18s var(--ease-soft), background .18s var(--ease-soft), transform .18s var(--ease-soft);
+  transition: background-color .18s var(--ease-soft);
 }
-.cot-op:hover { border-color: var(--ink); background: var(--white); }
-.cot-op:active { transform: translateY(1px); }
-.cot-op b { font-weight: 600; font-size: .98rem; }
-.cot-op small { color: var(--muted); font-size: .82rem; }
-.cot-op.is-elegido { border-color: var(--orange); background: var(--orange-tint); }
+.cot-ops .cot-op:nth-child(odd) { background: var(--paper-2); }
+.cot-op b {
+  font-family: var(--display); font-weight: 600;
+  font-size: clamp(1.02rem, 1.5vw, 1.18rem);
+  letter-spacing: -.01em;
+}
+.cot-op:hover { background: var(--orange-soft); }
+.cot-ops .cot-op.is-elegido { background: var(--orange-tint); box-shadow: inset 3px 0 0 var(--orange); }
 .cot-op.is-elegido b::after { content: " ✓"; color: var(--orange-dk); }
 
 .cot-nav {
@@ -1433,7 +1457,6 @@ body.fabs-fuera .wa-fab {
 .cot-caja[aria-busy="true"] .btn { pointer-events: none; opacity: .55; }
 
 @media (max-width: 720px) {
-  .cot-ops { grid-template-columns: 1fr; }
   .cot-acciones .btn { width: 100%; justify-content: center; }
 }
 
