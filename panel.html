@@ -2,10 +2,32 @@
 <html lang="es-CR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- `viewport-fit=cover` es lo que hace que env(safe-area-inset-*) devuelva
+     algo distinto de cero. Sin esto, la barra de abajo del panel se le mete
+     debajo de la rayita del iPhone. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Panel interno | Sanitarios Ticos</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+
+<!-- ===== La aplicación instalable =====
+     Con esto el panel se puede guardar en la pantalla de inicio del celular
+     y abre sin barra de navegador, como cualquier otra app. No hay tienda,
+     ni cuenta de desarrollador, ni cuota: es la misma página con su etiqueta.
+     El manifiesto está en manifest.webmanifest y la copia local en sw.js. -->
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/assets/img/icono-app-apple-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<!-- `default` deja que iOS reserve la franja de la hora. Con
+     `black-translucent` el título del panel se metería debajo de ella. -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Sanitarios">
+<meta name="application-name" content="Sanitarios">
+<!-- El color de la barra del sistema: el mismo fondo del panel, para que
+     no se vea una franja ajena arriba. -->
+<meta name="theme-color" content="#f3ece2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#10171b" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
@@ -367,6 +389,32 @@
   .bt.fuerte:hover { background: var(--p-acento-t); }
 
   .vacio-ok { color: var(--p-tenue); padding: .3rem 0 .5rem; }
+
+  /* ---------- Instalarla en el teléfono ----------
+     Se posa encima de la barra de abajo, no debajo: si tapara los iconos
+     de navegar sería un anuncio, y esto es un ofrecimiento. */
+  .instalar {
+    position: fixed; z-index: 40;
+    left: .8rem; right: .8rem; bottom: calc(4.6rem + env(safe-area-inset-bottom));
+    display: flex; align-items: center; gap: .7rem;
+    padding: .7rem .8rem;
+    background: var(--p-barra); color: var(--p-barra-t);
+    border-radius: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.28);
+  }
+  .instalar img { border-radius: 9px; flex: 0 0 auto; }
+  .instalar p { margin: 0; flex: 1 1 auto; font-size: .84rem; line-height: 1.35; }
+  .instalar .bt { flex: 0 0 auto; }
+  .instalar-x {
+    flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center; color: inherit; opacity: .6;
+  }
+  .instalar-x svg { width: 15px; height: 15px; }
+  .instalar-x:hover { opacity: 1; background: rgba(255,255,255,.12); }
+  @media (min-width: 860px) {
+    /* En escritorio la barra está a la izquierda, así que se va a la
+       esquina y se recoge al ancho de una tarjeta. */
+    .instalar { left: auto; right: 1.2rem; bottom: 1.2rem; max-width: 25rem; }
+  }
 
   /* ---------- Gráficas ---------- */
   .serie-caja { position: relative; }
@@ -795,7 +843,9 @@
     .largo { display: none; }
     .barra nav .grupo-nav { display: none; }
     .buscador { flex: 1 1 100%; max-width: none; order: 3; }
-    .lienzo-top h1 { flex: 1 1 auto; }
+    /* El saludo es de cartel en escritorio. En 375px se come media
+       pantalla, y lo que hay que ver primero son los pendientes. */
+    .lienzo-top h1 { flex: 1 1 auto; font-size: 1.5rem; }
     .lienzo { padding: 1rem .85rem 6rem; }
     .tarj-h .meta { display: none; }
     .tarj-h .meta.siempre { display: inline; }
@@ -813,6 +863,44 @@
     .filtros .empuje { margin-left: auto; }
     .filtros .f { min-width: 0; }
     .aro { width: 150px; height: 150px; }
+
+    /* ---------- Hoy, en la mano ----------
+       Esta es la pantalla que se usa de pie, en un portón, con una mano
+       ocupada. Todo lo que se toca crece y nada se esconde detrás de un
+       segundo rodillo. */
+
+    /* Una lista que rueda por dentro de otra que rueda es la forma más
+       segura de que alguien no llegue nunca al último pendiente. En el
+       teléfono la página entera es el rodillo. */
+    #cola { max-height: none; overflow-y: visible; }
+
+    /* Las alertas son botones que llevan a otro lado: 44px de alto es lo
+       que un pulgar acierta sin mirar. */
+    .aten { padding: .8rem .4rem; min-height: 44px; }
+
+    /* La ficha de un pendiente se apila: quién, cuánto lleva esperando y
+       los botones a todo el ancho. Puestos en fila caben, pero quedan de
+       28px y hay que apuntar. */
+    .fila-cola { gap: .45rem; padding: .9rem 0; }
+    /* Tres renglones, en el orden en que se leen: quién, cuánto lleva
+       esperando, y qué se puede hacer. */
+    .cola-quien { flex: 1 1 100%; order: 1; }
+    .cola-espera { flex: 1 1 100%; order: 2; }
+    /* `flex-wrap` es lo que deja que "Ya la atendí" se baje sola. Sin
+       esto los tres botones pelean por el mismo renglón y WhatsApp y
+       Llamar quedan de dos centímetros. */
+    .cola-acc { flex: 1 1 100%; order: 3; margin-left: 0; gap: .45rem; flex-wrap: wrap; }
+    .cola-acc .bt {
+      flex: 1 1 0; min-width: 0; justify-content: center;
+      padding: .62rem .5rem; min-height: 42px;
+    }
+    /* "Ya la atendí" es la única de las tres que cambia el estado de
+       algo, así que baja sola a su propia línea y no se toca por error
+       queriendo llamar. */
+    .cola-acc .bt.hecho { flex: 1 1 100%; }
+
+    /* Lo mismo para los mantenimientos que vienen. */
+    .toca-fila { padding: .8rem 0; min-height: 44px; }
   }
   @media (min-width: 860px) {
     .corto { display: none; }
@@ -856,7 +944,16 @@
 
     <nav role="tablist" aria-label="Secciones del panel">
       <span class="grupo-nav">Principal</span>
-      <button type="button" role="tab" data-vista="resumen" aria-selected="true">
+      <!-- Hoy va de primero y es lo que abre la aplicación. El icono es una
+           lista con visto: dice "lo que hay que hacer", que es justo lo que
+           esta pantalla contesta. El calendario ya es de Agenda. -->
+      <button type="button" role="tab" data-vista="hoy" aria-selected="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3.5 7.2 5.4 9l3.2-3.4M13 7.2h7.5M3.5 16.8l1.9 1.8 3.2-3.4M13 16.8h7.5"/>
+        </svg>
+        Hoy<span class="pendiente" id="pend-hoy" hidden></span>
+      </button>
+      <button type="button" role="tab" data-vista="resumen" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="7" height="8" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/>
           <rect x="14" y="11" width="7" height="10" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>
@@ -944,8 +1041,53 @@
       </span>
     </div>
 
-    <!-- ================= RESUMEN ================= -->
-    <div class="vista" id="vista-resumen">
+    <!-- ================= HOY =================
+         Qué hay que hacer ahora y con quién hay que hablar. El Resumen dice
+         cómo va el negocio; esta pantalla dice qué sigue. Es la que abre la
+         aplicación en el teléfono, y por eso no lleva ni un control de
+         fechas: nadie saca el celular en la calle para escoger un rango.
+
+         Las tres tarjetas se leen de arriba abajo como una jornada:
+           lo urgente  ·  a quién le debo respuesta  ·  qué viene después.
+         Y las tres salen de la misma consulta que ya alimenta el Resumen,
+         así que verlas no cuesta una llamada más al servidor. -->
+    <div class="vista" id="vista-hoy">
+      <p class="estado-linea" id="estado-hoy" role="status" aria-live="polite"></p>
+
+      <!-- Lo primero que hay que hacer hoy. El panel deja de ser una
+           pantalla donde uno mira números y pasa a decir qué sigue. -->
+      <div class="tarj" id="tarj-atencion" hidden>
+        <div class="tarj-h">
+          <h2>Requiere atención</h2>
+          <span class="meta" id="atencion-n"></span>
+        </div>
+        <div id="atencion"></div>
+      </div>
+
+      <div class="rejilla dos">
+        <div class="tarj" id="tarj-cola">
+          <div class="tarj-h">
+            <h2>Pendientes</h2>
+            <span class="meta" id="cola-n"></span>
+          </div>
+          <div id="cola"></div>
+        </div>
+
+        <div class="tarj">
+          <div class="tarj-h">
+            <h2>Próximos servicios</h2>
+            <span class="meta" id="proximos-n"></span>
+          </div>
+          <div id="proximos"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= RESUMEN =================
+         Las cifras. Acá sí manda el rango de fechas: la pregunta es cómo
+         viene el mes, no qué hago en este momento. -->
+    <div class="vista" id="vista-resumen" hidden>
       <div class="rango">
         <label for="r-desde">Desde</label>
         <input type="date" id="r-desde">
@@ -961,16 +1103,6 @@
       <p class="estado-linea" id="estado-resumen" role="status" aria-live="polite">Cargando…</p>
 
       <div class="rejilla cifras" id="cifras"></div>
-
-      <!-- Lo primero que hay que hacer hoy. El panel deja de ser una
-           pantalla donde uno mira números y pasa a decir qué sigue. -->
-      <div class="tarj" id="tarj-atencion" hidden>
-        <div class="tarj-h">
-          <h2>Requiere atención</h2>
-          <span class="meta" id="atencion-n"></span>
-        </div>
-        <div id="atencion"></div>
-      </div>
 
       <div class="rejilla dos">
         <div class="tarj">
@@ -995,24 +1127,6 @@
             <svg class="aro" id="aro" viewBox="0 0 120 120" role="img" aria-label="Porcentaje de cierre"></svg>
           </div>
           <div class="aro-pie" id="aro-pie"></div>
-        </div>
-      </div>
-
-      <div class="rejilla dos">
-        <div class="tarj" id="tarj-cola">
-          <div class="tarj-h">
-            <h2>Pendientes</h2>
-            <span class="meta" id="cola-n"></span>
-          </div>
-          <div id="cola"></div>
-        </div>
-
-        <div class="tarj">
-          <div class="tarj-h">
-            <h2>Próximos servicios</h2>
-            <span class="meta" id="proximos-n"></span>
-          </div>
-          <div id="proximos"></div>
         </div>
       </div>
 
@@ -1205,6 +1319,19 @@
      de los que depende el recordatorio de dentro de dos años. -->
 <div class="avisos" id="avisos" role="status" aria-live="polite"></div>
 
+<!-- La invitación a instalarla. Se enciende sola desde el código de abajo y
+     sólo si el panel NO se está viendo ya como aplicación. -->
+<div class="instalar" id="instalar-caja" hidden>
+  <img src="assets/img/icono-app-192.png" alt="" width="38" height="38">
+  <p id="instalar-txt"></p>
+  <button type="button" class="bt fuerte" id="instalar-si" hidden>Instalar</button>
+  <button type="button" class="instalar-x" id="instalar-no" aria-label="Ahora no">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <path d="M6 6l12 12M18 6 6 18"/>
+    </svg>
+  </button>
+</div>
+
 <div class="velo" id="velo" hidden>
   <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="hoja-t">
     <h2 id="hoja-t">Anotar el trabajo</h2>
@@ -1231,7 +1358,28 @@
   "use strict";
 
   var $ = function (id) { return document.getElementById(id); };
-  var clave = sessionStorage.getItem("clavePanel") || "";
+
+  /* La clave vive en localStorage y no en la sesión. En una pantalla de
+     escritorio da igual; en el celular es la diferencia entre una
+     herramienta y un estorbo: instalada como aplicación, sessionStorage
+     se vacía cada vez que iOS descarga la app de memoria, y el panel
+     pedía la contraseña varias veces al día.
+
+     El botón de Salir sigue estando y borra las dos, que es lo que hay
+     que hacer si el teléfono se pierde o se presta. */
+  var GUARDA_CLAVE = "clavePanel";
+  function leerClave() {
+    try { return localStorage.getItem(GUARDA_CLAVE) || sessionStorage.getItem(GUARDA_CLAVE) || ""; }
+    catch (e) { return ""; }
+  }
+  function guardarClave(v) {
+    try { localStorage.setItem(GUARDA_CLAVE, v); } catch (e) {}
+  }
+  function borrarClave() {
+    try { localStorage.removeItem(GUARDA_CLAVE); } catch (e) {}
+    try { sessionStorage.removeItem(GUARDA_CLAVE); } catch (e) {}
+  }
+  var clave = leerClave();
 
   /* Iconos. Trazo de 1.8 sin relleno, puntas redondeadas, rejilla de
      24 — el mismo dibujo para todos, que es lo que hace que un juego
@@ -1276,7 +1424,7 @@
   ponerTema(temaGuardado() ||
     (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "oscuro" : "claro"));
 
-  var vista = "resumen";
+  var vista = "hoy";
   var pagina = 1;
   var ESTADOS = null;
   var resumenCargado = false;
@@ -1288,7 +1436,7 @@
   var filtro = { desde: "", hasta: "", estado: "", provincia: "", servicio: "", buscar: "" };
 
   var NOMBRE_VISTA = {
-    resumen: "Resumen", cotizaciones: "Cotizaciones", solicitudes: "Solicitudes",
+    hoy: "Hoy", resumen: "Resumen", cotizaciones: "Cotizaciones", solicitudes: "Solicitudes",
     clientes: "Clientes", cliente: "Cliente", agenda: "Agenda", nueva: "Nueva cotización"
   };
 
@@ -1723,8 +1871,11 @@
   });
 
   function cargarResumen() {
-    $("estado-resumen").textContent = "";
-    $("estado-resumen").classList.remove("is-error");
+    // Las dos pantallas que comen de esta consulta avisan por su cuenta.
+    ["estado-resumen", "estado-hoy"].forEach(function (id) {
+      $(id).textContent = "";
+      $(id).classList.remove("is-error");
+    });
     if (!resumenCargado) {
       $("cifras").innerHTML = esqCifras();
       $("cola").innerHTML = esqFilas(3);
@@ -1760,14 +1911,23 @@
         pintarBarras("b-provincias", d.provincias, "provincia");
         pintarBarras("b-origenes", d.origenes, null);
 
+        marcar("pend-hoy", d.esperando.total);
         marcar("pend-cot", d.esperando.cot);
         marcar("pend-sol", d.esperando.sol);
         sellar();
         resumenCargado = true;
       })
       .catch(function () {
-        $("estado-resumen").textContent = "No se pudo cargar el resumen.";
-        $("estado-resumen").classList.add("is-error");
+        /* Sin red esto es lo único que se ve, así que dice qué pasó y qué
+           hacer. La copia guardada del panel abre la pantalla; los datos
+           nunca se guardan, a propósito: mejor decir que no se pudo que
+           mostrar montos de ayer como si fueran de hoy. */
+        ["estado-resumen", "estado-hoy"].forEach(function (id) {
+          $(id).textContent = "No se pudo traer la información. Revise la señal y vuelva a intentar.";
+          $(id).classList.add("is-error");
+        });
+        $("cola").innerHTML = "";
+        $("proximos").innerHTML = "";
       });
   }
 
@@ -3009,10 +3169,10 @@
     Array.prototype.forEach.call(document.querySelectorAll(".barra nav button"), function (b) {
       b.setAttribute("aria-selected", String(b.dataset.vista === nueva));
     });
-    /* El resumen saluda; las demás pantallas se nombran. Un "Buenos
-       días" en la lista de cotizaciones sería ruido — ahí uno vino a
-       trabajar, no a que lo saluden. */
-    if (nueva === "resumen") {
+    /* Hoy saluda; las demás pantallas se nombran. Un "Buenos días" en la
+       lista de cotizaciones sería ruido: ahí uno vino a trabajar, no a
+       que lo saluden. */
+    if (nueva === "hoy") {
       $("titulo-vista").textContent = saludo() + ", Leitón";
       $("sub-titulo").textContent = fechaDeHoy();
     } else {
@@ -3021,6 +3181,7 @@
     }
 
     var esTabla = nueva === "cotizaciones" || nueva === "solicitudes";
+    $("vista-hoy").hidden = nueva !== "hoy";
     $("vista-resumen").hidden = nueva !== "resumen";
     $("vista-nueva").hidden = nueva !== "nueva";
     $("vista-clientes").hidden = nueva !== "clientes";
@@ -3029,7 +3190,10 @@
     $("vista-tabla").hidden = !esTabla;
     window.scrollTo({ top: 0 });
 
-    if (nueva === "resumen") { if (!resumenCargado) cargarResumen(); }
+    /* Hoy y Resumen se sirven de la misma consulta, así que comparten el
+       mismo aviso de "ya está cargado". Pasar de una a otra no vuelve a
+       pedir nada. */
+    if (nueva === "hoy" || nueva === "resumen") { if (!resumenCargado) cargarResumen(); }
     else if (nueva === "nueva") { cargarNueva(); }
     else if (nueva === "clientes") { cargarClientes(); }
     else if (nueva === "agenda") { if (!agendaCargada) cargarAgenda(); else pintarAgendaLista(); }
@@ -3075,7 +3239,7 @@
     b.classList.remove("girando");
     void b.offsetWidth;
     b.classList.add("girando");
-    if (vista === "resumen") { resumenCargado = false; cargarResumen(); }
+    if (vista === "hoy" || vista === "resumen") { resumenCargado = false; cargarResumen(); }
     else if (vista === "nueva") { cargarNueva(); }
     else if (vista === "clientes") { cargarClientes(); }
     else if (vista === "cliente") { /* la ficha se recarga sola al volver */ }
@@ -3087,13 +3251,14 @@
     var nuevo = document.documentElement.getAttribute("data-tema") === "oscuro" ? "claro" : "oscuro";
     ponerTema(nuevo);
     try { localStorage.setItem(TEMA, nuevo); } catch (e) {}
-    // El gráfico está dibujado con los colores de antes.
-    if (vista === "resumen" && resumenCargado) { resumenCargado = false; cargarResumen(); }
+    // El gráfico está dibujado con los colores de antes. Si no se está
+    // mirando, basta con marcarlo viejo: se redibuja al entrar.
+    if (resumenCargado) { resumenCargado = false; if (vista === "resumen") cargarResumen(); }
   });
 
-  // Salir borra la clave de esta pestaña: el panel se abre en teléfonos
+  // Salir borra la clave de este aparato: el panel se abre en teléfonos
   // que no siempre son de uno solo.
-  function salir() { sessionStorage.removeItem("clavePanel"); location.reload(); }
+  function salir() { borrarClave(); location.reload(); }
   $("btn-salir").addEventListener("click", salir);
   $("btn-salir-movil").addEventListener("click", salir);
 
@@ -3117,14 +3282,26 @@
     clearTimeout(reloj);
     reloj = setTimeout(function () {
       if (esAngosto() !== eraAngosto) { eraAngosto = esAngosto(); dibujarLista(); }
-      if (vista === "resumen" && resumenCargado) { resumenCargado = false; cargarResumen(); }
+      if (resumenCargado) { resumenCargado = false; if (vista === "resumen") cargarResumen(); }
     }, 250);
   });
+
+  /* Los accesos directos del icono (mantener apretado en la pantalla de
+     inicio) llegan como /panel?ir=nueva. Sólo se aceptan destinos de la
+     lista: cualquier otra cosa cae en Hoy. */
+  function destinoDeLaDireccion() {
+    var v = new URLSearchParams(location.search).get("ir");
+    return Object.prototype.hasOwnProperty.call(NOMBRE_VISTA, v) ? v : "hoy";
+  }
 
   function mostrarPanel() {
     $("pantalla-clave").hidden = true;
     $("panel").hidden = false;
-    irA("resumen");
+    var v = destinoDeLaDireccion();
+    // La dirección se limpia para que al refrescar no vuelva a saltar al
+    // mismo lado; el acceso directo sirve una vez, no para siempre.
+    if (v !== "hoy") history.replaceState(null, "", location.pathname);
+    irA(v);
   }
 
   $("form-clave").addEventListener("submit", function (e) {
@@ -3142,7 +3319,7 @@
       })
       .then(function () {
         clave = intento;
-        sessionStorage.setItem("clavePanel", clave);
+        guardarClave(clave);
         $("estado-clave").textContent = "";
         mostrarPanel();
       })
@@ -3162,6 +3339,74 @@
   });
 
   if (clave) mostrarPanel();
+
+  /* =========================================================
+     Instalarla en el teléfono
+     =========================================================
+
+     El service worker es lo que hace que el panel abra de una y aguante
+     una calle con mala señal. Va con alcance /panel: el sitio público no
+     pasa por él y nada de lo que se publique queda atrapado en su copia.
+
+     Se registra después de `load` a propósito. Si se registra antes,
+     compite por el ancho de banda con la primera pantalla, que es
+     justamente lo que se está tratando de acelerar. */
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js", { scope: "/panel" })
+        .catch(function () { /* Sin él el panel funciona igual, sólo abre más lento. */ });
+    });
+  }
+
+  /* El aviso para instalarla. Sólo aparece si NO está ya instalada, y se
+     va para siempre en cuanto se instala o se cierra.
+
+     Android manda el evento y basta con un botón. iPhone no lo manda
+     nunca: en Safari hay que decirle a la persona los dos toques, porque
+     no hay ninguna forma de abrir ese menú desde la página. */
+  var YA_NO = "panel-no-instalar";
+  var invitacion = null;
+
+  function instalada() {
+    return window.matchMedia("(display-mode: standalone)").matches ||
+           window.navigator.standalone === true;
+  }
+  function rechazada() {
+    try { return localStorage.getItem(YA_NO) === "1"; } catch (e) { return false; }
+  }
+  function noPreguntarMas() {
+    try { localStorage.setItem(YA_NO, "1"); } catch (e) {}
+    var c = $("instalar-caja");
+    if (c) c.hidden = true;
+  }
+
+  function mostrarInvitacion(texto, conBoton) {
+    if (instalada() || rechazada()) return;
+    var c = $("instalar-caja");
+    $("instalar-txt").textContent = texto;
+    $("instalar-si").hidden = !conBoton;
+    c.hidden = false;
+  }
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    invitacion = e;
+    mostrarInvitacion("Guárdelo en la pantalla de inicio y ábralo como una aplicación.", true);
+  });
+
+  // iPhone: no hay evento, hay que explicarlo.
+  var esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (esIOS && !instalada()) {
+    mostrarInvitacion("Para tenerlo como aplicación: toque Compartir y luego “Añadir a inicio”.", false);
+  }
+
+  $("instalar-si").addEventListener("click", function () {
+    if (!invitacion) return;
+    invitacion.prompt();
+    invitacion.userChoice.then(function () { invitacion = null; noPreguntarMas(); });
+  });
+  $("instalar-no").addEventListener("click", noPreguntarMas);
+  window.addEventListener("appinstalled", noPreguntarMas);
 })();
 </script>
 

@@ -33,3 +33,17 @@
 
 /assets/favicon.svg
   Cache-Control: public, max-age=2592000
+
+# ---------------------------------------------------------------------------
+# La aplicación instalable del panel.
+# Estos dos SIEMPRE se revalidan. Si el navegador se queda con un sw.js viejo
+# guardado, el teléfono sigue sirviendo la copia anterior del panel aunque ya
+# se haya publicado una nueva, y no hay forma de sacarlo de ahí.
+# ---------------------------------------------------------------------------
+/sw.js
+  Cache-Control: no-cache
+  Service-Worker-Allowed: /
+
+/manifest.webmanifest
+  Cache-Control: no-cache
+  Content-Type: application/manifest+json; charset=utf-8

@@ -1379,3 +1379,70 @@ agricultor, cortes de agua, emergencias en comunidades, baños portátiles).
 Una página corta y cierta vale más que una larga a medias, y Frank lleva
 ahora la instrucción explícita de no inventar usos ni capacidades de este
 servicio.
+
+## 28. El panel se vuelve aplicación (tanda 1, 2026-09-10)
+
+El panel se usa de pie, en un portón, con una mano ocupada y a veces con
+mala señal. Estaba dibujado para eso desde hace rato —barra abajo, fichas
+en vez de tabla, `env(safe-area-inset-bottom)`— pero seguía siendo una
+pestaña del navegador. Esta tanda le pone el envoltorio, sin rehacer nada.
+
+**Instalable, no nativa.** `manifest.webmanifest` + `sw.js`. No hay tienda,
+ni cuenta de desarrollador, ni cuota anual, ni esperar aprobación para
+corregir una línea. Es el mismo archivo que ya se despliega con cada push,
+con su etiqueta puesta.
+
+**El icono.** El camión con el chofer saludando, a 64% del ancho, centrado
+sobre la pizarra `#1f2c33`. El 64% no es capricho: los iconos maskable de
+Android se recortan a un círculo del 80%, y a 72% la esquina del tanque
+quedaba justo por fuera. A 60px en la pantalla de inicio no se distinguen
+las manos del chofer, pero sí "camión naranja sobre oscuro", que es lo que
+tiene que pasar. Se descartó un monograma: la empresa ya tiene una marca
+dibujada y no hacía falta inventarle otra.
+
+**`viewport-fit=cover`.** Estaba faltando. Sin él, `env(safe-area-inset-*)`
+devuelve cero y la barra de abajo se le metía debajo de la rayita del
+iPhone. La barra ya pedía el inset desde antes; nunca se lo estaban dando.
+
+**Los datos no se guardan nunca.** El service worker cachea la concha
+—pantalla, css, iconos— y deja `/api/*` pasar de largo. Sin señal el panel
+abre completo y dice que no pudo traer la información, en vez de mostrar
+montos de ayer con cara de hoy. Es la decisión de diseño más importante de
+esta tanda y es una resta, no una suma.
+
+**La sesión se queda.** `localStorage` en vez de `sessionStorage`.
+Instalada como app, iOS descarga la vista de memoria a cada rato y el panel
+pedía la contraseña varias veces al día. Salir sigue estando y borra las
+dos.
+
+**Hoy, la pantalla nueva.** El Resumen mezclaba dos preguntas: "cómo va el
+negocio" (cifras, gráfica, aro de cierre, rangos de fecha) y "qué hago
+ahora" (lo urgente, quién espera respuesta, qué mantenimiento viene). En
+una pantalla de 375px la segunda perdía siempre, porque llegaba después de
+cuatro tarjetas de cifras y un selector de fechas.
+
+Se partieron. **Hoy** se queda con las tres tarjetas de trabajo y no lleva
+un solo control de fecha —nadie saca el celular en la calle para escoger un
+rango—. **Resumen** se queda con los números. Las dos comen de la misma
+consulta, así que separarlas no costó una llamada más al servidor, y el
+marcador de "ya está cargado" es compartido: pasar de una a otra no pide
+nada.
+
+Las tres tarjetas se leen como una jornada: **lo urgente · a quién le debo
+respuesta · qué viene después**. No es una lista de módulos, es el orden en
+que se trabaja el día.
+
+**En la mano.** Dentro de Hoy y en angosto: la ficha de un pendiente se
+apila en tres renglones (quién · cuánto lleva esperando · qué hacer), los
+botones van a 42px de alto y a mitad de ancho cada uno, y **"Ya la atendí"
+baja sola a su renglón**: es la única de las tres que cambia el estado de
+algo y no se puede tocar por error queriendo llamar. Se le quitó el
+`overflow-y` a la lista de pendientes: una lista que rueda por dentro de
+otra que rueda es la forma más segura de que alguien no llegue nunca al
+último. Y el saludo de cartel baja a 24px, porque a 375px se comía media
+pantalla y lo que hay que ver primero son los pendientes.
+
+**Lo que no se hizo, a propósito.** Ni chat propio (WhatsApp ya está donde
+el cliente está), ni notificaciones todavía —eso es la tanda 3, y antes de
+eso hay que separar usuarios: hoy la seguridad es una sola clave compartida
+y cualquiera que la tenga ve todos los precios y todos los clientes.
