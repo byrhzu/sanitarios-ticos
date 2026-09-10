@@ -1292,3 +1292,26 @@ Se fundieron los dos en un solo bloque y se quitó el margen suelto. Las
 tres columnas quedan en 8px parejos. De paso salió que esa columna todavía
 anunciaba «Alajuela · Heredia · San José», que era lo que quedaba de las
 sedes.
+
+## 26. La sección de salida inmediata
+
+Cuatro zonas donde el camión sale el mismo día: San Joaquín de Flores,
+Santa Bárbara, Santo Domingo y Tibás. Va en el inicio, entre «a quiénes
+atendemos» y la cobertura general — el orden cuenta una progresión: qué
+tipo de cliente, dónde llegamos hoy, hasta dónde llegamos.
+
+**Los cuatro nombres van solos, sin una frase de apoyo cada uno.** Es a
+propósito: todavía no hay nada distinto que decir de cada zona, y rellenar
+cuatro filas con la misma frase cambiando el nombre del cantón es
+literalmente lo que hacía el sitio viejo de Wix. Cuando llegue el material
+por zona (ZONAS-Y-SEO-LOCAL.md §8) cada una tendrá su página, y ahí sí hay
+algo que contar.
+
+Reusa `.data franjas` con un modificador de una línea, `.zonas span`, que
+sube el nombre a tamaño de titular chico. Los rótulos llevan la provincia,
+que se repite tres veces a propósito: no es ruido, es el dato que ubica
+cada nombre.
+
+La escala es lo único que separa esta lista de la de cobertura, y es
+coherente con §5: acá los nombres **son** el contenido de la sección; en la
+cobertura son un dato de apoyo bajo un titular que ya lo dijo todo.

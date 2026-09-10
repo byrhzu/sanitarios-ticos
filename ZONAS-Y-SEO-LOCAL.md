@@ -143,6 +143,62 @@ bórrelas antes de meter las nuevas. Es más limpio que ir corrigiendo.
 
 ---
 
+### La lista de Byron, resuelta (2026-09-09)
+
+Byron pasó esto y preguntó si conviene ponerlo por cantones específicos o
+por provincias:
+
+> Provincias: Heredia, Alajuela, San José.
+> Cantones: San Joaquín (Heredia), Santa Bárbara (Heredia), Tibás (San
+> José), Santo Domingo (Heredia).
+
+**Primero, una corrección de nombres.** *San Joaquín* no es cantón: es un
+**distrito del cantón Flores**, en Heredia. Los otros tres —Santa Bárbara,
+Santo Domingo y Tibás— sí son cantones. Importa porque Google escoge las
+áreas de una lista de entidades reales: si uno escribe "San Joaquín" a
+secas puede terminar marcando otro lugar del país con ese nombre. Lo
+correcto es **San Joaquín de Flores**.
+
+**En el perfil de Google: las tres provincias, y nada más.**
+
+No conviene mezclar. Una provincia **ya contiene** sus cantones: poner
+"Heredia" y además "Santa Bárbara" no agrega cobertura, gasta espacios de
+los veinte y, peor, sugiere que dentro de Heredia sólo cubren esos cantones.
+
+Como la empresa de verdad trabaja las tres provincias completas, lo honesto
+y lo simple es poner **Heredia, Alajuela y San José**. Tres áreas, sobran
+diecisiete.
+
+La objeción obvia es que Google pide *"ser lo más específico y preciso
+posible"*. Cierto — pero preciso significa **que calce con la realidad**, no
+partido en pedacitos. Si trabajan la provincia entera, la provincia es el
+dato preciso. Y hay que recordar lo del punto 2: **el área de servicio no
+posiciona**. Poner cuatro cantones en vez de tres provincias no mueve el
+orden en que salen; sólo cambia lo que el cliente lee.
+
+**Los cuatro cantones rápidos NO van en el área de servicio.** No son un
+límite de cobertura, son una promesa de velocidad. Meterlos ahí confunde
+las dos cosas. Su lugar es la página web —ya está hecha, ver abajo— y, si
+acaso, una publicación dentro de la ficha.
+
+**En la página web es al revés: manda lo específico.**
+
+Nadie busca "tanques sépticos provincia de Heredia". Busca "tanques
+sépticos Santa Bárbara". Los nombres específicos son los que traen
+búsquedas: menos competencia y muchísima más intención de compra.
+
+Por eso el sitio hace las dos cosas, cada una en su lugar:
+
+| Dónde | Qué dice | Para qué |
+|---|---|---|
+| Sección de cobertura | Las provincias con sus cantones | Contestar "¿me cubren?" |
+| Sección «salimos el mismo día» | Los cuatro específicos | Vender la velocidad |
+| Páginas de zona (pendientes) | Una por zona | Ganar la búsqueda |
+
+Y esos cuatro son los **primeros candidatos a página de zona**: si ahí se
+llega el mismo día, hay algo cierto y propio que contar, que es justo lo
+que pide el punto 8.
+
 ## 5 · En unos meses, esto se decide con datos
 
 El cotizador guarda la **provincia, el cantón y el distrito de cada

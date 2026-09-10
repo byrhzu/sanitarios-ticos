@@ -746,6 +746,10 @@ strong, b { font-weight: 600; }
   letter-spacing: .13em; color: var(--muted-2);
 }
 .data a, .data span { font-family: var(--display); font-weight: 600; font-size: 1.02rem; }
+/* Las zonas de salida inmediata son el contenido de su sección, no un dato
+   de apoyo: van al tamaño de un titular chico. La escala es el único
+   sistema de énfasis del sitio — DIRECCION-DE-ARTE.md §5. */
+.zonas span { font-size: clamp(1.15rem, 2.2vw, 1.5rem); }
 .data a { transition: color .2s var(--ease); }
 .data a:hover { color: var(--orange); }
 
