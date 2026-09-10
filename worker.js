@@ -2025,16 +2025,22 @@ async function responderAsistente(request, env) {
    generaba Wix. No son errores de copia.
    ============================================================= */
 const REDIRECCIONES_WIX = {
-  "/limpieza-de-tanques-septicos-heredi": "/servicios#tanques-septicos",
-  "/limpieza-de-tanques-septicos-alajue": "/servicios#tanques-septicos",
-  "/limpieza-de-tanques-septicos-san-jo": "/servicios#tanques-septicos",
-  "/tanques-septicos-y-drenajes-san-joa": "/servicios#tanques-septicos",
-  "/limpieza-de-tuberias-san-joaquin-de": "/servicios#destaqueo",
-  "/destaqueo-de-tuberias-san-joaquin-f": "/servicios#destaqueo",
-  "/limpieza-de-trampas-de-grasa-san-jo": "/servicios#trampas",
-  "/construccion-de-drenajes-san-joaqui": "/servicios#construccion",
-  "/construccion-de-plantas-de-tratamie": "/servicios#construccion",
-  "/construccion-de-tanques-septicos-sa": "/servicios#construccion",
+  // Zona por zona: cada una cae en la página nueva de su misma zona, que
+  // es lo que hace que Google traslade el valor en vez de perderlo.
+  "/limpieza-de-tanques-septicos-heredi": "/limpieza-de-tanques-septicos-heredia",
+  "/limpieza-de-tanques-septicos-alajue": "/limpieza-de-tanques-septicos-alajuela",
+  "/limpieza-de-tanques-septicos-san-jo": "/limpieza-de-tanques-septicos-san-jose",
+  // "san-joa" es San Joaquín de Flores, que es Heredia.
+  "/tanques-septicos-y-drenajes-san-joa": "/limpieza-de-tanques-septicos-heredia",
+
+  "/limpieza-de-tuberias-san-joaquin-de": "/destaqueo-de-tuberias",
+  "/destaqueo-de-tuberias-san-joaquin-f": "/destaqueo-de-tuberias",
+  "/limpieza-de-trampas-de-grasa-san-jo": "/limpieza-de-trampas-de-grasa",
+
+  "/construccion-de-drenajes-san-joaqui": "/construccion-de-tanques-septicos-y-drenajes",
+  "/construccion-de-plantas-de-tratamie": "/construccion-de-tanques-septicos-y-drenajes",
+  "/construccion-de-tanques-septicos-sa": "/construccion-de-tanques-septicos-y-drenajes",
+
   "/aprende-mas-sanitarios-ticos": "/nosotros",
   "/blog": "/"
 };

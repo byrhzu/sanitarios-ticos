@@ -749,6 +749,27 @@ strong, b { font-weight: 600; }
 .data a { transition: color .2s var(--ease); }
 .data a:hover { color: var(--orange); }
 
+/* --- Tabla de precios ---------------------------------------------
+   Search Console dice que "precio limpieza tanque séptico costa rica"
+   trae ~1.000 impresiones al año con 0,9% de clics: la gente busca el
+   precio y no lo encuentra. Publicarlo es la respuesta.
+   Sin filetes, con franjas alternas, igual que el resto (§7). */
+.precios { width: 100%; border-collapse: collapse; font-size: .95rem; }
+.precios caption {
+  text-align: left; font-size: .74rem; text-transform: uppercase;
+  letter-spacing: .13em; color: var(--muted-2); font-weight: 600;
+  padding-bottom: .7rem;
+}
+.precios td { padding: .85rem 1rem; }
+.precios tr:nth-child(odd) { background: var(--paper-2); }
+.block-paper2 .precios tr:nth-child(odd) { background: var(--paper); }
+.precios td:last-child {
+  text-align: right; white-space: nowrap;
+  font-family: var(--display); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.precios-nota { font-size: .88rem; color: var(--muted); margin-top: .9rem; }
+
 /* =============================================================
    7. Pie
    ============================================================= */
