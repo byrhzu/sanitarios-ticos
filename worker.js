@@ -1243,6 +1243,7 @@ async function agendaPanel(request, env) {
 //   1. Cambie los números de TARIFAS.
 //   2. Ponga `provisional: false`.
 //   3. Confirme si los montos llevan IVA incluido y ajuste `iva`.
+//      (Confirmado el 2026-09-10: NO lo llevan, se suma aparte.)
 //
 // Mientras `provisional` sea true, cada cotización sale marcada como
 // estimación y `tools/modo-publicacion.py` se niega a pasar el sitio a
@@ -1254,8 +1255,11 @@ async function agendaPanel(request, env) {
 const TARIFAS = {
   provisional: false,
 
-  // Confirmado: los montos ya llevan el IVA adentro. No se suma nada.
-  iva: { incluido: true, tasa: 0.13 },
+  /* Los montos de acá son la BASE: el IVA va aparte. Así se dice en el
+     sitio y en el documento, para que quien pide factura no se lleve una
+     sorpresa del 13% al final. Cómo se cobra en cada caso es cosa del
+     encargado y NO se explica en la página. */
+  iva: { incluido: false, tasa: 0.13 },
 
   vigenciaDias: 15,
 
@@ -1901,6 +1905,7 @@ REGLAS QUE DEBES SEGUIR SIEMPRE:
 - Esa marca no es visible para la persona; lo que ella ve es sólo su respuesta. Antes de la marca, explique brevemente y con naturalidad qué va a pasar: que necesita unos datos para armarle la cotización formal, que son preguntas cortas, y que al final le queda el documento con su número. Dos o tres frases, no más. Ejemplo: "Con gusto le armo la cotización. Ocupo unos datos suyos y de la propiedad para dejarla formal; son preguntas cortitas y al final le queda el documento con su número. Vamos: [[COTIZAR]]"
 - Use la marca [[COTIZAR]] SÓLO cuando la persona quiere cotizar. Si nada más está preguntando qué servicios hay o si llegan a su zona, conteste normal, sin la marca.
 - El cotizador NO le pide metros cúbicos ni litros de memoria: le pregunta la FORMA del tanque (redondo de cemento, hueco de tierra, plástico, cuadrado de block) y la medida aproximada, que se ve desde el patio; después hace cuánto se limpió, la provincia, el cantón y el distrito escogiéndolos de una lista, y por último el nombre, la cédula, el teléfono y el correo para emitir el documento. Si alguien se preocupa por no saber el tamaño exacto, tranquilícelo: basta con la forma y una medida aproximada. La cédula y el correo se pueden dejar en blanco.
+- Los montos del cotizador son la BASE: el IVA (13%) se suma aparte. Si alguien pregunta, dígalo así de simple, en una frase. NUNCA explique a quién se le cobra el IVA y a quién no, ni mencione la factura electrónica: eso lo resuelve el encargado hablando con el cliente.
 - El resultado del cotizador es un estimado automático, no un precio cerrado: el precio oficial lo da el encargado antes de empezar, gratis y sin compromiso. Dígalo así, como algo normal del negocio (en sitio pueden aparecer cosas que un formulario no ve), nunca como si el cotizador estuviera "en pruebas" o los precios fueran provisionales.
 - NUNCA inventes datos que no estén arriba: no inventes certificaciones, promociones, plazos exactos de llegada ni disponibilidad de camiones en tiempo real.
 - Si es una emergencia (derrame, tanque rebalsado ahora mismo), recomiende llamar directo al 2440-1110 en vez de seguir escribiendo.

@@ -989,7 +989,8 @@
         (esDesde
           ? "Le sale desde " + colones(d.min)
           : "Le sale entre " + colones(d.min) + " y " + colones(d.max)) +
-        " por el servicio de " + d.servicioNombre.toLowerCase() + "."
+        " por el servicio de " + d.servicioNombre.toLowerCase() + "." +
+        (d.ivaIncluido === false ? " A ese monto se le suma el IVA." : "")
       ];
 
       // Mientras las tarifas sean las provisionales, se dice. Callarlo

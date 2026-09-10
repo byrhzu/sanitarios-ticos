@@ -328,6 +328,14 @@
       esDesde ? "Desde " + colones(d.min) : colones(d.min) + " – " + colones(d.max)
     ));
 
+    /* El IVA se suma aparte, y son 13%: dejarlo sólo en una fila de la
+       tabla de abajo sería esconderlo. Va pegado al monto. */
+    var nota = document.querySelector("[data-cot-iva]");
+    if (nota) {
+      nota.textContent = d.ivaIncluido ? "IVA incluido en el monto." : "Al monto se le suma el IVA.";
+      nota.hidden = false;
+    }
+
     var cuerpo = $("[data-cot-desglose]");
     cuerpo.textContent = "";
     (d.desglose || []).forEach(function (fila) {

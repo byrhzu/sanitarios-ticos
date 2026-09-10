@@ -1449,6 +1449,12 @@ body.fabs-fuera .wa-fab {
 /* Sin mayúsculas rastreadas: son la firma tipográfica que Byron ya
    rechazó dos veces. Basta con que sea pequeño y gris. */
 .cot-monto small { display: block; font-size: .82rem; font-stretch: var(--ancho-texto); font-weight: 600; color: var(--muted); letter-spacing: .01em; margin-bottom: .45rem; }
+.cot-iva[hidden] { display: none; }
+.cot-iva {
+  margin: -.2rem 0 1.1rem;
+  font-family: var(--display); font-weight: 600;
+  font-size: .95rem; color: var(--muted);
+}
 .cot-oficial {
   background: var(--orange-tint); border-left: 3px solid var(--orange);
   padding: .85rem 1rem; border-radius: 0 10px 10px 0; color: var(--ink-2);
