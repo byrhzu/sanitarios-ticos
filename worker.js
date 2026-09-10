@@ -1328,7 +1328,7 @@ const TARIFAS = {
 
     // El alquiler se cobra por día con un piso de ocho.
     "alquiler-tanques": {
-      nombre: "Alquiler de tanque de agua potable",
+      nombre: "Alquiler de tanque plástico",
       porDia: 15000,
       diasMinimo: 8
     }
@@ -1879,7 +1879,7 @@ SERVICIOS QUE OFRECE LA EMPRESA:
 2. Limpieza y destaqueo de tuberías — con sonda eléctrica, para tubería fina o gruesa.
 3. Limpieza de trampas de grasa y diesel — para restaurantes, sodas, talleres.
 4. Construcción de tanques sépticos, drenajes y plantas de tratamiento.
-5. Alquiler de tanques de AGUA POTABLE: tanques plásticos para almacenar agua donde todavía no llega (obras) o donde se va a cortar por unos días (condominios, comercios, ferias, turnos). NO es para aguas residuales; si alguien lo confunde, acláreselo. Incluye entrega, retiro y limpiezas calendarizadas.
+5. Alquiler de tanques plásticos: para la RECOLECCIÓN DE AGUAS RESIDUALES en construcciones y eventos. Incluye el servicio de entrega y las limpiezas del tanque calendarizadas. Eso es todo lo que se sabe de este servicio: no invente usos, tamaños ni capacidades.
 
 COBERTURA: es un negocio que va donde el cliente; no hay local ni sala de espera y NUNCA invite a nadie a visitar una oficina. La zona de trabajo diaria es el GRAN ÁREA METROPOLITANA: San José, Heredia y Alajuela con sus cantones cercanos al centro. Ahí llegan rápido y en emergencia el mismo día. Fuera de esa zona (Cartago, Guanacaste, Puntarenas, Limón, Zona Norte, Zona Sur) también dan servicio, coordinando la fecha según la ruta del camión. Los camiones son TRES cisternas propias. No diga que tienen sedes ni sucursales.
 

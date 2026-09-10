@@ -1368,3 +1368,14 @@ Va a 22px de alto (1,75em sobre los 12,8px de la barra), con el archivo a
 44px para que no se vea borrosa en retina. Más chica deja de leerse como
 Costa Rica; se probaron 19, 22 y 26. En celular desaparece con el resto de
 esa línea, que ya estaba oculta.
+
+**Corrección de la corrección (2026-09-10).** El alquiler **sí es para
+recolección de aguas residuales**; lo de agua potable fue un malentendido
+y se devolvió todo. Lo que queda de eso es una regla de trabajo: el
+propietario dio tres líneas sobre ese servicio y nada más, así que la
+página dice esas tres líneas y lo que se deduce directamente de ellas. Se
+quitaron los usos que yo había inventado para llenar la página (ferias del
+agricultor, cortes de agua, emergencias en comunidades, baños portátiles).
+Una página corta y cierta vale más que una larga a medias, y Frank lleva
+ahora la instrucción explícita de no inventar usos ni capacidades de este
+servicio.
