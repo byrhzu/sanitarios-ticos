@@ -786,6 +786,10 @@ async function resumenPanel(request, env) {
        Cada línea es un conteo con su destino: no se listan los
        registros uno por uno porque la pregunta acá es "cuánto hay",
        no "cuál es". */
+    /* Cada línea tiene que caber en un renglón de 375px. "solicitudes
+       llevan más de un día esperando" se partía en dos y la tarjeta
+       pasaba de cinco renglones a nueve. El número ya está al lado en
+       su pastilla, así que el texto sólo tiene que nombrar la cosa. */
     const atencion = [];
     if (esperando.cot) atencion.push({
       grado: "alto", n: esperando.cot,
@@ -794,26 +798,26 @@ async function resumenPanel(request, env) {
     });
     if (solViejas) atencion.push({
       grado: "alto", n: solViejas,
-      texto: solViejas === 1 ? "solicitud lleva más de un día esperando"
-                             : "solicitudes llevan más de un día esperando",
+      texto: solViejas === 1 ? "solicitud de más de un día"
+                             : "solicitudes de más de un día",
       ir: { vista: "solicitudes", estado: "nueva" }
     });
     const vencidos = proximos.filter((p) => p.dias < 0).length;
     if (vencidos) atencion.push({
       grado: "alto", n: vencidos,
-      texto: vencidos === 1 ? "mantenimiento se pasó de fecha" : "mantenimientos se pasaron de fecha",
+      texto: vencidos === 1 ? "mantenimiento pasado de fecha" : "mantenimientos pasados de fecha",
       ir: { vista: "agenda" }
     });
     if (porVencer) atencion.push({
       grado: "medio", n: porVencer,
-      texto: porVencer === 1 ? "cotización está por vencerse" : "cotizaciones están por vencerse",
+      texto: porVencer === 1 ? "cotización por vencer" : "cotizaciones por vencer",
       ir: { vista: "cotizaciones", estado: "nueva" }
     });
     const estaSemana = proximos.filter((p) => p.dias >= 0 && p.dias <= 7).length;
     if (estaSemana) atencion.push({
       grado: "medio", n: estaSemana,
-      texto: estaSemana === 1 ? "cliente cumple mantenimiento esta semana"
-                              : "clientes cumplen mantenimiento esta semana",
+      texto: estaSemana === 1 ? "mantenimiento esta semana"
+                              : "mantenimientos esta semana",
       ir: { vista: "agenda" }
     });
 

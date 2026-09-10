@@ -1446,3 +1446,75 @@ pantalla y lo que hay que ver primero son los pendientes.
 el cliente está), ni notificaciones todavía —eso es la tanda 3, y antes de
 eso hay que separar usuarios: hoy la seguridad es una sola clave compartida
 y cualquiera que la tenga ve todos los precios y todos los clientes.
+
+## 29. El acomodo: lo que Byron cazó usando la app (2026-09-10)
+
+Byron abrió la aplicación instalada y el veredicto fue corto: *"Está muy
+bien la teoría de aplicar estos procesos, pero visualmente está fea."*
+Tenía razón y las razones eran nombrables una por una.
+
+**La cabecera era cinco cosas peleando por un renglón.** Título, buscador,
+un botón naranja, "Actualizado 15:16" y tres ruedas grises seguidas
+—refrescar, tema, salir— todas del mismo tamaño y del mismo peso. Ahora
+son tres renglones con tres trabajos: *dónde estoy y quién soy · el
+título · buscar*. Refrescar y crear se quedan arriba porque se usan a cada
+rato; **el tema y salir se van al menú del avatar**, que es donde va lo
+que se toca una vez al mes.
+
+**La hora de actualización se fue con ellos.** Lo que hay que saber de un
+golpe no es a qué hora se trajo, es sólo si está viejo: eso lo dice ahora
+un punto naranja sobre la rueda de refrescar, que se enciende solo a los
+diez minutos. La frase completa vive en el menú y en el pie de la barra.
+
+**Dos buscadores a veinte centímetros.** Clientes, Cotizaciones y
+Solicitudes traen su propia casilla de filtro, y encima tenían el buscador
+global. Dos cajas iguales haciendo cosas distintas, y ganaba siempre la de
+abajo por estar pegada a la lista. El global ahora se esconde en esas tres.
+
+**"▲ 41% contra el periodo anterior."** Cuatro cifras con esa frase debajo
+eran doce renglones de texto para decir cuatro porcentajes, y en 375px
+cada una se partía en tres. Es una pastilla: signo, número, color.
+"Contra el periodo anterior" se fue al `title`, que es donde va lo que se
+consulta una vez y no se relee nunca.
+
+**El rango de fechas partía la pantalla en tres antes del primer dato.**
+Dos casillas con sus dos etiquetas, envueltas. Nueve de cada diez veces lo
+que se quiere es uno de los tres periodos de siempre, así que mandan las
+pastillas en un riel; las fechas exactas se abren con el botón del
+calendario, y se abren solas si el rango que hay puesto no es ninguno de
+los tres.
+
+**Renglones que decían dos veces lo mismo.** "Vencidos / ya pasó la fecha"
+y "Sin recordatorio / no se les escribe": el de abajo se fue en los dos
+casos. **"Toca en 3 meses"** no dice qué toca: dice **"Mantenimiento en 3
+meses"**. Y la pastilla de un mantenimiento pasado de fecha era amarilla
+como la de uno próximo; ahora es roja, que es lo que ya decía la palabra.
+
+**Las alertas de Hoy se partían en dos renglones.** "solicitudes llevan
+más de un día esperando" pasó a "solicitudes de más de un día". El número
+ya está al lado en su pastilla; el texto sólo tiene que nombrar la cosa.
+
+**El orden estaba al revés.** Primero entra una **solicitud**, después se
+cotiza. Estaba Cotizaciones antes que Solicitudes en la barra, en las
+cifras y en la leyenda del gráfico. Se dio vuelta en los tres lados.
+
+**Tipografía.** Las dos familias eran Inter, así que un titular y una
+celda de tabla se veían iguales y la pantalla no tenía jerarquía: sólo
+cuerpos distintos del mismo dibujo. Inter se queda con los datos, que es
+para lo que está dibujada. **Plus Jakarta Sans** entra en titulares y
+cifras grandes: ese y ge más redondas, altura de equis más alta,
+terminaciones cortadas en horizontal. Se lee más humana en cuerpos grandes
+sin volverse simpática. Archivo sigue sin entrar acá (§14).
+
+**Radio de 10 a 16px.** A 10 las tarjetas tenían cara de cuadro de diálogo
+de escritorio. Los botones y las pastillas se quedaron más cerrados para
+no verse hinchados; los contadores de cada tarjeta pasaron a pastilla
+redonda, porque un número al lado de un título es un dato, no una frase
+("3 cosas" era una frase).
+
+**La referencia.** Byron mandó un tablero oscuro de Dribbble. Lo que se
+tomó de ahí es el ritmo —renglón chico, titular grande, tarjetas anchas y
+redondas, pastillas en riel, acción principal en naranja— y **no la
+paleta**: ese morado y esos degradados de neón son de otra marca y son
+justo lo que hace que todos los tableros de plantilla se parezcan. Acá el
+color sigue saliendo del camión.

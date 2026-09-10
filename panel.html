@@ -30,7 +30,7 @@
 <meta name="theme-color" content="#10171b" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
 <link rel="stylesheet" href="styles.css?v=20260910f">
 <style>
   /* =========================================================
@@ -58,9 +58,22 @@
 
      Que el sitio público y la herramienta interna usen tipografías
      distintas es a propósito: hacen trabajos opuestos. */
+  /* Antes las dos eran Inter, así que un titular y una celda de tabla se
+     veían iguales y la pantalla no tenía jerarquía: sólo cuerpos de
+     letra distintos del mismo dibujo.
+
+     Inter se queda con los datos, que es para lo que está dibujada:
+     números de ancho fijo y formas abiertas a 12 y 13px.
+
+     Plus Jakarta Sans entra en los titulares y en las cifras grandes.
+     Tiene la ese y la ge más redondas, la altura de equis más alta y las
+     terminaciones cortadas en horizontal — se lee más humana en cuerpos
+     grandes sin volverse simpática, que es lo que se le pide a un saludo
+     y a un número de seis dígitos. Archivo sigue sin entrar acá: es tipo
+     de cartel y esta es una herramienta (§14). */
   :root {
     --sans:    "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --display: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --display: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif;
   }
   .panel, .clave-pantalla { font-family: var(--sans); }
   /* Los números en las cifras y las tablas van de ancho fijo: si no,
@@ -140,7 +153,11 @@
     --est-off-bg:    rgba(255,255,255,.08); --est-off-tx:    #93a1a9;
   }
 
-  .panel { --barra: 240px; --radio: 10px; }
+  /* 10px dejaba las tarjetas con cara de cuadro de diálogo de escritorio.
+     16 es lo que hace que se lean como piezas y no como recuadros; los
+     botones y las pastillas se quedan más cerrados para no verse
+     hinchados. */
+  .panel { --barra: 240px; --radio: 16px; }
 
   /* El sitio público define h1 como titular de cartel: condensado al
      68%, peso 800 y en versalitas, como está pintado el tanque. Está
@@ -209,12 +226,67 @@
   .barra-pie img { height: 26px; width: auto; border-radius: 6px; }
 
   .lienzo { flex: 1; min-width: 0; padding: 1.5rem clamp(1rem, 2.2vw, 1.9rem) 4rem; }
-  .lienzo-top { display: flex; align-items: center; gap: var(--e3) var(--e4); flex-wrap: wrap; margin-bottom: var(--e5); }
-  .titulo-caja { min-width: 0; }
-  .lienzo-top h1 { font-family: var(--display); font-size: 1.4rem; margin: 0; }
-  .sub-titulo { display: block; color: var(--p-tenue); font-size: .82rem; margin-top: .15rem; }
-  .sub-titulo:empty { display: none; }
-  .lienzo-top .derecha { margin-left: auto; display: flex; align-items: center; gap: var(--e2); }
+  /* ---------- La cabecera ----------
+     Tres renglones y cada uno con un trabajo:
+       dónde estoy y quién soy · el título · buscar y crear.  */
+  .lienzo-top { margin-bottom: var(--e5); }
+  .top-fila { display: flex; align-items: center; gap: var(--e2); }
+  .top-donde {
+    color: var(--p-tenue); font-size: .8rem; font-weight: 500;
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .top-acc { position: relative; margin-left: auto; display: flex; align-items: center; gap: var(--e2); flex: 0 0 auto; }
+
+  /* El punto naranja sobre la rueda de refrescar. Reemplaza al
+     "Actualizado 15:16" que vivía a la par del botón de crear: lo que
+     hay que saber de un golpe es si está viejo, no a qué hora fue. */
+  .rueda { position: relative; }
+  .punto {
+    position: absolute; top: 4px; right: 4px;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--p-acento); box-shadow: 0 0 0 2px var(--p-sup);
+  }
+
+  .yo {
+    width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%;
+    overflow: hidden; background: var(--p-sup2); display: grid; place-items: center;
+    transition: box-shadow .15s var(--ease);
+  }
+  .yo img { width: 100%; height: 100%; object-fit: cover; }
+  .yo[aria-expanded="true"], .yo:hover { box-shadow: 0 0 0 2px var(--p-acento); }
+
+  .titulo-caja { min-width: 0; margin: .3rem 0 .85rem; }
+  .lienzo-top h1 {
+    font-family: var(--display); font-size: 1.75rem; font-weight: 700;
+    letter-spacing: -.02em; line-height: 1.12; margin: 0;
+  }
+
+  /* Buscar y crear comparten renglón: son las dos cosas que uno viene a
+     hacer, y juntas ocupan lo que antes ocupaba el buscador solo. */
+  .top-hacer { max-width: 40rem; }
+  .top-hacer[hidden] { display: none; }
+  .titulo-caja:has(+ .top-hacer[hidden]) { margin-bottom: 0; }
+  .btn-fuerte.crear { flex: 0 0 auto; padding: .55rem .9rem; }
+  .btn-fuerte.crear svg { width: 16px; height: 16px; }
+
+  /* ---------- El menú del avatar ----------
+     Lo que se toca una vez al mes: el tema y salir. Estaban arriba como
+     dos ruedas grises del mismo tamaño que el buscador. */
+  .menu-yo {
+    position: absolute; z-index: 45; top: calc(100% + .5rem); right: 0;
+    min-width: 12.5rem; padding: .35rem;
+    background: var(--p-sup); border: 1px solid var(--p-linea);
+    border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.22);
+  }
+  .menu-cabeza { padding: .5rem .6rem .6rem; border-bottom: 1px solid var(--p-linea); margin-bottom: .3rem; }
+  .menu-cabeza b { display: block; font-weight: 600; font-size: .84rem; }
+  .menu-yo button {
+    display: flex; align-items: center; gap: .6rem; width: 100%;
+    padding: .55rem .6rem; border-radius: 9px; text-align: left;
+    color: var(--p-txt2); font-weight: 500;
+  }
+  .menu-yo button svg { width: 16px; height: 16px; flex: 0 0 16px; }
+  .menu-yo button:hover { background: var(--p-sup2); color: var(--p-txt); }
 
   /* Buscador global. Encuentra en una sola caja lo que si no hay que ir
      a buscar a tres pantallas distintas. */
@@ -243,24 +315,29 @@
   .hallazgos small { display: block; color: var(--p-tenue); margin-top: .1rem; }
   .hallazgos .nada { padding: .7rem .6rem; color: var(--p-tenue); }
   .hallazgos .tipo { float: right; color: var(--p-tenue); font-size: .74rem; }
-  .frescura { color: var(--p-tenue); margin-right: .3rem; font-variant-numeric: tabular-nums; }
+  .frescura { display: block; color: var(--p-tenue); font-size: .76rem; margin-top: .15rem; font-variant-numeric: tabular-nums; }
 
   /* Los mismos controles de rango arriba del resumen y de las listas,
      en el mismo lugar y con el mismo aspecto. */
-  .rango { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
-  .rango label { color: var(--p-tenue); }
-  .rango input[type="date"] {
-    font-size: 13px; font-family: inherit; padding: .38rem .5rem; border-radius: 7px;
-    background: var(--p-sup); color: var(--p-txt); border: 1px solid var(--p-linea);
-  }
-  .rango .presets { display: flex; gap: 2px; margin-left: .3rem; }
+  .rango { display: flex; align-items: center; gap: .5rem; margin-bottom: 1rem; }
+  /* Un solo riel con tres pastillas: se lee como un control, no como
+     tres botones sueltos que casualmente están juntos. */
+  .rango .presets { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--p-sup); }
   .rango .presets button {
-    padding: .38rem .65rem; border-radius: 7px; color: var(--p-tenue);
-    background: var(--p-sup); font-weight: 500;
+    padding: .42rem .85rem; border-radius: 999px; color: var(--p-tenue); font-weight: 500;
     transition: background .15s var(--ease), color .15s var(--ease);
   }
   .rango .presets button:hover { color: var(--p-txt); }
   .rango .presets button[aria-pressed="true"] { background: var(--p-suave); color: var(--p-acento-t); }
+  #btn-fechas[aria-expanded="true"] { background: var(--p-suave); color: var(--p-acento-t); }
+
+  .rango-fechas { display: flex; gap: .5rem; margin: -.4rem 0 1rem; }
+  .rango-fechas .f { display: flex; flex-direction: column; gap: .2rem; flex: 1 1 0; min-width: 0; }
+  .rango-fechas label { color: var(--p-tenue); font-size: .78rem; }
+  .rango-fechas input[type="date"] {
+    width: 100%; font-size: 13px; font-family: inherit; padding: .45rem .55rem; border-radius: 9px;
+    background: var(--p-sup); color: var(--p-txt); border: 1px solid var(--p-linea);
+  }
 
   /* Botón redondo de icono. Reemplaza a los enlaces de texto
      "Actualizar" y "Salir": en una herramienta que se usa todos los
@@ -276,8 +353,6 @@
   .rueda:active { transform: scale(.94); }
   .rueda.girando svg { animation: girar .6s var(--ease); }
   @keyframes girar { to { transform: rotate(360deg); } }
-  .barra-pie .rueda { margin-left: auto; background: rgba(255,255,255,.07); color: var(--p-barra-t); box-shadow: none; }
-  .barra-pie .rueda:hover { background: rgba(255,255,255,.14); }
 
   /* ---------- Tarjetas ---------- */
   .tarj {
@@ -294,6 +369,14 @@
   .tarj-h { display: flex; align-items: baseline; gap: .5rem 1rem; flex-wrap: wrap; margin-bottom: .9rem; }
   .tarj-h h2 { font-family: var(--display); font-size: .97rem; margin: 0; }
   .tarj-h .meta { margin-left: auto; color: var(--p-tenue); font-size: .8rem; }
+  /* El contador que va pegado al título es un número, no una frase: se
+     dibuja como pastilla para que se lea de un vistazo y no compita con
+     el título. Los que llevan rango de fechas siguen siendo texto. */
+  .tarj-h .meta.cuenta:not(:empty) {
+    background: var(--p-sup2); color: var(--p-txt2); font-weight: 600;
+    min-width: 1.45rem; text-align: center; padding: .1rem .45rem;
+    border-radius: 999px; font-variant-numeric: tabular-nums;
+  }
 
   .rejilla { display: grid; gap: 1rem; }
   /* Dos o cuatro, nunca tres. Con `auto-fit` la cuarta tarjeta caía
@@ -336,7 +419,21 @@
     line-height: 1.05; letter-spacing: -.028em; font-variant-numeric: tabular-nums;
   }
   .cifra-t { color: var(--p-tenue); margin-top: .2rem; }
-  .cifra-p { color: var(--p-tenue); font-size: .79rem; margin-top: .3rem; line-height: 1.4; }
+  .cifra-p { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; margin-top: .5rem; }
+  .cifra-mas { color: var(--p-tenue); font-size: .78rem; }
+  /* Antes esto era una frase de tres renglones bajo cada cifra. Es un
+     dato de una sola ojeada: se lee el color y el signo antes que el
+     número, y el número antes que la palabra. */
+  .delta {
+    display: inline-flex; align-items: center; gap: .15rem;
+    font-size: .75rem; font-weight: 600; padding: .17rem .45rem;
+    border-radius: 999px; white-space: nowrap;
+    font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+  }
+  .delta.sube   { background: var(--est-ok-bg);     color: var(--est-ok-tx); }
+  .delta.baja   { background: var(--est-mal-bg);    color: var(--est-mal-tx); }
+  .delta.igual  { background: var(--p-sup2);        color: var(--p-tenue); }
+  .delta.espera { background: var(--est-espera-bg); color: var(--est-espera-tx); }
   .cifra.urge .cifra-n { color: var(--p-acento-t); }
   /* La línea de tendencia sangra hasta el borde de abajo, como en la
      referencia. Sólo la llevan las tarjetas que tienen una serie de
@@ -370,8 +467,7 @@
   .cola-quien { flex: 1 1 15rem; min-width: 0; }
   .cola-quien b { font-weight: 500; }
   .cola-quien small { display: block; color: var(--p-tenue); margin-top: .12rem; }
-  .cola-espera { color: var(--p-tenue); white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .fila-cola.viejo .cola-espera { color: var(--p-acento-t); font-weight: 500; }
+  .cola-espera { white-space: nowrap; }
   .cola-acc { display: flex; gap: .4rem; margin-left: auto; }
 
   .bt {
@@ -591,7 +687,10 @@
   .cli-top { display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap; }
   .cli-top b { font-size: 1rem; font-weight: 600; }
   .cli-top .tel { color: var(--p-tenue); font-variant-numeric: tabular-nums; }
-  .cli-marcas { display: flex; gap: .4rem; margin-left: auto; flex-wrap: wrap; }
+  /* Antes esto llevaba `margin-left: auto` y la pastilla se iba sola al
+     borde derecho, en su propio renglón y sin nada al lado. Ahora va
+     debajo del nombre, que es de lo que habla. */
+  .cli-marcas { display: flex; gap: .4rem; flex-wrap: wrap; flex-basis: 100%; }
   .pastilla {
     font-size: .75rem; font-weight: 500; padding: .2rem .5rem; border-radius: 6px;
     background: var(--p-sup2); color: var(--p-tenue); white-space: nowrap;
@@ -600,6 +699,9 @@
   .pastilla.vencio { background: var(--est-mal-bg); color: var(--est-mal-tx); }
   .pastilla.mudo { opacity: .65; }
   .cli-linea { color: var(--p-tenue); margin-top: .3rem; }
+  #estado-clientes:not(.is-error), #estado-lista:not(.is-error) {
+    text-align: right; font-size: .8rem;
+  }
 
   /* La ficha del cliente */
   .perfil-cab { display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
@@ -842,10 +944,12 @@
     .barra .pendiente { position: absolute; top: .15rem; left: 52%; margin: 0; }
     .largo { display: none; }
     .barra nav .grupo-nav { display: none; }
-    .buscador { flex: 1 1 100%; max-width: none; order: 3; }
+    .buscador { max-width: none; }
     /* El saludo es de cartel en escritorio. En 375px se come media
        pantalla, y lo que hay que ver primero son los pendientes. */
-    .lienzo-top h1 { flex: 1 1 auto; font-size: 1.5rem; }
+    .lienzo-top h1 { font-size: 1.45rem; }
+    /* Crear se queda en icono, del tamaño de las otras dos ruedas. */
+    .btn-fuerte.crear { width: 32px; height: 32px; padding: 0; border-radius: 9px; flex: 0 0 32px; }
     .lienzo { padding: 1rem .85rem 6rem; }
     .tarj-h .meta { display: none; }
     .tarj-h .meta.siempre { display: inline; }
@@ -904,9 +1008,6 @@
   }
   @media (min-width: 860px) {
     .corto { display: none; }
-    /* En escritorio el salir vive en el pie de la barra; repetirlo
-       arriba sería el mismo botón dos veces. */
-    #btn-salir-movil { display: none; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -961,19 +1062,19 @@
         Resumen
       </button>
       <span class="grupo-nav">Gestión</span>
-      <button type="button" role="tab" data-vista="cotizaciones" aria-selected="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/>
-          <path d="M14 2v5h5M9 13h6M9 17h4"/>
-        </svg>
-        <span class="largo">Cotizaciones</span><span class="corto">Cotiz.</span><span class="pendiente" id="pend-cot" hidden></span>
-      </button>
       <button type="button" role="tab" data-vista="solicitudes" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <path d="M5.4 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.4-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.8 1.1z"/>
           <path d="M22 12h-6l-2 3h-4l-2-3H2"/>
         </svg>
         <span class="largo">Solicitudes</span><span class="corto">Solic.</span><span class="pendiente" id="pend-sol" hidden></span>
+      </button>
+      <button type="button" role="tab" data-vista="cotizaciones" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/>
+          <path d="M14 2v5h5M9 13h6M9 17h4"/>
+        </svg>
+        <span class="largo">Cotizaciones</span><span class="corto">Cotiz.</span><span class="pendiente" id="pend-cot" hidden></span>
       </button>
       <button type="button" role="tab" data-vista="clientes" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -995,51 +1096,86 @@
     <div class="barra-pie">
       <img src="assets/img/logo-mascota.webp" alt="" width="26" height="26">
       <span class="quien"><b>Panel interno</b><small id="sello">Al día</small></span>
-      <button type="button" class="rueda" id="btn-salir" title="Cerrar la sesión" aria-label="Cerrar la sesión">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
-        </svg>
-      </button>
     </div>
   </aside>
 
   <main class="lienzo">
+    <!-- ================= LA CABECERA =================
+         Antes era una sola fila con el título, el buscador, un botón
+         naranja, la hora de actualización y tres ruedas grises seguidas.
+         Cinco cosas de peso distinto peleando por el mismo renglón.
+
+         Ahora son tres renglones con tres trabajos distintos:
+           1. dónde estoy   ·  refrescar  ·  yo
+           2. el título grande
+           3. buscar  ·  crear
+
+         Refrescar se queda arriba porque se usa a cada rato. Cambiar el
+         tema y salir se van al menú del avatar: se tocan una vez al mes
+         y no tenían por qué ocupar el mismo peso visual que el buscador.
+         Y la hora exacta de actualización se fue con ellos: lo que hay
+         que saber de un vistazo es sólo si está viejo, y eso lo dice el
+         puntito naranja sobre la rueda de refrescar. -->
     <div class="lienzo-top">
+
+      <div class="top-fila">
+        <span class="top-donde" id="top-donde">Hoy</span>
+        <span class="top-acc">
+          <button type="button" class="btn-fuerte crear" id="btn-nueva" title="Nueva cotización">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            <span class="largo">Nueva cotización</span>
+          </button>
+          <button type="button" class="rueda" id="btn-refrescar" title="Traer lo último" aria-label="Traer lo último">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6"/>
+            </svg>
+            <i class="punto" id="punto-viejo" hidden aria-hidden="true"></i>
+          </button>
+          <button type="button" class="yo" id="btn-yo" aria-haspopup="true" aria-expanded="false" aria-label="Ajustes y salir">
+            <img src="assets/img/logo-mascota.webp" alt="" width="30" height="30">
+          </button>
+
+          <!-- Lo que se toca una vez al mes: el tema y salir. Cuelga del
+               avatar y no del lienzo, para que "pegado a la derecha"
+               quiera decir pegado al avatar. -->
+          <div class="menu-yo" id="menu-yo" hidden>
+            <div class="menu-cabeza">
+              <b>Panel interno</b>
+              <small class="frescura" id="frescura">Cargando…</small>
+            </div>
+            <button type="button" id="btn-tema"></button>
+            <button type="button" id="btn-salir">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+              </svg>
+              Salir
+            </button>
+          </div>
+        </span>
+      </div>
+
       <div class="titulo-caja">
-        <h1 id="titulo-vista">Resumen</h1>
-        <span class="sub-titulo" id="sub-titulo"></span>
+        <h1 id="titulo-vista">Hoy</h1>
       </div>
 
-      <div class="buscador">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>
-        </svg>
-        <input type="search" id="buscar" placeholder="Buscar cliente, cotización o solicitud"
-               autocomplete="off" aria-label="Buscar en todo el panel">
-        <div class="hallazgos" id="hallazgos" hidden></div>
+      <!-- Clientes, Cotizaciones y Solicitudes traen su propia casilla de
+           filtro. Tener las dos era tener dos cajas iguales a veinte
+           centímetros haciendo cosas distintas, y la de abajo ganaba
+           siempre porque es la que está pegada a la lista. -->
+      <div class="top-fila top-hacer" id="top-busca">
+        <div class="buscador">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>
+          </svg>
+          <input type="search" id="buscar" placeholder="Buscar cliente, cotización o solicitud"
+                 autocomplete="off" aria-label="Buscar en todo el panel">
+          <div class="hallazgos" id="hallazgos" hidden></div>
+        </div>
       </div>
-
-      <span class="derecha">
-        <button type="button" class="btn-fuerte" id="btn-nueva">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="width:15px;height:15px;">
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
-          <span class="largo">Nueva cotización</span><span class="corto">Nueva</span>
-        </button>
-        <span class="frescura" id="frescura"></span>
-        <button type="button" class="rueda" id="btn-refrescar" title="Traer lo último" aria-label="Traer lo último">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6"/>
-          </svg>
-        </button>
-        <button type="button" class="rueda" id="btn-tema" title="Cambiar a modo oscuro" aria-label="Cambiar el tema"></button>
-        <button type="button" class="rueda" id="btn-salir-movil" title="Cerrar la sesión" aria-label="Cerrar la sesión">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
-          </svg>
-        </button>
-      </span>
     </div>
+
 
     <!-- ================= HOY =================
          Qué hay que hacer ahora y con quién hay que hablar. El Resumen dice
@@ -1059,7 +1195,7 @@
       <div class="tarj" id="tarj-atencion" hidden>
         <div class="tarj-h">
           <h2>Requiere atención</h2>
-          <span class="meta" id="atencion-n"></span>
+          <span class="meta cuenta siempre" id="atencion-n"></span>
         </div>
         <div id="atencion"></div>
       </div>
@@ -1068,7 +1204,7 @@
         <div class="tarj" id="tarj-cola">
           <div class="tarj-h">
             <h2>Pendientes</h2>
-            <span class="meta" id="cola-n"></span>
+            <span class="meta cuenta siempre" id="cola-n"></span>
           </div>
           <div id="cola"></div>
         </div>
@@ -1076,7 +1212,7 @@
         <div class="tarj">
           <div class="tarj-h">
             <h2>Próximos servicios</h2>
-            <span class="meta" id="proximos-n"></span>
+            <span class="meta cuenta siempre" id="proximos-n"></span>
           </div>
           <div id="proximos"></div>
         </div>
@@ -1088,16 +1224,27 @@
          Las cifras. Acá sí manda el rango de fechas: la pregunta es cómo
          viene el mes, no qué hago en este momento. -->
     <div class="vista" id="vista-resumen" hidden>
+      <!-- Nueve de cada diez veces el rango que se quiere es uno de los
+           tres de siempre, y en 375px las dos casillas de fecha con sus
+           dos etiquetas se partían en tres renglones antes de que se
+           viera un solo dato. Las pastillas mandan; las fechas exactas
+           se abren si de verdad hacen falta. -->
       <div class="rango">
-        <label for="r-desde">Desde</label>
-        <input type="date" id="r-desde">
-        <label for="r-hasta">Hasta</label>
-        <input type="date" id="r-hasta">
-        <span class="presets" id="presets">
+        <span class="presets" id="presets" role="group" aria-label="Periodo">
           <button type="button" data-dias="7">7 días</button>
           <button type="button" data-dias="30" aria-pressed="true">30 días</button>
           <button type="button" data-dias="90">90 días</button>
         </span>
+        <button type="button" class="rueda" id="btn-fechas" aria-expanded="false"
+                title="Escoger otras fechas" aria-label="Escoger otras fechas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="rango-fechas" id="rango-fechas" hidden>
+        <span class="f"><label for="r-desde">Desde</label><input type="date" id="r-desde"></span>
+        <span class="f"><label for="r-hasta">Hasta</label><input type="date" id="r-hasta"></span>
       </div>
 
       <p class="estado-linea" id="estado-resumen" role="status" aria-live="polite">Cargando…</p>
@@ -1111,8 +1258,8 @@
             <span class="meta siempre" id="serie-rango"></span>
           </div>
           <div class="leyenda">
-            <span><i class="cot"></i>Cotizaciones</span>
             <span><i class="sol"></i>Solicitudes</span>
+            <span><i class="cot"></i>Cotizaciones</span>
           </div>
           <div class="serie-caja">
             <svg class="serie" id="serie" role="img" aria-label="Entradas por día"></svg>
@@ -1414,8 +1561,8 @@
     document.documentElement.setAttribute("data-tema", t);
     var b = $("btn-tema");
     if (b) {
-      b.innerHTML = t === "oscuro" ? ICO.sol : ICO.luna;
-      b.title = t === "oscuro" ? "Cambiar a modo claro" : "Cambiar a modo oscuro";
+      b.innerHTML = (t === "oscuro" ? ICO.sol : ICO.luna) +
+                    "<span>" + (t === "oscuro" ? "Modo claro" : "Modo oscuro") + "</span>";
     }
   }
   function temaGuardado() {
@@ -1517,9 +1664,11 @@
   }
 
   var DIAS_SEM = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  /* Corta, porque va en el renglón chico de arriba y compite con dos
+     botones. El año sobra: nadie abre el panel con dudas sobre el año. */
   function fechaDeHoy() {
     var h = new Date();
-    return DIAS_SEM[h.getDay()] + " " + h.getDate() + " de " + MES_LARGO[h.getMonth()] + ", " + h.getFullYear();
+    return DIAS_SEM[h.getDay()] + " " + h.getDate() + " de " + MES_LARGO[h.getMonth()];
   }
 
   function hoyISO() {
@@ -1546,7 +1695,7 @@
       '<span class="cifra-chip">' + o.icono + "</span>" +
       '<div class="cifra-n">' + escHtml(o.n) + "</div>" +
       '<div class="cifra-t">' + escHtml(o.t) + "</div>" +
-      (o.p ? '<div class="cifra-p">' + escHtml(o.p) + "</div>" : "") +
+      (o.p ? '<div class="cifra-p">' + o.p + "</div>" : "") +
       (o.chispa ? chispa(o.chispa, o.color) : "") +
       "</button>";
   }
@@ -1576,36 +1725,50 @@
   /* La variación contra el periodo anterior. Un número solo no dice
      nada: 38 cotizaciones puede ser un buen mes o la mitad del
      anterior. Si no hay con qué comparar, no se inventa un porcentaje. */
+  /* Antes esto era "▲ 41% contra el periodo anterior", que en 375px
+     ocupaba tres renglones debajo de cada cifra: doce renglones de texto
+     para decir cuatro porcentajes. Ahora es una pastilla con el signo y
+     el número, y "contra el periodo anterior" vive en el title, que es
+     donde va lo que se consulta una vez y no se relee nunca. */
   function delta(v) {
     if (v === null || v === undefined) return "";
-    if (v === 0) return "igual que el periodo anterior";
-    return (v > 0 ? "▲ " : "▼ ") + Math.abs(v) + "% contra el periodo anterior";
+    var tono = v > 0 ? "sube" : v < 0 ? "baja" : "igual";
+    var texto = v === 0 ? "igual" : (v > 0 ? "▲ " : "▼ ") + Math.abs(v) + "%";
+    return '<span class="delta ' + tono + '" title="Contra el periodo anterior">' +
+           texto + "</span>";
   }
 
   function pintarCifras(d) {
     var esperando = d.esperando.total;
+    /* El orden es el del trabajo real: entra una solicitud, se cotiza,
+       queda algo sin atender, y al final se cobra. Estaba al revés. */
     $("cifras").innerHTML = [
-      cifra({ icono: ICO.doc, n: String(d.rango.cot), t: "Cotizaciones",
-        p: delta(d.variacion.cot),
-        ir: { vista: "cotizaciones", desde: d.desde, hasta: d.hasta },
-        chispa: d.serie.map(function (f) { return f.cot; }), color: "var(--p-dato1)" }),
-
       cifra({ icono: ICO.bandeja, n: String(d.rango.sol), t: "Solicitudes",
         p: delta(d.variacion.sol),
         ir: { vista: "solicitudes", desde: d.desde, hasta: d.hasta },
         chispa: d.serie.map(function (f) { return f.sol; }), color: "var(--p-dato2)" }),
 
+      cifra({ icono: ICO.doc, n: String(d.rango.cot), t: "Cotizaciones",
+        p: delta(d.variacion.cot),
+        ir: { vista: "cotizaciones", desde: d.desde, hasta: d.hasta },
+        chispa: d.serie.map(function (f) { return f.cot; }), color: "var(--p-dato1)" }),
+
       cifra({ icono: ICO.alerta, n: String(esperando), t: "Sin atender",
-        p: esperando ? ("más antiguo: " + espera(d.esperaMax)) : "",
+        p: esperando ? '<span class="delta espera" title="Lo que más lleva esperando">' +
+                       escHtml(espera(d.esperaMax)) + "</span>" : "",
         urge: esperando > 0, ir: { vista: "cotizaciones", estado: "nueva" } }),
 
       /* Ingresos sale de los trabajos anotados, que es plata recibida.
          No del rango de las cotizaciones, que es una estimación de algo
          que puede no pasar. */
+      /* Sin pie cuando no hay nada: el cero ya dice que no hay trabajos
+         anotados, y explicarlo con una frase era el renglón suelto más
+         largo de la pantalla. */
       cifra({ icono: ICO.cartera, n: colones(d.ingresos.monto), t: "Cobrado",
         p: d.ingresos.trabajos
-             ? (d.ingresos.trabajos + (d.ingresos.trabajos === 1 ? " trabajo · " : " trabajos · ") + delta(d.variacion.ing))
-             : "todavía no hay trabajos anotados en este rango",
+             ? delta(d.variacion.ing) + '<span class="cifra-mas">' +
+               d.ingresos.trabajos + (d.ingresos.trabajos === 1 ? " trabajo" : " trabajos") + "</span>"
+             : "",
         ir: { vista: "clientes" } })
     ].join("");
   }
@@ -1617,7 +1780,7 @@
     var caja = $("tarj-atencion");
     if (!d.atencion.length) { caja.hidden = true; return; }
     caja.hidden = false;
-    $("atencion-n").textContent = d.atencion.length === 1 ? "1 cosa" : d.atencion.length + " cosas";
+    $("atencion-n").textContent = String(d.atencion.length);
 
     $("atencion").innerHTML = d.atencion.map(function (a) {
       return '<button type="button" class="aten" data-ir=\'' + escHtml(JSON.stringify(a.ir)) + "'>" +
@@ -1690,7 +1853,8 @@
       return '<div class="fila-cola' + (p.horas >= 24 ? " viejo" : "") + '">' +
         '<div class="cola-quien"><b>' + escHtml(p.nombre) + "</b>" +
           "<small>" + escHtml(p.titulo + " · " + p.detalle + (p.lugar ? " · " + p.lugar : "")) + "</small></div>" +
-        '<span class="cola-espera">' + escHtml(espera(p.horas)) + "</span>" +
+        '<span class="cola-espera"><span class="delta ' + (p.horas >= 24 ? "baja" : "espera") + '">' +
+          escHtml(espera(p.horas)) + "</span></span>" +
         '<div class="cola-acc">' + acc.join("") + "</div>" +
       "</div>";
     }).join("");
@@ -1850,7 +2014,19 @@
     Array.prototype.forEach.call($("presets").children, function (b) {
       b.setAttribute("aria-pressed", String(Number(b.dataset.dias) === dias));
     });
+    /* Si el rango no es ninguno de los tres de siempre, las casillas de
+       fecha se abren solas: si no, la pantalla mostraría datos de un
+       periodo que no se ve por ningún lado. */
+    if (dias === null) verFechas(true);
   }
+
+  function verFechas(abrir) {
+    $("rango-fechas").hidden = !abrir;
+    $("btn-fechas").setAttribute("aria-expanded", String(abrir));
+  }
+  $("btn-fechas").addEventListener("click", function () {
+    verFechas($("rango-fechas").hidden);
+  });
 
   $("presets").addEventListener("click", function (e) {
     var b = e.target.closest("button[data-dias]");
@@ -1942,14 +2118,25 @@
      hora exacta no; además se actualiza sola, así que la pantalla
      nunca miente diciendo que está al día cuando lleva media hora. */
   var traidoA = null;
+  var VIEJO_MIN = 10;   // a partir de acá se enciende el punto
   function sellar() { traidoA = new Date(); pintarFrescura(); }
   function pintarFrescura() {
     if (!traidoA) return;
-    var t = "Actualizado " + String(traidoA.getHours()).padStart(2, "0") +
-            ":" + String(traidoA.getMinutes()).padStart(2, "0");
+    var min = Math.floor((Date.now() - traidoA.getTime()) / 60000);
+    var hora = String(traidoA.getHours()).padStart(2, "0") + ":" +
+               String(traidoA.getMinutes()).padStart(2, "0");
+    /* En el menú y en el pie va la frase completa, que es donde uno va
+       cuando de verdad quiere saber la hora. */
+    var t = min < 1 ? "Al día, " + hora
+          : min < 60 ? "Traído hace " + min + " min"
+          : "Traído a las " + hora;
     $("frescura").textContent = t;
     $("sello").textContent = t;
+    // Arriba, sólo el punto. Nada que leer si todo está fresco.
+    $("punto-viejo").hidden = min < VIEJO_MIN;
   }
+  // El punto tiene que encenderse solo, sin que nadie toque nada.
+  setInterval(pintarFrescura, 60000);
 
   // Cualquier cosa con data-ir lleva a su lista ya filtrada.
   document.addEventListener("click", function (e) {
@@ -2683,9 +2870,13 @@
           var marcas = [];
           if (c.proximo) {
             var dias = Math.round((Date.parse(c.proximo + "T00:00:00Z") - Date.parse(hoyISO() + "T00:00:00Z")) / 86400000);
-            // "Toca hace 9 días" no se dice. Lo vencido venció.
-            marcas.push('<span class="pastilla' + (dias <= 30 ? " toca" : "") + '">' +
-              escHtml((dias < 0 ? "Venció " : "Toca ") + cuando(dias)) + "</span>");
+            /* "Toca en 3 meses" no dice qué toca. Lo que toca es el
+               mantenimiento, así que se nombra. Y "Toca hace 9 días"
+               no se dice: lo vencido venció. */
+            marcas.push('<span class="pastilla' +
+              (dias < 0 ? " vencio" : dias <= 30 ? " toca" : "") + '">' +
+              escHtml(dias < 0 ? "Venció hace " + cuando(dias).replace("hace ", "")
+                               : "Mantenimiento " + cuando(dias)) + "</span>");
           }
           if (!c.recordatorio) marcas.push('<span class="pastilla mudo">Sin recordatorio</span>');
 
@@ -2742,8 +2933,8 @@
      memoria la próxima vez. */
   function verCliente(id) {
     vista = "cliente";
+    $("top-donde").textContent = "Cliente";
     $("titulo-vista").textContent = "Cliente";
-    $("sub-titulo").textContent = "";
     Array.prototype.forEach.call(document.querySelectorAll(".barra nav button"), function (b) {
       b.setAttribute("aria-selected", String(b.dataset.vista === "clientes"));
     });
@@ -2777,7 +2968,7 @@
             '<span class="f-fecha">' + escHtml(fechaLarga(s.fecha)) + "</span>" +
             '<span class="f-que">' + escHtml(s.servicioNombre + (s.detalle ? " · " + s.detalle : "")) + "</span>" +
             '<span class="f-monto">' + (s.monto ? escHtml(colones(s.monto)) : "—") + "</span>" +
-            '<span class="f-prox">' + (s.proximo ? "toca " + escHtml(fechaLarga(s.proximo)) : "") + "</span>" +
+            '<span class="f-prox">' + (s.proximo ? "próximo " + escHtml(fechaLarga(s.proximo)) : "") + "</span>" +
           "</li>";
         }).join("") + "</ul>"
       : '<p class="vacio-ok">Todavía no hay trabajos anotados.</p>';
@@ -2906,10 +3097,13 @@
         (pie ? '<div class="cifra-p">' + escHtml(pie) + "</div>" : "") + "</button>";
     }
     $("agenda-cifras").innerHTML =
-      t(ICO.alerta, r.vencidos, "Vencidos", "ya pasó la fecha", r.vencidos > 0, "vencidos") +
+      /* Sin pies. "Vencidos / ya pasó la fecha" y "Sin recordatorio / no
+         se les escribe" decían dos veces lo mismo, y el renglón de
+         abajo era el que no aportaba. La etiqueta se explica sola. */
+      t(ICO.alerta, r.vencidos, "Vencidos", "", r.vencidos > 0, "vencidos") +
       t(ICO.dia, r.mes, "Este mes", "", false, "pronto") +
       t(ICO.sube, r.trimestre, "Próximos 90 días", "", false, "trimestre") +
-      t(ICO.silencio, r.apagados, "Sin recordatorio", "no se les escribe", false, "apagados");
+      t(ICO.silencio, r.apagados, "Sin recordatorio", "", false, "apagados");
   }
 
   $("agenda-cifras").addEventListener("click", function (e) {
@@ -3172,15 +3366,17 @@
     /* Hoy saluda; las demás pantallas se nombran. Un "Buenos días" en la
        lista de cotizaciones sería ruido: ahí uno vino a trabajar, no a
        que lo saluden. */
-    if (nueva === "hoy") {
-      $("titulo-vista").textContent = saludo() + ", Leitón";
-      $("sub-titulo").textContent = fechaDeHoy();
-    } else {
-      $("titulo-vista").textContent = NOMBRE_VISTA[nueva] || "Panel";
-      $("sub-titulo").textContent = "";
-    }
+    /* El renglón chico dice siempre el día. El grande saluda en Hoy y
+       nombra la pantalla en las demás: un "Buenos días" en la lista de
+       cotizaciones sería ruido, ahí uno vino a trabajar. */
+    $("top-donde").textContent = nueva === "hoy" ? fechaDeHoy() : (NOMBRE_VISTA[nueva] || "Panel");
+    $("titulo-vista").textContent = nueva === "hoy"
+      ? saludo() + ", Leitón"
+      : (NOMBRE_VISTA[nueva] || "Panel");
+    menuYo(false);
 
     var esTabla = nueva === "cotizaciones" || nueva === "solicitudes";
+    $("top-busca").hidden = esTabla || nueva === "clientes";
     $("vista-hoy").hidden = nueva !== "hoy";
     $("vista-resumen").hidden = nueva !== "resumen";
     $("vista-nueva").hidden = nueva !== "nueva";
@@ -3247,6 +3443,23 @@
     else cargarTabla();
   });
 
+  /* El menú del avatar. Se cierra al escoger algo, al tocar afuera y con
+     Escape: las tres formas en que la gente espera cerrar un menú. */
+  function menuYo(abrir) {
+    $("menu-yo").hidden = !abrir;
+    $("btn-yo").setAttribute("aria-expanded", String(abrir));
+  }
+  $("btn-yo").addEventListener("click", function (e) {
+    e.stopPropagation();
+    menuYo($("menu-yo").hidden);
+  });
+  document.addEventListener("click", function (e) {
+    if (!$("menu-yo").hidden && !e.target.closest("#menu-yo")) menuYo(false);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") menuYo(false);
+  });
+
   $("btn-tema").addEventListener("click", function () {
     var nuevo = document.documentElement.getAttribute("data-tema") === "oscuro" ? "claro" : "oscuro";
     ponerTema(nuevo);
@@ -3260,7 +3473,6 @@
   // que no siempre son de uno solo.
   function salir() { borrarClave(); location.reload(); }
   $("btn-salir").addEventListener("click", salir);
-  $("btn-salir-movil").addEventListener("click", salir);
 
   $("btn-csv").addEventListener("click", function () {
     // La descarga no puede llevar encabezados propios, así que acá la
