@@ -172,7 +172,11 @@
      fuerte se lo queda el dato, no el papel. */
   .panel { --barra: 240px; --radio: 20px; --radio-chico: 14px; }
 
+  /* El radio vive en `:root` y no sólo en `.panel`: la hoja modal y la
+     pantalla de clave cuelgan del `body`, fuera de `.panel`, y ahí la
+     variable no existía — la hoja salía con esquinas cuadradas. */
   :root {
+    --radio: 20px; --radio-chico: 14px;
     --p-lienzo: radial-gradient(125% 85% at 50% 0%, #fdf9f5 0%, #f5ece1 55%, #ecdfd0 100%);
     --p-tarj:   #fffdfa;
     --p-borde:  rgba(27,25,23,.055);
@@ -335,10 +339,46 @@
     background: var(--p-sup); color: var(--p-txt); border: 1px solid var(--p-linea);
   }
   .buscador input:focus { border-color: var(--p-acento); outline: none; }
+  /* El atajo se muestra sólo donde hay teclado. En el celular sería una
+     etiqueta que no sirve para nada, y se va con el foco puesto para no
+     estorbarle a lo que se está escribiendo. */
+  .atajo {
+    position: absolute; right: .5rem; top: 50%; transform: translateY(-50%);
+    font-family: inherit; font-size: .72rem; font-weight: 500;
+    color: var(--p-tenue); background: var(--p-sup2);
+    border: 1px solid var(--p-borde); border-radius: 6px;
+    padding: .12rem .36rem; pointer-events: none;
+    transition: opacity .15s var(--ease);
+  }
+  .buscador input:focus ~ .atajo, .buscador input:not(:placeholder-shown) ~ .atajo { opacity: 0; }
+  @media (max-width: 859px) { .atajo { display: none; } }
+  /* Lo que flota sobre el contenido va translúcido y desenfocado: se ve
+     que hay algo debajo sin que se lea, y así una capa flotante se
+     distingue de una tarjeta apoyada sin necesidad de más sombra.
+     `@supports` porque sin desenfoque un fondo semitransparente deja el
+     texto ilegible; ahí se sirve opaco. */
   .hallazgos {
     position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 40;
-    background: var(--p-sup); border-radius: 10px; padding: var(--e1);
+    background: var(--p-sup); border: 1px solid var(--p-borde);
+    border-radius: 12px; padding: var(--e1);
     box-shadow: 0 12px 32px rgba(0,0,0,.22); max-height: 22rem; overflow-y: auto;
+  }
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .hallazgos, .menu-yo {
+      background: color-mix(in srgb, var(--p-sup) 82%, transparent);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      backdrop-filter: blur(16px) saturate(160%);
+    }
+    .velo {
+      background: rgba(12,18,22,.4);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+    }
+    .hoja {
+      background: color-mix(in srgb, var(--p-sup) 88%, transparent);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      backdrop-filter: blur(20px) saturate(160%);
+    }
   }
   .hallazgos button {
     display: block; width: 100%; text-align: left;
@@ -958,8 +998,17 @@
     background: rgba(12,18,22,.55); padding: 1rem;
   }
   .hoja {
-    background: var(--p-sup); border-radius: 12px; padding: 1.4rem 1.5rem 1.5rem;
+    background: var(--p-sup); border: 1px solid var(--p-borde);
+    border-radius: var(--radio); padding: 1.4rem 1.5rem 1.5rem;
     width: min(30rem, 100%); box-shadow: 0 24px 60px rgba(0,0,0,.35);
+  }
+  /* La hoja entra desde abajo y el velo se funde: dos movimientos de
+     220ms que dicen "esto se abrió encima" sin hacerlo esperar a nadie. */
+  .velo:not([hidden]) { animation: entra-suave .18s var(--ease) both; }
+  .velo:not([hidden]) .hoja { animation: entra-hoja .22s var(--ease) both; }
+  @keyframes entra-hoja {
+    from { opacity: 0; transform: translateY(14px) scale(.985); }
+    to   { opacity: 1; transform: none; }
   }
   .hoja h2 { font-size: 1.15rem; font-weight: 600; margin: 0; }
   .hoja .nueva-rejilla { grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); }
@@ -1021,7 +1070,12 @@
   .opc { font-weight: 400; color: var(--p-tenue); }
   .nueva-pie { margin-top: 1.6rem; display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap; }
   .nueva-pie .estado-linea { margin: 0; }
-  select:disabled { opacity: .45; cursor: not-allowed; }
+  /* Un solo trato para todo lo apagado, en vez de sólo los select. */
+  select:disabled, input:disabled, textarea:disabled,
+  button:disabled, .bt[aria-disabled="true"] {
+    opacity: .45; cursor: not-allowed; pointer-events: none;
+  }
+  .btn-suave:disabled, .rueda:disabled { transform: none; }
 
   .hecha-num { color: var(--p-tenue); font-variant-numeric: tabular-nums; }
   .hecha-rango {
@@ -1379,6 +1433,7 @@
           </svg>
           <input type="search" id="buscar" placeholder="Buscar cliente, cotización o solicitud"
                  autocomplete="off" aria-label="Buscar en todo el panel">
+          <kbd class="atajo" id="atajo-busca" aria-hidden="true"></kbd>
           <div class="hallazgos" id="hallazgos" hidden></div>
         </div>
       </div>
@@ -3769,6 +3824,31 @@
     else if (vista === "cliente") { /* la ficha se recarga sola al volver */ }
     else if (vista === "agenda") { agendaCargada = false; cargarAgenda(); }
     else cargarTabla();
+  });
+
+  /* ⌘K / Ctrl+K lleva al buscador de la pantalla en la que uno está: al
+     global si está a la vista, y si no, a la casilla de filtro que esa
+     lista trae. Buscar es buscar; no hay que acordarse de cuál caja. */
+  var esMac = /mac|iphone|ipad/i.test(navigator.platform || navigator.userAgent);
+  (function () {
+    var k = $("atajo-busca");
+    if (k) k.textContent = esMac ? "\u2318K" : "Ctrl K";
+  })();
+
+  function buscadorDeLaVista() {
+    if (!$("top-busca").hidden) return $("buscar");
+    if (vista === "clientes") return $("c-busca");
+    if (vista === "cotizaciones" || vista === "solicitudes") return $("l-busca");
+    return $("buscar");
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "k" && e.key !== "K") return;
+    if (!(esMac ? e.metaKey : e.ctrlKey)) return;
+    if ($("panel").hidden) return;
+    e.preventDefault();
+    var caja = buscadorDeLaVista();
+    if (caja) { caja.focus(); caja.select(); }
   });
 
   /* El menú del avatar. Se cierra al escoger algo, al tocar afuera y con
