@@ -1661,3 +1661,46 @@ Se ven como el título porque lo son. Lo único que avisa que además se
 aprietan es un subrayado punteado: convertirlos en dos botones de verdad
 los habría puesto a competir con el riel de ← Hoy →, que está a cinco
 centímetros y hace lo mismo.
+
+## 32. El cotizador del panel se suelta (2026-09-11)
+
+El cotizador del panel usaba la misma tabla que el público y sólo aceptaba
+servicios y direcciones de la lista. Sirve para el trabajo de todos los
+días, pero dejaba por fuera los dos casos que más importan: **ya se fue a
+ver el trabajo y hay un precio real**, y **es un trabajo o un lugar que no
+está en la lista**.
+
+**Toda lista termina en "Otro (escribir)".** Servicio, forma, medida,
+última limpieza y provincia. Al escogerlo aparece una casilla de texto al
+lado. Con servicio escrito no se preguntan forma ni medida —no hay tabla
+que consultar— y con dirección escrita desaparecen cantón y distrito.
+**Sólo en el panel:** en el sitio público la lista es el catálogo.
+
+**El precio final.** Un campo opcional en el paso de revisar. Si se llena,
+el mínimo y el máximo quedan iguales y la cotización se marca `a_mano`.
+Sólo lo acepta quien manda la clave del panel: sin eso, el cotizador
+público sería un formulario donde el visitante se cotiza a sí mismo lo que
+quiera.
+
+**Y el documento deja de llamarlo estimado.** Esto es el punto, no un
+detalle: con el mínimo y el máximo iguales el documento decía *"Desde
+₡95.000"* aunque el precio fuera cerrado, y eso le deja abierta la puerta
+a un cobro mayor que nadie pensó cobrar. Con `a_mano` cambian la columna
+("Precio" y no "Estimado"), la escalera ("Precio del trabajo", sin fila de
+máximo), el rótulo del cuadro, la nota (*"Precio dado por el encargado…"*),
+el encabezado del desglose ("Detalle del trabajo" y no "Cómo se calculó")
+y la condición de vigencia.
+
+Es la diferencia entre *"esto es lo que calculó una tabla"* y *"esto es lo
+que vale"*.
+
+**El PDF, de una.** Al crear, el panel abre el documento con `?pdf=1` y la
+página llama sola al diálogo de guardar. La pestaña se abre **dentro del
+toque**, antes de pedirle nada al servidor, y se le pone la dirección
+cuando llega la respuesta: abrirla después es una ventana sin gesto de por
+medio y todos los navegadores la bloquean.
+
+**`a_mano` no es decoración.** Separa las cotizaciones que puso una persona
+de las que calculó la tabla. Sin esa marca, mirar si las tarifas están bien
+mezclaría las dos cosas y la tabla parecería acertar cada vez que alguien
+la corrigió a mano.

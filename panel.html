@@ -1121,6 +1121,17 @@
     border-color: var(--p-acento); outline: none;
   }
   .opc { font-weight: 400; color: var(--p-tenue); }
+  /* Lo que se escribe a mano va sobre una superficie distinta: separa
+     de un vistazo lo que decidió el encargado de lo que calculó la
+     tabla, que son dos cosas de peso muy distinto en un documento. */
+  .libre-caja {
+    display: grid; gap: .9rem; margin-top: 1.1rem;
+    background: var(--p-sup); border: 1px solid var(--p-borde);
+    border-radius: var(--radio-chico); padding: 1rem 1.05rem 1.1rem;
+  }
+  .ayuda { color: var(--p-tenue); font-size: .8rem; margin: .35rem 0 0; }
+  .ayuda:empty { display: none; }
+  .campo-libre { margin-top: .5rem; }
   .nueva-pie { margin-top: 1.6rem; display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap; }
   .nueva-pie .estado-linea { margin: 0; }
   /* Un solo trato para todo lo apagado, en vez de sólo los select. */
@@ -1746,8 +1757,8 @@
             <p class="grupo">¿Dónde queda?</p>
             <div class="nueva-rejilla">
               <div class="f"><label for="n-provincia">Provincia</label><select id="n-provincia" required></select></div>
-              <div class="f"><label for="n-canton">Cantón</label><select id="n-canton" required disabled></select></div>
-              <div class="f"><label for="n-distrito">Distrito</label><select id="n-distrito" disabled></select></div>
+              <div class="f" id="campo-canton"><label for="n-canton">Cantón</label><select id="n-canton" required disabled></select></div>
+              <div class="f" id="campo-distrito"><label for="n-distrito">Distrito</label><select id="n-distrito" disabled></select></div>
             </div>
           </section>
 
@@ -1767,6 +1778,24 @@
           <section class="paso" data-paso="4" hidden>
             <p class="grupo">Revise antes de crearla</p>
             <dl class="repaso" id="repaso"></dl>
+
+            <!-- El precio real. Es para cuando ya se fue a ver el trabajo:
+                 ahí no hay estimado que valga, hay un monto. Si se deja
+                 en blanco, manda el cálculo de la tabla. -->
+            <div class="libre-caja">
+              <div class="f">
+                <label for="n-monto">Precio final <span class="opc">opcional</span></label>
+                <input type="number" id="n-monto" inputmode="numeric" min="1" step="1"
+                       placeholder="dejar en blanco para usar el estimado">
+                <p class="ayuda" id="n-monto-ayuda">Al escribirlo, el documento dice ese
+                  monto exacto en vez del estimado, y sin la palabra “Desde”.</p>
+              </div>
+              <div class="f">
+                <label for="n-detalle">Detalle para el documento <span class="opc">opcional</span></label>
+                <input type="text" id="n-detalle" maxlength="200"
+                       placeholder="ej. tanque de 3 tapas, acceso por el portón de atrás">
+              </div>
+            </div>
           </section>
 
           <div class="nueva-pie">
@@ -2905,28 +2934,78 @@
   // acá porque la vista puede tardar en cargar sus opciones.
   var prellenar = null;
 
-  function opciones(sel, lista, vacio) {
+  /* Toda lista del cotizador del panel termina en "Otro". El encargado
+     cotiza cosas que no están en la tabla —un bombeo, un pozo, una
+     dirección fuera del área— y sin esta salida tenía que escoger algo
+     parecido y corregirlo después en el documento, o no cotizar del todo.
+
+     El sitio público NO lleva esta opción: ahí la lista es el catálogo. */
+  var LIBRE = "__otro";
+
+  function opciones(sel, lista, vacio, conOtro) {
     sel.innerHTML = '<option value="">' + escHtml(vacio) + "</option>" +
       lista.map(function (o) {
         return '<option value="' + escHtml(o.id) + '">' + escHtml(o.etiqueta) + "</option>";
-      }).join("");
+      }).join("") +
+      (conOtro === false ? "" : '<option value="' + LIBRE + '">Otro (escribir)</option>');
+  }
+
+  /* Cada select con "Otro" tiene su casilla de texto al lado, escondida
+     hasta que se escoge. Se crea sola la primera vez para no repetir el
+     mismo trozo de HTML seis veces en el formulario. */
+  function casillaLibre(sel, placeholder) {
+    var id = sel.id + "-libre";
+    var caja = $(id);
+    if (!caja) {
+      caja = document.createElement("input");
+      caja.type = "text";
+      caja.id = id;
+      caja.className = "campo-libre";
+      caja.maxLength = 80;
+      caja.placeholder = placeholder || "Escríbalo";
+      caja.setAttribute("aria-label", placeholder || "Escríbalo");
+      sel.parentNode.appendChild(caja);
+    }
+    return caja;
+  }
+
+  function sincronizarLibre(sel, placeholder) {
+    var caja = casillaLibre(sel, placeholder);
+    var toca = sel.value === LIBRE;
+    caja.hidden = !toca;
+    caja.required = toca;
+    if (!toca) caja.value = "";
+    else caja.focus();
+  }
+
+  // Lo que quedó escrito en la casilla de un select, si la hay.
+  function valorLibre(sel) {
+    var caja = $(sel.id + "-libre");
+    return (sel.value === LIBRE && caja) ? caja.value.trim() : "";
   }
 
   function refrescarServicio() {
+    var libre = $("n-servicio").value === LIBRE;
+    sincronizarLibre($("n-servicio"), "Qué trabajo es");
+
     var s = OPC.servicios[$("n-servicio").value];
     var tipo = s ? s.tipo : null;
 
+    /* Con un servicio escrito a mano no hay tabla que preguntar forma ni
+       medida: lo que describe el trabajo es el detalle del paso 4, y el
+       precio lo pone el encargado. */
     $("campo-forma").hidden = tipo !== "tanque";
     $("campo-medida").hidden = tipo !== "tanque";
     $("campo-antiguedad").hidden = tipo !== "tanque";
     $("campo-dias").hidden = tipo !== "alquiler";
-    $("sin-preguntas").hidden = tipo !== "fijo";
+    $("sin-preguntas").hidden = tipo !== "fijo" && !libre;
 
     if (tipo === "tanque") {
       opciones($("n-forma"), s.formas.map(function (f) {
         return { id: f.id, etiqueta: f.etiqueta };
       }), "Escoja…");
       opciones($("n-antiguedad"), s.antiguedad, "Escoja…");
+      sincronizarLibre($("n-antiguedad"), "Hace cuánto");
       refrescarMedida();
     }
     if (tipo === "alquiler") {
@@ -2942,22 +3021,38 @@
       return x.id === $("n-forma").value;
     })[0];
     opciones($("n-medida"), f ? f.medidas : [], "Escoja…");
+    sincronizarLibre($("n-forma"), "Qué forma tiene");
+    sincronizarLibre($("n-medida"), "Qué medida");
   }
 
-  /* La dirección se escoge de la lista oficial, nunca se escribe: de
-     ahí sale la zona que cobra el motor, y "Sn José" a mano no la
-     encuentra. Misma lista que usan el formulario y Frank. */
+  /* La dirección normal se escoge de la lista oficial: de ahí sale la
+     zona, y "Sn José" a mano no la encuentra. Misma lista que usan el
+     formulario y Frank.
+
+     "Otro" es la salida para lo que no está en esa lista: un lugar sin
+     cantón claro, o uno fuera del área donde igual se va. Ahí cantón y
+     distrito sobran y vale lo que el encargado escriba. Sólo existe en
+     el panel; en el sitio público la lista es la lista. */
+  function direccionLibre() { return $("n-provincia").value === LIBRE; }
+
   function refrescarCanton() {
     var prov = $("n-provincia").value, sel = $("n-canton");
-    var lista = prov ? Object.keys(GEO[prov]) : [];
-    sel.disabled = !prov;
+    var libre = direccionLibre();
+    sincronizarLibre($("n-provincia"), "La dirección, como se la dieron");
+
+    $("campo-canton").hidden = libre;
+    $("campo-distrito").hidden = libre;
+    sel.required = !libre;
+
+    var lista = (prov && !libre && GEO[prov]) ? Object.keys(GEO[prov]) : [];
+    sel.disabled = !lista.length;
     opciones(sel, lista.map(function (k) { return { id: k, etiqueta: k }; }), "Escoja…");
     refrescarDistrito();
   }
 
   function refrescarDistrito() {
     var prov = $("n-provincia").value, cant = $("n-canton").value, sel = $("n-distrito");
-    var lista = (prov && cant && GEO[prov][cant]) || [];
+    var lista = (prov && cant && GEO[prov] && GEO[prov][cant]) || [];
     sel.disabled = !lista.length;
     opciones(sel, lista.map(function (k) { return { id: k, etiqueta: k }; }), "Escoja…");
   }
@@ -3032,9 +3127,11 @@
 
     $("nueva-hecha").innerHTML = '<div class="tarj">' +
       '<div class="hecha-num">' + escHtml(d.numero || "Cotización creada") + "</div>" +
+      // Con precio puesto a mano no se dice "Desde": vale eso.
       '<div class="hecha-rango">' +
-        escHtml(d.desde || d.min === d.max ? "Desde " + colones(d.min)
-                                          : colones(d.min) + " – " + colones(d.max)) + "</div>" +
+        escHtml(d.aMano ? colones(d.min)
+              : (d.desde || d.min === d.max) ? "Desde " + colones(d.min)
+              : colones(d.min) + " – " + colones(d.max)) + "</div>" +
       '<div class="hecha-quien">' + escHtml(d.servicioNombre + " · " + (d.nombre || "")) + "</div>" +
       '<div class="hecha-acc">' + acc.join("") + "</div></div>";
     $("nueva-hecha").hidden = false;
@@ -3063,7 +3160,6 @@
   // no al final: llegar al paso cuatro y descubrir que falta el cantón
   // obliga a devolverse a buscarlo.
   var REQUIERE = {
-    2: [["n-provincia", "la provincia"], ["n-canton", "el cantón"]],
     3: [["n-telefono", "el teléfono"], ["n-nombre", "el nombre"]]
   };
 
@@ -3071,18 +3167,36 @@
   // lista se arma en el momento en vez de estar escrita arriba.
   function requiereDelPrimerPaso() {
     var lista = [["n-servicio", "el servicio"]];
+    // Servicio escrito a mano: lo único que falta es escribirlo.
+    if ($("n-servicio").value === LIBRE) return lista.concat([["n-servicio-libre", "qué trabajo es"]]);
+
     var s = OPC && OPC.servicios[$("n-servicio").value];
     if (s && s.tipo === "tanque") {
-      lista.push(["n-forma", "la forma del tanque"], ["n-medida", "la medida"],
-                 ["n-antiguedad", "cuándo fue la última limpieza"]);
+      /* Cada lista pide su casilla escrita cuando está en "Otro". Sin
+         esto se podría pasar el paso con la lista en "Otro" y el texto
+         vacío, y la cotización saldría sin decir de qué tanque habla. */
+      [["n-forma", "la forma del tanque"], ["n-medida", "la medida"],
+       ["n-antiguedad", "cuándo fue la última limpieza"]].forEach(function (par) {
+        lista.push($(par[0]).value === LIBRE ? [par[0] + "-libre", par[1]] : par);
+      });
     }
     return lista;
   }
 
+  /* El segundo paso: con dirección escrita a mano no se pide cantón,
+     porque no hay. Lo que cierra el paso es el texto. */
+  function requiereDelSegundoPaso() {
+    if (direccionLibre()) return [["n-provincia-libre", "la dirección"]];
+    return [["n-provincia", "la provincia"], ["n-canton", "el cantón"]];
+  }
+
   function faltaEnPaso(n) {
-    var lista = n === 1 ? requiereDelPrimerPaso() : (REQUIERE[n] || []);
+    var lista = n === 1 ? requiereDelPrimerPaso()
+              : n === 2 ? requiereDelSegundoPaso()
+              : (REQUIERE[n] || []);
     for (var i = 0; i < lista.length; i++) {
-      if (!$(lista[i][0]).value.trim()) return lista[i];
+      var campo = $(lista[i][0]);
+      if (!campo || !campo.value.trim()) return lista[i];
     }
     return null;
   }
@@ -3128,14 +3242,21 @@
     return sel.selectedIndex > 0 ? sel.options[sel.selectedIndex].textContent : "—";
   }
 
+  // Lo que se escribió a mano vale más que la etiqueta "Otro".
+  function textoCampo(id) {
+    return valorLibre($(id)) || textoOpcion(id);
+  }
+
   function pintarRepaso() {
-    var lugar = [$("n-distrito").value, $("n-canton").value, $("n-provincia").value]
-      .filter(Boolean).join(", ");
-    var filas = [["Servicio", textoOpcion("n-servicio")]];
+    var lugar = direccionLibre()
+      ? valorLibre($("n-provincia"))
+      : [$("n-distrito").value, $("n-canton").value, $("n-provincia").value]
+          .filter(Boolean).join(", ");
+    var filas = [["Servicio", textoCampo("n-servicio")]];
     if (!$("campo-forma").hidden) {
-      filas.push(["Forma del tanque", textoOpcion("n-forma")],
-                 ["Medida", textoOpcion("n-medida")],
-                 ["Última limpieza", textoOpcion("n-antiguedad")]);
+      filas.push(["Forma del tanque", textoCampo("n-forma")],
+                 ["Medida", textoCampo("n-medida")],
+                 ["Última limpieza", textoCampo("n-antiguedad")]);
     }
     if (!$("campo-dias").hidden) filas.push(["Días de alquiler", $("n-dias").value || "—"]);
     filas = filas.concat([
@@ -3199,6 +3320,9 @@
   $("n-forma").addEventListener("change", refrescarMedida);
   $("n-provincia").addEventListener("change", refrescarCanton);
   $("n-canton").addEventListener("change", refrescarDistrito);
+  ["n-medida", "n-antiguedad", "n-canton", "n-distrito"].forEach(function (id) {
+    $(id).addEventListener("change", function () { sincronizarLibre($(id), "Escríbalo"); });
+  });
 
   $("form-nueva").addEventListener("submit", function (e) {
     e.preventDefault();
@@ -3206,6 +3330,21 @@
     aviso.classList.remove("is-error");
     aviso.textContent = "Calculando…";
     $("btn-crear").disabled = true;
+
+    /* La pestaña del documento se abre ACÁ, dentro del toque, y se le
+       pone la dirección cuando el servidor contesta. Abrirla después
+       —al llegar la respuesta— es una ventana sin gesto de por medio, y
+       todos los navegadores la bloquean. Queda en blanco mientras tanto,
+       que es medio segundo. */
+    var pestana = window.open("", "_blank");
+
+    var libreServicio = valorLibre($("n-servicio"));
+    var libreLugar = direccionLibre() ? valorLibre($("n-provincia")) : "";
+    // Forma, medida y antigüedad escritas a mano van todas al mismo
+    // renglón de detalle: en el documento se leen como una sola frase.
+    var detalle = [valorLibre($("n-forma")), valorLibre($("n-medida")),
+                   valorLibre($("n-antiguedad")), $("n-detalle").value.trim()]
+                  .filter(Boolean).join(" · ");
 
     pedir("/api/cotizar", {
       method: "POST",
@@ -3215,10 +3354,15 @@
         servicio: $("n-servicio").value,
         forma: $("n-forma").value, medida: $("n-medida").value,
         antiguedad: $("n-antiguedad").value, dias: $("n-dias").value,
-        provincia: $("n-provincia").value, canton: $("n-canton").value,
-        distrito: $("n-distrito").value,
+        provincia: libreLugar ? "" : $("n-provincia").value,
+        canton: libreLugar ? "" : $("n-canton").value,
+        distrito: libreLugar ? "" : $("n-distrito").value,
         nombre: $("n-nombre").value, telefono: $("n-telefono").value,
-        cedula: $("n-cedula").value, correo: $("n-correo").value
+        cedula: $("n-cedula").value, correo: $("n-correo").value,
+        montoFijo: $("n-monto").value,
+        servicioLibre: libreServicio,
+        detalleLibre: detalle,
+        lugarLibre: libreLugar
       })
     })
       .then(function (d) {
@@ -3226,10 +3370,13 @@
         resumenCargado = false;
         mostrarHecha(d);
         avisar("Cotización " + (d.numero || "") + " creada.");
+        if (pestana && d.enlace) pestana.location = d.enlace + "&pdf=1";
+        else if (pestana) pestana.close();
       })
       .catch(function (err) {
         // El servidor contesta el motivo en español —"Los teléfonos de
         // Costa Rica llevan 8 dígitos"— así que se muestra tal cual.
+        if (pestana) pestana.close();
         aviso.textContent = String((err && err.message) || "No se pudo crear la cotización.");
         aviso.classList.add("is-error");
       })

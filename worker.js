@@ -1661,16 +1661,35 @@ async function cotizar(request, env, ctx) {
     return json({ ok: false, error: "Formato inválido" }, 400);
   }
 
+  /* Todo lo que viene a continuación —precio a mano, servicio escrito,
+     dirección escrita— sólo lo puede mandar quien tiene la clave del
+     panel. Desde el sitio público no hay forma de poner un precio: eso
+     convertiría el cotizador en un formulario donde el visitante se
+     cotiza a sí mismo lo que quiera. */
+  const esPanel = claveValida(request, env);
+
   const provincia = texto(cuerpo.provincia, 40);
   const canton = texto(cuerpo.canton, 60);
   const distrito = texto(cuerpo.distrito, 80);
+  const lugarLibre = esPanel ? texto(cuerpo.lugarLibre, 120) : "";
 
-  if (!direccionValida(provincia, canton, distrito)) {
-    return json({ ok: false, error: "Esa dirección no existe en la lista de Costa Rica" }, 400);
+  /* Con dirección escrita a mano no se valida contra la lista: el caso
+     es justamente el que no está en ella. Pero si además mandó
+     provincia, esa sí tiene que existir, o el guardado quedaría con un
+     cantón inventado que después ensucia las estadísticas de zona. */
+  if (!lugarLibre || provincia) {
+    if (!direccionValida(provincia, canton, distrito)) {
+      return json({ ok: false, error: "Esa dirección no existe en la lista de Costa Rica" }, 400);
+    }
   }
 
   const entrada = {
-    servicio: texto(cuerpo.servicio, 40),
+    /* El panel manda "__otro" cuando el encargado escribió el servicio.
+       Se guarda como "otro" a secas: el doble guion bajo es una marca
+       interna del formulario y no tiene por qué aparecer en el CSV ni en
+       los desgloses del resumen. El nombre de verdad va en
+       `servicio_libre`. */
+    servicio: texto(cuerpo.servicio, 40) === "__otro" ? "otro" : texto(cuerpo.servicio, 40),
     // Tanque séptico
     forma: texto(cuerpo.forma, 40),
     medida: texto(cuerpo.medida, 40),
@@ -1684,9 +1703,36 @@ async function cotizar(request, env, ctx) {
     zona: zonaDeProvincia(provincia)
   };
 
-  const calculo = calcularCotizacion(entrada);
+  const servicioLibre = esPanel ? texto(cuerpo.servicioLibre, 80) : "";
+  const detalleLibre  = esPanel ? texto(cuerpo.detalleLibre, 200) : "";
+
+  /* El precio a mano. Es el caso de "ya lo vi y vale esto": no es un
+     estimado con un piso y un techo, es un monto. Por eso el mínimo y
+     el máximo quedan iguales y se marca `a_mano`, que es lo que después
+     le dice al documento que diga "₡95.000" y no "Desde ₡95.000". */
+  let montoFijo = null;
+  if (esPanel && cuerpo.montoFijo != null && cuerpo.montoFijo !== "") {
+    const n = Math.round(Number(cuerpo.montoFijo));
+    if (!isFinite(n) || n <= 0 || n > 99999999) {
+      return json({ ok: false, error: "El precio tiene que ser un monto en colones" }, 400);
+    }
+    montoFijo = n;
+  }
+
+  let calculo = calcularCotizacion(entrada);
+
+  /* Sin precio a mano hay que poder calcular. Con precio a mano no hace
+     falta: es el caso del trabajo que no está en la tabla, y obligar a
+     escoger un servicio de la lista para después ignorar su precio sería
+     pedir un dato falso. */
   if (!calculo) {
-    return json({ ok: false, error: "Datos incompletos o no reconocidos" }, 400);
+    if (montoFijo === null) {
+      return json({ ok: false, error: "Datos incompletos o no reconocidos" }, 400);
+    }
+    calculo = { min: montoFijo, max: montoFijo, dias: null, provisional: false };
+  }
+  if (montoFijo !== null) {
+    calculo = { min: montoFijo, max: montoFijo, dias: calculo.dias, provisional: false };
   }
 
   const persona = limpiarDatosPersona(cuerpo, ["nombre", "telefono"]);
@@ -1707,9 +1753,10 @@ async function cotizar(request, env, ctx) {
       `INSERT INTO cotizaciones
          (servicio, forma, medida, ultimo, dias, zona, monto_min, monto_max,
           provisional, origen, nombre, telefono, llave,
-          cedula, correo, provincia, canton, distrito)
+          cedula, correo, provincia, canton, distrito,
+          a_mano, servicio_libre, detalle_libre, lugar_libre)
        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13,
-               ?14, ?15, ?16, ?17, ?18)`
+               ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22)`
     ).bind(
       // `ultimo` guarda la antigüedad: es la misma pregunta de siempre
       // —hace cuánto fue el último servicio— con otro nombre en el
@@ -1717,7 +1764,8 @@ async function cotizar(request, env, ctx) {
       entrada.servicio, entrada.forma || null, entrada.medida || null,
       entrada.antiguedad || null, calculo.dias || null, entrada.zona,
       calculo.min, calculo.max, calculo.provisional ? 1 : 0, origen, nombre, telefono, llave,
-      cedula, correo, provincia, canton, distrito
+      cedula, correo, provincia, canton, distrito,
+      montoFijo !== null ? 1 : 0, servicioLibre || null, detalleLibre || null, lugarLibre || null
     ).run();
 
     const id = res.meta && res.meta.last_row_id;
@@ -1739,9 +1787,17 @@ async function cotizar(request, env, ctx) {
   /* El nombre y el teléfono vuelven ya limpios. Los necesita el panel
      para armar el WhatsApp con el que se le manda el documento al
      cliente: lo que la persona escribió podía venir dentro de una frase. */
+  /* El orden importa: lo de `calculo` primero y lo de acá después. Al
+     revés, el nombre que trae la tabla pisaría el que escribió el
+     encargado y el panel diría "Otro" en vez de "Bombeo de pozo". */
   const salida = Object.assign(
     { ok: true, numero: numero, enlace: enlace, nombre: nombre, telefono: telefono },
-    calculo
+    calculo,
+    {
+      aMano: montoFijo !== null,
+      servicioNombre: servicioLibre || calculo.servicioNombre ||
+                      etiqueta(entrada.servicio, null, "servicio")
+    }
   );
 
   // El aviso sale en segundo plano, como el del formulario.
@@ -1767,7 +1823,8 @@ async function verCotizacion(request, env) {
     f = await env.DB.prepare(
       `SELECT numero, datetime(creado, '-6 hours') AS creado, servicio, forma, medida,
               ultimo, dias, perfil, acceso, zona, monto_min, monto_max, provisional,
-              nombre, telefono, cedula, correo, provincia, canton, distrito
+              nombre, telefono, cedula, correo, provincia, canton, distrito,
+              a_mano, servicio_libre, detalle_libre, lugar_libre
          FROM cotizaciones
         WHERE numero = ?1 AND llave = ?2`
     ).bind(numero, llave).first();
@@ -1790,7 +1847,9 @@ async function verCotizacion(request, env) {
     emitida: emitida,
     vence: vence,
     vigenciaDias: TARIFAS.vigenciaDias,
-    servicio: etiqueta(f.servicio, null, "servicio"),
+    // Lo que se escribió a mano manda: si el encargado puso "Bombeo de
+    // pozo", el documento dice eso y no la etiqueta de la lista.
+    servicio: f.servicio_libre || etiqueta(f.servicio, null, "servicio"),
     min: f.monto_min,
     max: f.monto_max,
     minTexto: colones(f.monto_min),
@@ -1802,11 +1861,17 @@ async function verCotizacion(request, env) {
       cedula: f.cedula || null,
       telefono: f.telefono || null,
       correo: f.correo || null,
-      zonaTexto: zonaTexto(f.provincia, f.canton, f.distrito)
+      zonaTexto: f.lugar_libre || zonaTexto(f.provincia, f.canton, f.distrito)
     },
-    // Es un "desde" cuando no hay techo: el mínimo y el máximo iguales
-    // no son un rango de cero de ancho, son un piso.
-    desde: f.monto_min === f.monto_max,
+    /* Es un "desde" cuando no hay techo: el mínimo y el máximo iguales
+       no son un rango de cero de ancho, son un piso.
+
+       Salvo cuando el precio lo puso el encargado a mano: ahí los dos
+       iguales significan lo contrario —ya se vio el trabajo y vale
+       exactamente eso—, y decir "Desde ₡95.000" sería abrirle la puerta
+       a un cobro mayor que nadie pensó cobrar. */
+    desde: f.monto_min === f.monto_max && !f.a_mano,
+    aMano: !!f.a_mano,
     /* Las respuestas con las que se calculó, cada una con lo que mueve.
        Es el reemplazo honesto de las líneas de una factura: no tenemos
        artículos, tenemos motivos.
@@ -1831,6 +1896,9 @@ function baseDelCalculo(f) {
   // Cotizaciones viejas, emitidas con la estructura anterior.
   poner("Propiedad", f.perfil && etiqueta(f.servicio, f.perfil, "perfil"), PORQUE.perfil);
   poner("Acceso",    f.acceso && etiqueta(f.servicio, f.acceso, "acceso"), PORQUE.acceso);
+
+  // Lo escrito a mano va de primero: es lo más específico que hay.
+  if (f.detalle_libre) filas.unshift({ campo: "Detalle", valor: f.detalle_libre, porque: "" });
 
   poner("Zona", etiqueta(null, f.zona, "zona"), PORQUE.zona);
   return filas;

@@ -379,7 +379,7 @@ body {
     <thead>
       <tr>
         <th>Servicio</th>
-        <th class="der">Estimado</th>
+        <th class="der" id="th-monto">Estimado</th>
       </tr>
     </thead>
     <tbody>
@@ -395,20 +395,20 @@ body {
 
   <div class="pie-tabla">
     <div>
-      <p class="et">Cómo se calculó</p>
+      <p class="et" id="et-base">Cómo se calculó</p>
       <dl class="base" id="base"></dl>
     </div>
 
     <div>
       <div class="escalera">
-        <div class="lin"><span>Estimado mínimo</span><span id="min"></span></div>
-        <div class="lin"><span>Estimado máximo</span><span id="max"></span></div>
+        <div class="lin"><span id="et-min">Estimado mínimo</span><span id="min"></span></div>
+        <div class="lin" id="lin-max"><span>Estimado máximo</span><span id="max"></span></div>
         <div class="lin iva"><span>IVA</span><span id="iva"></span></div>
       </div>
       <div class="rango">
         <p class="et" id="rango-et">Rango estimado</p>
         <p class="cifra" id="cifra"></p>
-        <p class="nota">Estimado automático. <b>El precio oficial lo da el encargado</b> antes de empezar el trabajo, sin costo y sin compromiso.</p>
+        <p class="nota" id="rango-nota">Estimado automático. <b>El precio oficial lo da el encargado</b> antes de empezar el trabajo, sin costo y sin compromiso.</p>
       </div>
     </div>
   </div>
@@ -424,7 +424,7 @@ body {
       <p class="et">Condiciones</p>
       <ul>
         <li id="cond-vigencia"></li>
-        <li>Este documento es un <b>estimado automático</b>, calculado con los datos que
+        <li id="cond-estimado">Este documento es un <b>estimado automático</b>, calculado con los datos que
             usted nos dio. <b>El precio oficial lo confirma el encargado</b> antes de
             empezar el trabajo — no es un trámite de aprobación temporal: así funciona
             siempre, porque en sitio pueden aparecer cosas que un formulario no ve.</li>
@@ -564,13 +564,45 @@ body {
        mil— y otros que sólo tienen piso, como el tanque séptico, donde
        el precio sale del tamaño. Escribir "₡65.000 – ₡65.000" en esos
        sería fingir un rango que no existe. */
-    var esDesde = d.desde || d.min === d.max;
-    var rango = esDesde ? "Desde " + d.minTexto : d.minTexto + " – " + d.maxTexto;
-    $("rango-et").textContent = esDesde ? "Precio estimado" : "Rango estimado";
+    /* Tres formas de decir el precio, no dos:
+         un rango          — se estimó y hay piso y techo
+         "Desde ₡X"        — se estimó y sólo hay piso
+         "₡X" a secas      — el encargado ya vio el trabajo y vale eso
+
+       El tercero es el que faltaba. Con el mínimo y el máximo iguales,
+       el documento decía "Desde ₡95.000" incluso cuando el precio era
+       cerrado, y eso deja abierta la puerta a un cobro mayor que nadie
+       pensó cobrar. */
+    var exacto = !!d.aMano && d.min === d.max;
+    var esDesde = !exacto && (d.desde || d.min === d.max);
+    var rango = exacto ? d.minTexto
+              : esDesde ? "Desde " + d.minTexto
+              : d.minTexto + " – " + d.maxTexto;
+    /* Un precio puesto por el encargado NO es un estimado, y el documento
+       no puede seguir llamándolo así: sería decirle al cliente que el
+       monto todavía puede cambiar justo cuando ya no puede. Cambian la
+       columna, la escalera, el rótulo del cuadro, la nota y la condición.
+
+       Es la diferencia entre "esto es lo que calculó una tabla" y "esto
+       es lo que vale", y es el motivo de todo este cambio. */
+    $("rango-et").textContent = exacto ? "Precio" : esDesde ? "Precio estimado" : "Rango estimado";
+    $("th-monto").textContent = exacto ? "Precio" : "Estimado";
+    $("et-min").textContent = exacto ? "Precio del trabajo" : "Estimado mínimo";
+    $("lin-max").hidden = exacto;
+    if (exacto) {
+      $("rango-nota").innerHTML =
+        "<b>Precio dado por el encargado</b> para este trabajo. No es un estimado " +
+        "automático: sale de lo que se vio en sitio.";
+      // Con precio a mano no se calculó nada: se describió el trabajo.
+      $("et-base").textContent = "Detalle del trabajo";
+      $("cond-estimado").innerHTML =
+        "El monto de este documento <b>lo puso el encargado</b> después de revisar el " +
+        "trabajo, así que es el precio en firme y no una estimación.";
+    }
     $("monto-fila").textContent = rango;
     $("cifra").textContent = rango;
     $("min").textContent = d.minTexto;
-    $("max").textContent = esDesde ? "—" : d.maxTexto;
+    $("max").textContent = (esDesde || exacto) ? "—" : d.maxTexto;
     $("iva").textContent = d.ivaIncluido === null
       ? "Por confirmar"
       : (d.ivaIncluido ? "Incluido" : "Se suma aparte");
@@ -597,7 +629,8 @@ body {
     });
 
     $("cond-vigencia").textContent =
-      "Este estimado tiene una vigencia de " + d.vigenciaDias + " días naturales.";
+      (exacto ? "Este precio tiene una vigencia de " : "Este estimado tiene una vigencia de ") +
+      d.vigenciaDias + " días naturales.";
 
     $("provisional").hidden = !d.provisional;
 
@@ -618,6 +651,14 @@ body {
   }
 
   $("btn-imprimir").addEventListener("click", function () { window.print(); });
+
+  /* El panel abre el documento con ?pdf=1 al crear una cotización, para
+     que el encargado pase de "crear" a "guardar el PDF" sin un toque de
+     más. Espera un latido a que las fuentes y el logo estén puestos: sin
+     eso, el diálogo de impresión sale con la hoja a medio dibujar. */
+  if (new URLSearchParams(location.search).get("pdf") === "1") {
+    setTimeout(function () { window.print(); }, 400);
+  }
 
   $("btn-copiar").addEventListener("click", function () {
     var decir = function (t) {
