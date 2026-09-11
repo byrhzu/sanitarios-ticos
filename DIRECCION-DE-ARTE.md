@@ -1746,3 +1746,58 @@ los toca ni los marca.
 **`servicios.recordado`** guarda el día en que se le escribió. Sin eso, a
 quien le toca el mantenimiento le llegaría un correo todos los días hasta
 que por fin haga el trabajo.
+
+## 34. Fuera la tarjeta dentro de la tarjeta (2026-09-11)
+
+Byron usando la app desde el teléfono: *"hay card sobre card, donde hay
+texto se va reduciendo el tamaño"*. Tenía razón, y era culpa del §31: al
+volver cada aviso una pieza con borde propio, las piezas quedaron **dentro**
+de la tarjeta que las agrupaba. Dos bordes y cuatro rellenos en 375px: el
+texto se quedaba con la mitad del ancho.
+
+**El título de sección ya no es el encabezado de una caja, es un rótulo
+sobre el papel.** Es lo que hace una libreta: la sección se nombra, no se
+enmarca. Las piezas suben a la superficie de tarjeta y la caja de afuera
+desaparece. Se recuperan unos 36px de ancho por renglón y la jerarquía
+queda más clara, no menos: se distingue *"esto es un grupo de piezas"* de
+*"esto es una pieza"*.
+
+**El número de cotización es un atajo.** Lo pidió explícito: que el aviso
+traiga adentro el camino a donde se atiende, sin tener que acordarse de a
+cuál pantalla ir. La ficha `COT-0041` lleva a Cotizaciones con ese número
+ya filtrado.
+
+### El filtro de las listas
+
+Las dos casillas de fecha con sus dos etiquetas ocupaban dos renglones
+enteros arriba de la lista y se usan una vez cada tanto. Ahora el renglón
+es uno: buscar, el calendario y el CSV como iconos. Las fechas se abren
+aparte, igual que en el Resumen, **con un punto naranja cuando hay un
+filtro puesto**: una lista recortada sin nada visible que lo explique es la
+forma más rápida de creer que no hay trabajo.
+
+**Dos arreglos de paso.** El riel de estados rodaba también en vertical
+—`overflow-x: auto` a secas deja rodar en los dos ejes— y se movía un par
+de píxeles al arrastrarlo. Y el renglón chico repetía el nombre de la
+pantalla justo encima del titular: "Solicitudes" sobre "Solicitudes". Ahora
+dice siempre el día.
+
+### El fondo
+
+*"En modo claro se ve muy mal, con un color muy genérico de inteligencia
+artificial."* Era un degradado beige de claro a menos claro, que es el
+fondo por defecto de cualquier plantilla.
+
+Ahora son **tres capas**: un resplandor naranja muy tenue arriba a la
+derecha —la marca, presente sin gritar—, una sombra fría abajo a la
+izquierda que le da peso, y la base. Las dos luces a menos del 13%: se
+sienten antes de verse. En oscuro, el mismo esquema con un azul frío abajo,
+que es el que impide que la pantalla se lea como un gris muerto.
+
+### El filo de color
+
+De la maqueta de Stitch faltaba este detalle: **cada cifra con su color**,
+tres píxeles arriba y el icono a juego. Solicitudes en azul, Cotizaciones
+en el naranja de marca, Sin atender en ámbar, Cobrado en verde. Las cuatro
+con el mismo naranja se leían como una sola cosa repetida cuatro veces.
+Lo mismo en los cuatro conteos de la Agenda.

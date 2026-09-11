@@ -177,7 +177,16 @@
      variable no existía — la hoja salía con esquinas cuadradas. */
   :root {
     --radio: 20px; --radio-chico: 14px;
-    --p-lienzo: radial-gradient(125% 85% at 50% 0%, #fdf9f5 0%, #f5ece1 55%, #ecdfd0 100%);
+    /* Tres capas, no un degradado. Un beige que va de claro a menos
+       claro es el fondo por defecto de cualquier plantilla; lo que hace
+       que un papel se vea escogido es que tenga temperatura: un resplandor
+       naranja muy tenue arriba a la derecha —la marca, presente sin
+       gritar— y una sombra fría abajo a la izquierda que le da peso.
+       Las dos a menos del 13%: se sienten antes de verse. */
+    --p-lienzo:
+      radial-gradient(90% 55% at 88% -8%, rgba(239,101,17,.13) 0%, rgba(239,101,17,0) 62%),
+      radial-gradient(75% 50% at 4% 104%, rgba(31,44,51,.075) 0%, rgba(31,44,51,0) 58%),
+      linear-gradient(178deg, #fdfaf6 0%, #f6eee4 46%, #efe4d6 100%);
     --p-tarj:   #fffdfa;
     --p-borde:  rgba(27,25,23,.055);
     /* Dos sombras: una de 1px que apoya la tarjeta en el papel y otra
@@ -188,7 +197,14 @@
     --p-alza2:  0 2px 6px rgba(27,25,23,.05), 0 18px 40px -18px rgba(27,25,23,.3);
   }
   :root[data-tema="oscuro"] {
-    --p-lienzo: radial-gradient(125% 85% at 50% 0%, #17222a 0%, #101920 55%, #0b1015 100%);
+    /* El mismo esquema en oscuro: el resplandor naranja arriba a la
+       derecha y un azul frío abajo, que es el que impide que la pantalla
+       se lea como un gris muerto. En oscuro se pueden subir un punto:
+       la luz sobre fondo negro se ve menos de lo que mide. */
+    --p-lienzo:
+      radial-gradient(85% 55% at 86% -6%, rgba(255,122,43,.17) 0%, rgba(255,122,43,0) 60%),
+      radial-gradient(70% 50% at 0% 102%, rgba(90,150,230,.11) 0%, rgba(90,150,230,0) 56%),
+      linear-gradient(178deg, #141e26 0%, #0f171d 50%, #0a0f13 100%);
     --p-tarj:   #1b262d;
     --p-borde:  rgba(255,255,255,.06);
     --p-alza:   0 1px 2px rgba(0,0,0,.28), 0 12px 30px -16px rgba(0,0,0,.7);
@@ -443,6 +459,36 @@
   .tarj + .rejilla, .rejilla + .tarj { margin-top: 1.4rem; }
   .tarj-h { position: relative; display: flex; align-items: baseline; gap: .5rem 1rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
   .tarj-h h2 { font-family: var(--display); font-size: 1.12rem; font-weight: 600; letter-spacing: -.015em; margin: 0; }
+
+  /* El rótulo de una sección que NO va dentro de una caja. Mismo cuerpo
+     que el título de una tarjeta, pero sobre el papel: así se distingue
+     "esto es un grupo de piezas" de "esto es una pieza". */
+  .seccion-h {
+    display: flex; align-items: center; gap: .6rem;
+    margin: 0 .15rem .7rem; min-height: 2rem;
+  }
+  .seccion-h h2 {
+    display: flex; align-items: center; gap: .5rem;
+    font-family: var(--display); font-size: 1.12rem; font-weight: 600;
+    letter-spacing: -.015em; margin: 0;
+  }
+  [data-punto] .seccion-h h2::before {
+    content: ""; width: 9px; height: 9px; border-radius: 50%; flex: 0 0 9px;
+    background: var(--p-acento);
+  }
+  [data-punto="mal"]  .seccion-h h2::before { background: var(--est-mal-tx); }
+  [data-punto="dato"] .seccion-h h2::before { background: var(--p-dato2); }
+  .seccion-h .cuenta {
+    margin-left: auto; background: var(--p-sup2); color: var(--p-txt2);
+    font-weight: 600; font-size: .8rem; min-width: 1.45rem; text-align: center;
+    padding: .1rem .45rem; border-radius: 999px; font-variant-numeric: tabular-nums;
+  }
+  .seccion-h .cuenta:empty { display: none; }
+
+  /* Separación entre secciones sueltas, igual que entre tarjetas. */
+  .vista > section + section, .vista > section + .rejilla,
+  .vista > .rejilla + section { margin-top: 1.4rem; }
+  .rejilla.dos > section { min-width: 0; }
   /* Un punto de color delante del título de las tres tarjetas de Hoy.
      No es adorno: los tres bloques se distinguen antes de leerlos, y es
      lo que hace que la pantalla se lea como un semáforo y no como tres
@@ -501,6 +547,23 @@
     width: 34px; height: 34px; border-radius: 11px; margin-bottom: .75rem;
     background: var(--p-suave); color: var(--p-acento-t);
   }
+  /* El filo de color arriba: un detalle de tres píxeles que hace que la
+     fila de cifras se lea como cuatro cosas y no como una repetida. */
+  .cifra { position: relative; }
+  .cifra[class*="t-"]::after {
+    content: ""; position: absolute; inset: 0 auto auto 0;
+    width: 100%; height: 3px; border-radius: var(--radio) var(--radio) 0 0;
+    background: var(--filo);
+  }
+  .cifra.t-dato   { --filo: var(--p-dato2); }
+  .cifra.t-mal    { --filo: var(--est-mal-tx); }
+  .cifra.t-mal    .cifra-chip { background: var(--est-mal-bg); color: var(--est-mal-tx); }
+  .cifra.t-marca  { --filo: var(--p-acento); }
+  .cifra.t-espera { --filo: var(--est-espera-tx); }
+  .cifra.t-ok     { --filo: var(--est-ok-tx); }
+  .cifra.t-dato   .cifra-chip { background: var(--est-curso-bg);  color: var(--est-curso-tx); }
+  .cifra.t-espera .cifra-chip { background: var(--est-espera-bg); color: var(--est-espera-tx); }
+  .cifra.t-ok     .cifra-chip { background: var(--est-ok-bg);     color: var(--est-ok-tx); }
   .cifra-chip svg { width: 17px; height: 17px; }
   .cifra-n {
     font-family: var(--display); font-weight: 600; font-size: 1.9rem;
@@ -530,11 +593,10 @@
   .delta.baja   { background: var(--est-mal-bg);    color: var(--est-mal-tx); }
   .delta.igual  { background: var(--p-sup2);        color: var(--p-tenue); }
   .delta.espera { background: var(--est-espera-bg); color: var(--est-espera-tx); }
-  /* La tarjeta urgente se marca con un filo a la izquierda, igual que
-     un pendiente viejo. El número se queda del color normal: teñirlo
-     de naranja lo hacía competir con la pastilla de al lado y con el
-     botón de crear, y el naranja acá es marca, no alarma. */
-  .cifra.urge { border-left: 3px solid var(--p-acento); }
+  /* La tarjeta urgente lleva además un filo a la izquierda, del mismo
+     color que el de arriba. Con el naranja de marca eran dos naranjas
+     distintos en la misma esquina, que se lee como un error de imprenta. */
+  .cifra.urge { border-left: 3px solid var(--filo, var(--p-acento)); }
   /* La línea de tendencia sangra hasta el borde de abajo, como en la
      referencia. Sólo la llevan las tarjetas que tienen una serie de
      verdad: dibujarle una tendencia inventada a un número que no la
@@ -563,10 +625,11 @@
      sólo por una rayita, dos personas seguidas con tres botones cada una
      se leían como una sola maraña. */
   .fila-cola {
-    background: var(--p-sup); border: 1px solid var(--p-borde);
-    border-radius: var(--radio-chico); padding: .85rem .9rem .9rem;
+    background: var(--p-tarj); border: 1px solid var(--p-borde);
+    border-radius: var(--radio); box-shadow: var(--p-alza);
+    padding: 1rem 1.1rem 1.1rem;
   }
-  .fila-cola + .fila-cola { margin-top: .6rem; }
+  .fila-cola + .fila-cola { margin-top: .7rem; }
   /* Lo vencido se marca con un filo rojo, no con el naranja de la marca. */
   .fila-cola.viejo { border-left: 3px solid var(--est-mal-tx); }
 
@@ -578,9 +641,12 @@
   .cola-nom .delta { flex: 0 0 auto; }
   .cola-det { color: var(--p-tenue); margin: .35rem 0 .75rem; line-height: 1.45; }
   .cola-det .ref { margin-right: .35rem; }
+  button.ref { cursor: pointer; }
+  button.ref:hover { background: var(--p-suave); color: var(--p-acento-t); }
   /* La referencia, en caja monoespaciada: se busca con el ojo, no se lee. */
   .ref {
     display: inline-block; vertical-align: baseline;
+    transition: background .15s var(--ease), color .15s var(--ease);
     font-family: ui-monospace, "SF Mono", Menlo, monospace;
     font-size: .72rem; letter-spacing: -.02em;
     background: var(--p-sup2); color: var(--p-txt2);
@@ -594,7 +660,7 @@
   .bt {
     display: inline-flex; align-items: center; gap: .4rem;
     font-weight: 500; padding: .45rem .8rem; border-radius: 11px;
-    background: var(--p-tarj); color: var(--p-txt);
+    background: transparent; color: var(--p-txt);
     border: 1px solid var(--p-linea); white-space: nowrap;
     transition: background .15s var(--ease), border-color .15s var(--ease), transform .12s var(--ease);
   }
@@ -672,7 +738,10 @@
      como un recorrido de un estado al siguiente. */
   .pest-est {
     display: flex; gap: .2rem; flex-wrap: nowrap;
-    overflow-x: auto; scrollbar-width: none;
+    /* `overflow-y: hidden` a propósito: con `overflow-x: auto` a secas el
+       navegador deja rodar también en vertical, y el riel se movía de
+       arriba abajo un par de píxeles al arrastrarlo de lado. */
+    overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
     border-bottom: 1px solid var(--p-linea); margin-bottom: var(--e4);
   }
   .pest-est::-webkit-scrollbar { display: none; }
@@ -691,16 +760,15 @@
   .pest-est button[aria-selected="true"] .n { color: var(--p-acento-t); }
   .pest-est .n:empty { display: none; }
 
-  .filtros { display: flex; gap: .8rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 1rem; }
-  .filtros .f-busca { flex: 1 1 14rem; max-width: 22rem; }
-  .filtros input[type="search"] { width: 100%; }
-  .filtros .f { margin: 0; }
-  .filtros .f label { font-size: .78rem; color: var(--p-tenue); }
-  .filtros input, .filtros select {
-    font-size: 13.5px; padding: .42rem .55rem; border-radius: 8px;
-    background: var(--p-sup); color: var(--p-txt); border: 1px solid var(--p-linea);
-  }
-  .filtros .empuje { margin-left: auto; }
+  .filtros { display: flex; gap: .6rem; align-items: center; margin-bottom: 1rem; }
+  .filtros .f-busca { flex: 1 1 auto; min-width: 0; max-width: 26rem; }
+  /* El punto avisa que hay un filtro de fechas puesto aunque esté
+     cerrado: si no, la lista sale recortada sin nada que lo explique. */
+  #btn-fechas-lista[aria-expanded="true"] { background: var(--p-suave); color: var(--p-acento-t); }
+  /* Las fechas se fueron al cajón de abajo, así que este renglón ya sólo
+     lleva el buscador. La regla vieja le ponía relleno propio a todo
+     `input` de acá adentro y le comía el hueco de la lupa. */
+  .filtros .buscador input { width: 100%; }
 
   .aplicado { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-bottom: .9rem; }
   .aplicado .marca {
@@ -965,12 +1033,13 @@
      se cuentan de un vistazo y se ve que cada una lleva a otro lado. */
   .aten {
     display: flex; align-items: center; gap: var(--e3); width: 100%;
-    padding: .8rem .85rem; border-radius: var(--radio-chico); text-align: left;
-    background: var(--p-sup); border: 1px solid var(--p-borde);
-    transition: background .15s var(--ease), border-color .15s var(--ease);
+    padding: .95rem 1.05rem; border-radius: var(--radio); text-align: left;
+    background: var(--p-tarj); border: 1px solid var(--p-borde);
+    box-shadow: var(--p-alza);
+    transition: box-shadow .18s var(--ease), transform .15s var(--ease);
   }
-  .aten + .aten { margin-top: .55rem; }
-  .aten:hover { background: var(--p-sup2); border-color: var(--p-linea); }
+  .aten + .aten { margin-top: .6rem; }
+  .aten:hover { transform: translateY(-2px); box-shadow: var(--p-alza2); }
   .aten-n {
     flex: 0 0 auto; min-width: 2.1rem; height: 2.1rem; border-radius: 999px;
     display: inline-flex; align-items: center; justify-content: center;
@@ -986,10 +1055,11 @@
 
   .toca-fila {
     display: flex; gap: .8rem; align-items: center; flex-wrap: wrap;
-    padding: .8rem .85rem; border-radius: var(--radio-chico);
-    background: var(--p-sup); border: 1px solid var(--p-borde);
+    padding: .95rem 1.05rem; border-radius: var(--radio);
+    background: var(--p-tarj); border: 1px solid var(--p-borde);
+    box-shadow: var(--p-alza);
   }
-  .toca-fila + .toca-fila { margin-top: .55rem; }
+  .toca-fila + .toca-fila { margin-top: .6rem; }
   .toca-fila[data-ir] { cursor: pointer; }
   .toca-fila[data-ir]:hover { background: var(--p-sup2); border-color: var(--p-linea); }
   .toca-quien { flex: 1 1 11rem; min-width: 0; }
@@ -1253,17 +1323,7 @@
        cuatro cifras dejarían de compararse entre sí de un vistazo. */
     .cifra-n { font-size: 1.45rem; letter-spacing: -.03em; }
     .cifra { padding: .85rem .9rem .95rem; }
-    .filtros { gap: .6rem; }
-    /* El filtro a todo el ancho y las dos fechas a mitad cada una. Con
-       el `flex-basis` de escritorio, "Desde" arrancaba a los 224px y se
-       salía de la pantalla por el borde derecho. */
-    .filtros .f-busca { flex: 1 1 100%; max-width: none; }
-    .filtros .f { flex: 1 1 7rem; min-width: 0; }
-    .filtros .f input, .filtros .f select { width: 100%; }
-    /* El CSV no se estira: en el teléfono casi nadie descarga una hoja
-       de cálculo, y un botón a todo el ancho promete que sí. */
-    .filtros .empuje { margin-left: auto; }
-    .filtros .f { min-width: 0; }
+    .filtros .f-busca { max-width: none; }
     .aro { width: 150px; height: 150px; }
 
     /* ---------- Hoy, en la mano ----------
@@ -1532,32 +1592,38 @@
     <div class="vista" id="vista-hoy">
       <p class="estado-linea" id="estado-hoy" role="status" aria-live="polite"></p>
 
-      <!-- Lo primero que hay que hacer hoy. El panel deja de ser una
-           pantalla donde uno mira números y pasa a decir qué sigue. -->
-      <div class="tarj" id="tarj-atencion" data-punto="mal" hidden>
-        <div class="tarj-h">
+      <!-- Sin tarjeta de afuera.
+           Cada aviso y cada pendiente YA es una tarjeta. Meterlos dentro
+           de otra sumaba dos bordes y cuatro rellenos en 375px: el texto
+           se quedaba con la mitad del ancho y todo se veía apretado.
+
+           El título pasa a ser un rótulo sobre el papel, no el encabezado
+           de una caja. Es lo mismo que hace una libreta: la sección se
+           nombra, no se enmarca. -->
+      <section id="tarj-atencion" data-punto="mal" hidden>
+        <div class="seccion-h">
           <h2>Requiere atención</h2>
-          <span class="meta cuenta siempre" id="atencion-n"></span>
+          <span class="cuenta" id="atencion-n"></span>
         </div>
         <div id="atencion" class="escalona"></div>
-      </div>
+      </section>
 
       <div class="rejilla dos">
-        <div class="tarj" id="tarj-cola" data-punto>
-          <div class="tarj-h">
+        <section id="tarj-cola" data-punto>
+          <div class="seccion-h">
             <h2>Pendientes</h2>
-            <span class="meta cuenta siempre" id="cola-n"></span>
+            <span class="cuenta" id="cola-n"></span>
           </div>
           <div id="cola" class="escalona"></div>
-        </div>
+        </section>
 
-        <div class="tarj" data-punto="dato">
-          <div class="tarj-h">
+        <section data-punto="dato">
+          <div class="seccion-h">
             <h2>Próximos servicios</h2>
-            <span class="meta cuenta siempre" id="proximos-n"></span>
+            <span class="cuenta" id="proximos-n"></span>
           </div>
           <div id="proximos" class="escalona"></div>
-        </div>
+        </section>
       </div>
 
     </div>
@@ -1645,20 +1711,34 @@
            embudo?" antes de que uno tenga que abrir ninguna. -->
       <div class="pest-est" id="pest-est" role="tablist" aria-label="Filtrar por estado"></div>
 
+      <!-- Un solo renglón: buscar, y dos botones de icono. Las dos
+           casillas de fecha con sus dos etiquetas ocupaban dos renglones
+           enteros arriba de la lista, y se usan una vez cada tanto. Se
+           abren aparte, igual que en el Resumen. -->
       <div class="filtros">
-        <div class="f f-busca">
-          <!-- Se llama distinto que el buscador de arriba a propósito:
-               son dos cajas parecidas a 20cm de distancia y hacen cosas
-               distintas — una filtra lo que ya está en pantalla, la
-               otra busca en todo el panel. -->
-          <label for="l-busca">Filtrar esta lista</label>
-          <input type="search" id="l-busca" placeholder="Nombre, teléfono, cédula o número">
+        <div class="buscador f-busca">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>
+          </svg>
+          <input type="search" id="l-busca" placeholder="Filtrar esta lista"
+                 aria-label="Filtrar esta lista por nombre, teléfono, cédula o número">
         </div>
-        <div class="f"><label for="desde">Desde</label><input type="date" id="desde"></div>
-        <div class="f"><label for="hasta">Hasta</label><input type="date" id="hasta"></div>
-        <span class="empuje">
-          <button class="btn-suave" type="button" id="btn-csv">Descargar CSV</button>
-        </span>
+        <button type="button" class="rueda" id="btn-fechas-lista" aria-expanded="false"
+                title="Filtrar por fechas" aria-label="Filtrar por fechas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/>
+          </svg>
+          <i class="punto" id="punto-fechas" hidden aria-hidden="true"></i>
+        </button>
+        <button type="button" class="rueda" id="btn-csv" title="Descargar CSV" aria-label="Descargar CSV">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="rango-fechas" id="fechas-lista" hidden>
+        <span class="f"><label for="desde">Desde</label><input type="date" id="desde"></span>
+        <span class="f"><label for="hasta">Hasta</label><input type="date" id="hasta"></span>
       </div>
 
       <div class="aplicado" id="aplicado" hidden></div>
@@ -2144,7 +2224,11 @@
      tarjetas de distinto alto y hacía que el ojo tuviera que bajar hasta
      el pie para saber si la cifra venía subiendo. */
   function cifra(o) {
-    return '<button type="button" class="cifra' + (o.urge ? " urge" : "") + '"' +
+    /* `tono` le pone color propio al icono y al filo de arriba. Las
+        cuatro cifras con el mismo naranja se leían como una sola cosa
+        repetida; con color se distinguen antes de leer la etiqueta. */
+    return '<button type="button" class="cifra' + (o.urge ? " urge" : "") +
+      (o.tono ? " t-" + o.tono : "") + '"' +
       (o.ir ? " data-ir='" + escHtml(JSON.stringify(o.ir)) + "'" : "") + ">" +
       '<div class="cifra-top"><span class="cifra-chip">' + o.icono + "</span>" +
         (o.p || "") + "</div>" +
@@ -2217,17 +2301,17 @@
     /* El orden es el del trabajo real: entra una solicitud, se cotiza,
        queda algo sin atender, y al final se cobra. Estaba al revés. */
     $("cifras").innerHTML = [
-      cifra({ icono: ICO.bandeja, n: String(d.rango.sol), bruto: d.rango.sol, t: "Solicitudes",
+      cifra({ icono: ICO.bandeja, n: String(d.rango.sol), bruto: d.rango.sol, t: "Solicitudes", tono: "dato",
         p: delta(d.variacion.sol),
         ir: { vista: "solicitudes", desde: d.desde, hasta: d.hasta },
         chispa: d.serie.map(function (f) { return f.sol; }), color: "var(--p-dato2)" }),
 
-      cifra({ icono: ICO.doc, n: String(d.rango.cot), bruto: d.rango.cot, t: "Cotizaciones",
+      cifra({ icono: ICO.doc, n: String(d.rango.cot), bruto: d.rango.cot, t: "Cotizaciones", tono: "marca",
         p: delta(d.variacion.cot),
         ir: { vista: "cotizaciones", desde: d.desde, hasta: d.hasta },
         chispa: d.serie.map(function (f) { return f.cot; }), color: "var(--p-dato1)" }),
 
-      cifra({ icono: ICO.alerta, n: String(esperando), bruto: esperando, t: "Sin atender",
+      cifra({ icono: ICO.alerta, n: String(esperando), bruto: esperando, t: "Sin atender", tono: "espera",
         p: esperando ? '<span class="delta espera" title="Lo que más lleva esperando">' +
                        escHtml(espera(d.esperaMax)) + "</span>" : "",
         urge: esperando > 0, ir: { vista: "cotizaciones", estado: "nueva" } }),
@@ -2238,7 +2322,7 @@
       /* Sin pie cuando no hay nada: el cero ya dice que no hay trabajos
          anotados, y explicarlo con una frase era el renglón suelto más
          largo de la pantalla. */
-      cifra({ icono: ICO.cartera, n: colones(d.ingresos.monto),
+      cifra({ icono: ICO.cartera, n: colones(d.ingresos.monto), tono: "ok",
         bruto: d.ingresos.monto, colones: true, t: "Cobrado",
         p: d.ingresos.trabajos ? delta(d.variacion.ing) : "",
         pie: d.ingresos.trabajos
@@ -2372,7 +2456,15 @@
         '<div class="cola-nom"><b>' + escHtml(p.nombre) + "</b>" +
           '<span class="delta ' + (p.horas >= 24 ? "baja" : "espera") + '">' +
             escHtml(espera(p.horas)) + "</span></div>" +
-        '<div class="cola-det"><span class="ref">' + escHtml(p.titulo) + "</span>" +
+        /* La ficha del número es un atajo: lleva a esa lista con ese
+           registro ya filtrado. Es lo que pidió el propietario — que el
+           aviso traiga adentro el camino a donde se atiende, y no haya
+           que acordarse de a cuál pantalla ir. */
+        '<div class="cola-det"><button type="button" class="ref" data-ir=\'' +
+          escHtml(JSON.stringify(p.tabla === "cotizaciones"
+            ? { vista: "cotizaciones", buscar: p.titulo }
+            : { vista: "solicitudes", estado: "nueva" })) + "'>" +
+          escHtml(p.titulo) + "</button>" +
           (det ? "<span>" + escHtml(det) + "</span>" : "") + "</div>" +
         '<div class="cola-acc">' + acc.join("") + "</div>" +
       "</div>";
@@ -2545,6 +2637,14 @@
   }
   $("btn-fechas").addEventListener("click", function () {
     verFechas($("rango-fechas").hidden);
+  });
+
+  function verFechasLista(abrir) {
+    $("fechas-lista").hidden = !abrir;
+    $("btn-fechas-lista").setAttribute("aria-expanded", String(abrir));
+  }
+  $("btn-fechas-lista").addEventListener("click", function () {
+    verFechasLista($("fechas-lista").hidden);
   });
 
   $("presets").addEventListener("click", function (e) {
@@ -2728,10 +2828,17 @@
     cargarTabla();
   });
 
+  function marcarFechasLista() {
+    var hay = !!(filtro.desde || filtro.hasta);
+    $("punto-fechas").hidden = !hay;
+    if (hay) verFechasLista(true);
+  }
+
   function sincronizarControles() {
     $("desde").value = filtro.desde;
     $("hasta").value = filtro.hasta;
     $("l-busca").value = filtro.buscar;
+    marcarFechasLista();
   }
 
   function pintarPaginacion(d) {
@@ -3598,7 +3705,6 @@
      memoria la próxima vez. */
   function verCliente(id) {
     vista = "cliente";
-    $("top-donde").textContent = "Cliente";
     $("titulo-vista").textContent = "Cliente";
     Array.prototype.forEach.call(document.querySelectorAll(".barra nav button"), function (b) {
       b.setAttribute("aria-selected", String(b.dataset.vista === "clientes"));
@@ -3875,8 +3981,11 @@
 
   function pintarAgendaCifras(d) {
     var r = d.resumen;
-    function t(icono, n, etq, pie, urge, filtro) {
+    // Los mismos cuatro colores que en el Resumen: la fila se lee como
+    // cuatro cosas distintas y no como una repetida cuatro veces.
+    function t(icono, n, etq, pie, urge, filtro, tono) {
       return '<button type="button" class="cifra' + (urge ? " urge" : "") +
+        (tono ? " t-" + tono : "") +
         '" data-agenda="' + filtro + '">' +
         '<span class="cifra-chip">' + icono + "</span>" +
         '<div class="cifra-n">' + n + "</div>" +
@@ -3887,9 +3996,9 @@
       /* Sin pies. "Vencidos / ya pasó la fecha" y "Sin recordatorio / no
          se les escribe" decían dos veces lo mismo, y el renglón de
          abajo era el que no aportaba. La etiqueta se explica sola. */
-      t(ICO.alerta, r.vencidos, "Vencidos", "", r.vencidos > 0, "vencidos") +
-      t(ICO.dia, r.mes, "Este mes", "", false, "pronto") +
-      t(ICO.sube, r.trimestre, "Próximos 90 días", "", false, "trimestre") +
+      t(ICO.alerta, r.vencidos, "Vencidos", "", r.vencidos > 0, "vencidos", "mal") +
+      t(ICO.dia, r.mes, "Este mes", "", false, "pronto", "espera") +
+      t(ICO.sube, r.trimestre, "Próximos 90 días", "", false, "trimestre", "dato") +
       t(ICO.silencio, r.apagados, "Sin recordatorio", "", false, "apagados");
   }
 
@@ -4238,7 +4347,10 @@
     /* El renglón chico dice siempre el día. El grande saluda en Hoy y
        nombra la pantalla en las demás: un "Buenos días" en la lista de
        cotizaciones sería ruido, ahí uno vino a trabajar. */
-    $("top-donde").textContent = nueva === "hoy" ? fechaDeHoy() : (NOMBRE_VISTA[nueva] || "Panel");
+    /* El renglón chico dice siempre el día. Decía el nombre de la
+       pantalla y el titular de abajo lo repetía: "Solicitudes" encima de
+       "Solicitudes", dos veces lo mismo con dos cuerpos distintos. */
+    $("top-donde").textContent = fechaDeHoy();
     $("titulo-vista").textContent = nueva === "hoy"
       ? saludo() + ", Leitón"
       : (NOMBRE_VISTA[nueva] || "Panel");
@@ -4282,6 +4394,7 @@
       filtro.desde = $("desde").value;
       filtro.hasta = $("hasta").value;
       pagina = 1;
+      marcarFechasLista();
       cargarTabla();
     });
   });
