@@ -1801,3 +1801,54 @@ tres píxeles arriba y el icono a juego. Solicitudes en azul, Cotizaciones
 en el naranja de marca, Sin atender en ámbar, Cobrado en verde. Las cuatro
 con el mismo naranja se leían como una sola cosa repetida cuatro veces.
 Lo mismo en los cuatro conteos de la Agenda.
+
+## 35. El panel como centro de control (2026-09-11)
+
+Byron: que el panel sirva para **todo** lo que entra, no sólo para lo que
+pasó por el sitio. El que llama, pregunta el precio, se le hace el trabajo
+y se le cobra tiene que quedar registrado igual.
+
+**Eso ya existía** (§ *Anotar un trabajo*), pero le faltaba la pieza que lo
+volvía útil a fin de mes: **la zona**. La hoja pedía señas en texto libre y
+ninguna provincia, así que un trabajo anotado a mano no aparecía en el
+desglose de dónde se está trabajando. El conteo quedaba mintiendo. Ahora la
+hoja pide provincia y cantón.
+
+**Y los desgloses cambiaron de fuente.** "Servicios" y "Ubicaciones" salían
+de las **cotizaciones emitidas**; ahora salen de los **trabajos hechos** y
+se llaman *"Qué se hizo"* y *"Dónde se trabajó"*. La pregunta de fin de mes
+es "qué hice y para dónde fui", y una cotización que nunca se convirtió en
+trabajo contestaba que no. De paso, así entran los trabajos anotados a mano,
+que no tienen cotización y no aparecían en ningún desglose.
+
+Los dos desgloses llevan ahora a **Clientes con ese filtro puesto**, no a la
+lista de cotizaciones: hablan de trabajo hecho, y el trabajo hecho vive en
+el cliente.
+
+### Clientes: ordenar y filtrar
+
+*"¿La alerta de mantenimiento va disminuyendo?"* Sí, siempre lo hizo: se
+calcula contra el día de hoy cada vez que se pinta. Tres meses pasa a dos,
+a 25 días, a 3 días, a "Venció hace 2 días". Lo que **no** funcionaba era
+otra cosa, y era peor: `proximo` sólo tomaba fechas futuras, así que **a
+quien ya se le había pasado la fecha le quedaba en blanco**. El que hay que
+ver de primero desaparecía de los avisos. Ahora sale del último trabajo,
+esté vencido o no, igual que en la Agenda.
+
+**Tres órdenes**, y cada uno contesta una pregunta distinta:
+
+| Orden | Contesta |
+|---|---|
+| Le toca | ¿a quién hay que escribirle ya? — lo vencido de primero |
+| Reciente | ¿qué acabo de hacer? |
+| Nombre | ¿dónde está fulano? |
+
+De entrada manda **Le toca**: alfabético es el único orden que no sirve
+para trabajar.
+
+**Filtros de zona y de servicio**, y sus listas salen de lo que hay en la
+base, con el conteo al lado. Ofrecer "Limón" cuando no hay un solo cliente
+en Limón es ofrecer una lista vacía.
+
+Y el **servicio aparece como pastilla en la tarjeta**: es por lo que se
+filtra, así que tiene que verse sin abrir la ficha.

@@ -81,6 +81,9 @@ La misma pantalla con dos fuentes.
 Quien ya tuvo un trabajo hecho.
 
 - Buscar por nombre, teléfono o cédula.
+- **Ordenar:** *Le toca* (lo vencido primero) · *Reciente* (último trabajo
+  primero) · *Nombre*.
+- **Filtrar** por zona y por servicio.
 - Por tarjeta: cuándo le toca el mantenimiento, cuántos trabajos lleva, el
   último, dónde queda, y **WhatsApp / Llamar** sin abrir la ficha.
 
@@ -188,6 +191,8 @@ Para marcar encima:
 - **No agenda el camión.** La Agenda dice a quién le toca, no qué se hace
   mañana ni con cuál camión.
 - **No registra gastos.** "Cobrado" suma lo que entró; no hay salidas.
+- **No compara meses.** El Resumen compara contra el periodo anterior, pero
+  no hay una vista de "enero contra febrero contra marzo".
 - ~~No manda los recordatorios solo~~ · **a medias:** los de **correo**
   salen solos todos los días a las 7 a.m. Los de **WhatsApp** siguen a
   mano desde la Agenda: mandar un WhatsApp automático necesita la API de

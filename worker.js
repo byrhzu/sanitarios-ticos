@@ -779,10 +779,18 @@ async function resumenPanel(request, env) {
          FROM cotizaciones WHERE estado = 'nueva' ORDER BY creado ASC LIMIT 15`),
       q(`SELECT id, nombre, telefono, servicio, zona, ${dia} AS d, ${espera}
          FROM solicitudes WHERE estado = 'nueva' ORDER BY creado ASC LIMIT 15`),
-      // 6 · qué se cotiza
-      q(`SELECT servicio AS k, COUNT(*) AS n FROM cotizaciones WHERE ${enRango} GROUP BY k ORDER BY n DESC`, R),
-      // 7 · dónde queda: esto dice para dónde van los camiones
-      q(`SELECT COALESCE(provincia, '—') AS k, COUNT(*) AS n FROM cotizaciones WHERE ${enRango} GROUP BY k ORDER BY n DESC`, R),
+      /* 6 y 7 · qué se HIZO y DÓNDE se hizo. Salen de los trabajos
+             anotados, no de las cotizaciones emitidas. La pregunta de fin
+             de mes es "qué hice y para dónde fui", y una cotización que
+             nunca se convirtió en trabajo contestaba que no.
+
+             Además así entran los trabajos anotados a mano, que no
+             tienen cotización y antes no aparecían en ningún desglose. */
+      q(`SELECT servicio AS k, COUNT(*) AS n, COALESCE(SUM(monto), 0) AS m
+         FROM servicios WHERE fecha BETWEEN ? AND ? GROUP BY k ORDER BY n DESC`, R),
+      q(`SELECT COALESCE(NULLIF(c.provincia, ''), '—') AS k, COUNT(*) AS n
+         FROM servicios s JOIN clientes c ON c.id = s.cliente_id
+         WHERE s.fecha BETWEEN ? AND ? GROUP BY k ORDER BY n DESC`, R),
       // 8 · por dónde entró: dice si Frank está sirviendo
       q(`SELECT COALESCE(origen, 'beto') AS k, COUNT(*) AS n FROM cotizaciones WHERE ${enRango} GROUP BY k ORDER BY n DESC`, R),
       /* 9 · el monto que sigue vivo. También sin filtro de fecha: es
@@ -968,7 +976,9 @@ async function resumenPanel(request, env) {
       pendientes,
       abierto: { min: abierto.smin || 0, max: abierto.smax || 0 },
       embudo: { cotizaciones: estCot, solicitudes: estSol },
-      servicios:  filas(6).map((f) => ({ id: f.k, k: etiqueta(f.k, null, "servicio"), n: f.n })),
+      servicios:  filas(6).map((f) => ({
+        id: f.k, k: etiqueta(f.k, null, "servicio"), n: f.n, monto: f.m || 0
+      })),
       provincias: filas(7).map((f) => ({ id: f.k, k: f.k, n: f.n })),
       origenes:   filas(8).map((f) => ({ k: ORIGENES[f.k] || f.k, n: f.n })),
       estados: ESTADOS
@@ -1154,38 +1164,94 @@ async function listaClientes(request, env) {
 
   const url = new URL(request.url);
   const busca = texto(url.searchParams.get("q"), 60);
+  const provincia = texto(url.searchParams.get("provincia"), 40);
+  const servicio = texto(url.searchParams.get("servicio"), 40);
   const pedida = parseInt(url.searchParams.get("pagina"), 10);
   const pagina = Number.isFinite(pedida) && pedida > 0 ? pedida : 1;
 
-  const donde = busca ? `WHERE c.nombre LIKE ?1 OR c.telefono LIKE ?1 OR c.cedula LIKE ?1` : "";
-  const val = busca ? ["%" + busca + "%"] : [];
+  /* Tres formas de ordenar, y cada una contesta una pregunta distinta:
+       nombre    ¿dónde está fulano?
+       pronto    ¿a quién le toca ya?      — lo vencido primero
+       reciente  ¿qué acabo de hacer?      — el último trabajo primero
+     Sin esto la lista salía siempre alfabética, que es el único orden
+     que no sirve para trabajar. */
+  const ORDENES = {
+    nombre:   "(c.nombre IS NULL), c.nombre",
+    pronto:   "(proximo IS NULL), proximo ASC",
+    reciente: "(ultimo IS NULL), ultimo DESC"
+  };
+  const pedidoOrden = url.searchParams.get("orden");
+  const orden = Object.prototype.hasOwnProperty.call(ORDENES, pedidoOrden) ? pedidoOrden : "nombre";
+
+  const cond = [];
+  const val = [];
+  if (busca) {
+    cond.push("(c.nombre LIKE ? OR c.telefono LIKE ? OR c.cedula LIKE ?)");
+    val.push("%" + busca + "%", "%" + busca + "%", "%" + busca + "%");
+  }
+  if (provincia) { cond.push("c.provincia = ?"); val.push(provincia); }
+  if (servicio) {
+    cond.push("EXISTS (SELECT 1 FROM servicios sx WHERE sx.cliente_id = c.id AND sx.servicio = ?)");
+    val.push(servicio);
+  }
+  const donde = cond.length ? "WHERE " + cond.join(" AND ") : "";
 
   try {
     const total = await env.DB.prepare(`SELECT COUNT(*) AS n FROM clientes c ${donde}`)
       .bind(...val).first();
 
+    /* `proximo` sale del ÚLTIMO trabajo, esté vencido o no. Antes sólo
+       tomaba fechas futuras, así que a quien ya se le pasó le quedaba en
+       blanco: justo el que hay que ver de primero desaparecía de la
+       lista de avisos. Es la misma regla que usa la Agenda. */
     const { results } = await env.DB.prepare(
       `SELECT c.id, c.nombre, c.telefono, c.correo, c.provincia, c.canton, c.distrito,
               c.recordatorio, c.canal, c.meses,
               COUNT(s.id) AS trabajos,
               MAX(s.fecha) AS ultimo,
-              MIN(CASE WHEN s.proximo >= date('now','-6 hours') THEN s.proximo END) AS proximo
+              (SELECT s2.proximo FROM servicios s2 WHERE s2.cliente_id = c.id
+                ORDER BY s2.fecha DESC, s2.id DESC LIMIT 1) AS proximo,
+              (SELECT s3.servicio FROM servicios s3 WHERE s3.cliente_id = c.id
+                ORDER BY s3.fecha DESC, s3.id DESC LIMIT 1) AS servicio
        FROM clientes c LEFT JOIN servicios s ON s.cliente_id = c.id
        ${donde}
        GROUP BY c.id
-       ORDER BY (c.nombre IS NULL), c.nombre
-       LIMIT ?${val.length + 1} OFFSET ?${val.length + 2}`
+       ORDER BY ${ORDENES[orden]}
+       LIMIT ? OFFSET ?`
     ).bind(...val, POR_PAGINA, (pagina - 1) * POR_PAGINA).all();
+
+    /* Las listas de los filtros salen de lo que hay, no de un catálogo:
+       ofrecer "Limón" cuando no hay un solo cliente en Limón es ofrecer
+       una lista vacía. */
+    const provincias = ((await env.DB.prepare(
+      `SELECT provincia AS k, COUNT(*) AS n FROM clientes
+        WHERE provincia IS NOT NULL AND provincia <> ''
+        GROUP BY k ORDER BY k`
+    ).all()).results) || [];
+
+    const servicios = ((await env.DB.prepare(
+      `SELECT servicio AS k, COUNT(*) AS n FROM servicios
+        WHERE servicio IS NOT NULL AND servicio <> ''
+        GROUP BY k ORDER BY n DESC`
+    ).all()).results) || [];
 
     return json({
       ok: true,
       clientes: results.map((c) => Object.assign({}, c, {
+        servicioNombre: c.servicio ? etiqueta(c.servicio, null, "servicio") : null,
         wa: waDe(c.telefono, "Buenas" + (c.nombre ? " " + primerNombre(c.nombre) : "") +
                              ", le escribo de Sanitarios Ticos.")
       })),
       total: total ? total.n : 0,
       pagina, porPagina: POR_PAGINA,
       paginas: Math.max(1, Math.ceil((total ? total.n : 0) / POR_PAGINA)),
+      orden,
+      filtros: {
+        provincias: provincias.map((f) => ({ id: f.k, etiqueta: f.k, n: f.n })),
+        servicios: servicios.map((f) => ({
+          id: f.k, etiqueta: etiqueta(f.k, null, "servicio"), n: f.n
+        }))
+      },
       canales: CANALES,
       periodos: PERIODOS
     });
