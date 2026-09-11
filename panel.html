@@ -30,7 +30,7 @@
 <meta name="theme-color" content="#10171b" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="styles.css?v=20260910f">
 <style>
   /* =========================================================
@@ -71,9 +71,18 @@
      grandes sin volverse simpática, que es lo que se le pide a un saludo
      y a un número de seis dígitos. Archivo sigue sin entrar acá: es tipo
      de cartel y esta es una herramienta (§14). */
+  /* Poppins en todo: es la geométrica redonda de la referencia que mandó
+     Byron, y es la que le da el aire de aplicación y no de hoja de
+     cálculo. Inter se queda sólo para los números de las tablas, donde
+     el ancho fijo importa más que el carácter. */
   :root {
-    --sans:    "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --display: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif;
+    --sans:    "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --display: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --datos:   "Inter", system-ui, -apple-system, sans-serif;
+  }
+  .lista, .lista td, .lista th, .hist, .cifra-n, .ficha-monto, .hecha-rango,
+  .ref, .cal, .delta, .cli-top .tel {
+    font-family: var(--datos);
   }
   .panel, .clave-pantalla { font-family: var(--sans); }
   /* Los números en las cifras y las tablas van de ancho fijo: si no,
@@ -84,22 +93,27 @@
   /* Claro: el papel tibio del sitio. Oscuro: el mismo slate de la
      carrocería bajado a tres escalones, como Linear usa sus tres
      negros. No es el claro invertido — está escogido aparte. */
+  /* Claro: blanco y naranja. La referencia es blanco con morado; el
+     morado lo toma el naranja del camión. El papel tibio de antes sale
+     de escena: con tarjetas blancas sobre papel tibio no hay contraste
+     de superficie, y toda la referencia se sostiene justo en eso —
+     blanco limpio con tarjetas blancas separadas sólo por la sombra. */
   :root {
-    --p-fondo:   #f3ece2;
-    --p-sup:     #faf7f2;
-    --p-sup2:    #e9dfd1;
-    --p-txt:     #1b1917;
-    --p-txt2:    #3c3630;
-    --p-tenue:   #6b6259;
-    --p-linea:   rgba(27,25,23,.08);
-    --p-barra:   #1f2c33;
-    --p-barra-t: #faf7f2;
+    --p-fondo:   #ffffff;
+    --p-sup:     #fbf7f4;
+    --p-sup2:    #f4eeea;
+    --p-txt:     #17161a;
+    --p-txt2:    #403c44;
+    --p-tenue:   #8a8592;
+    --p-linea:   rgba(23,22,26,.07);
+    --p-barra:   #fff2e9;
+    --p-barra-t: #17161a;
     --p-acento:  #ef6511;
-    --p-acento-t:#b34c0d;
+    --p-acento-t:#c4500b;
     --p-suave:   rgba(239,101,17,.10);
     --p-dato1:   #ef6511;
     --p-dato2:   #3a6ea5;
-    --p-sombra:  0 1px 2px rgba(27,25,23,.04);
+    --p-sombra:  0 1px 2px rgba(23,22,26,.04);
 
     /* Estados. Cinco significados, un color cada uno, iguales en toda
        la aplicación. Se miden: cada texto pasa 4.5:1 sobre su propia
@@ -124,24 +138,27 @@
        igual que la otra. */
     --e1: .25rem; --e2: .5rem; --e3: .75rem; --e4: 1rem; --e5: 1.5rem; --e6: 2rem;
   }
+  /* Oscuro: azul medianoche mate. Mate quiere decir sin brillo y sin
+     azul eléctrico — un azul desaturado que se lee como tinta, no como
+     pantalla de cine. */
   :root[data-tema="oscuro"] {
-    --p-fondo:   #10171b;
-    --p-sup:     #1a242a;
-    --p-sup2:    #24313a;
-    --p-txt:     #eef2f4;
-    --p-txt2:    #c3ced4;
-    --p-tenue:   #909ea6;
-    --p-linea:   rgba(255,255,255,.08);
-    --p-barra:   #0c1216;
-    --p-barra-t: #eef2f4;
+    --p-fondo:   #0e1524;
+    --p-sup:     #182234;
+    --p-sup2:    #212d42;
+    --p-txt:     #f3f6fb;
+    --p-txt2:    #ccd5e4;
+    --p-tenue:   #8d9ab3;
+    --p-linea:   rgba(255,255,255,.09);
+    --p-barra:   #182234;
+    --p-barra-t: #f3f6fb;
     --p-acento:  #ff7a2b;
     --p-acento-t:#ff9254;
     --p-suave:   rgba(255,122,43,.14);
     /* Medidos con el validador contra la superficie oscura: el naranja
        de marca se sale de la banda de luminosidad del modo oscuro por
        un punto, así que la serie usa el corrimiento que sí entra. */
-    --p-dato1:   #ec6618;
-    --p-dato2:   #5990cf;
+    --p-dato1:   #ff7a2b;
+    --p-dato2:   #6f9fe0;
     --p-sombra:  0 1px 2px rgba(0,0,0,.3);
 
     /* Los mismos cinco estados, escogidos aparte para el fondo oscuro
@@ -183,12 +200,16 @@
        naranja muy tenue arriba a la derecha —la marca, presente sin
        gritar— y una sombra fría abajo a la izquierda que le da peso.
        Las dos a menos del 13%: se sienten antes de verse. */
+    /* Blanco, con dos manchas de color tan tenues que no se nombran:
+       naranja arriba a la derecha y un durazno abajo a la izquierda.
+       Es lo que hace la referencia con el lila, y es lo que impide que
+       un fondo blanco se lea como una hoja en blanco. */
     --p-lienzo:
-      radial-gradient(90% 55% at 88% -8%, rgba(239,101,17,.13) 0%, rgba(239,101,17,0) 62%),
-      radial-gradient(75% 50% at 4% 104%, rgba(31,44,51,.075) 0%, rgba(31,44,51,0) 58%),
-      linear-gradient(178deg, #fdfaf6 0%, #f6eee4 46%, #efe4d6 100%);
-    --p-tarj:   #fffdfa;
-    --p-borde:  rgba(27,25,23,.055);
+      radial-gradient(70% 45% at 92% -5%, rgba(239,101,17,.10) 0%, rgba(239,101,17,0) 60%),
+      radial-gradient(60% 40% at 2% 100%, rgba(255,150,80,.09) 0%, rgba(255,150,80,0) 58%),
+      #ffffff;
+    --p-tarj:   #ffffff;
+    --p-borde:  rgba(23,22,26,.05);
     /* Dos sombras: una de 1px que apoya la tarjeta en el papel y otra
        larga y muy abierta que la levanta. La segunda es la que da el
        efecto de la referencia; sola se ve sucia, sola la primera se ve
@@ -202,11 +223,11 @@
        se lea como un gris muerto. En oscuro se pueden subir un punto:
        la luz sobre fondo negro se ve menos de lo que mide. */
     --p-lienzo:
-      radial-gradient(85% 55% at 86% -6%, rgba(255,122,43,.17) 0%, rgba(255,122,43,0) 60%),
-      radial-gradient(70% 50% at 0% 102%, rgba(90,150,230,.11) 0%, rgba(90,150,230,0) 56%),
-      linear-gradient(178deg, #141e26 0%, #0f171d 50%, #0a0f13 100%);
-    --p-tarj:   #1b262d;
-    --p-borde:  rgba(255,255,255,.06);
+      radial-gradient(75% 45% at 90% -5%, rgba(255,122,43,.16) 0%, rgba(255,122,43,0) 58%),
+      radial-gradient(65% 45% at 0% 100%, rgba(90,140,225,.13) 0%, rgba(90,140,225,0) 56%),
+      linear-gradient(180deg, #111a2b 0%, #0e1524 55%, #0b1120 100%);
+    --p-tarj:   #182234;
+    --p-borde:  rgba(255,255,255,.07);
     --p-alza:   0 1px 2px rgba(0,0,0,.28), 0 12px 30px -16px rgba(0,0,0,.7);
     --p-alza2:  0 3px 8px rgba(0,0,0,.35), 0 20px 44px -20px rgba(0,0,0,.8);
   }
@@ -247,20 +268,53 @@
      como lo hacen los tableros de plantilla y es lo que el propietario
      ya señaló dos veces como tipografía de máquina. */
   .barra nav .grupo-nav {
-    color: rgba(238,242,244,.38); font-size: .74rem; font-weight: 500;
+    color: color-mix(in srgb, var(--p-barra-t) 42%, transparent);
+    font-size: .74rem; font-weight: 500;
     padding: 1.1rem .65rem .35rem;
   }
+  /* Los colores de la barra salen de `--p-barra-t` y no de un blanco
+     escrito a mano: en claro la barra es durazno y en oscuro es azul
+     medianoche, y el texto tiene que seguir a su fondo. */
   .barra nav button {
     display: flex; align-items: center; gap: .7rem; width: 100%;
-    padding: .6rem .65rem; border-radius: 8px;
-    color: rgba(238,242,244,.6); font-weight: 400; text-align: left;
+    padding: .6rem .65rem; border-radius: 10px;
+    color: color-mix(in srgb, var(--p-barra-t) 62%, transparent);
+    font-weight: 500; text-align: left;
     transition: background .15s var(--ease), color .15s var(--ease);
   }
   .barra nav button svg { width: 18px; height: 18px; flex: 0 0 18px; }
-  .barra nav button:hover { color: #fff; background: rgba(255,255,255,.06); }
-  .barra nav button[aria-selected="true"] { color: #fff; background: rgba(255,255,255,.1); font-weight: 500; }
+  .barra nav button:hover { color: var(--p-barra-t); background: color-mix(in srgb, var(--p-barra-t) 8%, transparent); }
+  .barra nav button[aria-selected="true"] { color: var(--p-acento-t); background: color-mix(in srgb, var(--p-acento) 12%, transparent); font-weight: 600; }
   /* El único naranja de la barra: marca dónde está uno y nada más. */
   .barra nav button[aria-selected="true"] svg { color: var(--p-acento); }
+
+  /* El botón redondo. En escritorio la barra es lateral, así que vuelve
+     a ser un botón con su nombre debajo del logo; el hueco del centro
+     desaparece. */
+  .fab {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    background: var(--p-acento); color: #fff; font-weight: 600;
+    transition: transform .15s var(--ease), box-shadow .15s var(--ease);
+  }
+  .fab svg { width: 20px; height: 20px; }
+  .fab:hover { box-shadow: 0 8px 22px -6px rgba(239,101,17,.7); }
+  .fab:active { transform: scale(.94); }
+  .hueco-fab { display: none; }
+
+  @media (min-width: 860px) {
+    .fab { width: calc(100% - 1.4rem); margin: 0 .7rem 1rem; padding: .7rem 1rem; border-radius: 14px; }
+  }
+  @media (max-width: 859px) {
+    .fab {
+      position: absolute; left: 50%; top: 0; z-index: 2;
+      width: 56px; height: 56px; padding: 0; border-radius: 50%;
+      transform: translate(-50%, -46%);
+      box-shadow: 0 10px 24px -6px rgba(239,101,17,.55), 0 2px 6px rgba(0,0,0,.2);
+    }
+    .fab .largo { display: none; }
+    .fab:active { transform: translate(-50%, -46%) scale(.94); }
+    .hueco-fab { display: block; flex: 0 0 58px; }
+  }
 
   .barra .pendiente {
     margin-left: auto; background: var(--p-acento); color: #fff;
@@ -276,7 +330,7 @@
   }
   .barra-pie .quien { min-width: 0; }
   .barra-pie .quien b { display: block; font-weight: 500; font-size: .82rem; }
-  .barra-pie .quien small { color: rgba(238,242,244,.45); font-size: .74rem; }
+  .barra-pie .quien small { color: color-mix(in srgb, var(--p-barra-t) 52%, transparent); font-size: .74rem; }
   .barra-pie img { height: 26px; width: auto; border-radius: 6px; }
 
   .lienzo { flex: 1; min-width: 0; padding: 1.5rem clamp(1rem, 2.2vw, 1.9rem) 4rem; }
@@ -285,10 +339,16 @@
        dónde estoy y quién soy · el título · buscar y crear.  */
   .lienzo-top { margin-bottom: var(--e5); }
   .top-fila { display: flex; align-items: center; gap: var(--e2); }
-  .top-donde {
-    color: var(--p-tenue); font-size: .8rem; font-weight: 500;
-    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  /* El saludo de la referencia: "¡Hola!" chiquito y el nombre debajo,
+     al lado del avatar. Ocupa el mismo alto que tenía el renglón de la
+     fecha y dice algo que sí se relee todos los días. */
+  .top-saludo { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+  .top-saludo small { color: var(--p-tenue); font-size: .78rem; }
+  .top-saludo b {
+    font-family: var(--display); font-weight: 600; font-size: 1.02rem;
+    letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
+  .top-fila > .yo { margin-right: .1rem; }
   .top-acc { position: relative; margin-left: auto; display: flex; align-items: center; gap: var(--e2); flex: 0 0 auto; }
 
   /* El punto naranja sobre la rueda de refrescar. Reemplaza al
@@ -302,14 +362,15 @@
   }
 
   .yo {
-    width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%;
+    width: 42px; height: 42px; flex: 0 0 42px; border-radius: 50%;
     overflow: hidden; background: var(--p-sup2); display: grid; place-items: center;
     transition: box-shadow .15s var(--ease);
   }
   .yo img { width: 100%; height: 100%; object-fit: cover; }
   .yo[aria-expanded="true"], .yo:hover { box-shadow: 0 0 0 2px var(--p-acento); }
 
-  .titulo-caja { min-width: 0; margin: .3rem 0 .85rem; }
+  .titulo-caja { min-width: 0; margin: 1rem 0 .9rem; }
+  .titulo-caja[hidden] { display: none; }
   .lienzo-top h1 {
     font-family: var(--display); font-size: 1.75rem; font-weight: 700;
     letter-spacing: -.02em; line-height: 1.12; margin: 0;
@@ -420,6 +481,7 @@
   .rango .presets button:hover { color: var(--p-txt); }
   .rango .presets button[aria-pressed="true"] { background: var(--p-suave); color: var(--p-acento-t); }
   #btn-fechas[aria-expanded="true"] { background: var(--p-suave); color: var(--p-acento-t); }
+  #btn-campana.encendida { color: var(--p-acento-t); background: var(--p-suave); }
 
   .rango-fechas { display: flex; gap: .5rem; margin: -.4rem 0 1rem; }
   .rango-fechas .f { display: flex; flex-direction: column; gap: .2rem; flex: 1 1 0; min-width: 0; }
@@ -472,6 +534,35 @@
   .tarj + .rejilla, .rejilla + .tarj { margin-top: 1.4rem; }
   .tarj-h { position: relative; display: flex; align-items: baseline; gap: .5rem 1rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
   .tarj-h h2 { font-family: var(--display); font-size: 1.12rem; font-weight: 600; letter-spacing: -.015em; margin: 0; }
+
+  /* ---------- La portada de Hoy ----------
+     El bloque lleno de color de la referencia. Es lo único de toda la
+     aplicación con el acento de fondo: si hubiera dos, dejaría de ser
+     la portada y pasaría a ser un color más. */
+  .portada {
+    display: flex; align-items: center; gap: 1rem;
+    background: linear-gradient(135deg, var(--p-acento) 0%, #ff8f3d 100%);
+    color: #fff; border-radius: 24px; padding: 1.35rem 1.4rem;
+    box-shadow: 0 14px 34px -14px rgba(239,101,17,.65);
+    margin-bottom: 1.4rem;
+  }
+  .portada-txt { flex: 1 1 auto; min-width: 0; }
+  .portada-txt b {
+    display: block; font-family: var(--display); font-weight: 600;
+    font-size: 1.12rem; line-height: 1.3; letter-spacing: -.01em;
+  }
+  .portada-txt small { display: block; margin-top: .2rem; opacity: .85; font-size: .82rem; }
+  .portada-btn {
+    margin-top: .9rem; background: #fff; color: var(--p-acento-t);
+    font-weight: 600; font-size: .84rem;
+    padding: .55rem 1.1rem; border-radius: 999px;
+    transition: transform .12s var(--ease);
+  }
+  .portada-btn:active { transform: scale(.96); }
+  .portada-aro { flex: 0 0 auto; text-align: center; }
+  .portada-aro svg { width: 86px; height: 86px; display: block; }
+  .portada-aro small { display: block; margin-top: .1rem; font-size: .72rem; opacity: .85; }
+  .portada-aro .n { font-family: var(--display); font-weight: 600; font-size: 22px; fill: #fff; }
 
   /* El rótulo de una sección que NO va dentro de una caja. Mismo cuerpo
      que el título de una tarjeta, pero sobre el papel: así se distingue
@@ -750,22 +841,27 @@
      filas, la segunda se lee como otra cosa y el riel deja de verse
      como un recorrido de un estado al siguiente. */
   .pest-est {
-    display: flex; gap: .2rem; flex-wrap: nowrap;
+    display: flex; gap: .4rem; flex-wrap: nowrap;
     /* `overflow-y: hidden` a propósito: con `overflow-x: auto` a secas el
        navegador deja rodar también en vertical, y el riel se movía de
        arriba abajo un par de píxeles al arrastrarlo de lado. */
     overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
-    border-bottom: 1px solid var(--p-linea); margin-bottom: var(--e4);
+    margin-bottom: var(--e4); padding-bottom: .15rem;
   }
   .pest-est::-webkit-scrollbar { display: none; }
-  .pest-est button { flex: 0 0 auto; white-space: nowrap; }
+  /* Pastillas, no pestañas subrayadas. Es lo que hace la referencia y
+     además se tocan mejor: el área tocable es toda la pastilla y no una
+     palabra con una rayita de dos píxeles debajo. */
   .pest-est button {
-    padding: .55rem .75rem; color: var(--p-tenue); font-weight: 500;
-    border-bottom: 2px solid transparent; margin-bottom: -1px;
-    transition: color .15s var(--ease), border-color .15s var(--ease);
+    flex: 0 0 auto; white-space: nowrap;
+    padding: .55rem 1.05rem; border-radius: 999px; font-weight: 500;
+    background: var(--p-sup); color: var(--p-txt2);
+    transition: background .15s var(--ease), color .15s var(--ease);
   }
-  .pest-est button:hover { color: var(--p-txt); }
-  .pest-est button[aria-selected="true"] { color: var(--p-txt); border-bottom-color: var(--p-acento); }
+  .pest-est button:hover { background: var(--p-sup2); }
+  .pest-est button[aria-selected="true"] {
+    background: var(--p-acento); color: #fff; font-weight: 600;
+  }
   .pest-est .n {
     margin-left: .35rem; font-variant-numeric: tabular-nums;
     color: var(--p-tenue); font-size: .8rem;
@@ -1282,7 +1378,8 @@
       width: auto; height: auto;
       flex-direction: row; z-index: 30; padding: 0;
       border-radius: 999px;
-      box-shadow: 0 14px 34px -10px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.2);
+      border: 1px solid var(--p-borde);
+      box-shadow: 0 14px 34px -14px rgba(23,22,26,.3), 0 2px 8px rgba(23,22,26,.06);
     }
     .barra-logo, .barra-pie { display: none; }
     /* El inset de abajo ya lo lleva la barra en su `bottom`; repetirlo
@@ -1305,7 +1402,7 @@
        la referencia— y sobre la pizarra oscura el naranja al 18% da un
        café sucio, además de que chocaba con el contador. El punto dice
        lo mismo, no ensucia y nunca se topa con nada. */
-    .barra nav button[aria-selected="true"] { background: none; color: var(--p-acento-t); font-weight: 500; }
+    .barra nav button[aria-selected="true"] { background: none; color: var(--p-acento-t); font-weight: 600; }
     .barra nav button[aria-selected="true"]::after {
       content: ""; position: absolute; bottom: -.05rem; left: 50%;
       width: 4px; height: 4px; margin-left: -2px;
@@ -1482,6 +1579,11 @@
         </svg>
         <span class="largo">Solicitudes</span><span class="corto">Solic.</span><span class="pendiente" id="pend-sol" hidden></span>
       </button>
+      <!-- El hueco donde se para el botón redondo: justo en el medio,
+           tres destinos de cada lado. En escritorio la barra es lateral,
+           el botón vuelve a tener su nombre y el hueco desaparece. -->
+      <span class="hueco-fab" aria-hidden="true"></span>
+
       <button type="button" role="tab" data-vista="cotizaciones" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/>
@@ -1505,6 +1607,15 @@
         Agenda<span class="pendiente" id="pend-agenda" hidden></span>
       </button>
     </nav>
+
+    <!-- La acción principal, como en la referencia: un botón redondo
+         parado sobre la barra, en el centro. -->
+    <button type="button" class="fab" id="btn-nueva" title="Nueva cotización" aria-label="Nueva cotización">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      <span class="largo">Nueva cotización</span>
+    </button>
 
     <div class="barra-pie">
       <img src="assets/img/logo-mascota.webp" alt="" width="26" height="26">
@@ -1532,27 +1643,35 @@
     <div class="lienzo-top">
 
       <div class="top-fila">
-        <span class="top-donde" id="top-donde">Hoy</span>
+        <!-- Avatar, saludo y acciones. Es la cabecera de la referencia:
+             quién soy a la izquierda, lo que suena a la derecha. El
+             "Nueva cotización" se fue al botón redondo de la barra de
+             abajo, que es donde la referencia pone la acción principal. -->
+        <button type="button" class="yo" id="btn-yo" aria-haspopup="true" aria-expanded="false" aria-label="Ajustes y salir">
+          <img src="assets/img/logo-mascota.webp" alt="" width="30" height="30">
+        </button>
+        <span class="top-saludo">
+          <small id="top-donde">¡Hola!</small>
+          <b id="top-quien">Leitón</b>
+        </span>
         <span class="top-acc">
-          <button type="button" class="btn-fuerte crear" id="btn-nueva" title="Nueva cotización">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-            <span class="largo">Nueva cotización</span>
-          </button>
           <button type="button" class="rueda" id="btn-refrescar" title="Traer lo último" aria-label="Traer lo último">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6"/>
             </svg>
             <i class="punto" id="punto-viejo" hidden aria-hidden="true"></i>
           </button>
-          <button type="button" class="yo" id="btn-yo" aria-haspopup="true" aria-expanded="false" aria-label="Ajustes y salir">
-            <img src="assets/img/logo-mascota.webp" alt="" width="30" height="30">
+          <!-- La campana: enciende y apaga los avisos de este aparato, y
+               lleva un punto cuando hay algo esperando. -->
+          <button type="button" class="rueda" id="btn-campana" title="Avisos" aria-label="Avisos">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5M13.7 20a2 2 0 0 1-3.4 0"/>
+            </svg>
+            <i class="punto" id="punto-campana" hidden aria-hidden="true"></i>
           </button>
 
-          <!-- Lo que se toca una vez al mes: el tema y salir. Cuelga del
-               avatar y no del lienzo, para que "pegado a la derecha"
-               quiera decir pegado al avatar. -->
+          <!-- Lo que se toca una vez al mes: el tema y salir. Cuelga de
+               las acciones, pegado a la derecha. -->
           <div class="menu-yo" id="menu-yo" hidden>
             <div class="menu-cabeza">
               <b>Panel interno</b>
@@ -1570,7 +1689,7 @@
         </span>
       </div>
 
-      <div class="titulo-caja">
+      <div class="titulo-caja" id="titulo-caja">
         <h1 id="titulo-vista">Hoy</h1>
       </div>
 
@@ -1613,6 +1732,22 @@
            El título pasa a ser un rótulo sobre el papel, no el encabezado
            de una caja. Es lo mismo que hace una libreta: la sección se
            nombra, no se enmarca. -->
+      <!-- La tarjeta de portada. Es la pieza que abre la referencia: un
+           bloque lleno de color con el dato del día, un aro de progreso y
+           un botón claro. Dice de una lo que hay que hacer y cuánto se
+           está cerrando, sin obligar a leer tres tarjetas. -->
+      <div class="portada" id="portada" hidden>
+        <div class="portada-txt">
+          <b id="portada-t"></b>
+          <small id="portada-p"></small>
+          <button type="button" class="portada-btn" id="portada-btn">Ver pendientes</button>
+        </div>
+        <div class="portada-aro">
+          <svg viewBox="0 0 120 120" id="aro-portada" role="img" aria-label="Porcentaje de cierre"></svg>
+          <small>cierre</small>
+        </div>
+      </div>
+
       <section id="tarj-atencion" data-punto="mal" hidden>
         <div class="seccion-h">
           <h2>Requiere atención</h2>
@@ -2413,6 +2548,34 @@
   /* Requiere atención. Cada línea es un conteo con su destino: la
      pregunta acá es "cuánto hay", no "cuál es" — para eso está la
      lista a la que lleva. */
+  /* La portada. Dice lo del día con una frase, no con una cifra suelta,
+     y el aro lleva el porcentaje de cierre: es el único número que
+     contesta "cómo voy" sin abrir el Resumen. */
+  function pintarPortada(d) {
+    var n = d.esperando.total;
+    $("portada").hidden = false;
+    $("portada-t").textContent = n
+      ? (n === 1 ? "Tiene 1 sin responder" : "Tiene " + n + " sin responder")
+      : "Todo al día";
+    $("portada-p").textContent = n
+      ? "El que más lleva esperando, " + espera(d.esperaMax) + "."
+      : "Nadie está esperando respuesta.";
+    $("portada-btn").textContent = n ? "Ver pendientes" : "Ver el resumen";
+    $("portada-btn").dataset.ir = JSON.stringify(n ? { vista: "hoy" } : { vista: "resumen" });
+
+    var pct = d.cierre === null ? 0 : d.cierre;
+    var r = 42, C = 2 * Math.PI * r;
+    $("aro-portada").innerHTML =
+      '<g transform="rotate(-90 60 60)">' +
+        '<circle cx="60" cy="60" r="' + r + '" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="9"/>' +
+        (pct > 0 ? '<circle cx="60" cy="60" r="' + r + '" fill="none" stroke="#fff" stroke-width="9" ' +
+          'stroke-linecap="round" stroke-dasharray="' + C.toFixed(1) + '" ' +
+          'stroke-dashoffset="' + (C * (1 - pct / 100)).toFixed(1) + '"/>' : "") +
+      "</g>" +
+      '<text class="n" x="60" y="61" text-anchor="middle" dominant-baseline="middle">' +
+        (d.cierre === null ? "—" : pct + "%") + "</text>";
+  }
+
   function pintarAtencion(d) {
     var caja = $("tarj-atencion");
     if (!d.atencion.length) { caja.hidden = true; return; }
@@ -2737,6 +2900,7 @@
         marcarPreset();
         $("estado-resumen").textContent = "";
         pintarCifras(d);
+        pintarPortada(d);
         pintarAtencion(d);
         pintarCola(d);
         pintarProximos(d);
@@ -2755,6 +2919,8 @@
         pintarBarras("b-origenes", d.origenes, null);
 
         marcar("pend-hoy", d.esperando.total);
+        // El puntito de la campana: hay algo esperando respuesta.
+        $("punto-campana").hidden = !d.esperando.total;
         marcar("pend-cot", d.esperando.cot);
         marcar("pend-sol", d.esperando.sol);
         sellar();
@@ -2815,6 +2981,14 @@
     $("buscar").value = "";
     if (v === "cliente") { verCliente(ir.id); return; }
     irA(v, ir);
+  });
+
+  $("portada-btn").addEventListener("click", function () {
+    var ir = JSON.parse($("portada-btn").dataset.ir || '{"vista":"hoy"}');
+    if (ir.vista === "hoy") {
+      var caja = $("tarj-cola");
+      if (caja) caja.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else irA(ir.vista, {});
   });
 
   $("cola").addEventListener("click", function (e) {
@@ -3807,6 +3981,7 @@
 
   function verCliente(id) {
     vista = "cliente";
+    $("titulo-caja").hidden = false;
     $("titulo-vista").textContent = "Cliente";
     Array.prototype.forEach.call(document.querySelectorAll(".barra nav button"), function (b) {
       b.setAttribute("aria-selected", String(b.dataset.vista === "clientes"));
@@ -4486,10 +4661,12 @@
     /* El renglón chico dice siempre el día. Decía el nombre de la
        pantalla y el titular de abajo lo repetía: "Solicitudes" encima de
        "Solicitudes", dos veces lo mismo con dos cuerpos distintos. */
-    $("top-donde").textContent = fechaDeHoy();
-    $("titulo-vista").textContent = nueva === "hoy"
-      ? saludo() + ", Leitón"
-      : (NOMBRE_VISTA[nueva] || "Panel");
+    /* El saludo vive en la cabecera y no cambia de pantalla. El titular
+       grande nombra la vista, salvo en Hoy: ahí lo dice la portada, y
+       repetirlo sería decir tres veces lo mismo en el mismo pantallazo. */
+    $("top-donde").textContent = saludo() + ",";
+    $("titulo-caja").hidden = nueva === "hoy";
+    $("titulo-vista").textContent = NOMBRE_VISTA[nueva] || "Panel";
     menuYo(false);
 
     var esTabla = nueva === "cotizaciones" || nueva === "solicitudes";
@@ -4723,6 +4900,8 @@
     b.innerHTML = (activo ? ICO_CAMPANA : ICO_CAMPANA_NO) +
       "<span>" + escHtml(texto || (activo ? "Avisos encendidos" : "Encender avisos")) + "</span>";
     b.dataset.activo = activo ? "1" : "";
+    // La campana se pinta llena cuando los avisos están encendidos.
+    $("btn-campana").classList.toggle("encendida", !!activo);
   }
 
   function revisarAvisos() {
@@ -4807,6 +4986,12 @@
   }
 
   $("btn-avisos").addEventListener("click", function () {
+    if ($("btn-avisos").dataset.activo) apagarAvisos();
+    else encenderAvisos();
+  });
+
+  // La campana de la cabecera hace lo mismo que el renglón del menú.
+  $("btn-campana").addEventListener("click", function () {
     if ($("btn-avisos").dataset.activo) apagarAvisos();
     else encenderAvisos();
   });

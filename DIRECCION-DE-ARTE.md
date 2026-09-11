@@ -1852,3 +1852,49 @@ en Limón es ofrecer una lista vacía.
 
 Y el **servicio aparece como pastilla en la tarjeta**: es por lo que se
 filtra, así que tiene que verse sin abrir la ficha.
+
+## 36. La referencia de app, en blanco y naranja (2026-09-11)
+
+Byron mandó dos pantallas de una app de tareas —blanco con morado, geométrica
+redonda, tarjeta de portada llena de color, aro de progreso, pastillas de
+filtro, barra flotante con botón redondo en el centro— y el encargo: *"créalo
+lo más similar posible, blanco y naranja en claro, azul medianoche mate y
+blanco en oscuro"*.
+
+**Tipografía: Poppins.** La referencia usa una geométrica redonda y Poppins es
+la que más se le acerca de las que hay disponibles. Entra en todo. Inter se
+queda sólo donde el ancho fijo importa más que el carácter: las tablas, las
+cifras, el calendario y las pastillas de número.
+
+**El papel tibio sale de escena.** Toda la referencia se sostiene en blanco
+limpio con tarjetas blancas separadas **sólo por la sombra**; con tarjetas
+blancas sobre papel beige eso no existe. El fondo pasa a blanco con dos
+manchas de color tan tenues que no se nombran, naranja arriba y durazno
+abajo. En oscuro, azul medianoche **mate**: desaturado, que se lea como tinta
+y no como pantalla de cine.
+
+**La portada.** El bloque lleno de color que abre la referencia: dice de una
+cuántos están esperando y cuánto lleva el más viejo, con un aro de cierre al
+lado y un botón claro. Es **lo único de toda la aplicación con el acento de
+fondo** — si hubiera dos, dejaría de ser la portada y pasaría a ser un color
+más. Y como ya nombra el día, el titular grande se esconde en Hoy: decirlo
+tres veces en el mismo pantallazo era lo que sobraba.
+
+**La cabecera.** Avatar, "Buenas tardes / Leitón", y a la derecha refrescar y
+una campana con punto. El saludo sube de titular a cabecera, que es donde la
+referencia lo pone, y deja el titular grande para nombrar la pantalla.
+
+**El botón redondo.** "Nueva cotización" se va del encabezado a un botón
+redondo parado en el centro de la barra de abajo, con un hueco de 58px entre
+el tercer y el cuarto destino para que se pare sin tapar nada. En escritorio
+la barra es lateral, así que vuelve a ser un botón con su nombre bajo el
+logo y el hueco desaparece.
+
+**Las pestañas de estado pasan a pastillas.** Además de ser lo de la
+referencia, se tocan mejor: el área tocable es toda la pastilla y no una
+palabra con una rayita de dos píxeles debajo.
+
+**La barra de abajo ya no es pizarra.** En claro es durazno y en oscuro es
+azul medianoche, y sus colores salen todos de `--p-barra-t` con `color-mix`
+en vez de un blanco escrito a mano: con el blanco fijo, al aclarar la barra
+el texto desaparecía.
