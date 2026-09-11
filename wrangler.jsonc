@@ -36,6 +36,18 @@
     ]
   },
 
+  // Lo que corre solo. "0 13 * * *" es todos los días a las 13:00 UTC,
+  // que en Costa Rica son las 7 de la mañana: la hora en que el encargado
+  // está viendo el día y todavía puede meter una visita en la ruta.
+  //
+  // Hace dos cosas: manda por correo los recordatorios de mantenimiento a
+  // quien le toca, y le toca la puerta al teléfono con lo del día. Los
+  // recordatorios de WhatsApp NO salen solos: eso necesita la API de
+  // empresa de Meta. Se siguen mandando a mano desde la Agenda.
+  "triggers": {
+    "crons": ["0 13 * * *"]
+  },
+
   // Dato normal (no secreto) que el programa puede leer como env.CORREO_AVISO.
   // Para cambiarlo: editar el valor de abajo y hacer "git push", nada más.
   // Las claves de verdad (RESEND_API_KEY, CLAVE_PANEL) NO van acá — esas se

@@ -99,6 +99,8 @@ async function guardarSolicitud(request, env, ctx) {
   // "seguí trabajando en esto aunque ya respondiste", así el correo
   // sale igual sin retrasar la apertura de WhatsApp.
   ctx.waitUntil(avisarPorCorreo(datos, env));
+  // Y el toque de puerta al teléfono, que es el que se ve en el momento.
+  ctx.waitUntil(avisarAlPanel(env));
 
   return json({ ok: true });
 }
@@ -2240,7 +2242,260 @@ const REDIRECCIONES_WIX = {
   "/blog": "/"
 };
 
+
+/* =============================================================
+   AVISOS AL TELÉFONO
+
+   El panel no avisaba: había que entrar a mirar. Esto le toca la
+   puerta al teléfono cuando entra una solicitud o cuando hay
+   mantenimientos del día.
+
+   El aviso viaja VACÍO, a propósito. Mandar contenido dentro de una
+   notificación web obliga a cifrarlo (ECDH + HKDF + AES-GCM) contra la
+   clave de cada aparato, que es mucho código delicado para ganar poco;
+   y además ese contenido pasa por los servidores de Google o Apple. Acá
+   sólo se toca la puerta, y el propio teléfono va a buscar los números
+   al panel con la clave que ya tiene guardada. Menos código, y ningún
+   dato del negocio sale de nuestro servidor.
+
+   La clave pública va escrita acá porque es pública —el navegador la
+   necesita para suscribirse—. La privada vive en Cloudflare como Secret.
+   ============================================================= */
+const VAPID_PUBLICA =
+  "BKMDOH2dzFyPRe8jfSeB7_RfwSIc7ECL1ljm37GWxhnoyvvXarysNqqeYsR25ED32o6YuhH2eA11OHWukZhf2ag";
+const VAPID_SUJETO = "mailto:info@sanitariosticos.com";
+
+function b64uABytes(s) {
+  const base = String(s).replace(/-/g, "+").replace(/_/g, "/");
+  const crudo = atob(base + "=".repeat((4 - base.length % 4) % 4));
+  const salida = new Uint8Array(crudo.length);
+  for (let i = 0; i < crudo.length; i++) salida[i] = crudo.charCodeAt(i);
+  return salida;
+}
+
+function bytesAB64u(b) {
+  let s = "";
+  const u = new Uint8Array(b);
+  for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/* La clave privada se arma con la `d` secreta y con la x/y que ya vienen
+   dentro de la pública: los 65 bytes de la pública son 0x04 seguido de
+   las dos mitades. Así el secreto que hay que guardar es uno solo. */
+async function clavePrivadaVapid(env) {
+  const pub = b64uABytes(VAPID_PUBLICA);
+  return crypto.subtle.importKey(
+    "jwk",
+    {
+      kty: "EC", crv: "P-256", ext: true,
+      d: env.VAPID_PRIVADA,
+      x: bytesAB64u(pub.slice(1, 33)),
+      y: bytesAB64u(pub.slice(33, 65))
+    },
+    { name: "ECDSA", namedCurve: "P-256" },
+    false,
+    ["sign"]
+  );
+}
+
+/* El pase que le prueba al servicio de empuje —Google, Apple, Mozilla—
+   que el aviso lo manda quien dice. Dura doce horas. */
+async function jwtVapid(destino, env) {
+  const cod = (o) => bytesAB64u(new TextEncoder().encode(JSON.stringify(o)));
+  const cabeza = cod({ typ: "JWT", alg: "ES256" });
+  const cuerpo = cod({
+    aud: destino,
+    exp: Math.floor(Date.now() / 1000) + 12 * 3600,
+    sub: VAPID_SUJETO
+  });
+  const firma = await crypto.subtle.sign(
+    { name: "ECDSA", hash: "SHA-256" },
+    await clavePrivadaVapid(env),
+    new TextEncoder().encode(cabeza + "." + cuerpo)
+  );
+  return cabeza + "." + cuerpo + "." + bytesAB64u(firma);
+}
+
+/* Toca la puerta de un aparato. Devuelve el código que contestó el
+   servicio de empuje: 404 y 410 quieren decir "ese aparato ya no
+   existe", y entonces se borra de la tabla. */
+async function empujar(endpoint, env) {
+  try {
+    const jwt = await jwtVapid(new URL(endpoint).origin, env);
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "TTL": "86400",
+        "Authorization": "vapid t=" + jwt + ", k=" + VAPID_PUBLICA,
+        "Content-Length": "0"
+      }
+    });
+    return res.status;
+  } catch (e) {
+    console.error("No se pudo empujar el aviso:", e);
+    return 0;
+  }
+}
+
+/* Le avisa a todos los aparatos registrados. Se llama sin esperar: que
+   un aviso no salga nunca puede detener lo que estaba pasando. */
+async function avisarAlPanel(env) {
+  if (!env.VAPID_PRIVADA) return;
+  let filas;
+  try {
+    filas = (await env.DB.prepare(`SELECT id, endpoint FROM avisos`).all()).results || [];
+  } catch (e) {
+    // La tabla puede no existir todavía; no es motivo para romper nada.
+    return;
+  }
+
+  for (const f of filas) {
+    const codigo = await empujar(f.endpoint, env);
+    if (codigo === 404 || codigo === 410) {
+      await env.DB.prepare(`DELETE FROM avisos WHERE id = ?`).bind(f.id).run().catch(() => {});
+    }
+  }
+}
+
+async function avisosPanel(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+
+  if (request.method === "GET") {
+    const endpoint = new URL(request.url).searchParams.get("endpoint") || "";
+    let activo = false;
+    if (endpoint) {
+      const f = await env.DB.prepare(`SELECT id FROM avisos WHERE endpoint = ?`)
+        .bind(endpoint).first().catch(() => null);
+      activo = !!f;
+    }
+    return json({ ok: true, publica: VAPID_PUBLICA, activo, listo: !!env.VAPID_PRIVADA });
+  }
+
+  let cuerpo;
+  try {
+    cuerpo = await request.json();
+  } catch (e) {
+    return json({ ok: false, error: "Formato inválido" }, 400);
+  }
+
+  const endpoint = texto(cuerpo.endpoint, 600);
+  if (!endpoint) return json({ ok: false, error: "Falta la dirección del aparato" }, 400);
+
+  try {
+    if (cuerpo.baja) {
+      await env.DB.prepare(`DELETE FROM avisos WHERE endpoint = ?`).bind(endpoint).run();
+      return json({ ok: true, activo: false });
+    }
+    await env.DB.prepare(
+      `INSERT INTO avisos (endpoint, p256dh, auth, agente) VALUES (?1, ?2, ?3, ?4)
+       ON CONFLICT(endpoint) DO UPDATE SET
+         p256dh = excluded.p256dh, auth = excluded.auth,
+         agente = excluded.agente, fallo = NULL`
+    ).bind(
+      endpoint, texto(cuerpo.p256dh, 200) || null, texto(cuerpo.auth, 100) || null,
+      texto(cuerpo.agente, 200) || null
+    ).run();
+    return json({ ok: true, activo: true });
+  } catch (e) {
+    console.error("No se pudo guardar el aviso:", e);
+    return json({ ok: false, error: "No se pudo guardar" }, 500);
+  }
+}
+
+/* =============================================================
+   LO QUE CORRE SOLO CADA DÍA
+
+   Dos cosas: mandarle el recordatorio por correo a quien le toca, y
+   tocarle la puerta al teléfono del encargado con lo del día.
+
+   Por CORREO y no por WhatsApp: mandar un WhatsApp solo necesita la API
+   de empresa de Meta —cuenta verificada, plantillas aprobadas y cobro
+   por mensaje—. Los de WhatsApp se siguen mandando a mano desde la
+   Agenda, que es un toque. Este proceso no los toca ni los marca.
+   ============================================================= */
+async function tareaDiaria(env) {
+  const hoy = new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
+
+  let vencen = [];
+  try {
+    /* Sólo el último trabajo de cada cliente, sólo si el recordatorio
+       está prendido, y sólo si todavía no se le escribió por este.
+       `recordado` es lo que evita escribirle todos los días desde que le
+       toca hasta que por fin hace el trabajo. */
+    vencen = (await env.DB.prepare(
+      `SELECT s.id, s.fecha, s.servicio, s.proximo, c.id AS cliente_id, c.nombre,
+              c.correo, c.canton, c.canal
+         FROM servicios s JOIN clientes c ON c.id = s.cliente_id
+        WHERE s.id = (SELECT s2.id FROM servicios s2 WHERE s2.cliente_id = c.id
+                      ORDER BY s2.fecha DESC, s2.id DESC LIMIT 1)
+          AND s.proximo IS NOT NULL AND s.proximo <= ?1
+          AND s.recordado IS NULL
+          AND c.recordatorio = 1`
+    ).bind(hoy).all()).results || [];
+  } catch (e) {
+    console.error("No se pudo leer la agenda del día:", e);
+  }
+
+  let enviados = 0;
+  for (const f of vencen) {
+    const porCorreo = (f.canal === "correo" || f.canal === "ambos") && f.correo;
+    if (!porCorreo) continue;
+    const ok = await correoRecordatorio(f, env);
+    if (!ok) continue;
+    enviados++;
+    await env.DB.prepare(`UPDATE servicios SET recordado = ?1 WHERE id = ?2`)
+      .bind(hoy, f.id).run().catch(() => {});
+  }
+
+  // Un solo toque de puerta, con todo lo del día junto.
+  if (vencen.length) await avisarAlPanel(env);
+  console.log("Tarea diaria:", vencen.length, "vencen,", enviados, "correos");
+}
+
+async function correoRecordatorio(f, env) {
+  if (!env.RESEND_API_KEY || !f.correo) return false;
+  const texto0 = mensajeRecordatorio(f);
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + env.RESEND_API_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        from: "Sanitarios Ticos <onboarding@resend.dev>",
+        to: [f.correo],
+        subject: "Le toca el mantenimiento, Sanitarios Ticos",
+        html: `<div style="font-family:sans-serif;font-size:15px;color:#1b1917;line-height:1.6;">
+          <p>${escaparHtml(texto0)}</p>
+          <p style="margin-top:1.2rem;">
+            <b>${escaparHtml(EMPRESA.nombre)}</b><br>
+            ${EMPRESA.telefonos.map(escaparHtml).join(" / ")} ·
+            WhatsApp ${escaparHtml(EMPRESA.whatsapp)}
+          </p>
+        </div>`
+      })
+    });
+    if (!res.ok) {
+      console.error("Resend respondió", res.status, await res.text());
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("No se pudo mandar el recordatorio:", e);
+    return false;
+  }
+}
+
 export default {
+  /* Lo dispara Cloudflare con el horario que está en wrangler.jsonc. No
+     hay nadie esperando la respuesta, así que todo lo que falle queda en
+     el registro y no se le avisa a nadie. */
+  async scheduled(evento, env, ctx) {
+    ctx.waitUntil(tareaDiaria(env));
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
@@ -2272,6 +2527,10 @@ export default {
     }
     if (url.pathname === "/api/panel/cliente" && request.method === "GET") {
       return verCliente(request, env);
+    }
+    if (url.pathname === "/api/panel/avisos" &&
+        (request.method === "GET" || request.method === "POST")) {
+      return avisosPanel(request, env);
     }
     if (url.pathname === "/api/panel/trabajo" && request.method === "POST") {
       return trabajoAMano(request, env);

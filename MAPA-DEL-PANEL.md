@@ -153,6 +153,7 @@ Botón alterno: *Sólo marcar como hecha*, sin registrar cliente.
 | `/api/panel/clientes` | Lista de clientes |
 | `/api/panel/cliente` | Ver y guardar una ficha |
 | `/api/panel/trabajo` | Anotar un trabajo a mano y registrar al cliente |
+| `/api/panel/avisos` | Encender y apagar los avisos de este aparato |
 | `/api/panel/agenda` | Mantenimientos |
 | `/api/panel/buscar` | El buscador global |
 | `/api/cotizar` | Crear una cotización |
@@ -164,6 +165,22 @@ propia llave dentro del enlace.
 
 ---
 
+## Lo que corre solo
+
+Todos los días a las **7 de la mañana** (13:00 UTC), Cloudflare dispara
+la tarea diaria:
+
+1. Le manda **por correo** el recordatorio a quien le toca mantenimiento
+   y tiene el canal en Correo. Se marca para no repetirlo al día
+   siguiente.
+2. Le **toca la puerta al teléfono** del encargado con lo del día.
+
+El aviso viaja **vacío**: el propio teléfono va a buscar los números al
+panel. Así ningún dato del negocio pasa por los servidores de Google ni
+de Apple.
+
+---
+
 ## Lo que el panel NO hace hoy
 
 Para marcar encima:
@@ -171,9 +188,14 @@ Para marcar encima:
 - **No agenda el camión.** La Agenda dice a quién le toca, no qué se hace
   mañana ni con cuál camión.
 - **No registra gastos.** "Cobrado" suma lo que entró; no hay salidas.
-- **No manda los recordatorios solo.** Hay que abrir la Agenda y tocar
-  Recordar uno por uno.
-- **No avisa.** Sin notificaciones: hay que entrar a ver.
+- ~~No manda los recordatorios solo~~ · **a medias:** los de **correo**
+  salen solos todos los días a las 7 a.m. Los de **WhatsApp** siguen a
+  mano desde la Agenda: mandar un WhatsApp automático necesita la API de
+  empresa de Meta (cuenta verificada, plantillas aprobadas y cobro por
+  mensaje).
+- ~~No avisa~~ · **hecho:** avisos al teléfono cuando entra una solicitud
+  y cuando hay mantenimientos del día. Se encienden en el menú del
+  avatar, aparato por aparato. En iPhone sólo con la app instalada.
 - **No hay usuarios.** Una sola clave compartida; cualquiera que la tenga
   ve todos los precios y todos los clientes.
 - **No guarda fotos.** Ni del tanque, ni del trabajo hecho.

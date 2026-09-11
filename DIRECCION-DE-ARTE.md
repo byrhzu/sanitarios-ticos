@@ -1704,3 +1704,45 @@ medio y todos los navegadores la bloquean.
 de las que calculó la tabla. Sin esa marca, mirar si las tarifas están bien
 mezclaría las dos cosas y la tabla parecería acertar cada vez que alguien
 la corrigió a mano.
+
+## 33. Que avise solo (2026-09-11)
+
+Dos cosas que el panel no hacía: avisar, y mandar los recordatorios sin
+que alguien los toque uno por uno.
+
+**El aviso viaja vacío, a propósito.** Meterle contenido a una
+notificación web obliga a cifrarlo (ECDH + HKDF + AES-GCM) contra la clave
+de cada aparato: mucho código delicado para ganar poco, y ese contenido
+pasaría igual por los servidores de Google o de Apple. Acá el servidor
+sólo toca la puerta; el propio teléfono va a buscar los números al panel
+con la clave que ya tiene. Menos código, y **ningún dato del negocio sale
+de nuestro servidor**.
+
+**El buzón de la clave.** Un service worker no puede leer `localStorage`
+—no tiene ventana—, así que la pantalla le deja una copia de la clave en
+la caché, que los dos sí pueden ver. Es lo que permite que el aviso diga
+*"3 sin responder"* en vez de *"tiene algo nuevo"*. Sin clave o sin señal,
+sale el genérico: es preferible a no avisar.
+
+**Una sola notificación a la vez** (`tag: "panel"`). Diez avisos apilados
+de lo mismo no dicen diez veces más; estorban al desbloquear.
+
+**La clave privada se reconstruye.** Los 65 bytes de la clave pública son
+`0x04` seguido de las dos mitades x e y, así que el único secreto que hay
+que guardar en Cloudflare es la `d`. Un secreto menos que perder.
+
+### El recordatorio automático es por correo, no por WhatsApp
+
+No es una decisión de diseño, es lo que se puede. Mandar un WhatsApp solo
+necesita la API de empresa de Meta: cuenta verificada, plantillas
+aprobadas por ellos y cobro por mensaje. El WhatsApp de hoy es un enlace
+que abre el chat con el texto escrito, y alguien tiene que tocar enviar.
+
+Así que los de correo salen solos a las 7 de la mañana —la hora en que el
+encargado está viendo el día y todavía puede meter una visita en la ruta—
+y los de WhatsApp siguen a un toque desde la Agenda. La tarea diaria ni
+los toca ni los marca.
+
+**`servicios.recordado`** guarda el día en que se le escribió. Sin eso, a
+quien le toca el mantenimiento le llegaría un correo todos los días hasta
+que por fin haga el trabajo.

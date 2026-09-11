@@ -24,7 +24,17 @@
    teléfonos que ya lo tienen se quedan con la copia vieja.
    ============================================================================ */
 
-const CACHE = "panel-st-v1";
+const CACHE = "panel-st-v2";
+
+/* Dónde la pantalla le deja la clave a este archivo. Un service worker
+   no puede leer localStorage —no tiene ventana—, así que se usa la caché
+   como buzón: es lo mismo que ya guarda ahí la aplicación, en el mismo
+   origen, y evita tener que escribir media base de datos para pasar un
+   texto de veinte letras.
+
+   Sirve para una sola cosa: que el aviso que llega al teléfono pueda
+   decir "3 sin responder" en vez de "tiene algo nuevo". */
+const BUZON = "panel-clave";
 
 // Lo mínimo para que la pantalla se dibuje sin red.
 const CONCHA = [
@@ -50,7 +60,9 @@ self.addEventListener("activate", (evento) => {
   evento.waitUntil(
     caches.keys()
       .then((llaves) => Promise.all(
-        llaves.filter((k) => k !== CACHE).map((k) => caches.delete(k))
+        // El buzón de la clave NO se borra: no es una copia de nada, es
+        // el único lugar donde este archivo puede leerla.
+        llaves.filter((k) => k !== CACHE && k !== BUZON).map((k) => caches.delete(k))
       ))
       .then(() => self.clients.claim())
   );
@@ -93,6 +105,85 @@ self.addEventListener("fetch", (evento) => {
         return r;
       }).catch(() => guardado);
       return guardado || red;
+    })
+  );
+});
+
+
+/* ============================================================================
+   Avisos
+
+   El aviso llega VACÍO: el servidor sólo toca la puerta. Acá adentro se va
+   a buscar el número al panel con la clave del buzón, y con eso se arma la
+   frase. Así ningún dato del negocio pasa por los servidores de Google o de
+   Apple, que es por donde viaja todo aviso web.
+
+   Si no hay clave o no hay señal, el aviso sale genérico. Es preferible un
+   "tiene algo nuevo" a no avisar del todo.
+   ============================================================================ */
+
+async function claveGuardada() {
+  try {
+    const c = await caches.open(BUZON);
+    const r = await c.match("/clave");
+    return r ? (await r.text()) : "";
+  } catch (e) {
+    return "";
+  }
+}
+
+function frase(d) {
+  const partes = [];
+  const esperando = (d.esperando && d.esperando.total) || 0;
+  if (esperando) {
+    partes.push(esperando + (esperando === 1 ? " sin responder" : " sin responder"));
+  }
+  const proximos = d.proximos || [];
+  const vencidos = proximos.filter((p) => p.dias < 0).length;
+  const hoy = proximos.filter((p) => p.dias === 0).length;
+  if (vencidos) partes.push(vencidos + (vencidos === 1 ? " mantenimiento vencido" : " mantenimientos vencidos"));
+  if (hoy) partes.push(hoy + (hoy === 1 ? " mantenimiento hoy" : " mantenimientos hoy"));
+  return partes.join(" · ");
+}
+
+async function mostrarAviso() {
+  let cuerpo = "Tiene algo nuevo en el panel.";
+  try {
+    const clave = await claveGuardada();
+    if (clave) {
+      const r = await fetch("/api/panel/resumen", { headers: { "X-Clave": clave } });
+      const d = await r.json();
+      if (d && d.ok) cuerpo = frase(d) || cuerpo;
+    }
+  } catch (e) { /* sin señal: queda el aviso genérico */ }
+
+  return self.registration.showNotification("Sanitarios Ticos", {
+    body: cuerpo,
+    icon: "/assets/img/icono-app-192.png",
+    badge: "/assets/img/icono-app-192.png",
+    // Una sola notificación a la vez: diez avisos apilados de lo mismo
+    // no dicen diez veces más, sólo estorban al desbloquear.
+    tag: "panel",
+    renotify: true,
+    data: { url: "/panel" }
+  });
+}
+
+self.addEventListener("push", (evento) => {
+  evento.waitUntil(mostrarAviso());
+});
+
+/* Tocar el aviso trae al frente la aplicación si ya estaba abierta, en vez
+   de abrir una segunda copia. */
+self.addEventListener("notificationclick", (evento) => {
+  evento.notification.close();
+  const destino = (evento.notification.data && evento.notification.data.url) || "/panel";
+  evento.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((ventanas) => {
+      for (const v of ventanas) {
+        if (v.url.indexOf("/panel") !== -1 && "focus" in v) return v.focus();
+      }
+      return self.clients.openWindow(destino);
     })
   );
 });
