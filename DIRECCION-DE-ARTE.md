@@ -1518,3 +1518,79 @@ redondas, pastillas en riel, acción principal en naranja— y **no la
 paleta**: ese morado y esos degradados de neón son de otra marca y son
 justo lo que hace que todos los tableros de plantilla se parezcan. Acá el
 color sigue saliendo del camión.
+
+## 30. El acabado de Stitch, traducido al naranja (2026-09-10)
+
+Byron maquetó la aplicación entera en Google Stitch y mandó las quince
+pantallas: *"ese es el resultado final que yo quiero"*. Buena parte volvió
+en verde menta, no en el naranja de la marca. Él lo dejó a criterio:
+copiar el efecto en naranja, o quedarse con el verde.
+
+Se copió el efecto. El verde es de nadie; el naranja está pintado en los
+tres camiones.
+
+**Lo que es "el efecto".** Un fondo con degradado radial suave en vez de
+un color plano, tarjetas casi blancas flotando encima con sombra larga y
+muy baja, radios de 20px, y la barra de abajo como una pastilla despegada
+de los bordes.
+
+**La traducción no fue cambiarle el tono al degradado.** El verde de la
+referencia funcionaba porque el fondo verde contrastaba con las pastillas
+ámbar y rojas de los datos. Con un fondo cálido eso se pierde: todo queda
+en la misma familia y la pantalla se vuelve una sopa. Así que el degradado
+va a muy poca saturación (`#fdf9f5 → #f5ece1 → #ecdfd0`), las tarjetas
+suben a `#fffdfa` para despegarse del papel, y el color fuerte se lo queda
+el dato. **El papel no compite.**
+
+**Dos sombras, no una.** Una de 1px que apoya la tarjeta y otra larga y
+muy abierta (`0 10px 26px -14px`) que la levanta. La segunda sola se ve
+sucia; la primera sola se ve plana.
+
+**Lo que se tomó pantalla por pantalla.** La pastilla de espera pasa a la
+línea del nombre y ahorra un renglón por pendiente. Cada pendiente se
+vuelve su propia tarjeta dentro de la tarjeta. El número de cotización
+sale del texto corrido y se vuelve una ficha monoespaciada: es lo que se
+busca cuando el cliente lo dice por teléfono. La pastilla de variación
+sube a la línea del icono, que deja las cuatro cifras del mismo alto y el
+pie libre para la gráfica. La chispa se suaviza con Catmull-Rom, porque
+con treinta días de entradas diarias la polilínea sale como un serrucho.
+Las tarjetas de cliente ganan una franja al pie con WhatsApp y llamar: es
+la única forma de contacto que faltaba en el panel. El día de hoy en el
+calendario pasa a relleno naranja con su sombra, y los días del mes vecino
+se dibujan en gris en vez de dejar celdas en blanco. Y los teléfonos se
+parten: `8811-2233`, no `88112233`.
+
+**Lo que no se copió.** La referencia inventó datos que no existen
+—códigos "CLI-0028", "Camión 2 asignado para las 9:00 AM", "Tanque séptico
+al día"—, volvió a poner subtítulos de relleno bajo cada título, y metió
+versalitas rastreadas ("MONTO ESTIMADO", "ALERTA"). Nada de eso entró.
+
+**La pastilla rellena detrás del icono activo tampoco.** Sobre la pizarra
+oscura de la barra, el naranja al 18% da un café sucio, y además chocaba
+con el contador de la esquina. El activo se marca con el icono y la
+etiqueta en naranja más un punto debajo: dice lo mismo y no se topa con
+nada.
+
+### Movimiento
+
+Byron pidió animaciones "simples, rápidas, nada muy cargado". Tres reglas:
+
+1. **Nada pasa de 280ms.** Esto se abre veinte veces al día; una animación
+   que se disfruta la primera vez estorba la décima.
+2. **Se mueve lo que entra, no lo que ya estaba.** Nada rebota, nada gira,
+   nada se desliza de lado.
+3. **Todo sale de `both`**, así que si algo falla el elemento queda en su
+   estado final y no invisible.
+
+La pantalla que entra sólo se funde (160ms); el movimiento lo ponen las
+tarjetas, con un escalonado de 35ms que se corta a los ocho elementos
+—pasados esos, el último llegaría medio segundo después del primero y la
+lista se sentiría lenta en vez de viva—. El menú del avatar entra desde su
+esquina. Lo que se puede tocar se hunde un 1,2% al presionar, que en una
+pantalla táctil es la única confirmación de que el dedo pegó.
+
+**Lo único decorativo del panel son las cifras contando hasta su número**
+(420ms, desaceleración cúbica). Se gana el puesto: a ₡1.340.000 le cuesta
+que lo miren, y contando obliga al ojo a quedarse el medio segundo que
+hace falta para leer la cifra. Con el sistema en "menos movimiento" no
+corre, como todo lo demás.

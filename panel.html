@@ -157,7 +157,39 @@
      16 es lo que hace que se lean como piezas y no como recuadros; los
      botones y las pastillas se quedan más cerrados para no verse
      hinchados. */
-  .panel { --barra: 240px; --radio: 16px; }
+  /* ---------- El acabado ----------
+     Byron maquetó la app en Stitch y el resultado es la referencia: un
+     fondo con un degradado suave, tarjetas casi blancas flotando encima
+     con sombra larga y muy baja, radios grandes, y la barra de abajo
+     como una pastilla despegada del borde.
+
+     Aquella salió en verde menta. Acá se traduce al naranja del camión,
+     que es lo que el cliente reconoce. La traducción no es cambiarle el
+     tono al degradado y ya: el verde de la referencia funcionaba porque
+     el fondo verde contrastaba con las pastillas ámbar y naranjas de los
+     datos. Con un fondo cálido eso se perdería, así que el degradado va
+     a muy poca saturación y las tarjetas suben a casi blanco. El color
+     fuerte se lo queda el dato, no el papel. */
+  .panel { --barra: 240px; --radio: 20px; --radio-chico: 14px; }
+
+  :root {
+    --p-lienzo: radial-gradient(125% 85% at 50% 0%, #fdf9f5 0%, #f5ece1 55%, #ecdfd0 100%);
+    --p-tarj:   #fffdfa;
+    --p-borde:  rgba(27,25,23,.055);
+    /* Dos sombras: una de 1px que apoya la tarjeta en el papel y otra
+       larga y muy abierta que la levanta. La segunda es la que da el
+       efecto de la referencia; sola se ve sucia, sola la primera se ve
+       plana. */
+    --p-alza:   0 1px 2px rgba(27,25,23,.03), 0 10px 26px -14px rgba(27,25,23,.22);
+    --p-alza2:  0 2px 6px rgba(27,25,23,.05), 0 18px 40px -18px rgba(27,25,23,.3);
+  }
+  :root[data-tema="oscuro"] {
+    --p-lienzo: radial-gradient(125% 85% at 50% 0%, #17222a 0%, #101920 55%, #0b1015 100%);
+    --p-tarj:   #1b262d;
+    --p-borde:  rgba(255,255,255,.06);
+    --p-alza:   0 1px 2px rgba(0,0,0,.28), 0 12px 30px -16px rgba(0,0,0,.7);
+    --p-alza2:  0 3px 8px rgba(0,0,0,.35), 0 20px 44px -20px rgba(0,0,0,.8);
+  }
 
   /* El sitio público define h1 como titular de cartel: condensado al
      68%, peso 800 y en versalitas, como está pintado el tanque. Está
@@ -169,6 +201,8 @@
 
   body {
     background: var(--p-fondo); color: var(--p-txt);
+    background-image: var(--p-lienzo);
+    background-attachment: fixed;
     font-size: 13.5px; letter-spacing: -.01em;
     transition: background .2s var(--ease), color .2s var(--ease);
   }
@@ -356,8 +390,9 @@
 
   /* ---------- Tarjetas ---------- */
   .tarj {
-    background: var(--p-sup); border-radius: var(--radio);
-    padding: 1.05rem 1.15rem 1.15rem; box-shadow: var(--p-sombra);
+    background: var(--p-tarj); border-radius: var(--radio);
+    padding: 1.05rem 1.15rem 1.15rem;
+    border: 1px solid var(--p-borde); box-shadow: var(--p-alza);
   }
   /* El margen sólo entre bloques apilados de la vista. Puesto como
      `.tarj + .tarj` a secas se colaba dentro de las rejillas y le
@@ -367,7 +402,19 @@
   .vista > .tarj + .tarj, .rejilla + .rejilla,
   .tarj + .rejilla, .rejilla + .tarj { margin-top: 1rem; }
   .tarj-h { display: flex; align-items: baseline; gap: .5rem 1rem; flex-wrap: wrap; margin-bottom: .9rem; }
-  .tarj-h h2 { font-family: var(--display); font-size: .97rem; margin: 0; }
+  .tarj-h h2 { font-family: var(--display); font-size: 1.02rem; font-weight: 600; margin: 0; }
+  /* Un punto de color delante del título de las tres tarjetas de Hoy.
+     No es adorno: los tres bloques se distinguen antes de leerlos, y es
+     lo que hace que la pantalla se lea como un semáforo y no como tres
+     cajas iguales. Sólo las que lo declaran, para que no se convierta
+     en ruido en las doce tarjetas del Resumen. */
+  .tarj[data-punto] .tarj-h h2 { display: flex; align-items: center; gap: .5rem; }
+  .tarj[data-punto] .tarj-h h2::before {
+    content: ""; width: 9px; height: 9px; border-radius: 50%; flex: 0 0 9px;
+    background: var(--p-acento);
+  }
+  .tarj[data-punto="mal"]  .tarj-h h2::before { background: var(--est-mal-tx); }
+  .tarj[data-punto="dato"] .tarj-h h2::before { background: var(--p-dato2); }
   .tarj-h .meta { margin-left: auto; color: var(--p-tenue); font-size: .8rem; }
   /* El contador que va pegado al título es un número, no una frase: se
      dibuja como pastilla para que se lea de un vistazo y no compita con
@@ -402,15 +449,16 @@
   /* Cada una es un botón: tocar el 2 de "sin atender" abre esas dos. */
   button.cifra {
     position: relative; overflow: hidden;
-    background: var(--p-sup); border-radius: var(--radio);
+    background: var(--p-tarj); border-radius: var(--radio);
     padding: 1rem 1.1rem 1.1rem; text-align: left; width: 100%;
-    box-shadow: var(--p-sombra);
-    transition: background .15s var(--ease), transform .15s var(--ease);
+    border: 1px solid var(--p-borde); box-shadow: var(--p-alza);
+    transition: box-shadow .18s var(--ease), transform .18s var(--ease);
   }
-  button.cifra:hover { background: var(--p-sup2); transform: translateY(-1px); }
+  button.cifra:hover { transform: translateY(-2px); box-shadow: var(--p-alza2); }
+  button.cifra:active { transform: translateY(0); }
   .cifra-chip {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 32px; height: 32px; border-radius: 9px; margin-bottom: .7rem;
+    width: 34px; height: 34px; border-radius: 11px; margin-bottom: .75rem;
     background: var(--p-suave); color: var(--p-acento-t);
   }
   .cifra-chip svg { width: 17px; height: 17px; }
@@ -418,14 +466,22 @@
     font-family: var(--display); font-weight: 600; font-size: 1.9rem;
     line-height: 1.05; letter-spacing: -.028em; font-variant-numeric: tabular-nums;
   }
+  .cifra-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
   .cifra-t { color: var(--p-tenue); margin-top: .2rem; }
-  .cifra-p { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; margin-top: .5rem; }
-  .cifra-mas { color: var(--p-tenue); font-size: .78rem; }
+  .cifra-p { color: var(--p-tenue); font-size: .78rem; margin-top: .25rem; }
   /* Antes esto era una frase de tres renglones bajo cada cifra. Es un
      dato de una sola ojeada: se lee el color y el signo antes que el
      número, y el número antes que la palabra. */
+  .delta::before, .pastilla:not(.mudo)::before {
+    content: ""; width: 5px; height: 5px; border-radius: 50%;
+    background: currentColor; flex: 0 0 5px; opacity: .85;
+  }
+  /* Las que ya empiezan con una flecha no llevan punto: serían dos
+     marcas seguidas diciendo lo mismo. */
+  .delta.sube::before, .delta.baja::before { display: none; }
+
   .delta {
-    display: inline-flex; align-items: center; gap: .15rem;
+    display: inline-flex; align-items: center; gap: .3rem;
     font-size: .75rem; font-weight: 600; padding: .17rem .45rem;
     border-radius: 999px; white-space: nowrap;
     font-variant-numeric: tabular-nums; letter-spacing: -.01em;
@@ -434,7 +490,11 @@
   .delta.baja   { background: var(--est-mal-bg);    color: var(--est-mal-tx); }
   .delta.igual  { background: var(--p-sup2);        color: var(--p-tenue); }
   .delta.espera { background: var(--est-espera-bg); color: var(--est-espera-tx); }
-  .cifra.urge .cifra-n { color: var(--p-acento-t); }
+  /* La tarjeta urgente se marca con un filo a la izquierda, igual que
+     un pendiente viejo. El número se queda del color normal: teñirlo
+     de naranja lo hacía competir con la pastilla de al lado y con el
+     botón de crear, y el naranja acá es marca, no alarma. */
+  .cifra.urge { border-left: 3px solid var(--p-acento); }
   /* La línea de tendencia sangra hasta el borde de abajo, como en la
      referencia. Sólo la llevan las tarjetas que tienen una serie de
      verdad: dibujarle una tendencia inventada a un número que no la
@@ -459,16 +519,34 @@
   }
 
   /* ---------- La cola ---------- */
+  /* Cada pendiente es su propia tarjeta dentro de la tarjeta. Separadas
+     sólo por una rayita, dos personas seguidas con tres botones cada una
+     se leían como una sola maraña. */
   .fila-cola {
-    display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
-    padding: .72rem 0; border-top: 1px solid var(--p-linea);
+    background: var(--p-sup); border: 1px solid var(--p-borde);
+    border-radius: var(--radio-chico); padding: .85rem .9rem .9rem;
   }
-  .fila-cola:first-child { border-top: 0; }
-  .cola-quien { flex: 1 1 15rem; min-width: 0; }
-  .cola-quien b { font-weight: 500; }
-  .cola-quien small { display: block; color: var(--p-tenue); margin-top: .12rem; }
-  .cola-espera { white-space: nowrap; }
-  .cola-acc { display: flex; gap: .4rem; margin-left: auto; }
+  .fila-cola + .fila-cola { margin-top: .6rem; }
+  /* Lo vencido se marca con un filo rojo, no con el naranja de la marca. */
+  .fila-cola.viejo { border-left: 3px solid var(--est-mal-tx); }
+
+  .cola-nom { display: flex; align-items: center; gap: .6rem; }
+  .cola-nom b {
+    flex: 1 1 auto; min-width: 0; font-weight: 600; font-size: .95rem;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .cola-nom .delta { flex: 0 0 auto; }
+  .cola-det { color: var(--p-tenue); margin: .35rem 0 .75rem; line-height: 1.45; }
+  .cola-det .ref { margin-right: .35rem; }
+  /* La referencia, en caja monoespaciada: se busca con el ojo, no se lee. */
+  .ref {
+    display: inline-block; vertical-align: baseline;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: .72rem; letter-spacing: -.02em;
+    background: var(--p-sup2); color: var(--p-txt2);
+    padding: .12rem .4rem; border-radius: 5px;
+  }
+  .cola-acc { display: flex; gap: .45rem; flex-wrap: wrap; }
 
   .bt {
     display: inline-flex; align-items: center; gap: .35rem;
@@ -491,7 +569,7 @@
      de navegar sería un anuncio, y esto es un ofrecimiento. */
   .instalar {
     position: fixed; z-index: 40;
-    left: .8rem; right: .8rem; bottom: calc(4.6rem + env(safe-area-inset-bottom));
+    left: .8rem; right: .8rem; bottom: calc(5.6rem + env(safe-area-inset-bottom));
     display: flex; align-items: center; gap: .7rem;
     padding: .7rem .8rem;
     background: var(--p-barra); color: var(--p-barra-t);
@@ -581,7 +659,7 @@
   .aplicado button { color: var(--p-tenue); text-decoration: underline; text-underline-offset: 3px; }
   .aplicado button:hover { color: var(--p-txt); }
 
-  .tabla-wrap { overflow-x: auto; border-radius: var(--radio); background: var(--p-sup); box-shadow: var(--p-sombra); }
+  .tabla-wrap { overflow-x: auto; border-radius: var(--radio); background: var(--p-tarj); border: 1px solid var(--p-borde); box-shadow: var(--p-alza); }
   table.lista { width: 100%; border-collapse: collapse; white-space: nowrap; }
   table.lista th, table.lista td { padding: .66rem .85rem; text-align: left; vertical-align: middle; }
   table.lista tbody tr { border-top: 1px solid var(--p-linea); }
@@ -606,7 +684,7 @@
      justamente lo que uno vino a tocar. En angosto no hay tabla: cada
      registro es una ficha con lo suyo apilado y los botones a mano. */
   .fichas { display: flex; flex-direction: column; gap: .7rem; }
-  .ficha { background: var(--p-sup); border-radius: var(--radio); padding: .9rem 1rem 1rem; box-shadow: var(--p-sombra); }
+  .ficha { background: var(--p-tarj); border-radius: var(--radio); padding: .9rem 1rem 1rem; border: 1px solid var(--p-borde); box-shadow: var(--p-alza); }
   .ficha-top { display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem; }
   .ficha-top .num { font-weight: 500; color: var(--p-acento-t); }
   .ficha-top .estado-hueco { margin-left: auto; }
@@ -684,21 +762,33 @@
 
   .ficha.cli { cursor: pointer; transition: background .15s var(--ease); }
   .ficha.cli:hover { background: var(--p-sup2); }
-  .cli-top { display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap; }
-  .cli-top b { font-size: 1rem; font-weight: 600; }
+  /* El nombre solo en su renglón y el teléfono debajo. Antes iban en la
+     misma línea y en un nombre de empresa largo el teléfono se perdía. */
+  .cli-top { display: flex; flex-direction: column; gap: .1rem; }
+  .cli-top b { font-size: 1.02rem; font-weight: 600; }
   .cli-top .tel { color: var(--p-tenue); font-variant-numeric: tabular-nums; }
   /* Antes esto llevaba `margin-left: auto` y la pastilla se iba sola al
      borde derecho, en su propio renglón y sin nada al lado. Ahora va
      debajo del nombre, que es de lo que habla. */
-  .cli-marcas { display: flex; gap: .4rem; flex-wrap: wrap; flex-basis: 100%; }
+  .cli-marcas { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .45rem; }
   .pastilla {
-    font-size: .75rem; font-weight: 500; padding: .2rem .5rem; border-radius: 6px;
+    display: inline-flex; align-items: center; gap: .35rem;
+    font-size: .75rem; font-weight: 500; padding: .25rem .6rem; border-radius: 999px;
     background: var(--p-sup2); color: var(--p-tenue); white-space: nowrap;
   }
   .pastilla.toca { background: var(--est-espera-bg); color: var(--est-espera-tx); }
   .pastilla.vencio { background: var(--est-mal-bg); color: var(--est-mal-tx); }
   .pastilla.mudo { opacity: .65; }
-  .cli-linea { color: var(--p-tenue); margin-top: .3rem; }
+  .cli-linea { color: var(--p-tenue); margin-top: .5rem; }
+  .cli-pie {
+    display: flex; align-items: center; gap: .7rem;
+    margin-top: .75rem; padding-top: .7rem; border-top: 1px solid var(--p-linea);
+  }
+  .cli-ir { flex: 1 1 auto; color: var(--p-acento-t); font-weight: 500; }
+  /* Los dos botones de contacto se agrandan: acá no hay una tabla que
+     los obligue a ser chiquitos y esto se toca en la calle. */
+  .acc[data-alto] a { width: 2.4rem; height: 2.4rem; border-radius: 999px; }
+  .acc[data-alto] a svg { width: 17px; height: 17px; }
   #estado-clientes:not(.is-error), #estado-lista:not(.is-error) {
     text-align: right; font-size: .8rem;
   }
@@ -727,20 +817,36 @@
     text-align: center; color: var(--p-tenue); font-size: .72rem;
     font-weight: 500; padding-bottom: .3rem;
   }
-  .cal button, .cal span.hueco {
-    aspect-ratio: 1 / 1; border-radius: 7px; display: flex;
+  .cal button {
+    aspect-ratio: 1 / 1; border-radius: 9px; display: flex;
     flex-direction: column; align-items: center; justify-content: center; gap: 2px;
     font-variant-numeric: tabular-nums; color: var(--p-txt2);
   }
-  .cal span.hueco { visibility: hidden; }
+  .cal span.fuera {
+    aspect-ratio: 1 / 1; border-radius: 9px; display: flex;
+    align-items: center; justify-content: center;
+    font-variant-numeric: tabular-nums; color: var(--p-tenue); opacity: .4;
+  }
   .cal button:hover { background: var(--p-sup2); }
-  .cal button.hoy { box-shadow: inset 0 0 0 1.5px var(--p-linea); font-weight: 600; color: var(--p-txt); }
+  /* Hoy va relleno de naranja, no con un aro tenue: es el único día que
+     uno busca de verdad al abrir la agenda, y un borde de 1,5px se
+     perdía entre los días que sí tienen color de estado. */
+  .cal button.hoy {
+    background: var(--p-acento); color: #fff; font-weight: 700;
+    box-shadow: 0 2px 8px -2px rgba(239,101,17,.5);
+  }
+  .cal button.hoy:hover { background: var(--p-acento); }
+  .cal button.hoy.con, .cal button.hoy.vencido { background: var(--p-acento); color: #fff; }
   .cal button.con { background: var(--est-espera-bg); color: var(--est-espera-tx); font-weight: 600; }
   .cal button.vencido { background: var(--est-mal-bg); color: var(--est-mal-tx); font-weight: 600; }
   .cal button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--p-acento); }
   .cal i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+  /* Los tres controles del mes en un solo riel: se leen como un control
+     y no como tres botones que casualmente quedaron juntos. */
+  .mes-riel { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--p-sup); }
   .mes-nav {
-    color: var(--p-tenue); padding: .18rem .45rem; border-radius: 6px; font-weight: 500;
+    min-width: 1.9rem; color: var(--p-tenue); padding: .28rem .55rem;
+    border-radius: 999px; font-weight: 500; text-align: center;
   }
   .mes-nav:hover { background: var(--p-sup2); color: var(--p-txt); }
 
@@ -774,7 +880,9 @@
   .toca-quien b { font-weight: 500; }
   .toca-quien small { display: block; color: var(--p-tenue); margin-top: .1rem; }
   .toca-cuando { color: var(--p-tenue); white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .toca-fila.vencido .toca-cuando { color: var(--p-acento-t); font-weight: 500; }
+  /* Lo vencido lo marca la pastilla roja, no el naranja de la marca. */
+  .toca-cuando { display: flex; flex-direction: column; align-items: flex-end; gap: .2rem; }
+  .toca-cuando small { color: var(--p-tenue); font-size: .74rem; }
   .toca-acc { display: flex; gap: .4rem; margin-left: auto; }
 
   /* ---------- Avisos ----------
@@ -800,7 +908,7 @@
   .aviso-uno.se-va { animation: bajaAviso .2s var(--ease) forwards; }
   @keyframes subeAviso { from { opacity: 0; transform: translateY(8px); } }
   @keyframes bajaAviso { to { opacity: 0; transform: translateY(6px); } }
-  @media (max-width: 859px) { .avisos { bottom: 4.6rem; } }
+  @media (max-width: 859px) { .avisos { bottom: calc(5.4rem + env(safe-area-inset-bottom)); } }
 
   /* ---------- Esqueletos ----------
      Mientras carga se dibuja la forma de lo que viene, no la palabra
@@ -809,7 +917,7 @@
   .hueso { background: var(--p-sup2); border-radius: 6px; animation: latir 1.4s ease-in-out infinite; }
   @keyframes latir { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
   .hueso-linea { height: .8rem; }
-  .esq-cifra { background: var(--p-sup); border-radius: var(--radio); padding: 1rem 1.1rem 1.1rem; box-shadow: var(--p-sombra); }
+  .esq-cifra { background: var(--p-tarj); border-radius: var(--radio); padding: 1rem 1.1rem 1.1rem; border: 1px solid var(--p-borde); box-shadow: var(--p-alza); }
   .esq-fila { display: flex; align-items: center; gap: var(--e4); padding: .8rem 0; border-top: 1px solid var(--p-linea); }
   .esq-fila:first-child { border-top: 0; }
 
@@ -925,23 +1033,54 @@
 
   /* ---------- Angosto ---------- */
   @media (max-width: 859px) {
-    /* La barra baja al borde de abajo, donde el pulgar ya busca. */
+    /* La barra baja al borde de abajo, donde el pulgar ya busca, y va
+       despegada de los bordes como una pastilla. Pegada al filo se lee
+       como parte del sistema operativo; flotando se lee como parte de
+       la aplicación, que es lo que muestra la referencia. */
     .panel { flex-direction: column; }
     .barra {
-      position: fixed; inset: auto 0 0 0; width: auto; height: auto;
+      position: fixed; left: .6rem; right: .6rem; top: auto;
+      bottom: calc(.5rem + env(safe-area-inset-bottom));
+      width: auto; height: auto;
       flex-direction: row; z-index: 30; padding: 0;
-      box-shadow: 0 -2px 16px rgba(0,0,0,.18);
+      border-radius: 999px;
+      box-shadow: 0 14px 34px -10px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.2);
     }
     .barra-logo, .barra-pie { display: none; }
-    .barra nav { flex-direction: row; width: 100%; padding: .35rem .4rem calc(.35rem + env(safe-area-inset-bottom)); gap: 0; }
+    /* El inset de abajo ya lo lleva la barra en su `bottom`; repetirlo
+       acá dentro dejaría un hueco negro del alto de la rayita. */
+    .barra nav { flex-direction: row; width: 100%; padding: .4rem .3rem; gap: 0; }
     /* Seis destinos en 375px: 62px cada uno. La etiqueta baja de
        tamaño y la larga se cambia por la corta. */
     /* `position: relative` para que el contador se cuelgue de SU botón
        y no de la barra entera, que es lo que lo dejaba flotando en el
        medio de la pantalla. */
-    .barra nav button { position: relative; flex-direction: column; gap: .15rem; justify-content: flex-start; font-size: .62rem; padding: .4rem .1rem; text-align: center; line-height: 1.15; }
-    .barra nav button svg { width: 19px; height: 19px; flex-basis: 19px; }
-    .barra .pendiente { position: absolute; top: .15rem; left: 52%; margin: 0; }
+    .barra nav button {
+      position: relative; flex-direction: column; gap: .18rem;
+      justify-content: flex-start; font-size: .62rem;
+      padding: .42rem .1rem .3rem; text-align: center; line-height: 1.15;
+      border-radius: 999px; background: none;
+    }
+    .barra nav button svg { position: relative; z-index: 1; width: 19px; height: 19px; flex-basis: 19px; }
+    /* El activo: icono y etiqueta en naranja, más un punto debajo.
+       Se probó una pastilla rellena detrás del icono —que es lo que hace
+       la referencia— y sobre la pizarra oscura el naranja al 18% da un
+       café sucio, además de que chocaba con el contador. El punto dice
+       lo mismo, no ensucia y nunca se topa con nada. */
+    .barra nav button[aria-selected="true"] { background: none; color: var(--p-acento-t); font-weight: 500; }
+    .barra nav button[aria-selected="true"]::after {
+      content: ""; position: absolute; bottom: -.05rem; left: 50%;
+      width: 4px; height: 4px; margin-left: -2px;
+      border-radius: 50%; background: var(--p-acento-t);
+    }
+    .barra nav button:hover { background: none; }
+    /* El contador se pega a la esquina del icono como una calcomanía, con
+       un aro del color de la barra que lo despega del dibujo de abajo. */
+    .barra .pendiente {
+      position: absolute; z-index: 2; top: .15rem; left: auto; right: .45rem; margin: 0;
+      border-radius: 999px; padding: .1rem .3rem; min-width: 1.05rem; text-align: center;
+      box-shadow: 0 0 0 2px var(--p-barra);
+    }
     .largo { display: none; }
     .barra nav .grupo-nav { display: none; }
     .buscador { max-width: none; }
@@ -950,7 +1089,7 @@
     .lienzo-top h1 { font-size: 1.45rem; }
     /* Crear se queda en icono, del tamaño de las otras dos ruedas. */
     .btn-fuerte.crear { width: 32px; height: 32px; padding: 0; border-radius: 9px; flex: 0 0 32px; }
-    .lienzo { padding: 1rem .85rem 6rem; }
+    .lienzo { padding: 1rem .85rem 7rem; }
     .tarj-h .meta { display: none; }
     .tarj-h .meta.siempre { display: inline; }
     .rejilla.cifras { gap: .7rem; }
@@ -985,15 +1124,10 @@
     /* La ficha de un pendiente se apila: quién, cuánto lleva esperando y
        los botones a todo el ancho. Puestos en fila caben, pero quedan de
        28px y hay que apuntar. */
-    .fila-cola { gap: .45rem; padding: .9rem 0; }
-    /* Tres renglones, en el orden en que se leen: quién, cuánto lleva
-       esperando, y qué se puede hacer. */
-    .cola-quien { flex: 1 1 100%; order: 1; }
-    .cola-espera { flex: 1 1 100%; order: 2; }
-    /* `flex-wrap` es lo que deja que "Ya la atendí" se baje sola. Sin
-       esto los tres botones pelean por el mismo renglón y WhatsApp y
-       Llamar quedan de dos centímetros. */
-    .cola-acc { flex: 1 1 100%; order: 3; margin-left: 0; gap: .45rem; flex-wrap: wrap; }
+    /* Los botones a todo el ancho: WhatsApp y Llamar a mitad cada uno,
+       y "Ya la atendí" se baja sola porque es la única que cambia el
+       estado de algo y no se puede tocar por error queriendo llamar. */
+    .cola-acc { gap: .45rem; }
     .cola-acc .bt {
       flex: 1 1 0; min-width: 0; justify-content: center;
       padding: .62rem .5rem; min-height: 42px;
@@ -1010,8 +1144,55 @@
     .corto { display: none; }
   }
 
+  /* ---------- Movimiento ----------
+     Tres reglas y ninguna más:
+
+       1. Nada dura más de 280ms. Esto se abre veinte veces al día; una
+          animación que se disfruta la primera vez estorba la décima.
+       2. Se mueve lo que entra, no lo que ya estaba. Nada rebota, nada
+          gira, nada se desliza de lado.
+       3. Todo sale de `both`, así que si algo falla el elemento queda
+          en su estado final y no invisible.
+
+     El escalonado es de 35ms y se corta a los ocho elementos: pasados
+     esos, el último llegaría medio segundo después del primero y la
+     lista se sentiría lenta en vez de viva. */
+  @keyframes entra-sube {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes entra-suave { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes entra-menu {
+    from { opacity: 0; transform: scale(.94) translateY(-6px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* La pantalla que entra sólo se funde. El movimiento lo ponen las
+     tarjetas: si se movieran las dos, se vería como un salto. */
+  .vista:not([hidden]) { animation: entra-suave .16s var(--ease) both; }
+
+  .escalona > * { animation: entra-sube .26s var(--ease) both; }
+  .escalona > *:nth-child(1) { animation-delay: 0ms; }
+  .escalona > *:nth-child(2) { animation-delay: 35ms; }
+  .escalona > *:nth-child(3) { animation-delay: 70ms; }
+  .escalona > *:nth-child(4) { animation-delay: 105ms; }
+  .escalona > *:nth-child(5) { animation-delay: 140ms; }
+  .escalona > *:nth-child(6) { animation-delay: 175ms; }
+  .escalona > *:nth-child(7) { animation-delay: 210ms; }
+  .escalona > *:nth-child(n+8) { animation-delay: 245ms; }
+
+  .menu-yo:not([hidden]) { animation: entra-menu .15s var(--ease) both; transform-origin: top right; }
+
+  /* Respuesta al toque: lo que se puede tocar se hunde un pelo. En una
+     pantalla táctil es la única confirmación de que el dedo pegó. */
+  .aten:active, .toca-fila:active, .ficha:active, .fila-cola:active { transform: scale(.988); }
+  .aten, .toca-fila, .ficha, .fila-cola { transition: transform .12s var(--ease), background .15s var(--ease); }
+
   @media (prefers-reduced-motion: reduce) {
-    .panel *, .panel *::before { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    .panel *, .panel *::before, .panel *::after {
+      animation-duration: .01ms !important; animation-delay: 0ms !important;
+      transition-duration: .01ms !important;
+    }
   }
 </style>
 </head>
@@ -1192,29 +1373,29 @@
 
       <!-- Lo primero que hay que hacer hoy. El panel deja de ser una
            pantalla donde uno mira números y pasa a decir qué sigue. -->
-      <div class="tarj" id="tarj-atencion" hidden>
+      <div class="tarj" id="tarj-atencion" data-punto="mal" hidden>
         <div class="tarj-h">
           <h2>Requiere atención</h2>
           <span class="meta cuenta siempre" id="atencion-n"></span>
         </div>
-        <div id="atencion"></div>
+        <div id="atencion" class="escalona"></div>
       </div>
 
       <div class="rejilla dos">
-        <div class="tarj" id="tarj-cola">
+        <div class="tarj" id="tarj-cola" data-punto>
           <div class="tarj-h">
             <h2>Pendientes</h2>
             <span class="meta cuenta siempre" id="cola-n"></span>
           </div>
-          <div id="cola"></div>
+          <div id="cola" class="escalona"></div>
         </div>
 
-        <div class="tarj">
+        <div class="tarj" data-punto="dato">
           <div class="tarj-h">
             <h2>Próximos servicios</h2>
             <span class="meta cuenta siempre" id="proximos-n"></span>
           </div>
-          <div id="proximos"></div>
+          <div id="proximos" class="escalona"></div>
         </div>
       </div>
 
@@ -1249,7 +1430,7 @@
 
       <p class="estado-linea" id="estado-resumen" role="status" aria-live="polite">Cargando…</p>
 
-      <div class="rejilla cifras" id="cifras"></div>
+      <div class="rejilla cifras escalona" id="cifras"></div>
 
       <div class="rejilla dos">
         <div class="tarj">
@@ -1329,7 +1510,7 @@
           <tbody id="cuerpo-tabla"></tbody>
         </table>
       </div>
-      <div class="fichas" id="fichas" hidden></div>
+      <div class="fichas escalona" id="fichas" hidden></div>
 
       <div class="paginacion" id="paginacion" hidden>
         <button class="btn-suave" type="button" id="btn-antes">&larr; Anteriores</button>
@@ -1347,7 +1528,7 @@
         <input type="search" id="c-busca" placeholder="Buscar por nombre, teléfono o cédula" aria-label="Buscar cliente">
       </div>
       <p class="estado-linea" id="estado-clientes" role="status" aria-live="polite"></p>
-      <div class="fichas" id="lista-clientes"></div>
+      <div class="fichas escalona" id="lista-clientes"></div>
       <div class="paginacion" id="clientes-pag" hidden>
         <button class="btn-suave" type="button" id="cli-antes">&larr; Anteriores</button>
         <span class="estado-linea" style="margin:0;" id="cli-pag-txt"></span>
@@ -1367,13 +1548,13 @@
          reciente. -->
     <div class="vista" id="vista-agenda" hidden>
       <p class="estado-linea" id="estado-agenda" role="status" aria-live="polite">Cargando…</p>
-      <div class="rejilla cifras" id="agenda-cifras"></div>
+      <div class="rejilla cifras escalona" id="agenda-cifras"></div>
 
       <div class="rejilla dos">
         <div class="tarj">
           <div class="tarj-h">
             <h2 id="cal-titulo"></h2>
-            <span class="meta">
+            <span class="meta siempre mes-riel">
               <button type="button" class="mes-nav" id="mes-antes" aria-label="Mes anterior">&larr;</button>
               <button type="button" class="mes-nav" id="mes-hoy">Hoy</button>
               <button type="button" class="mes-nav" id="mes-despues" aria-label="Mes siguiente">&rarr;</button>
@@ -1384,7 +1565,7 @@
 
         <div class="tarj">
           <div class="tarj-h"><h2 id="agenda-titulo">Le toca</h2><span class="meta" id="agenda-n"></span></div>
-          <div id="agenda-lista"></div>
+          <div id="agenda-lista" class="escalona"></div>
         </div>
       </div>
     </div>
@@ -1639,6 +1820,15 @@
     });
   }
 
+  /* 8811-2233 en vez de 88112233. Ocho dígitos seguidos hay que
+     contarlos para leerlos; partidos en dos se leen de un golpe, que es
+     como está impreso en cualquier tarjeta de Costa Rica. Los fijos de
+     ocho también, y lo que no tenga ocho se deja tal cual. */
+  function tel(v) {
+    var d = String(v || "").replace(/\D/g, "");
+    return d.length === 8 ? d.slice(0, 4) + "-" + d.slice(4) : String(v || "");
+  }
+
   // El mismo formato que el servidor: punto de miles.
   function colones(n) {
     return "₡" + String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -1689,13 +1879,21 @@
      hasta el borde de abajo, y sólo la llevan las dos tarjetas que
      cuentan entradas en el tiempo — a un estado y a una suma no se les
      dibuja una tendencia que no tienen. */
+  /* La pastilla de variación va arriba a la derecha, en la misma línea
+     del icono. Abajo estorbaba: empujaba la gráfica, dejaba las cuatro
+     tarjetas de distinto alto y hacía que el ojo tuviera que bajar hasta
+     el pie para saber si la cifra venía subiendo. */
   function cifra(o) {
     return '<button type="button" class="cifra' + (o.urge ? " urge" : "") + '"' +
       (o.ir ? " data-ir='" + escHtml(JSON.stringify(o.ir)) + "'" : "") + ">" +
-      '<span class="cifra-chip">' + o.icono + "</span>" +
-      '<div class="cifra-n">' + escHtml(o.n) + "</div>" +
+      '<div class="cifra-top"><span class="cifra-chip">' + o.icono + "</span>" +
+        (o.p || "") + "</div>" +
+      '<div class="cifra-n"' +
+        (o.bruto != null ? ' data-bruto="' + Number(o.bruto) + '"' +
+                           (o.colones ? ' data-colones="1"' : "") : "") +
+        ">" + escHtml(o.n) + "</div>" +
       '<div class="cifra-t">' + escHtml(o.t) + "</div>" +
-      (o.p ? '<div class="cifra-p">' + o.p + "</div>" : "") +
+      (o.pie ? '<div class="cifra-p">' + escHtml(o.pie) + "</div>" : "") +
       (o.chispa ? chispa(o.chispa, o.color) : "") +
       "</button>";
   }
@@ -1710,10 +1908,26 @@
     var pts = vals.map(function (v, i) {
       return (i * paso).toFixed(2) + "," + (H - (v / tope) * (H - 4) - 2).toFixed(2);
     });
+    /* Curva, no quebrada. Con treinta días de entradas diarias la
+       polilínea sale como un serrucho y no se lee una tendencia; suavizar
+       con un Catmull-Rom simplificado deja ver la forma, que es lo único
+       que una chispa de 30px de alto puede decir. */
+    var xy = pts.map(function (t) { var q = t.split(","); return [parseFloat(q[0]), parseFloat(q[1])]; });
+    var d = "M" + xy[0][0] + "," + xy[0][1];
+    for (var i = 0; i < xy.length - 1; i++) {
+      var p0 = xy[i === 0 ? 0 : i - 1], p1 = xy[i], p2 = xy[i + 1];
+      var p3 = xy[i + 2 < xy.length ? i + 2 : xy.length - 1];
+      var T = 6;   // cuánto se redondea: más alto, más suave
+      var c1x = p1[0] + (p2[0] - p0[0]) / T, c1y = p1[1] + (p2[1] - p0[1]) / T;
+      var c2x = p2[0] - (p3[0] - p1[0]) / T, c2y = p2[1] - (p3[1] - p1[1]) / T;
+      d += "C" + c1x.toFixed(2) + "," + c1y.toFixed(2) +
+           " " + c2x.toFixed(2) + "," + c2y.toFixed(2) +
+           " " + p2[0].toFixed(2) + "," + p2[1].toFixed(2);
+    }
     var c = color || "var(--p-dato1)";
     return '<svg class="cifra-chispa" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" aria-hidden="true">' +
-      '<path d="M0,' + H + "L" + pts.join("L") + "L" + W + "," + H + 'Z" fill="' + c + '" opacity=".13"/>' +
-      '<path d="M' + pts.join("L") + '" fill="none" stroke="' + c + '" stroke-width="1.6" ' +
+      '<path d="' + d + "L" + W + "," + H + "L0," + H + 'Z" fill="' + c + '" opacity=".11"/>' +
+      '<path d="' + d + '" fill="none" stroke="' + c + '" stroke-width="1.7" ' +
       'stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>';
   }
 
@@ -1743,17 +1957,17 @@
     /* El orden es el del trabajo real: entra una solicitud, se cotiza,
        queda algo sin atender, y al final se cobra. Estaba al revés. */
     $("cifras").innerHTML = [
-      cifra({ icono: ICO.bandeja, n: String(d.rango.sol), t: "Solicitudes",
+      cifra({ icono: ICO.bandeja, n: String(d.rango.sol), bruto: d.rango.sol, t: "Solicitudes",
         p: delta(d.variacion.sol),
         ir: { vista: "solicitudes", desde: d.desde, hasta: d.hasta },
         chispa: d.serie.map(function (f) { return f.sol; }), color: "var(--p-dato2)" }),
 
-      cifra({ icono: ICO.doc, n: String(d.rango.cot), t: "Cotizaciones",
+      cifra({ icono: ICO.doc, n: String(d.rango.cot), bruto: d.rango.cot, t: "Cotizaciones",
         p: delta(d.variacion.cot),
         ir: { vista: "cotizaciones", desde: d.desde, hasta: d.hasta },
         chispa: d.serie.map(function (f) { return f.cot; }), color: "var(--p-dato1)" }),
 
-      cifra({ icono: ICO.alerta, n: String(esperando), t: "Sin atender",
+      cifra({ icono: ICO.alerta, n: String(esperando), bruto: esperando, t: "Sin atender",
         p: esperando ? '<span class="delta espera" title="Lo que más lleva esperando">' +
                        escHtml(espera(d.esperaMax)) + "</span>" : "",
         urge: esperando > 0, ir: { vista: "cotizaciones", estado: "nueva" } }),
@@ -1764,13 +1978,46 @@
       /* Sin pie cuando no hay nada: el cero ya dice que no hay trabajos
          anotados, y explicarlo con una frase era el renglón suelto más
          largo de la pantalla. */
-      cifra({ icono: ICO.cartera, n: colones(d.ingresos.monto), t: "Cobrado",
-        p: d.ingresos.trabajos
-             ? delta(d.variacion.ing) + '<span class="cifra-mas">' +
-               d.ingresos.trabajos + (d.ingresos.trabajos === 1 ? " trabajo" : " trabajos") + "</span>"
-             : "",
+      cifra({ icono: ICO.cartera, n: colones(d.ingresos.monto),
+        bruto: d.ingresos.monto, colones: true, t: "Cobrado",
+        p: d.ingresos.trabajos ? delta(d.variacion.ing) : "",
+        pie: d.ingresos.trabajos
+               ? d.ingresos.trabajos + (d.ingresos.trabajos === 1 ? " trabajo" : " trabajos")
+               : "",
         ir: { vista: "clientes" } })
     ].join("");
+    contarCifras();
+  }
+
+  function reducido() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
+  /* Las cifras suben hasta su número en 420ms, con desaceleración
+     cúbica: rápido al principio y frenando al final, que es como se
+     lee un contador y no como se lee una barra de carga.
+
+     Es lo único decorativo de todo el panel y se gana el puesto: a
+     ₡1.340.000 le cuesta algo que lo miren, y contando obliga al ojo a
+     quedarse el medio segundo que hace falta para leer la cifra. Con
+     el sistema en "menos movimiento" no corre. */
+  function contarCifras() {
+    if (reducido()) return;
+    Array.prototype.forEach.call(document.querySelectorAll(".cifra-n[data-bruto]"), function (e) {
+      var fin = Number(e.dataset.bruto);
+      var esCol = e.dataset.colones === "1";
+      if (!fin) return;
+      var t0 = null, dur = 420;
+      function paso(t) {
+        if (t0 === null) t0 = t;
+        var k = Math.min(1, (t - t0) / dur);
+        var v = Math.round(fin * (1 - Math.pow(1 - k, 3)));
+        e.textContent = esCol ? colones(v) : String(v);
+        if (k < 1) requestAnimationFrame(paso);
+      }
+      e.textContent = esCol ? colones(0) : "0";
+      requestAnimationFrame(paso);
+    });
   }
 
   /* Requiere atención. Cada línea es un conteo con su destino: la
@@ -1800,12 +2047,18 @@
         'Acá van a aparecer los clientes a los que les toque mantenimiento.</p>';
       return;
     }
+    /* "en 2 días" dice cuánto falta; "(12 set)" dice cuándo es. Las dos
+       juntas son lo que uno necesita para decidir si lo mete en la ruta
+       de mañana, y cada una sola obliga a hacer la cuenta a mano. */
     $("proximos").innerHTML = d.proximos.map(function (p) {
       return '<div class="toca-fila' + (p.dias < 0 ? " vencido" : "") + '" data-ir=\'' +
         escHtml(JSON.stringify({ vista: "cliente", id: p.clienteId })) + "'>" +
         '<div class="toca-quien"><b>' + escHtml(p.nombre) + "</b><small>" +
           escHtml(p.servicio + (p.lugar ? " · " + p.lugar : "")) + "</small></div>" +
-        '<span class="toca-cuando">' + escHtml(cuando(p.dias)) + "</span>" +
+        '<span class="toca-cuando"><span class="delta ' +
+          (p.dias < 0 ? "baja" : p.dias <= 7 ? "espera" : "igual") + '">' +
+          escHtml(cuando(p.dias)) + "</span>" +
+          '<small>' + escHtml(fechaCorta(p.proximo)) + "</small></span>" +
       "</div>";
     }).join("");
   }
@@ -1850,11 +2103,17 @@
       acc.push('<button type="button" class="bt hecho" data-tabla="' + escHtml(p.tabla) +
                '" data-id="' + escHtml(String(p.id)) + '">' + ICO.visto + "Ya la atendí</button>");
 
+      /* El número de cotización sale del texto corrido y se vuelve una
+         ficha aparte: es lo que se busca cuando el cliente lo dice por
+         teléfono, y enterrado entre puntos medios no se encontraba. */
+      var det = [p.detalle, p.lugar].filter(Boolean).join(" · ");
+
       return '<div class="fila-cola' + (p.horas >= 24 ? " viejo" : "") + '">' +
-        '<div class="cola-quien"><b>' + escHtml(p.nombre) + "</b>" +
-          "<small>" + escHtml(p.titulo + " · " + p.detalle + (p.lugar ? " · " + p.lugar : "")) + "</small></div>" +
-        '<span class="cola-espera"><span class="delta ' + (p.horas >= 24 ? "baja" : "espera") + '">' +
-          escHtml(espera(p.horas)) + "</span></span>" +
+        '<div class="cola-nom"><b>' + escHtml(p.nombre) + "</b>" +
+          '<span class="delta ' + (p.horas >= 24 ? "baja" : "espera") + '">' +
+            escHtml(espera(p.horas)) + "</span></div>" +
+        '<div class="cola-det"><span class="ref">' + escHtml(p.titulo) + "</span>" +
+          (det ? "<span>" + escHtml(det) + "</span>" : "") + "</div>" +
         '<div class="cola-acc">' + acc.join("") + "</div>" +
       "</div>";
     }).join("");
@@ -2886,11 +3145,24 @@
           var lugar = [c.canton, c.provincia].filter(Boolean).join(", ");
           if (lugar) linea.push(lugar);
 
+          /* Una franja al pie para escribirle o llamarlo sin abrir la
+             ficha. Es la única forma de contacto que faltaba en el panel:
+             desde acá había que entrar al cliente para conseguir un botón,
+             y son dos toques de más en la única pantalla donde uno ya
+             sabe a quién quiere llamar. */
+          var pie = [];
+          if (c.wa) pie.push('<a class="wa" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener" ' +
+            'title="Escribir por WhatsApp" aria-label="Escribir por WhatsApp">' + ICO.wa + "</a>");
+          pie.push('<a href="tel:+506' + escHtml(String(c.telefono).replace(/\D/g, "")) +
+            '" title="Llamar" aria-label="Llamar">' + ICO.tel + "</a>");
+
           return '<article class="ficha cli" data-cliente="' + c.id + '">' +
             '<div class="cli-top"><b>' + escHtml(c.nombre) + "</b>" +
-              '<span class="tel">' + escHtml(c.telefono) + "</span>" +
+              '<span class="tel">' + escHtml(tel(c.telefono)) + "</span>" +
               '<span class="cli-marcas">' + marcas.join("") + "</span></div>" +
             (linea.length ? '<div class="cli-linea">' + escHtml(linea.join(" · ")) + "</div>" : "") +
+            '<div class="cli-pie"><span class="cli-ir">Ver ficha</span>' +
+              '<span class="acc" data-alto>' + pie.join("") + "</span></div>" +
           "</article>";
         }).join("");
 
@@ -2923,6 +3195,10 @@
   $("cli-despues").addEventListener("click", function () { cliPagina++; cargarClientes(); });
 
   $("lista-clientes").addEventListener("click", function (e) {
+    /* La tarjeta entera abre la ficha, pero los dos botones de la franja
+       de abajo son enlaces de verdad (WhatsApp y tel:). Sin esta salida,
+       tocar "llamar" abriría también la ficha por detrás. */
+    if (e.target.closest("a")) return;
     var f = e.target.closest("[data-cliente]");
     if (f) verCliente(f.dataset.cliente);
   });
@@ -2977,7 +3253,7 @@
       '<div class="tarj">' +
         '<div class="perfil-cab">' +
           "<div><h2>" + escHtml(c.nombre) + "</h2>" +
-            '<div class="sub">' + escHtml(c.telefono + (lugar ? " · " + lugar : "")) + "</div></div>" +
+            '<div class="sub">' + escHtml(tel(c.telefono) + (lugar ? " · " + lugar : "")) + "</div></div>" +
           '<div class="acc-cab">' + acc.join("") + "</div>" +
         "</div>" +
         '<div class="nueva-rejilla">' +
@@ -3137,7 +3413,15 @@
     var hoy = new Date(), esMesDeHoy = hoy.getFullYear() === y && hoy.getMonth() === m;
 
     var celdas = DOW.map(function (d) { return '<span class="dow">' + d + "</span>"; });
-    for (var i = 0; i < corrimiento; i++) celdas.push('<span class="hueco"></span>');
+
+    /* Los días del mes vecino se dibujan en gris en vez de dejar celdas
+       en blanco. Con huecos, la primera fila parece rota; con los
+       números apagados se ve que la semana sigue, que es lo que hace
+       cualquier calendario de papel. */
+    var finAnterior = new Date(y, m, 0).getDate();
+    for (var i = corrimiento; i > 0; i--) {
+      celdas.push('<span class="fuera">' + (finAnterior - i + 1) + "</span>");
+    }
 
     for (var dia = 1; dia <= ultimo; dia++) {
       var n = porDia[dia] || 0;
@@ -3150,6 +3434,11 @@
         (n ? ' title="' + n + (n === 1 ? " cliente" : " clientes") + '"' : "") + ">" +
         dia + (n ? "<i></i>" : "") + "</button>");
     }
+
+    // Y se completa la última fila con los primeros del mes que viene.
+    var sobran = (7 - (celdas.length - DOW.length) % 7) % 7;
+    for (var j = 1; j <= sobran; j++) celdas.push('<span class="fuera">' + j + "</span>");
+
     $("cal").innerHTML = celdas.join("");
   }
 
