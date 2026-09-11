@@ -1053,7 +1053,10 @@
   .hoja {
     background: var(--p-sup); border: 1px solid var(--p-borde);
     border-radius: var(--radio); padding: 1.4rem 1.5rem 1.5rem;
-    width: min(30rem, 100%); box-shadow: 0 24px 60px rgba(0,0,0,.35);
+    width: min(32rem, 100%); box-shadow: 0 24px 60px rgba(0,0,0,.35);
+    /* Una hoja más alta que la pantalla deja los botones de guardar
+       fuera y sin forma de llegar a ellos. Rueda por dentro. */
+    max-height: calc(100vh - 2rem); overflow-y: auto;
   }
   /* La hoja entra desde abajo y el velo se funde: dos movimientos de
      220ms que dicen "esto se abrió encima" sin hacerlo esperar a nadie. */
@@ -1065,7 +1068,18 @@
   }
   .hoja h2 { font-size: 1.15rem; font-weight: 600; margin: 0; }
   .hoja .nueva-rejilla { grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); }
-  .hoja-pie { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1.4rem; flex-wrap: wrap; }
+  .hoja-pie {
+    display: flex; gap: .6rem; justify-content: flex-end;
+    margin-top: 1.4rem; flex-wrap: wrap;
+    /* Pegado al fondo de la hoja mientras se rueda: los botones de
+       guardar no se buscan, tienen que estar. */
+    position: sticky; bottom: -1.5rem;
+    padding: .9rem 0 .2rem; background: var(--p-sup);
+  }
+  @media (max-width: 560px) {
+    .hoja-pie { flex-direction: column-reverse; }
+    .hoja-pie button { width: 100%; }
+  }
 
   /* ---------- Nueva cotización ---------- */
   /* El riel de pasos. El número se tacha con un visto cuando ya se
@@ -1672,6 +1686,14 @@
     <div class="vista" id="vista-clientes" hidden>
       <div class="rango" id="clientes-barra">
         <input type="search" id="c-busca" placeholder="Buscar por nombre, teléfono o cédula" aria-label="Buscar cliente">
+        <!-- El trabajo que no vino de una cotización. Es el caso más
+             común de todos y era el único que no entraba por ningún lado. -->
+        <button type="button" class="btn-fuerte crear" id="btn-trabajo" title="Anotar un trabajo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          <span class="largo">Anotar un trabajo</span>
+        </button>
       </div>
       <p class="estado-linea" id="estado-clientes" role="status" aria-live="polite"></p>
       <div class="fichas escalona" id="lista-clientes"></div>
@@ -1828,6 +1850,60 @@
       <path d="M6 6l12 12M18 6 6 18"/>
     </svg>
   </button>
+</div>
+
+<!-- Anotar un trabajo que no vino de una cotización, y de paso registrar
+     al cliente. Antes un cliente sólo podía nacer marcando una cotización
+     como hecha; el que llamó y se le hizo el trabajo directo no quedaba
+     en ninguna parte, ni sumaba en lo cobrado ni se le armaba el
+     recordatorio, que es de donde sale el próximo trabajo. -->
+<div class="velo" id="velo-trabajo" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="t-titulo">
+    <h2 id="t-titulo">Anotar un trabajo</h2>
+    <p class="dim" style="color:var(--p-tenue); margin:.3rem 0 1.1rem;">
+      Para el que llamó y se le hizo el trabajo, sin cotización de por medio.
+    </p>
+
+    <div class="nueva-rejilla">
+      <div class="f"><label for="t-telefono">Teléfono</label>
+        <input id="t-telefono" type="tel" inputmode="tel" autocomplete="off" placeholder="8888-8888"></div>
+      <div class="f"><label for="t-nombre">Nombre</label>
+        <input id="t-nombre" type="text" autocomplete="off"></div>
+      <div class="f"><label for="t-cedula">Cédula <span class="opc">opcional</span></label>
+        <input id="t-cedula" type="text" autocomplete="off"></div>
+      <div class="f"><label for="t-correo">Correo <span class="opc">opcional</span></label>
+        <input id="t-correo" type="email" autocomplete="off"></div>
+    </div>
+    <div class="f" style="margin-top:.9rem;"><label for="t-senas">Señas para llegar <span class="opc">opcional</span></label>
+      <input id="t-senas" type="text" placeholder="ej. Grecia, 300m sur de la iglesia, portón verde"></div>
+    <p class="ayuda" id="t-ya" hidden></p>
+
+    <div class="libre-caja">
+      <div class="nueva-rejilla">
+        <div class="f"><label for="t-servicio">Qué se hizo</label>
+          <select id="t-servicio"></select></div>
+        <div class="f"><label for="t-fecha">Se hizo el</label>
+          <input type="date" id="t-fecha"></div>
+        <div class="f"><label for="t-monto">Se cobró <span class="opc">opcional</span></label>
+          <input type="number" id="t-monto" inputmode="numeric" min="0" placeholder="₡"></div>
+      </div>
+      <div class="f"><label for="t-detalle">Detalle <span class="opc">opcional</span></label>
+        <input id="t-detalle" type="text" placeholder="ej. tanque de 3 tapas, se encontró raíz en la salida"></div>
+    </div>
+
+    <div class="nueva-rejilla" style="margin-top:.9rem;">
+      <div class="f"><label for="t-meses">Recordar en</label><select id="t-meses"></select></div>
+      <div class="f"><label for="t-canal">Recordar por</label><select id="t-canal"></select></div>
+    </div>
+    <label class="marca-check"><input type="checkbox" id="t-recordar" checked> Mandarle recordatorio cuando le toque</label>
+
+    <p class="estado-linea" id="t-aviso" role="status" aria-live="polite"></p>
+    <div class="hoja-pie">
+      <button type="button" class="btn-suave" id="t-cerrar">Cancelar</button>
+      <button type="button" class="btn-suave" id="t-solo-cliente">Sólo guardar el cliente</button>
+      <button type="button" class="btn-fuerte" id="t-guardar">Guardar el trabajo</button>
+    </div>
+  </div>
 </div>
 
 <div class="velo" id="velo" hidden>
@@ -3639,6 +3715,128 @@
   var AGENDA = null, agendaCargada = false;
   var calMes = null;                       // primer día del mes mostrado
   var agendaFiltro = { tipo: "pronto" };   // pronto | vencidos | trimestre | dia
+
+  /* =========================================================
+     Anotar un trabajo a mano
+     =========================================================
+
+     El que llamó, se le hizo el trabajo y se le cobró. No hubo
+     cotización, así que hasta ahora no entraba por ningún lado: ni
+     sumaba en lo cobrado, ni quedaba el cliente, ni se le armaba el
+     recordatorio — que es de donde sale el próximo trabajo.
+
+     El teléfono manda, igual que en todo el panel: si ya existe se
+     actualiza, y si no, se crea. */
+  function abrirTrabajo() {
+    $("t-meses").innerHTML = PERIODOS.map(function (m) {
+      return '<option value="' + m + '"' + (m === 24 ? " selected" : "") + ">" + textoPeriodo(m) + "</option>";
+    }).join("");
+    $("t-canal").innerHTML = Object.keys(CANALES || { whatsapp: "WhatsApp" }).map(function (k) {
+      return '<option value="' + k + '"' + (k === "whatsapp" ? " selected" : "") + ">" +
+             escHtml((CANALES || {})[k] || k) + "</option>";
+    }).join("");
+
+    /* La lista de servicios vive en el cotizador, así que si todavía no
+       se ha abierto esa pantalla hay que traerla. Mientras llega, la
+       casilla queda con lo mínimo y no bloquea el resto de la hoja. */
+    function llenarServicios() {
+      opciones($("t-servicio"), Object.keys(OPC.servicios).map(function (k) {
+        return { id: k, etiqueta: OPC.servicios[k].nombre };
+      }), "Escoja…");
+    }
+    if (OPC) llenarServicios();
+    else {
+      $("t-servicio").innerHTML = '<option value="">Cargando…</option>';
+      pedir("/api/cotizar/opciones").then(function (r) { OPC = r; llenarServicios(); })
+        .catch(function () { $("t-servicio").innerHTML = '<option value="">No se pudo cargar</option>'; });
+    }
+
+    ["t-telefono", "t-nombre", "t-cedula", "t-correo", "t-senas", "t-monto", "t-detalle"]
+      .forEach(function (id) { $(id).value = ""; });
+    $("t-fecha").value = hoyISO();
+    $("t-recordar").checked = true;
+    $("t-aviso").textContent = "";
+    $("t-aviso").classList.remove("is-error");
+    $("t-ya").hidden = true;
+    $("velo-trabajo").hidden = false;
+    $("t-telefono").focus();
+  }
+
+  function cerrarTrabajo() { $("velo-trabajo").hidden = true; }
+
+  $("btn-trabajo").addEventListener("click", abrirTrabajo);
+  $("t-cerrar").addEventListener("click", cerrarTrabajo);
+  $("velo-trabajo").addEventListener("click", function (e) {
+    if (e.target === $("velo-trabajo")) cerrarTrabajo();
+  });
+
+  // Si el teléfono ya está registrado se avisa y se trae el nombre: es
+  // lo que evita terminar con el mismo señor escrito de tres formas.
+  var tReloj = null;
+  $("t-telefono").addEventListener("input", function () {
+    var d = $("t-telefono").value.replace(/\D/g, "");
+    $("t-ya").hidden = true;
+    if (d.length !== 8) return;
+    clearTimeout(tReloj);
+    tReloj = setTimeout(function () {
+      pedir("/api/panel/buscar?q=" + encodeURIComponent(d))
+        .then(function (r) {
+          var c = (r.resultados || []).filter(function (x) { return x.tipo === "cliente"; })[0];
+          if (!c) return;
+          $("t-ya").textContent = "Ya está registrado: " + c.etiqueta + ". Se le suma este trabajo.";
+          $("t-ya").hidden = false;
+          if (!$("t-nombre").value) {
+            $("t-nombre").value = String(c.etiqueta).split(" · ")[0] || "";
+          }
+        })
+        .catch(function () {});
+    }, 350);
+  });
+
+  function guardarTrabajo(conTrabajo) {
+    var aviso = $("t-aviso");
+    aviso.classList.remove("is-error");
+    aviso.textContent = "Guardando…";
+    $("t-guardar").disabled = true;
+    $("t-solo-cliente").disabled = true;
+
+    pedir("/api/panel/trabajo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        conTrabajo: conTrabajo,
+        telefono: $("t-telefono").value, nombre: $("t-nombre").value,
+        cedula: $("t-cedula").value, correo: $("t-correo").value,
+        senas: $("t-senas").value,
+        servicio: $("t-servicio").value, fecha: $("t-fecha").value,
+        monto: $("t-monto").value, detalle: $("t-detalle").value,
+        meses: $("t-meses").value, canal: $("t-canal").value,
+        recordatorio: $("t-recordar").checked
+      })
+    })
+      .then(function (d) {
+        cerrarTrabajo();
+        avisar(d.conTrabajo
+          ? "Trabajo anotado" + (d.nuevo ? " y cliente registrado." : ".")
+          : (d.nuevo ? "Cliente registrado." : "Cliente actualizado."));
+        // El trabajo cambia lo cobrado y la agenda, así que las dos
+        // pantallas quedan marcadas como viejas.
+        resumenCargado = false;
+        agendaCargada = false;
+        cargarClientes();
+      })
+      .catch(function (err) {
+        aviso.textContent = String((err && err.message) || "No se pudo guardar.");
+        aviso.classList.add("is-error");
+      })
+      .then(function () {
+        $("t-guardar").disabled = false;
+        $("t-solo-cliente").disabled = false;
+      });
+  }
+
+  $("t-guardar").addEventListener("click", function () { guardarTrabajo(true); });
+  $("t-solo-cliente").addEventListener("click", function () { guardarTrabajo(false); });
 
   function cargarAgenda() {
     $("estado-agenda").textContent = "";

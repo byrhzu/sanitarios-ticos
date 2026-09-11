@@ -601,6 +601,105 @@ async function registrarDesdeCotizacion(env, id, extra) {
   }
 }
 
+
+/* -------------------------------------------------------------
+   Un trabajo anotado a mano
+
+   Hasta acá, un cliente sólo podía nacer marcando una cotización como
+   hecha, y un trabajo sólo existía si antes hubo cotización. Eso deja
+   por fuera el caso más común de todos: el que llamó, se le fue a hacer
+   el trabajo y se le cobró, sin que nadie abriera el cotizador.
+
+   Ese trabajo no estaba en ningún lado. No sumaba en lo cobrado, el
+   cliente no quedaba registrado y no se le armaba el recordatorio — que
+   es justamente de donde sale el próximo trabajo.
+
+   Acá entra por el teléfono, igual que todo lo demás: si ya existe se
+   actualiza, y si no, se crea. `cotizacion` queda en null, que es la
+   forma honesta de decir "este no vino de una".
+   ------------------------------------------------------------- */
+async function trabajoAMano(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+
+  let cuerpo;
+  try {
+    cuerpo = await request.json();
+  } catch (e) {
+    return json({ ok: false, error: "Formato inválido" }, 400);
+  }
+
+  const persona = limpiarDatosPersona(cuerpo, ["nombre", "telefono"]);
+  if (persona.error) return json({ ok: false, error: persona.error }, 400);
+
+  const provincia = texto(cuerpo.provincia, 40);
+  const canton = texto(cuerpo.canton, 60);
+  const distrito = texto(cuerpo.distrito, 80);
+  if (provincia && !direccionValida(provincia, canton, distrito)) {
+    return json({ ok: false, error: "Esa dirección no existe en la lista de Costa Rica" }, 400);
+  }
+
+  const conTrabajo = cuerpo.conTrabajo !== false;
+  if (conTrabajo && !texto(cuerpo.servicio, 40)) {
+    return json({ ok: false, error: "Falta decir qué trabajo se hizo" }, 400);
+  }
+
+  try {
+    // Saber si ya existía antes de tocarlo: es lo que le permite al panel
+    // decir "se registró" o "se actualizó" sin adivinar.
+    const antes = await env.DB.prepare(`SELECT id FROM clientes WHERE telefono = ?`)
+      .bind(normalizarTelefono(persona.datos.telefono).valor).first();
+
+    const cliente = await guardarCliente(env, Object.assign({}, persona.datos, {
+      provincia, canton, distrito
+    }));
+    if (!cliente) return json({ ok: false, error: "No se pudo guardar el cliente" }, 500);
+
+    /* Las señas, la nota y la forma de recordar no las toca
+       `guardarCliente` —ese se usa también desde una cotización, donde no
+       existen—, así que se ponen acá y sólo si vinieron. */
+    const meses = PERIODOS.indexOf(+cuerpo.meses) !== -1 ? +cuerpo.meses : cliente.meses;
+    const canal = ["whatsapp", "correo", "ninguno"].indexOf(cuerpo.canal) !== -1
+      ? cuerpo.canal : null;
+
+    await env.DB.prepare(
+      `UPDATE clientes SET
+         senas        = COALESCE(NULLIF(?1, ''), senas),
+         nota         = COALESCE(NULLIF(?2, ''), nota),
+         meses        = ?3,
+         canal        = COALESCE(?4, canal),
+         recordatorio = ?5,
+         actualizado  = datetime('now')
+       WHERE id = ?6`
+    ).bind(
+      texto(cuerpo.senas, 200) || "", texto(cuerpo.nota, 300) || "",
+      meses, canal, cuerpo.recordatorio === false ? 0 : 1, cliente.id
+    ).run();
+
+    if (conTrabajo) {
+      await guardarServicio(env, cliente.id, {
+        fecha: cuerpo.fecha,
+        servicio: texto(cuerpo.servicio, 40),
+        detalle: texto(cuerpo.detalle, 200),
+        monto: cuerpo.monto,
+        cotizacion: null,
+        meses: meses,
+        nota: texto(cuerpo.notaTrabajo, 300)
+      }, meses);
+    }
+
+    return json({
+      ok: true,
+      id: cliente.id,
+      nombre: persona.datos.nombre,
+      nuevo: !antes,
+      conTrabajo
+    });
+  } catch (e) {
+    console.error("No se pudo anotar el trabajo:", e);
+    return json({ ok: false, error: "No se pudo guardar" }, 500);
+  }
+}
+
 /* -------------------------------------------------------------
    Resumen: las cifras del tablero
 
@@ -2173,6 +2272,9 @@ export default {
     }
     if (url.pathname === "/api/panel/cliente" && request.method === "GET") {
       return verCliente(request, env);
+    }
+    if (url.pathname === "/api/panel/trabajo" && request.method === "POST") {
+      return trabajoAMano(request, env);
     }
     if (url.pathname === "/api/panel/cliente" && request.method === "POST") {
       return editarCliente(request, env);
