@@ -1594,3 +1594,28 @@ pantalla táctil es la única confirmación de que el dedo pegó.
 que lo miren, y contando obliga al ojo a quedarse el medio segundo que
 hace falta para leer la cifra. Con el sistema en "menos movimiento" no
 corre, como todo lo demás.
+
+### Solicitudes y Cotizaciones en el teléfono
+
+La ficha de celular era la fila de la tabla puesta en vertical: etiqueta y
+valor, todas del mismo tamaño, con "Rango: ₡85.000 a ₡110.000" pesando lo
+mismo que "Zona: 1".
+
+Ahora cada dato pesa lo que pesa en la cabeza de uno: arriba el número en
+ficha naranja y el estado, que es por dónde se busca; después el cliente y
+qué pidió; luego **el monto en su propia caja**, porque es el dato con el
+que se decide; y al final lugar, fecha y teléfono **con icono en vez de
+palabra** — tres palabras menos por ficha, y el icono se reconoce antes de
+leerse.
+
+Para eso `meta` en `worker.js` pasó a llevar los campos con nombre
+(`servicio`, `detalle`, `monto`, `lugar`, `fecha`). La tabla de escritorio
+sigue armándose con `encabezado` y `fila`, que es lo correcto para una
+tabla; pero cuál celda es el monto no se puede deducir de un arreglo, y la
+ficha necesita saberlo para darle distinto peso.
+
+Dos arreglos de paso: el filtro de la lista se salía de la pantalla por el
+borde derecho en 375px (arrancaba a los 224px por un `flex-basis` de
+escritorio metido en un `style` en línea), y las pestañas de estado se
+partían en dos filas, donde la segunda se lee como otra cosa. Ahora ruedan
+de lado en una sola línea.

@@ -229,12 +229,22 @@ const TABLAS_PANEL = {
       ancha: 5,
       fila: (f) => [f.creado, f.nombre, f.telefono, f.servicio,
                     f.zona, f.detalle || "—"],
+      /* `meta` lleva los mismos datos que la fila, pero con nombre. En
+         escritorio la tabla se arma con `encabezado` y `fila`, que es lo
+         correcto para una tabla; en el teléfono la ficha necesita saber
+         cuál dato es el monto y cuál el lugar para darles distinto peso,
+         y eso no se puede deducir de un arreglo de celdas. */
       meta: (f) => ({
         id: f.id,
         estado: f.estado || ESTADO_INICIAL,
         nota: f.nota || "",
         nombre: f.nombre || "",
         tel: f.telefono || null,
+        servicio: f.servicio || "",
+        detalle: f.detalle || "",
+        monto: null,            // una solicitud todavía no tiene precio
+        lugar: f.zona || null,
+        fecha: f.creado,
         wa: waDe(f.telefono,
           "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") + ", le escribo de " +
           "Sanitarios Ticos. Nos entró su solicitud de " + (f.servicio || "servicio").toLowerCase() +
@@ -285,6 +295,12 @@ const TABLAS_PANEL = {
         nota: f.nota || "",
         nombre: f.nombre || "",
         tel: f.telefono || null,
+        servicio: etiqueta(f.servicio, null, "servicio"),
+        detalle: [etiqueta(f.servicio, f.forma, "forma"),
+                  etiqueta(f.servicio, f.medida, "medida")].filter(Boolean).join(" · "),
+        monto: montoTexto(f.monto_min, f.monto_max),
+        lugar: [f.canton, f.provincia].filter(Boolean).join(", ") || null,
+        fecha: f.creado,
         wa: waDe(f.telefono,
           "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") + ", le escribo de " +
           "Sanitarios Ticos por su cotización " + (f.numero || "") + ": " +

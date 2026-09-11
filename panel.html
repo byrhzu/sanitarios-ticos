@@ -623,10 +623,16 @@
   /* ---------- Listas ---------- */
   /* Pestañas de estado. La línea de abajo hace de riel: el activo se
      marca con el naranja y el resto se queda en gris, sin cajas. */
+  /* Las pestañas ruedan de lado en una sola línea. Envueltas en dos
+     filas, la segunda se lee como otra cosa y el riel deja de verse
+     como un recorrido de un estado al siguiente. */
   .pest-est {
-    display: flex; gap: .2rem; flex-wrap: wrap;
+    display: flex; gap: .2rem; flex-wrap: nowrap;
+    overflow-x: auto; scrollbar-width: none;
     border-bottom: 1px solid var(--p-linea); margin-bottom: var(--e4);
   }
+  .pest-est::-webkit-scrollbar { display: none; }
+  .pest-est button { flex: 0 0 auto; white-space: nowrap; }
   .pest-est button {
     padding: .55rem .75rem; color: var(--p-tenue); font-weight: 500;
     border-bottom: 2px solid transparent; margin-bottom: -1px;
@@ -642,6 +648,7 @@
   .pest-est .n:empty { display: none; }
 
   .filtros { display: flex; gap: .8rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 1rem; }
+  .filtros .f-busca { flex: 1 1 14rem; max-width: 22rem; }
   .filtros input[type="search"] { width: 100%; }
   .filtros .f { margin: 0; }
   .filtros .f label { font-size: .78rem; color: var(--p-tenue); }
@@ -686,13 +693,29 @@
   .fichas { display: flex; flex-direction: column; gap: .7rem; }
   .ficha { background: var(--p-tarj); border-radius: var(--radio); padding: .9rem 1rem 1rem; border: 1px solid var(--p-borde); box-shadow: var(--p-alza); }
   .ficha-top { display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem; }
-  .ficha-top .num { font-weight: 500; color: var(--p-acento-t); }
+  .ficha-top .num.ref { color: var(--p-acento-t); background: var(--p-suave); }
+  .ficha-top .num.ref a { color: inherit; }
   .ficha-top .estado-hueco { margin-left: auto; }
-  .ficha-nom { font-family: var(--display); font-weight: 600; font-size: 1.02rem; letter-spacing: -.015em; }
-  .ficha-datos { margin-top: .5rem; display: grid; gap: .28rem; }
-  .ficha-datos div { display: flex; gap: .7rem; }
-  .ficha-datos dt { color: var(--p-tenue); flex: 0 0 7.2rem; }
-  .ficha-datos dd { margin: 0; color: var(--p-txt2); min-width: 0; overflow-wrap: anywhere; }
+  .ficha-nom { font-family: var(--display); font-weight: 600; font-size: 1.05rem; letter-spacing: -.015em; }
+  .ficha-que { color: var(--p-tenue); margin-top: .12rem; }
+
+  /* El monto en su propia caja. Es el dato con el que se decide, y en
+     texto corrido entre puntos medios pesaba lo mismo que la zona. */
+  .ficha-monto {
+    font-family: var(--display); font-weight: 700; font-size: 1.15rem;
+    letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+    background: var(--p-sup); border: 1px solid var(--p-borde);
+    border-radius: var(--radio-chico); padding: .6rem .75rem; margin-top: .7rem;
+  }
+
+  /* Lugar, fecha y teléfono con icono en vez de etiqueta. Tres palabras
+     menos por ficha y el icono se reconoce antes de leerse. */
+  .ficha-datos {
+    display: flex; flex-wrap: wrap; gap: .35rem .9rem;
+    margin-top: .7rem; color: var(--p-tenue);
+  }
+  .ficha-datos span { display: inline-flex; align-items: center; gap: .35rem; min-width: 0; }
+  .ficha-datos svg { width: 14px; height: 14px; flex: 0 0 14px; opacity: .8; }
   .ficha-pie { display: flex; gap: .5rem; align-items: center; margin-top: .9rem; padding-top: .8rem; border-top: 1px solid var(--p-linea); }
   .ficha-pie .bt { flex: 1; justify-content: center; }
   .ficha .nota { width: 100%; margin-top: .6rem; }
@@ -1099,7 +1122,11 @@
     .cifra-n { font-size: 1.45rem; letter-spacing: -.03em; }
     .cifra { padding: .85rem .9rem .95rem; }
     .filtros { gap: .6rem; }
-    .filtros .f { flex: 1 1 7rem; }
+    /* El filtro a todo el ancho y las dos fechas a mitad cada una. Con
+       el `flex-basis` de escritorio, "Desde" arrancaba a los 224px y se
+       salía de la pantalla por el borde derecho. */
+    .filtros .f-busca { flex: 1 1 100%; max-width: none; }
+    .filtros .f { flex: 1 1 7rem; min-width: 0; }
     .filtros .f input, .filtros .f select { width: 100%; }
     /* El CSV no se estira: en el teléfono casi nadie descarga una hoja
        de cálculo, y un botón a todo el ancho promete que sí. */
@@ -1485,7 +1512,7 @@
       <div class="pest-est" id="pest-est" role="tablist" aria-label="Filtrar por estado"></div>
 
       <div class="filtros">
-        <div class="f" style="flex:1 1 14rem; max-width:22rem;">
+        <div class="f f-busca">
           <!-- Se llama distinto que el buscador de arriba a propósito:
                son dos cajas parecidas a 20cm de distancia y hacen cosas
                distintas — una filtra lo que ya está en pantalla, la
@@ -1731,7 +1758,8 @@
     visto:    ico("M20 6 9 17l-5-5"),
     silencio: ico("M11 5 6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6"),
     flecha:   ico("M5 12h13m-5-6 6 6-6 6"),
-    mas:      ico("M12 5v14M5 12h14")
+    mas:      ico("M12 5v14M5 12h14"),
+    pin:      ico("M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11z", '<circle cx="12" cy="10" r="2.6"/>')
   };
 
   /* El tema arranca por lo que tenga puesto el sistema y se queda con
@@ -2567,12 +2595,22 @@
   var ANGOSTO = 720;
   function esAngosto() { return window.innerWidth < ANGOSTO; }
 
+  /* La ficha de celular. Antes era la fila de la tabla puesta en
+     vertical: una lista de etiqueta y valor, todas del mismo tamaño, con
+     "Rango: ₡85.000 a ₡110.000" pesando lo mismo que "Zona: 1".
+
+     Ahora cada dato tiene el peso que tiene en la cabeza de uno:
+       arriba   el número y el estado, que es por dónde se busca
+       después  el cliente y qué pidió
+       luego    el monto, en su propia caja, porque es el dato de la
+                decisión y enterrado en texto corrido no se veía
+       al final el lugar, la fecha y el teléfono, con icono en vez de
+                palabra: tres palabras menos y se reconocen más rápido */
   function pintarFichas(d) {
     if (!d.filas.length) {
       $("fichas").innerHTML = "";
       return;
     }
-    var enc = d.encabezado || [];
 
     $("fichas").innerHTML = d.filas.map(function (fila, n) {
       var enlace = d.enlaces && d.enlaces[n];
@@ -2581,31 +2619,32 @@
       var titulo = escHtml(fila[0]);
       if (enlace) titulo = '<a class="doc" href="' + escHtml(enlace) + '" target="_blank" rel="noopener">' + titulo + "</a>";
 
-      // El nombre va de titular, así que se saca de la lista de datos
-      // para no decirlo dos veces.
-      var datos = fila.map(function (v, i) {
-        if (i === 0) return "";
-        if (m && m.nombre && String(v) === String(m.nombre)) return "";
-        if (!v || v === "—") return "";
-        return "<div><dt>" + escHtml(enc[i] || "") + "</dt><dd>" + escHtml(v) + "</dd></div>";
-      }).join("");
-
-      var pie = "";
-      if (m) {
-        var b = [];
-        if (m.wa) b.push('<a class="bt wa" href="' + escHtml(m.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
-        if (m.tel) b.push('<a class="bt" href="tel:+506' + escHtml(String(m.tel).replace(/\D/g, "")) + '">' + ICO.tel + "Llamar</a>");
-        if (b.length) pie = '<div class="ficha-pie">' + b.join("") + "</div>";
+      if (!m) {
+        return '<article class="ficha"><div class="ficha-top"><span class="num">' +
+          titulo + "</span></div></article>";
       }
 
-      return '<article class="ficha" data-id="' + (m ? escHtml(String(m.id)) : "") + '">' +
-        '<div class="ficha-top"><span class="num">' + titulo + "</span>" +
-          (m ? '<span class="estado-hueco">' + celdaEstado(m) + "</span>" : "") + "</div>" +
-        (m && m.nombre ? '<div class="ficha-nom">' + escHtml(m.nombre) + "</div>" : "") +
-        '<dl class="ficha-datos">' + datos + "</dl>" +
-        (m ? '<input class="nota" type="text" value="' + escHtml(m.nota) +
-             '" placeholder="Nota — ej. llamar después de las 5" aria-label="Nota">' : "") +
-        pie +
+      var que = [m.servicio, m.detalle].filter(Boolean).join(" · ");
+
+      var datos = [];
+      if (m.lugar) datos.push("<span>" + ICO.pin + escHtml(m.lugar) + "</span>");
+      if (m.fecha) datos.push("<span>" + ICO.dia + escHtml(fechaCorta(String(m.fecha).slice(0, 10))) + "</span>");
+      if (m.tel)   datos.push("<span>" + ICO.tel + escHtml(tel(m.tel)) + "</span>");
+
+      var b = [];
+      if (m.wa) b.push('<a class="bt wa" href="' + escHtml(m.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
+      if (m.tel) b.push('<a class="bt" href="tel:+506' + escHtml(String(m.tel).replace(/\D/g, "")) + '">' + ICO.tel + "Llamar</a>");
+
+      return '<article class="ficha" data-id="' + escHtml(String(m.id)) + '">' +
+        '<div class="ficha-top"><span class="num ref">' + titulo + "</span>" +
+          '<span class="estado-hueco">' + celdaEstado(m) + "</span></div>" +
+        (m.nombre ? '<div class="ficha-nom">' + escHtml(m.nombre) + "</div>" : "") +
+        (que ? '<div class="ficha-que">' + escHtml(que) + "</div>" : "") +
+        (m.monto ? '<div class="ficha-monto">' + escHtml(m.monto) + "</div>" : "") +
+        (datos.length ? '<div class="ficha-datos">' + datos.join("") + "</div>" : "") +
+        '<input class="nota" type="text" value="' + escHtml(m.nota) +
+          '" placeholder="Nota — ej. llamar después de las 5" aria-label="Nota">' +
+        (b.length ? '<div class="ficha-pie">' + b.join("") + "</div>" : "") +
       "</article>";
     }).join("");
   }
