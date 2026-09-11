@@ -1619,3 +1619,45 @@ borde derecho en 375px (arrancaba a los 224px por un `flex-basis` de
 escritorio metido en un `style` en línea), y las pestañas de estado se
 partían en dos filas, donde la segunda se lee como otra cosa. Ahora ruedan
 de lado en una sola línea.
+
+## 31. "Aún lo siento tieso" (2026-09-10)
+
+Byron dijo que le seguía gustando más su maqueta de Stitch. Se midieron
+las dos pantallas de Hoy, la suya y la del panel, y la diferencia no era
+el color ni la sombra: **su diseño se compone por piezas y el mío
+comprimía y dividía.**
+
+**Tarjetas dentro de tarjetas.** Cada alerta y cada mantenimiento pasa a
+ser su propia pieza con borde y radio propios. Separadas por una rayita
+dentro de un solo bloque, las tres se leían como una losa partida; en
+piezas se cuentan de un vistazo y se ve que cada una lleva a otro lado.
+Esto era el grueso de lo "tieso".
+
+**Los radios de adentro no acompañaban.** Tarjeta exterior de 20px y
+adentro chips de 7, botones de 7, filas de 8. Los números pasan a
+**círculos** y los botones a 11px.
+
+**Dos botones rellenos seguidos.** WhatsApp verde y Llamar beige, los dos
+macizos, pesaban el doble de lo que vale lo que dicen y el verde dejaba de
+destacar. El secundario pasa a **contorneado**.
+
+**Aire.** Separación entre tarjetas de 16 a 22px, relleno interno de 17 a
+20/22, y el título de la tarjeta de 16,3 a 18px.
+
+**La flecha.** Era una flecha de cuerpo entero; pasa a un chevron de 1,6
+de trazo al 55% de opacidad. Dice "sigue por acá" sin pesar más que el
+texto al que acompaña.
+
+### El mes y el año, tocables
+
+De setiembre de 2026 a marzo de 2028 eran diecisiete toques de flecha.
+Ahora el mes y el año del calendario son botones: el mes abre los doce en
+una cuadrícula de tres por cuatro, que se ven todos de una; el año abre
+una lista corta alrededor del actual (tres atrás, cuatro adelante), porque
+una agenda de mantenimientos no se consulta a diez años y una lista larga
+obliga a rodar para llegar al año que casi siempre se quiere.
+
+Se ven como el título porque lo son. Lo único que avisa que además se
+aprietan es un subrayado punteado: convertirlos en dos botones de verdad
+los habría puesto a competir con el riel de ← Hoy →, que está a cinco
+centímetros y hace lo mismo.

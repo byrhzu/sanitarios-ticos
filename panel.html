@@ -431,7 +431,7 @@
   /* ---------- Tarjetas ---------- */
   .tarj {
     background: var(--p-tarj); border-radius: var(--radio);
-    padding: 1.05rem 1.15rem 1.15rem;
+    padding: 1.25rem 1.35rem 1.35rem;
     border: 1px solid var(--p-borde); box-shadow: var(--p-alza);
   }
   /* El margen sólo entre bloques apilados de la vista. Puesto como
@@ -440,9 +440,9 @@
      fila — que era por qué "Estado" se veía más alta que sus vecinas y
      por qué "Pendientes" no cerraba parejo con "Cierre". */
   .vista > .tarj + .tarj, .rejilla + .rejilla,
-  .tarj + .rejilla, .rejilla + .tarj { margin-top: 1rem; }
-  .tarj-h { display: flex; align-items: baseline; gap: .5rem 1rem; flex-wrap: wrap; margin-bottom: .9rem; }
-  .tarj-h h2 { font-family: var(--display); font-size: 1.02rem; font-weight: 600; margin: 0; }
+  .tarj + .rejilla, .rejilla + .tarj { margin-top: 1.4rem; }
+  .tarj-h { position: relative; display: flex; align-items: baseline; gap: .5rem 1rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+  .tarj-h h2 { font-family: var(--display); font-size: 1.12rem; font-weight: 600; letter-spacing: -.015em; margin: 0; }
   /* Un punto de color delante del título de las tres tarjetas de Hoy.
      No es adorno: los tres bloques se distinguen antes de leerlos, y es
      lo que hace que la pantalla se lea como un semáforo y no como tres
@@ -465,7 +465,7 @@
     border-radius: 999px; font-variant-numeric: tabular-nums;
   }
 
-  .rejilla { display: grid; gap: 1rem; }
+  .rejilla { display: grid; gap: 1.4rem; }
   /* Dos o cuatro, nunca tres. Con `auto-fit` la cuarta tarjeta caía
      sola en una segunda fila en las pantallas de laptop angostas, y una
      fila de KPIs con un huérfano se lee como si faltara algo. */
@@ -588,18 +588,22 @@
   }
   .cola-acc { display: flex; gap: .45rem; flex-wrap: wrap; }
 
+  /* El secundario va contorneado sobre la superficie, no relleno. Dos
+     botones macizos uno al lado del otro pesan el doble de lo que vale
+     lo que dicen, y el verde de WhatsApp deja de destacar. */
   .bt {
-    display: inline-flex; align-items: center; gap: .35rem;
-    font-weight: 500; padding: .38rem .7rem; border-radius: 7px;
-    background: var(--p-sup2); color: var(--p-txt); white-space: nowrap;
-    transition: background .15s var(--ease), transform .12s var(--ease);
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-weight: 500; padding: .45rem .8rem; border-radius: 11px;
+    background: var(--p-tarj); color: var(--p-txt);
+    border: 1px solid var(--p-linea); white-space: nowrap;
+    transition: background .15s var(--ease), border-color .15s var(--ease), transform .12s var(--ease);
   }
+  .bt:hover { background: var(--p-sup2); border-color: var(--p-tenue); }
   .bt svg { width: 14px; height: 14px; }
-  .bt:hover { background: var(--p-linea); }
   .bt:active { transform: scale(.97); }
-  .bt.wa { background: #25d366; color: #06371a; }
+  .bt.wa { background: #25d366; color: #06371a; border-color: transparent; }
   .bt.wa:hover { background: #1fbe5b; }
-  .bt.fuerte { background: var(--p-acento); color: #fff; }
+  .bt.fuerte { background: var(--p-acento); color: #fff; border-color: transparent; }
   .bt.fuerte:hover { background: var(--p-acento-t); }
 
   .vacio-ok { color: var(--p-tenue); padding: .3rem 0 .5rem; }
@@ -904,6 +908,46 @@
   .cal button.vencido { background: var(--est-mal-bg); color: var(--est-mal-tx); font-weight: 600; }
   .cal button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--p-acento); }
   .cal i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+  /* El mes y el año, tocables. Se ven como el título porque lo son; el
+     subrayado punteado es lo único que avisa que además se pueden
+     apretar, sin convertirlos en dos botones que compitan con el riel. */
+  .cal-tit { display: flex; align-items: baseline; gap: .45rem; }
+  .cal-tit button {
+    font: inherit; color: inherit; letter-spacing: inherit;
+    padding: .1rem .3rem; margin: -.1rem -.3rem; border-radius: 8px;
+    border-bottom: 1.5px dotted var(--p-linea);
+    transition: background .15s var(--ease), color .15s var(--ease);
+  }
+  .cal-tit button:hover { background: var(--p-suave); color: var(--p-acento-t); }
+  .cal-tit button[aria-expanded="true"] { background: var(--p-suave); color: var(--p-acento-t); }
+
+  .cal-pop {
+    position: absolute; z-index: 50; top: calc(100% + .4rem); left: 0;
+    background: var(--p-sup); border: 1px solid var(--p-borde);
+    border-radius: var(--radio-chico); padding: .4rem;
+    box-shadow: 0 14px 36px rgba(0,0,0,.22);
+    display: grid; gap: 2px;
+    animation: entra-menu .15s var(--ease) both; transform-origin: top left;
+  }
+  .cal-pop.de-mes  { grid-template-columns: repeat(3, minmax(3.6rem, 1fr)); }
+  .cal-pop.de-anio { grid-template-columns: repeat(2, minmax(3.6rem, 1fr)); }
+  .cal-pop button {
+    padding: .5rem .4rem; border-radius: 9px; font-weight: 500;
+    color: var(--p-txt2); text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .cal-pop button:hover { background: var(--p-sup2); color: var(--p-txt); }
+  /* El de hoy se nombra sin rellenarse; el escogido sí va relleno. */
+  .cal-pop button.es-hoy { color: var(--p-acento-t); }
+  .cal-pop button[aria-selected="true"] { background: var(--p-acento); color: #fff; }
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .cal-pop {
+      background: color-mix(in srgb, var(--p-sup) 82%, transparent);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      backdrop-filter: blur(16px) saturate(160%);
+    }
+  }
+
   /* Los tres controles del mes en un solo riel: se leen como un control
      y no como tres botones que casualmente quedaron juntos. */
   .mes-riel { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--p-sup); }
@@ -916,29 +960,38 @@
   /* Requiere atención. La cifra a la izquierda, la frase en medio y la
      flecha a la derecha: se lee "3 cotizaciones sin responder →" de un
      golpe y la fila entera es el botón. */
+  /* Cada alerta es su propia pieza, no un renglón de una losa dividida.
+     Separadas por rayitas, las tres se leen como un bloque; en tarjetas
+     se cuentan de un vistazo y se ve que cada una lleva a otro lado. */
   .aten {
     display: flex; align-items: center; gap: var(--e3); width: 100%;
-    padding: .6rem .5rem; border-radius: 8px; text-align: left;
-    transition: background .15s var(--ease);
+    padding: .8rem .85rem; border-radius: var(--radio-chico); text-align: left;
+    background: var(--p-sup); border: 1px solid var(--p-borde);
+    transition: background .15s var(--ease), border-color .15s var(--ease);
   }
-  .aten + .aten { border-top: 1px solid var(--p-linea); border-radius: 0; }
-  .aten:hover { background: var(--p-sup2); }
+  .aten + .aten { margin-top: .55rem; }
+  .aten:hover { background: var(--p-sup2); border-color: var(--p-linea); }
   .aten-n {
-    flex: 0 0 auto; min-width: 1.9rem; height: 1.9rem; border-radius: 7px;
+    flex: 0 0 auto; min-width: 2.1rem; height: 2.1rem; border-radius: 999px;
     display: inline-flex; align-items: center; justify-content: center;
     font-weight: 600; font-variant-numeric: tabular-nums; padding: 0 .4rem;
   }
   .aten-n[data-grado="alto"]  { background: var(--est-mal-bg);    color: var(--est-mal-tx); }
   .aten-n[data-grado="medio"] { background: var(--est-espera-bg); color: var(--est-espera-tx); }
   .aten-t { flex: 1; min-width: 0; }
-  .aten-ir { color: var(--p-tenue); display: inline-flex; }
+  .aten-ir { color: var(--p-tenue); display: inline-flex; opacity: .55; }
+  .aten-ir svg { width: 16px; height: 16px; }
   .aten-ir svg { width: 16px; height: 16px; }
   .aten:hover .aten-ir { color: var(--p-acento-t); }
 
-  .toca-fila { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; padding: .68rem 0; border-top: 1px solid var(--p-linea); }
-  .toca-fila[data-ir] { cursor: pointer; margin: 0 -.5rem; padding-left: .5rem; padding-right: .5rem; border-radius: 8px; }
-  .toca-fila[data-ir]:hover { background: var(--p-sup2); }
-  .toca-fila:first-child { border-top: 0; }
+  .toca-fila {
+    display: flex; gap: .8rem; align-items: center; flex-wrap: wrap;
+    padding: .8rem .85rem; border-radius: var(--radio-chico);
+    background: var(--p-sup); border: 1px solid var(--p-borde);
+  }
+  .toca-fila + .toca-fila { margin-top: .55rem; }
+  .toca-fila[data-ir] { cursor: pointer; }
+  .toca-fila[data-ir]:hover { background: var(--p-sup2); border-color: var(--p-linea); }
   .toca-quien { flex: 1 1 11rem; min-width: 0; }
   .toca-quien b { font-weight: 500; }
   .toca-quien small { display: block; color: var(--p-tenue); margin-top: .1rem; }
@@ -1635,7 +1688,13 @@
       <div class="rejilla dos">
         <div class="tarj">
           <div class="tarj-h">
-            <h2 id="cal-titulo"></h2>
+            <!-- El mes y el año se tocan. Con sólo las flechas, ir de
+                 setiembre de 2026 a marzo de 2028 son diecisiete toques. -->
+            <h2 class="cal-tit">
+              <button type="button" id="cal-mes" aria-haspopup="true" aria-expanded="false"></button>
+              <button type="button" id="cal-anio" aria-haspopup="true" aria-expanded="false"></button>
+            </h2>
+            <div class="cal-pop" id="cal-pop" hidden role="listbox" aria-label="Escoger mes o año"></div>
             <span class="meta siempre mes-riel">
               <button type="button" class="mes-nav" id="mes-antes" aria-label="Mes anterior">&larr;</button>
               <button type="button" class="mes-nav" id="mes-hoy">Hoy</button>
@@ -1812,7 +1871,10 @@
     wa:       '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .1-1.6-.1a13 13 0 0 1-5-4.4c-.4-.6-.9-1.5-.9-2.4s.5-1.4.7-1.6c.2-.2.4-.3.6-.3h.5c.2 0 .4 0 .6.4l.8 1.9c0 .2 0 .3-.1.5l-.4.5c-.1.1-.3.3-.1.6.2.3.7 1.1 1.4 1.8.9.8 1.6 1 1.9 1.2.3.1.4 0 .6-.1l.7-.9c.2-.2.3-.2.6-.1l1.8.9c.3.1.4.2.5.3v1.2Z"/></svg>',
     visto:    ico("M20 6 9 17l-5-5"),
     silencio: ico("M11 5 6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6"),
-    flecha:   ico("M5 12h13m-5-6 6 6-6 6"),
+    /* Un chevron fino, no una flecha de cuerpo entero: dice "sigue por
+       acá" sin pesar más que el texto al que acompaña. */
+    flecha:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+              'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>',
     mas:      ico("M12 5v14M5 12h14"),
     pin:      ico("M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11z", '<circle cx="12" cy="10" r="2.6"/>')
   };
@@ -3488,7 +3550,8 @@
 
   function pintarCalendario() {
     var y = calMes.getFullYear(), m = calMes.getMonth();
-    $("cal-titulo").textContent = MES_LARGO[m] + " " + y;
+    $("cal-mes").textContent = MES_LARGO[m];
+    $("cal-anio").textContent = y;
 
     // Cuántos caen cada día de este mes.
     var porDia = {};
@@ -3549,13 +3612,81 @@
   function moverMes(n) {
     calMes = new Date(calMes.getFullYear(), calMes.getMonth() + n, 1);
     pintarCalendario();
+    cerrarPop();
   }
+
+  /* ---------- Escoger mes y año ----------
+     Los doce meses caben en una cuadrícula de tres por cuatro y se ven
+     todos de una. Los años van en una lista corta alrededor del actual:
+     una agenda de mantenimientos no se consulta a diez años, y una lista
+     larga obliga a rodar para llegar al que casi siempre se quiere. */
+  var ANIOS_ATRAS = 3, ANIOS_ADELANTE = 4;
+
+  function cerrarPop() {
+    $("cal-pop").hidden = true;
+    $("cal-mes").setAttribute("aria-expanded", "false");
+    $("cal-anio").setAttribute("aria-expanded", "false");
+  }
+
+  function abrirPop(tipo) {
+    var y = calMes.getFullYear(), m = calMes.getMonth();
+    var hoy = new Date();
+    var caja = $("cal-pop");
+    var piezas;
+
+    if (tipo === "mes") {
+      piezas = MES_LARGO.map(function (nombre, i) {
+        return '<button type="button" data-mes="' + i + '"' +
+          (i === m ? ' aria-selected="true"' : "") +
+          (i === hoy.getMonth() && y === hoy.getFullYear() ? ' class="es-hoy"' : "") +
+          ">" + escHtml(nombre.slice(0, 3)) + "</button>";
+      }).join("");
+    } else {
+      piezas = [];
+      for (var a = hoy.getFullYear() - ANIOS_ATRAS; a <= hoy.getFullYear() + ANIOS_ADELANTE; a++) {
+        piezas.push('<button type="button" data-anio="' + a + '"' +
+          (a === y ? ' aria-selected="true"' : "") +
+          (a === hoy.getFullYear() ? ' class="es-hoy"' : "") + ">" + a + "</button>");
+      }
+      piezas = piezas.join("");
+    }
+
+    caja.className = "cal-pop " + (tipo === "mes" ? "de-mes" : "de-anio");
+    caja.innerHTML = piezas;
+    caja.hidden = false;
+    $("cal-mes").setAttribute("aria-expanded", String(tipo === "mes"));
+    $("cal-anio").setAttribute("aria-expanded", String(tipo === "anio"));
+  }
+
+  function alternarPop(tipo) {
+    var abierto = !$("cal-pop").hidden &&
+                  $(tipo === "mes" ? "cal-mes" : "cal-anio").getAttribute("aria-expanded") === "true";
+    if (abierto) cerrarPop(); else abrirPop(tipo);
+  }
+
+  $("cal-mes").addEventListener("click", function (e) { e.stopPropagation(); alternarPop("mes"); });
+  $("cal-anio").addEventListener("click", function (e) { e.stopPropagation(); alternarPop("anio"); });
+
+  $("cal-pop").addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (!b) return;
+    if (b.dataset.mes != null) calMes = new Date(calMes.getFullYear(), Number(b.dataset.mes), 1);
+    else calMes = new Date(Number(b.dataset.anio), calMes.getMonth(), 1);
+    pintarCalendario();
+    cerrarPop();
+  });
+
+  document.addEventListener("click", function (e) {
+    if (!$("cal-pop").hidden && !e.target.closest("#cal-pop")) cerrarPop();
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") cerrarPop(); });
   $("mes-antes").addEventListener("click", function () { moverMes(-1); });
   $("mes-despues").addEventListener("click", function () { moverMes(1); });
   $("mes-hoy").addEventListener("click", function () {
     var h = new Date();
     calMes = new Date(h.getFullYear(), h.getMonth(), 1);
     pintarCalendario();
+    cerrarPop();
   });
 
   var TITULO_AGENDA = {
