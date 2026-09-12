@@ -310,7 +310,12 @@ body {
 [hidden] { display: none !important; }
 
 /* --- Pantallas angostas ------------------------------------------ */
-@media (max-width: 230mm) {
+/* Va con `screen` a propósito: sin eso, al imprimir DESDE EL TELÉFONO el
+   navegador tomaba también estas reglas —la pantalla es angosta— y apilaba
+   todo en una columna, con lo que la hoja crecía y saltaba a una segunda
+   página. Desde la compu no pasaba porque la pantalla es ancha. Con
+   `screen` la impresión siempre usa la maqueta A4 de dos columnas. */
+@media screen and (max-width: 230mm) {
   .hoja { width: 100%; min-height: 0; margin: 0; padding: 9mm 6mm 12mm; box-shadow: none; }
   body { background: var(--hoja); }
   .cabeza { flex-direction: column; gap: 6mm; }

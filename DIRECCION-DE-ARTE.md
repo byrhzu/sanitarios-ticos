@@ -2019,3 +2019,36 @@ suelto haciendo lo mismo.
 - **Bug de paso:** un `var reloj` (el temporizador del resize) pisaba a la
   función `reloj()` en el mismo ámbito y tumbaba el Resumen entero. El
   temporizador pasó a llamarse `temporizadorAncho`.
+
+## 41. Simetría de la ficha, el número que se abre y el PDF (2026-09-12)
+
+- **Los cuatro botones de la ficha de cliente, del mismo tamaño.** En
+  angosto iban con `flex: 1 1 auto`, así que "Nueva cotización" y
+  "WhatsApp" —y "Llamar" y "Editar cliente"— medían distinto según su
+  texto y la card se veía torcida. Ahora es una rejilla 2×2 de columnas
+  iguales (`grid-template-columns: 1fr 1fr`).
+
+- **El número de la cotización se ve que se abre.** Suelto era un chip
+  azul sin nada que dijera "tócame". Se le puso un ojo al lado —"ver"— y
+  subrayado; en el teléfono, sin cursor, hacía falta. Vale para la tabla
+  y para la ficha (helper `enlaceDoc`).
+
+- **El PDF ya no salta a dos páginas desde el móvil.** La causa: el
+  bloque responsive `@media (max-width: 230mm)` apilaba todo en una
+  columna, y al imprimir DESDE EL TELÉFONO —pantalla angosta— esas reglas
+  también aplicaban, con lo que la hoja crecía y saltaba. Se le puso
+  `screen and` para que la impresión, en cualquier aparato, use siempre
+  la maqueta A4 de dos columnas. Desde la compu nunca pasó porque la
+  pantalla es ancha.
+
+- **Bug de paso:** `verCliente()` ocultaba todas las vistas menos Hoy, así
+  que abrir un cliente desde "Próximos servicios" dejaba las dos pantallas
+  encimadas. Se agregó `hoy` a la lista que se oculta.
+
+- **Lo que NO se pudo:** un PDF que se descargue solo, como archivo, sin
+  el diálogo del navegador, no es algo que una página web pueda hacer con
+  buena calidad. La vía nativa es imprimir → "Guardar como PDF" (que es lo
+  que abre el `window.print()`): sale nítido y con el texto de verdad. La
+  alternativa —una librería que arma el PDF en el navegador— lo descarga
+  de una, pero convierte el documento en imagen (texto no seleccionable,
+  archivo más pesado). Queda a decisión de Byron.

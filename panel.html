@@ -981,8 +981,19 @@
   }
   table.lista td.ancha { white-space: normal; min-width: 15rem; color: var(--p-txt2); }
   table.lista tbody tr:hover { background: var(--p-fondo); }
-  table.lista a.doc { color: var(--p-acento-t); font-weight: 500; }
-  table.lista a.doc:hover { text-decoration: underline; text-underline-offset: 3px; }
+  /* El número-enlace: el ojo dice "se abre" y el subrayado lo confirma
+     donde no hay cursor (el teléfono). El texto va subrayado, el ojo no. */
+  a.doc {
+    color: var(--p-acento-t); font-weight: 600;
+    display: inline-flex; align-items: center; gap: .32em;
+  }
+  a.doc .doc-t {
+    text-decoration: underline; text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  }
+  a.doc svg { width: 1.05em; height: 1.05em; opacity: .8; flex: 0 0 auto; }
+  a.doc:hover .doc-t { text-decoration-color: currentColor; }
   table.lista th.trabajo, table.lista td.trabajo { position: sticky; background: var(--p-sup); }
   table.lista tbody tr:hover td.trabajo { background: var(--p-fondo); }
   table.lista td.t1, table.lista th.t1 { right: calc(var(--t2, 0px) + var(--t3, 0px)); box-shadow: -1px 0 0 var(--p-linea); }
@@ -997,8 +1008,10 @@
   .fichas { display: flex; flex-direction: column; gap: .7rem; }
   .ficha { background: var(--p-tarj); border-radius: var(--radio); padding: .9rem 1rem 1rem; border: 1px solid var(--p-borde); box-shadow: var(--p-alza); }
   .ficha-top { display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem; }
-  .ficha-top .num.ref { color: var(--p-primario); background: var(--p-prim-suave); }
+  .ficha-top .num.ref { color: var(--p-primario); background: var(--p-prim-suave); cursor: pointer; transition: background .15s var(--ease); }
+  .ficha-top .num.ref:hover { background: color-mix(in srgb, var(--p-primario) 20%, transparent); }
   .ficha-top .num.ref a { color: inherit; }
+  .ficha-top .num.ref a:active { transform: scale(.97); }
   .ficha-top .estado-hueco { margin-left: auto; }
   .ficha-nom { font-family: var(--display); font-weight: 600; font-size: 1.05rem; letter-spacing: -.015em; }
   .ficha-que { color: var(--p-tenue); margin-top: .12rem; }
@@ -1137,7 +1150,17 @@
   .perfil-cab h2 { font-size: 1.5rem; font-weight: 600; letter-spacing: -.025em; margin: 0; }
   .perfil-cab .sub { color: var(--p-tenue); margin-top: .2rem; }
   .perfil-cab .acc-cab { margin-left: auto; display: flex; gap: .5rem; flex-wrap: wrap; }
-  @media (max-width: 560px) { .perfil-cab .acc-cab { margin-left: 0; width: 100%; } .perfil-cab .acc-cab .bt { flex: 1 1 auto; } }
+  /* En angosto los cuatro botones van en rejilla 2×2 de columnas
+     iguales: así "Nueva cotización" y "WhatsApp" miden lo mismo, y
+     "Llamar" y "Editar cliente" también. Con flex quedaban de distinto
+     ancho según el texto y la card se veía torcida. */
+  @media (max-width: 560px) {
+    .perfil-cab .acc-cab {
+      margin-left: 0; width: 100%;
+      display: grid; grid-template-columns: 1fr 1fr; gap: .5rem;
+    }
+    .perfil-cab .acc-cab .bt { justify-content: center; }
+  }
 
   .hist { list-style: none; margin: 0; padding: 0; }
   .hist li { display: flex; gap: 1rem; align-items: baseline; flex-wrap: wrap; padding: .7rem 0; border-top: 1px solid var(--p-linea); }
@@ -3129,6 +3152,16 @@
     return enlace + (enlace.indexOf("?") === -1 ? "?" : "&") + "pdf=1";
   }
 
+  /* El número de una cotización es el enlace a su PDF. Suelto se leía
+     como texto —sobre todo en el teléfono, donde es un chip azul sin
+     cursor que lo delate—; con un ojo al lado y subrayado se entiende
+     que de ahí se abre. `textoEsc` ya viene escapado. */
+  function enlaceDoc(textoEsc, enlace) {
+    return '<a class="doc" href="' + escHtml(pdfDirecto(enlace)) +
+      '" target="_blank" rel="noopener" title="Abrir el PDF">' +
+      '<span class="doc-t">' + textoEsc + "</span>" + ICO.ojo + "</a>";
+  }
+
   function pintarFilas(d) {
     $("encabezado-tabla").innerHTML =
       (d.encabezado || []).map(function (t) { return "<th>" + escHtml(t) + "</th>"; }).join("") +
@@ -3146,7 +3179,7 @@
         var cls = i === d.ancha ? ' class="ancha"' : "";
         var texto = escHtml(celda);
         if (i === 0 && enlace) {
-          texto = '<a class="doc" href="' + escHtml(pdfDirecto(enlace)) + '" target="_blank" rel="noopener">' + texto + "</a>";
+          texto = enlaceDoc(texto, enlace);
         }
         return "<td" + cls + ">" + texto + "</td>";
       }).join("");
@@ -3214,7 +3247,7 @@
       var m = (d.meta && d.meta[n]) || null;
 
       var titulo = escHtml(fila[0]);
-      if (enlace) titulo = '<a class="doc" href="' + escHtml(pdfDirecto(enlace)) + '" target="_blank" rel="noopener">' + titulo + "</a>";
+      if (enlace) titulo = enlaceDoc(titulo, enlace);
 
       if (!m) {
         return '<article class="ficha"><div class="ficha-top"><span class="num">' +
@@ -4222,7 +4255,7 @@
     Array.prototype.forEach.call(document.querySelectorAll(".barra nav button"), function (b) {
       b.setAttribute("aria-selected", String(b.dataset.vista === "clientes"));
     });
-    ["resumen", "tabla", "nueva", "clientes", "agenda"].forEach(function (v) { $("vista-" + v).hidden = true; });
+    ["hoy", "resumen", "tabla", "nueva", "clientes", "agenda"].forEach(function (v) { $("vista-" + v).hidden = true; });
     $("vista-cliente").hidden = false;
     $("cliente-cuerpo").innerHTML = '<p class="estado-linea">Cargando…</p>';
     window.scrollTo({ top: 0 });
