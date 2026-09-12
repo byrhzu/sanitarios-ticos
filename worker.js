@@ -305,7 +305,7 @@ const TABLAS_PANEL = {
         tel: f.telefono || null,
         servicio: etiqueta(f.servicio, null, "servicio"),
         detalle: [etiqueta(f.servicio, f.forma, "forma"),
-                  etiqueta(f.servicio, f.medida, "medida")].filter(Boolean).join(" · "),
+                  etiqueta(f.servicio, f.medida, "medida")].filter(Boolean).join(", "),
         monto: montoTexto(f.monto_min, f.monto_max),
         lugar: [f.canton, f.provincia].filter(Boolean).join(", ") || null,
         fecha: f.creado,
@@ -931,7 +931,7 @@ async function resumenPanel(request, env) {
       tabla: "cotizaciones", id: f.id, horas: f.horas, fecha: f.d,
       titulo: f.numero || ("Cotización " + f.id),
       nombre: f.nombre || "Sin nombre",
-      detalle: etiqueta(f.servicio, null, "servicio") + " · " +
+      detalle: etiqueta(f.servicio, null, "servicio") + ", " +
                montoTexto(f.monto_min, f.monto_max),
       lugar: [f.canton, f.provincia].filter(Boolean).join(", ") || null,
       tel: f.telefono || null,
@@ -1096,7 +1096,7 @@ async function buscarPanel(request, env) {
     for (const c of filas(0)) {
       resultados.push({
         tipo: "cliente", etiqueta: c.nombre,
-        detalle: [c.telefono, [c.canton, c.provincia].filter(Boolean).join(", ")].filter(Boolean).join(" · "),
+        detalle: [c.telefono, [c.canton, c.provincia].filter(Boolean).join(", ")].filter(Boolean).join("   "),
         ir: { vista: "cliente", id: c.id }
       });
     }
@@ -1104,14 +1104,14 @@ async function buscarPanel(request, env) {
       resultados.push({
         tipo: "cotizacion", etiqueta: c.numero || ("Cotización " + c.id),
         detalle: [c.nombre, etiqueta(c.servicio, null, "servicio"), nombreEstado(c.estado)]
-                 .filter(Boolean).join(" · "),
+                 .filter(Boolean).join("   "),
         ir: { vista: "cotizaciones", buscar: c.numero || c.telefono || c.nombre }
       });
     }
     for (const c of filas(2)) {
       resultados.push({
         tipo: "solicitud", etiqueta: c.nombre || ("Solicitud " + c.id),
-        detalle: [c.telefono, c.servicio, nombreEstado(c.estado)].filter(Boolean).join(" · "),
+        detalle: [c.telefono, c.servicio, nombreEstado(c.estado)].filter(Boolean).join("   "),
         ir: { vista: "solicitudes", buscar: c.telefono || c.nombre }
       });
     }

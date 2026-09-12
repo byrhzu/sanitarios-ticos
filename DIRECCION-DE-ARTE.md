@@ -1974,3 +1974,23 @@ que abra directo, el login con efecto y ver-contraseña, y el arreglo del
   siempre abierto: ahora es un perfil (nombre, contacto e historial
   cronológico) con un botón **Editar cliente** que revela la edición. Es lo
   que pide la guía —"entrar a ver un perfil sin ver toda la información"—.
+
+## 39. Auditoría final (2026-09-12)
+
+- **El azul, más mate y profundo.** Byron lo veía "un poquito claro". El
+  primario baja de #2a63d6 a #234f9e en claro (un navy mate) y de #5b8cff
+  a #5480d8 en oscuro (menos eléctrico). El fondo claro baja a #eef2f9 y
+  las superficies oscuras a #0a0f1c / #121c33: se lee como tinta, no como
+  pantalla.
+
+- **Fuera todos los separadores de carácter.** No sólo el middot "·": tam-
+  bién el guión " — " que lo había reemplazado. Los fragmentos de una
+  línea (nombre, servicio, lugar, fecha) se separan ahora por espacio, con
+  un `.pzs` que los pone en flex con gap. El "—" que queda es sólo el de
+  "sin valor" (una celda vacía), que no separa nada.
+
+- **Revisado:** cerrar sesión (borra la clave del aparato y vuelve al
+  login), los enlaces (todos los assets cargan; las cotizaciones abren su
+  PDF), los bordes (nada pegado al límite, la barra flotante despegada), y
+  la consola (sin errores propios; los 404 de /api en local son porque el
+  servidor de prueba no tiene backend, en producción los sirve el worker).

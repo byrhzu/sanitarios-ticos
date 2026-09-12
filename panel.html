@@ -106,9 +106,9 @@
      naranja resalta por ser el único cálido en un mar azul, en vez de
      teñirlo todo. */
   :root {
-    --p-fondo:   #f6f8fc;
+    --p-fondo:   #eef2f9;
     --p-sup:     #ffffff;
-    --p-sup2:    #eef2fa;
+    --p-sup2:    #e6ecf6;
     --p-txt:     #101a30;
     --p-txt2:    #39445c;
     --p-tenue:   #78849c;
@@ -120,10 +120,10 @@
     --p-acento-t:#c4500b;
     --p-suave:   rgba(239,101,17,.11);
     /* Azul primario: lo seleccionado, lo activo, los enlaces. */
-    --p-primario:  #2a63d6;
-    --p-primario-t:#1f4fb4;
-    --p-prim-suave:rgba(42,99,214,.10);
-    --p-dato1:   #2a63d6;
+    --p-primario:  #234f9e;
+    --p-primario-t:#1b3f82;
+    --p-prim-suave:rgba(35,79,158,.11);
+    --p-dato1:   #234f9e;
     --p-dato2:   #ef6511;
     --p-sombra:  0 1px 2px rgba(16,26,48,.05);
 
@@ -156,9 +156,9 @@
   /* Oscuro: azul medianoche mate. Sin brillo y sin azul eléctrico — un
      azul desaturado que se lee como tinta, no como pantalla de cine. */
   :root[data-tema="oscuro"] {
-    --p-fondo:   #0b1220;
-    --p-sup:     #14203a;
-    --p-sup2:    #1e2c4a;
+    --p-fondo:   #0a0f1c;
+    --p-sup:     #121c33;
+    --p-sup2:    #1b2842;
     --p-txt:     #eaf0fb;
     --p-txt2:    #b9c5dc;
     --p-tenue:   #8493ad;
@@ -168,10 +168,10 @@
     --p-acento:  #ff7a2b;
     --p-acento-t:#ff9254;
     --p-suave:   rgba(255,122,43,.15);
-    --p-primario:  #5b8cff;
-    --p-primario-t:#7ba3ff;
-    --p-prim-suave:rgba(91,140,255,.16);
-    --p-dato1:   #5b8cff;
+    --p-primario:  #5480d8;
+    --p-primario-t:#7098e0;
+    --p-prim-suave:rgba(84,128,216,.18);
+    --p-dato1:   #5480d8;
     --p-dato2:   #ff7a2b;
     --p-sombra:  0 1px 2px rgba(0,0,0,.35);
 
@@ -223,9 +223,9 @@
        abajo a la izquierda —el acento asomando—. Es lo que le da el aire
        tech de la inspiración y saca al fondo de "hoja en blanco". */
     --p-lienzo:
-      radial-gradient(72% 46% at 90% -6%, rgba(42,99,214,.13) 0%, rgba(42,99,214,0) 60%),
-      radial-gradient(58% 40% at 0% 104%, rgba(239,101,17,.08) 0%, rgba(239,101,17,0) 58%),
-      #f6f8fc;
+      radial-gradient(72% 46% at 90% -6%, rgba(35,79,158,.14) 0%, rgba(35,79,158,0) 60%),
+      radial-gradient(58% 40% at 0% 104%, rgba(239,101,17,.07) 0%, rgba(239,101,17,0) 58%),
+      #eef2f9;
     --p-tarj:   #ffffff;
     --p-borde:  rgba(16,26,48,.06);
     /* Dos sombras: una de 1px que apoya la tarjeta en el papel y otra
@@ -241,10 +241,10 @@
        se lea como un gris muerto. En oscuro se pueden subir un punto:
        la luz sobre fondo negro se ve menos de lo que mide. */
     --p-lienzo:
-      radial-gradient(74% 46% at 90% -6%, rgba(91,140,255,.20) 0%, rgba(91,140,255,0) 58%),
-      radial-gradient(60% 44% at 0% 104%, rgba(255,122,43,.13) 0%, rgba(255,122,43,0) 56%),
-      linear-gradient(180deg, #0e1830 0%, #0b1220 55%, #090f1b 100%);
-    --p-tarj:   #14203a;
+      radial-gradient(74% 46% at 90% -6%, rgba(84,128,216,.18) 0%, rgba(84,128,216,0) 58%),
+      radial-gradient(60% 44% at 0% 104%, rgba(255,122,43,.12) 0%, rgba(255,122,43,0) 56%),
+      linear-gradient(180deg, #0c1428 0%, #0a0f1c 55%, #080d17 100%);
+    --p-tarj:   #121c33;
     --p-borde:  rgba(255,255,255,.08);
     --p-alza:   0 1px 2px rgba(0,0,0,.28), 0 12px 30px -16px rgba(0,0,0,.7);
     --p-alza2:  0 3px 8px rgba(0,0,0,.35), 0 20px 44px -20px rgba(0,0,0,.8);
@@ -1112,6 +1112,8 @@
   .pastilla.vencio { background: var(--est-mal-bg); color: var(--est-mal-tx); }
   .pastilla.mudo { opacity: .65; }
   .cli-linea { color: var(--p-tenue); margin-top: .5rem; }
+  /* Fragmentos de una línea, separados por espacio y no por un carácter. */
+  .pzs { display: inline-flex; flex-wrap: wrap; gap: .05rem .7rem; }
   .cli-pie {
     display: flex; align-items: center; gap: .7rem;
     margin-top: .75rem; padding-top: .7rem; border-top: 1px solid var(--p-linea);
@@ -2404,6 +2406,15 @@
     clientes: "Clientes", cliente: "Cliente", agenda: "Agenda", nueva: "Nueva cotización"
   };
 
+  /* Junta fragmentos de una línea SIN carácter separador: cada uno es
+     un <span> y el espacio lo pone el CSS (flex gap). Byron no quiere
+     guiones ni middots entre los datos de una tarjeta. */
+  function piezas(arr) {
+    return '<span class="pzs">' + arr.filter(Boolean).map(function (x) {
+      return "<span>" + escHtml(x) + "</span>";
+    }).join("") + "</span>";
+  }
+
   function escHtml(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -2723,7 +2734,7 @@
             '">' + escHtml(espera(p.horas)) + "</span>" +
           '<span class="aviso-ir">' + ICO.flecha + "</span></div>" +
         '<div class="aviso-det"><span class="ref">' + escHtml(p.titulo) + "</span>" +
-          (det.length ? "<span>" + escHtml(det.join(" — ")) + "</span>" : "") + "</div>" +
+          (det.length ? piezas(det) : "") + "</div>" +
       "</button>";
     }).join("");
   }
@@ -2744,7 +2755,7 @@
       return '<div class="toca-fila' + (p.dias < 0 ? " vencido" : "") + '" data-ir=\'' +
         escHtml(JSON.stringify({ vista: "cliente", id: p.clienteId })) + "'>" +
         '<div class="toca-quien"><b>' + escHtml(p.nombre) + "</b><small>" +
-          escHtml(p.servicio + (p.lugar ? " — " + p.lugar : "")) + "</small></div>" +
+          piezas([p.servicio, p.lugar]) + "</small></div>" +
         '<span class="toca-cuando"><span class="delta ' +
           (p.dias < 0 ? "baja" : p.dias <= 7 ? "espera" : "igual") + '">' +
           escHtml(cuando(p.dias)) + "</span>" +
@@ -3201,7 +3212,7 @@
           titulo + "</span></div></article>";
       }
 
-      var que = [m.servicio, m.detalle].filter(Boolean).join(" — ");
+      var quePartes = [m.servicio, m.detalle].filter(Boolean);
 
       var datos = [];
       if (m.lugar) datos.push("<span>" + ICO.pin + escHtml(m.lugar) + "</span>");
@@ -3234,7 +3245,7 @@
       return '<article class="ficha" data-id="' + escHtml(String(m.id)) + '">' +
         '<div class="ficha-top">' + arriba + "</div>" +
         (m.nombre ? '<div class="ficha-nom">' + escHtml(m.nombre) + "</div>" : "") +
-        (que ? '<div class="ficha-que">' + escHtml(que) + "</div>" : "") +
+        (quePartes.length ? '<div class="ficha-que">' + piezas(quePartes) + "</div>" : "") +
         (origenPill ? '<div class="ficha-ori">' + origenPill + "</div>" : "") +
         (m.monto ? '<div class="ficha-monto">' + escHtml(m.monto) + "</div>" : "") +
         (datos.length ? '<div class="ficha-datos">' + datos.join("") + "</div>" : "") +
@@ -3643,7 +3654,7 @@
         escHtml(d.aMano ? colones(d.min)
               : (d.desde || d.min === d.max) ? "Desde " + colones(d.min)
               : colones(d.min) + " – " + colones(d.max)) + "</div>" +
-      '<div class="hecha-quien">' + escHtml(d.servicioNombre + " · " + (d.nombre || "")) + "</div>" +
+      '<div class="hecha-quien">' + piezas([d.servicioNombre, d.nombre]) + "</div>" +
       '<div class="hecha-acc">' + acc.join("") + "</div></div>";
     $("nueva-hecha").hidden = false;
     $("form-nueva").hidden = true;
@@ -3996,7 +4007,7 @@
             '<div class="cli-top"><b>' + escHtml(c.nombre) + "</b>" +
               '<span class="tel">' + escHtml(tel(c.telefono)) + "</span>" +
               '<span class="cli-marcas">' + marcas.join("") + "</span></div>" +
-            (linea.length ? '<div class="cli-linea">' + escHtml(linea.join(" — ")) + "</div>" : "") +
+            (linea.length ? '<div class="cli-linea">' + piezas(linea) + "</div>" : "") +
             '<div class="cli-pie"><span class="acc" data-alto>' + pie.join("") + "</span>" +
               '<span class="cli-ir" title="Ver ficha" aria-label="Ver ficha">' + ICO.flecha + "</span></div>" +
           "</article>";
@@ -4065,7 +4076,7 @@
             '<div class="cli-top"><b>' + escHtml(c.nombre || "Sin nombre") + "</b>" +
               '<span class="tel">' + escHtml(tel(c.telefono)) + "</span>" +
               '<span class="cli-marcas">' + marcas.join("") + "</span></div>" +
-            (linea.length ? '<div class="cli-linea">' + escHtml(linea.join(" — ")) + "</div>" : "") +
+            (linea.length ? '<div class="cli-linea">' + piezas(linea) + "</div>" : "") +
             '<div class="cli-pie"><span class="acc" data-alto>' + pie.join("") + "</span>" +
               '<button type="button" class="bt fuerte pos-cotizar">' + ICO.mas + "Cotizar</button></div>" +
           "</article>";
@@ -4230,7 +4241,7 @@
       ? '<ul class="hist">' + d.servicios.map(function (s) {
           return "<li>" +
             '<span class="f-fecha">' + escHtml(fechaLarga(s.fecha)) + "</span>" +
-            '<span class="f-que">' + escHtml(s.servicioNombre + (s.detalle ? " — " + s.detalle : "")) + "</span>" +
+            '<span class="f-que">' + piezas([s.servicioNombre, s.detalle]) + "</span>" +
             '<span class="f-monto">' + (s.monto ? escHtml(colones(s.monto)) : "—") + "</span>" +
             '<span class="f-prox">' + (s.proximo ? "próximo " + escHtml(fechaLarga(s.proximo)) : "") + "</span>" +
           "</li>";
@@ -4241,7 +4252,7 @@
       '<div class="tarj">' +
         '<div class="perfil-cab">' +
           "<div><h2>" + escHtml(c.nombre) + "</h2>" +
-            '<div class="sub">' + escHtml(tel(c.telefono) + (lugar ? " — " + lugar : "")) + "</div></div>" +
+            '<div class="sub">' + piezas([tel(c.telefono), lugar]) + "</div></div>" +
           '<div class="acc-cab">' + acc.join("") + "</div>" +
         "</div>" +
         '<div id="cf-editar" hidden>' +
@@ -4714,7 +4725,7 @@
 
       return '<div class="toca-fila' + (i.dias < 0 ? " vencido" : "") + '">' +
         '<div class="toca-quien"><b>' + escHtml(i.nombre) + "</b><small>" +
-          escHtml(i.servicio + (i.lugar ? " · " + i.lugar : "") + " · último " + fechaLarga(i.fecha)) +
+          piezas([i.servicio, i.lugar, "último " + fechaLarga(i.fecha)]) +
         "</small></div>" +
         '<span class="toca-cuando">' + escHtml(cuando(i.dias)) + "</span>" +
         '<div class="toca-acc">' + acc.join("") + "</div>" +
