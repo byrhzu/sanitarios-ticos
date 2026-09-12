@@ -854,6 +854,8 @@
   .bt.wa { background: #25d366; color: #06371a; border-color: transparent; }
   .bt.wa:hover { background: #1fbe5b; }
   .bt.fuerte { background: var(--p-acento); color: #fff; border-color: transparent; }
+  .bt.malo { color: var(--est-mal-tx); border-color: color-mix(in srgb, var(--est-mal-tx) 35%, transparent); }
+  .bt.malo:hover { background: var(--est-mal-bg); border-color: var(--est-mal-tx); }
   .bt.fuerte:hover { background: var(--p-acento-t); }
 
   .vacio-ok { color: var(--p-tenue); padding: .3rem 0 .5rem; }
@@ -2378,7 +2380,7 @@
      el resumen escribe acá y salta a la lista, y la lista dice con
      palabras qué filtro tiene puesto. Sin esto, tocar una barra sería
      magia: la lista cambiaría sin explicar por qué. */
-  var filtro = { desde: "", hasta: "", estado: "", provincia: "", servicio: "", buscar: "" };
+  var filtro = { desde: "", hasta: "", estado: "", provincia: "", servicio: "", buscar: "", svista: "" };
 
   var NOMBRE_VISTA = {
     hoy: "Hoy", resumen: "Resumen", cotizaciones: "Cotizaciones", solicitudes: "Solicitudes",
@@ -2760,6 +2762,16 @@
      con los demás filtros: "Hechas 13" en todo el año no es "Hechas 13"
      en la última semana. */
   function pintarPestanasEstado(d) {
+    // Solicitudes: dos estados y una papelera, no las cinco de siempre.
+    if (d.pestanas) {
+      var activa = filtro.svista || "pendientes";
+      $("pest-est").innerHTML = d.pestanas.map(function (b) {
+        return '<button type="button" role="tab" data-svista="' + b.id + '"' +
+          (activa === b.id ? ' aria-selected="true"' : ' aria-selected="false"') + ">" +
+          escHtml(b.etiqueta) + '<span class="n">' + (b.n || "") + "</span></button>";
+      }).join("");
+      return;
+    }
     if (!ESTADOS) return;
     var c = d.conteos || {};
     var total = Object.keys(c).reduce(function (a, k) { return a + c[k]; }, 0);
@@ -2776,6 +2788,14 @@
   }
 
   $("pest-est").addEventListener("click", function (e) {
+    var sv = e.target.closest("button[data-svista]");
+    if (sv) {
+      if (sv.dataset.svista === (filtro.svista || "pendientes")) return;
+      filtro.svista = sv.dataset.svista;
+      pagina = 1;
+      cargarTabla();
+      return;
+    }
     var b = e.target.closest("button[data-est]");
     if (!b || b.dataset.est === filtro.estado) return;
     filtro.estado = b.dataset.est;
@@ -2976,8 +2996,9 @@
   function pintarAplicado() {
     var caja = $("aplicado");
     var puestos = Object.keys(filtro).filter(function (k) {
-      // El estado no va de marca: ya lo dice la pestaña que está activa.
-      return filtro[k] && k !== "estado";
+      // Ni el estado ni la pestaña de solicitud (svista) van de marca:
+      // ya lo dice la pestaña activa.
+      return filtro[k] && k !== "estado" && k !== "svista";
     });
     if (!puestos.length) { caja.hidden = true; return; }
 
@@ -3124,11 +3145,32 @@
                 decisión y enterrado en texto corrido no se veía
        al final el lugar, la fecha y el teléfono, con icono en vez de
                 palabra: tres palabras menos y se reconocen más rápido */
+  /* Las acciones de una solicitud (guía § Solicitudes). En la lista
+     normal: cotizarla —que la exporta a Cotizaciones y la marca
+     realizada— o botarla a la papelera. En la papelera: restaurarla o
+     eliminarla de verdad. Sin dropdown de estado: la solicitud sólo es
+     pendiente o realizada, y eso lo decide cotizarla, no un menú. */
+  function accionesSolicitud(m, svista) {
+    var b = [];
+    if (m.wa) b.push('<a class="bt wa" href="' + escHtml(m.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
+    if (m.tel) b.push('<a class="bt" href="tel:+506' + escHtml(String(m.tel).replace(/\D/g, "")) + '">' + ICO.tel + "Llamar</a>");
+    if (svista === "papelera") {
+      b.push('<button type="button" class="bt sol-acc" data-acc="restaurar" data-id="' + escHtml(String(m.id)) + '">' + ICO.flecha + "Restaurar</button>");
+      b.push('<button type="button" class="bt malo sol-acc" data-acc="eliminar" data-id="' + escHtml(String(m.id)) + '">Eliminar</button>');
+    } else {
+      b.push('<button type="button" class="bt fuerte sol-cotizar" data-id="' + escHtml(String(m.id)) + '">' + ICO.mas + "Cotizar</button>");
+      b.push('<button type="button" class="bt sol-acc" data-acc="papelera" data-id="' + escHtml(String(m.id)) + '" title="Botar a la papelera" aria-label="Botar a la papelera">' + ICO.silencio + "</button>");
+    }
+    return b;
+  }
+
   function pintarFichas(d) {
     if (!d.filas.length) {
       $("fichas").innerHTML = "";
       return;
     }
+    var esSol = d.tabla === "solicitudes";
+    var svista = d.svista || "pendientes";
 
     $("fichas").innerHTML = d.filas.map(function (fila, n) {
       var enlace = d.enlaces && d.enlaces[n];
@@ -3142,26 +3184,38 @@
           titulo + "</span></div></article>";
       }
 
-      var que = [m.servicio, m.detalle].filter(Boolean).join(" · ");
+      var que = [m.servicio, m.detalle].filter(Boolean).join(" — ");
 
       var datos = [];
       if (m.lugar) datos.push("<span>" + ICO.pin + escHtml(m.lugar) + "</span>");
       if (m.fecha) datos.push("<span>" + ICO.dia + escHtml(fechaCorta(String(m.fecha).slice(0, 10))) + "</span>");
       if (m.tel)   datos.push("<span>" + ICO.tel + escHtml(tel(m.tel)) + "</span>");
 
-      var b = [];
-      if (m.wa) b.push('<a class="bt wa" href="' + escHtml(m.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
-      if (m.tel) b.push('<a class="bt" href="tel:+506' + escHtml(String(m.tel).replace(/\D/g, "")) + '">' + ICO.tel + "Llamar</a>");
+      var b = esSol ? accionesSolicitud(m, svista) : (function () {
+        var x = [];
+        if (m.wa) x.push('<a class="bt wa" href="' + escHtml(m.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
+        if (m.tel) x.push('<a class="bt" href="tel:+506' + escHtml(String(m.tel).replace(/\D/g, "")) + '">' + ICO.tel + "Llamar</a>");
+        return x;
+      })();
+
+      // Arriba: para solicitud un rótulo "Solicitud"; para cotización el
+      // número (enlace al PDF) y el dropdown de estado.
+      var arriba = esSol
+        ? '<span class="num ref">Solicitud</span>' +
+          (svista === "papelera" ? '<span class="pastilla mudo">En la papelera</span>'
+            : '<span class="pastilla ' + (m.estado === "hecha" ? "" : "toca") + '">' +
+              (m.estado === "hecha" ? "Realizada" : "Pendiente") + "</span>")
+        : '<span class="num ref">' + titulo + "</span>" +
+          '<span class="estado-hueco">' + celdaEstado(m) + "</span>";
 
       return '<article class="ficha" data-id="' + escHtml(String(m.id)) + '">' +
-        '<div class="ficha-top"><span class="num ref">' + titulo + "</span>" +
-          '<span class="estado-hueco">' + celdaEstado(m) + "</span></div>" +
+        '<div class="ficha-top">' + arriba + "</div>" +
         (m.nombre ? '<div class="ficha-nom">' + escHtml(m.nombre) + "</div>" : "") +
         (que ? '<div class="ficha-que">' + escHtml(que) + "</div>" : "") +
         (m.monto ? '<div class="ficha-monto">' + escHtml(m.monto) + "</div>" : "") +
         (datos.length ? '<div class="ficha-datos">' + datos.join("") + "</div>" : "") +
-        '<input class="nota" type="text" value="' + escHtml(m.nota) +
-          '" placeholder="Nota — ej. llamar después de las 5" aria-label="Nota">' +
+        (esSol ? "" : '<input class="nota" type="text" value="' + escHtml(m.nota) +
+          '" placeholder="Nota — ej. llamar después de las 5" aria-label="Nota">') +
         (b.length ? '<div class="ficha-pie">' + b.join("") + "</div>" : "") +
       "</article>";
     }).join("");
@@ -3292,6 +3346,54 @@
   });
   $("cuerpo-tabla").addEventListener("change", alCambiar);
   $("fichas").addEventListener("change", alCambiar);
+
+  /* Los atajos de una solicitud. Se buscan en la lista que está cargada,
+     que ya trae toda la meta. */
+  function metaSolicitud(id) {
+    if (!ultimaLista || !ultimaLista.meta) return null;
+    for (var i = 0; i < ultimaLista.meta.length; i++) {
+      if (String(ultimaLista.meta[i].id) === String(id)) return ultimaLista.meta[i];
+    }
+    return null;
+  }
+
+  var prellenarSolicitud = null;
+
+  function accionSolicitud(e) {
+    var cot = e.target.closest(".sol-cotizar");
+    if (cot) {
+      var m = metaSolicitud(cot.dataset.id);
+      if (!m) return;
+      // Exportar lo que mandó el cliente y recordar de qué solicitud vino.
+      prellenar = {
+        nombre: m.nombre, telefono: m.tel, cedula: m.cedula, correo: m.correo,
+        provincia: m.provincia, canton: m.canton, distrito: m.distrito
+      };
+      prellenarSolicitud = m.id;
+      irA("nueva", {});
+      return;
+    }
+    var acc = e.target.closest(".sol-acc");
+    if (!acc) return;
+    var accion = acc.dataset.acc, id = acc.dataset.id;
+    if (accion === "eliminar" && !confirm("¿Eliminar esta solicitud para siempre? No se puede deshacer.")) return;
+    acc.disabled = true;
+    pedir("/api/panel/estado", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tabla: "solicitudes", id: id, accion: accion })
+    })
+      .then(function () {
+        avisar(accion === "papelera" ? "Solicitud botada a la papelera."
+             : accion === "restaurar" ? "Solicitud restaurada."
+             : "Solicitud eliminada.");
+        resumenCargado = false;
+        cargarTabla();
+      })
+      .catch(function () { acc.disabled = false; avisar("No se pudo.", "mal"); });
+  }
+  $("fichas").addEventListener("click", accionSolicitud);
+  $("cuerpo-tabla").addEventListener("click", accionSolicitud);
 
   /* =========================================================
      Nueva cotización
@@ -3731,6 +3833,7 @@
         distrito: libreLugar ? "" : $("n-distrito").value,
         nombre: $("n-nombre").value, telefono: $("n-telefono").value,
         cedula: $("n-cedula").value, correo: $("n-correo").value,
+        solicitudId: prellenarSolicitud || "",
         montoFijo: $("n-monto").value,
         servicioLibre: libreServicio,
         detalleLibre: detalle,
@@ -3742,6 +3845,7 @@
         resumenCargado = false;
         mostrarHecha(d);
         avisar("Cotización " + (d.numero || "") + " creada.");
+        if (prellenarSolicitud) { prellenarSolicitud = null; resumenCargado = false; }
         if (pestana && d.enlace) pestana.location = d.enlace + "&pdf=1";
         else if (pestana) pestana.close();
       })
@@ -4707,6 +4811,7 @@
       Object.keys(filtros).forEach(function (k) {
         if (Object.prototype.hasOwnProperty.call(filtro, k)) filtro[k] = filtros[k];
       });
+      if (nueva === "solicitudes" && !filtro.svista) filtro.svista = "pendientes";
       sincronizarControles();
 
       /* Clientes tiene sus propios filtros, aparte de los de las listas.

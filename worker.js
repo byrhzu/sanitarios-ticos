@@ -167,7 +167,7 @@ function claveValida(request, env) {
    endpoint para que el nombre de la tabla nunca salga de la URL: lo
    que llega de afuera sólo sirve para escoger de esta lista, así que
    no hay forma de inyectar SQL por el nombre. */
-const ORIGENES = { beto: "Frank", panel: "Panel", formulario: "Formulario" };
+const ORIGENES = { beto: "Frank", panel: "Panel", formulario: "Formulario", solicitud: "Solicitud" };
 
 /* En qué va cada solicitud y cada cotización.
 
@@ -247,6 +247,12 @@ const TABLAS_PANEL = {
         monto: null,            // una solicitud todavía no tiene precio
         lugar: f.zona || null,
         fecha: f.creado,
+        // Para el atajo de "Cotizar": exportar lo que ya mandó el cliente.
+        cedula: f.cedula || "",
+        correo: f.correo || "",
+        provincia: f.provincia || "",
+        canton: f.canton || "",
+        distrito: f.distrito || "",
         wa: waDe(f.telefono,
           "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") + ", le escribo de " +
           "Sanitarios Ticos. Nos entró su solicitud de " + (f.servicio || "servicio").toLowerCase() +
@@ -328,7 +334,7 @@ const TABLAS_PANEL = {
    para escoger de acá. `servicio` sólo está en cotizaciones porque
    solicitudes guarda el texto que escogió la persona, no el código. */
 const FILTROS_TABLA = {
-  solicitudes:  ["estado", "provincia"],
+  solicitudes:  ["provincia"],
   cotizaciones: ["estado", "provincia", "servicio"]
 };
 
@@ -392,6 +398,21 @@ function construirConsulta(url, sinEstado) {
     condiciones.push("(" + cols.map((c) => c + " LIKE ?").join(" OR ") + ")");
     for (const _ of cols) valores.push("%" + busca + "%");
   }
+  /* Solicitudes: dos estados y una papelera (guía final). La columna
+     `estado` de la base se mantiene, pero la pantalla sólo ve dos cosas:
+     pendiente (todo lo que no está hecho) y realizada (hecha). Y la
+     papelera esconde las inválidas sin borrarlas. */
+  if (tabla === "solicitudes") {
+    const svista = url.searchParams.get("svista");
+    if (svista === "papelera") {
+      condiciones.push("papelera IS NOT NULL");
+    } else {
+      condiciones.push("papelera IS NULL");
+      if (svista === "realizadas") condiciones.push("estado = 'hecha'");
+      else if (svista === "pendientes") condiciones.push("estado <> 'hecha'");
+    }
+  }
+
   const donde = condiciones.length ? ` WHERE ` + condiciones.join(" AND ") : "";
   sql += donde + ` ORDER BY creado DESC`;
 
@@ -433,12 +454,31 @@ async function listaPanel(request, env) {
        que hace que las pestañas digan un número en vez de ser cinco
        botones a ciegas — y que uno sepa que no hay nada perdido en
        "Agendadas" sin tener que entrar a mirar. */
-    const sinEst = construirConsulta(url, true);
-    const conteo = await env.DB
-      .prepare(`SELECT estado, COUNT(*) AS n FROM ${tabla}${sinEst.donde} GROUP BY estado`)
-      .bind(...sinEst.valores).all();
-    const conteos = {};
-    for (const f of conteo.results || []) conteos[f.estado] = f.n;
+    let conteos = {};
+    let pestanas = null;
+    if (tabla === "solicitudes") {
+      /* Las tres pestañas de solicitudes. Se cuentan sin el filtro de
+         pestaña puesto, para que cada una diga su número aunque se esté
+         viendo otra. */
+      const c = await env.DB.prepare(
+        `SELECT
+           SUM(CASE WHEN papelera IS NULL AND estado <> 'hecha' THEN 1 ELSE 0 END) AS pend,
+           SUM(CASE WHEN papelera IS NULL AND estado =  'hecha' THEN 1 ELSE 0 END) AS real2,
+           SUM(CASE WHEN papelera IS NOT NULL THEN 1 ELSE 0 END) AS pap
+         FROM solicitudes`
+      ).first().catch(() => ({ pend: 0, real2: 0, pap: 0 }));
+      pestanas = [
+        { id: "pendientes", etiqueta: "Pendientes", n: (c && c.pend) || 0 },
+        { id: "realizadas", etiqueta: "Realizadas", n: (c && c.real2) || 0 },
+        { id: "papelera",   etiqueta: "Papelera",   n: (c && c.pap) || 0 }
+      ];
+    } else {
+      const sinEst = construirConsulta(url, true);
+      const conteo = await env.DB
+        .prepare(`SELECT estado, COUNT(*) AS n FROM ${tabla}${sinEst.donde} GROUP BY estado`)
+        .bind(...sinEst.valores).all();
+      for (const f of conteo.results || []) conteos[f.estado] = f.n;
+    }
 
     const vista = TABLAS_PANEL[tabla].vista;
     const origen = url.origin;
@@ -456,6 +496,8 @@ async function listaPanel(request, env) {
       // para escribirle sin salirse del panel.
       meta: vista.meta ? results.map(vista.meta) : null,
       estados: ESTADOS,
+      pestanas,
+      svista: url.searchParams.get("svista") || (tabla === "solicitudes" ? "pendientes" : null),
       // Un aviso arriba de la tabla vale más que una marca en cada
       // fila: mientras las tarifas sean las provisionales, lo son todas.
       hayProvisionales: results.some((f) => f.provisional),
@@ -534,6 +576,26 @@ async function cambiarEstado(request, env) {
 
   const id = parseInt(cuerpo.id, 10);
   if (!Number.isFinite(id) || id <= 0) return json({ ok: false, error: "Fila inválida" }, 400);
+
+  /* Papelera de solicitudes: botar (soft), restaurar y eliminar de
+     verdad. Sólo para solicitudes; una cotización no se bota. */
+  if (tabla === "solicitudes" && cuerpo.accion) {
+    try {
+      if (cuerpo.accion === "papelera") {
+        await env.DB.prepare(`UPDATE solicitudes SET papelera = datetime('now') WHERE id = ?`).bind(id).run();
+      } else if (cuerpo.accion === "restaurar") {
+        await env.DB.prepare(`UPDATE solicitudes SET papelera = NULL WHERE id = ?`).bind(id).run();
+      } else if (cuerpo.accion === "eliminar") {
+        await env.DB.prepare(`DELETE FROM solicitudes WHERE id = ? AND papelera IS NOT NULL`).bind(id).run();
+      } else {
+        return json({ ok: false, error: "Acción desconocida" }, 400);
+      }
+      return json({ ok: true, accion: cuerpo.accion });
+    } catch (e) {
+      console.error("Error en la papelera:", e);
+      return json({ ok: false, error: "No se pudo guardar" }, 500);
+    }
+  }
 
   const estado = Object.prototype.hasOwnProperty.call(ESTADOS, cuerpo.estado)
     ? cuerpo.estado : null;
@@ -2048,6 +2110,13 @@ async function cotizar(request, env, ctx) {
   let origen = ["panel", "formulario"].indexOf(cuerpo.origen) !== -1 ? cuerpo.origen : "beto";
   if (origen === "panel" && !claveValida(request, env)) origen = "beto";
 
+  /* Si la cotización nació de una solicitud, la etiqueta es "solicitud":
+     de ahí sale el filtro de dónde proviene cada cotización, y ésas —como
+     las del +— tienen más probabilidad de concretarse que las de la web
+     de alguien que sólo quería saber el precio. */
+  const solicitudId = esPanel ? parseInt(cuerpo.solicitudId, 10) : NaN;
+  if (esPanel && Number.isFinite(solicitudId) && solicitudId > 0) origen = "solicitud";
+
   let numero = null;
   let enlace = null;
   const llave = nuevaLlave();
@@ -2102,6 +2171,14 @@ async function cotizar(request, env, ctx) {
                       etiqueta(entrada.servicio, null, "servicio")
     }
   );
+
+  /* La solicitud de origen pasa a "realizada": deja la lista de
+     pendientes y su lugar queda en Cotizaciones (guía § Solicitudes). */
+  if (esPanel && Number.isFinite(solicitudId) && solicitudId > 0) {
+    ctx.waitUntil(env.DB.prepare(
+      `UPDATE solicitudes SET estado = 'hecha', actualizado = datetime('now') WHERE id = ?`
+    ).bind(solicitudId).run().catch(function (e) { console.error("No se marcó la solicitud:", e); }));
+  }
 
   // El aviso sale en segundo plano, como el del formulario.
   ctx.waitUntil(avisarCotizacion(Object.assign({}, salida, {
