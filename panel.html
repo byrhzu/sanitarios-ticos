@@ -759,24 +759,25 @@
   /* Antes esto era una frase de tres renglones bajo cada cifra. Es un
      dato de una sola ojeada: se lee el color y el signo antes que el
      número, y el número antes que la palabra. */
-  .delta::before, .pastilla:not(.mudo)::before {
+  .pastilla:not(.mudo):not(.ori)::before {
     content: ""; width: 5px; height: 5px; border-radius: 50%;
     background: currentColor; flex: 0 0 5px; opacity: .85;
   }
-  /* Las que ya empiezan con una flecha no llevan punto: serían dos
-     marcas seguidas diciendo lo mismo. */
-  .delta.sube::before, .delta.baja::before { display: none; }
-
+  /* Antes esto era una pastilla rellena de esquinas redondas; a Byron no
+     le gustaban. Ahora es texto de color con un icono chico —la flecha
+     de tendencia o un relojito—: se lee de un vistazo, pesa menos y no
+     compite con las pastillas de verdad. */
   .delta {
-    display: inline-flex; align-items: center; gap: .3rem;
-    font-size: .75rem; font-weight: 600; padding: .17rem .45rem;
-    border-radius: 999px; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: .22rem;
+    font-size: .82rem; font-weight: 700; white-space: nowrap;
     font-variant-numeric: tabular-nums; letter-spacing: -.01em;
   }
-  .delta.sube   { background: var(--est-ok-bg);     color: var(--est-ok-tx); }
-  .delta.baja   { background: var(--est-mal-bg);    color: var(--est-mal-tx); }
-  .delta.igual  { background: var(--p-sup2);        color: var(--p-tenue); }
-  .delta.espera { background: var(--est-espera-bg); color: var(--est-espera-tx); }
+  .delta svg { width: 14px; height: 14px; flex: 0 0 14px; }
+  .delta.sube   { color: var(--est-ok-tx); }
+  .delta.baja   { color: var(--est-mal-tx); }
+  .delta.ok     { color: var(--est-ok-tx); }
+  .delta.igual, .delta.neutro { color: var(--p-tenue); font-weight: 600; }
+  .delta.espera { color: var(--est-espera-tx); }
   /* La tarjeta urgente lleva además un filo a la izquierda, del mismo
      color que el de arriba. Con el naranja de marca eran dos naranjas
      distintos en la misma esquina, que se lee como un error de imprenta. */
@@ -2362,7 +2363,11 @@
     cotizacion: ico("M3 11.5V5a2 2 0 0 1 2-2h6.5a2 2 0 0 1 1.4.6l7.5 7.5a2 2 0 0 1 0 2.8l-6.6 6.6a2 2 0 0 1-2.8 0L3.6 13a2 2 0 0 1-.6-1.5z", '<circle cx="7.5" cy="7.5" r="1.4"/>'),
     ojo:    ico("M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z", '<circle cx="12" cy="12" r="3"/>'),
     ojoNo:  ico("M3 3l18 18M10.6 10.7a3 3 0 0 0 4 4M9.9 5.2A9.5 9.5 0 0 1 12 5c6.5 0 10 7 10 7a15.5 15.5 0 0 1-3.4 4.1M6.1 6.2A15.6 15.6 0 0 0 2 12s3.5 7 10 7a9.4 9.4 0 0 0 3-.5"),
-    lapiz:  ico("M4 20h4L18.5 9.5a2 2 0 0 0-3-3L5 17v3zM14.5 6.5l3 3")
+    lapiz:  ico("M4 20h4L18.5 9.5a2 2 0 0 0-3-3L5 17v3zM14.5 6.5l3 3"),
+    // Flechas de tendencia y relojito, para reemplazar las pastillas.
+    subeF:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>',
+    bajaF:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
+    reloj:  ico("M12 7v5l3 2", '<circle cx="12" cy="12" r="9"/>')
   };
 
   /* El tema arranca por lo que tenga puesto el sistema y se queda con
@@ -2598,9 +2603,15 @@
   function delta(v) {
     if (v === null || v === undefined) return "";
     var tono = v > 0 ? "sube" : v < 0 ? "baja" : "igual";
-    var texto = v === 0 ? "igual" : (v > 0 ? "▲ " : "▼ ") + Math.abs(v) + "%";
+    var ico = v > 0 ? ICO.subeF : v < 0 ? ICO.bajaF : "";
+    var texto = v === 0 ? "sin cambio" : Math.abs(v) + "%";
     return '<span class="delta ' + tono + '" title="Contra el periodo anterior">' +
-           texto + "</span>";
+           ico + "<span>" + texto + "</span></span>";
+  }
+
+  // La espera / los días, con un relojito, no en pastilla.
+  function reloj(texto, tono) {
+    return '<span class="delta ' + tono + '">' + ICO.reloj + "<span>" + escHtml(texto) + "</span></span>";
   }
 
   function pintarCifras(d) {
@@ -2619,8 +2630,7 @@
         chispa: d.serie.map(function (f) { return f.cot; }), color: "var(--p-acento)" }),
 
       cifra({ icono: ICO.alerta, n: String(esperando), bruto: esperando, t: "Sin atender", tono: "espera",
-        p: esperando ? '<span class="delta espera" title="Lo que más lleva esperando">' +
-                       escHtml(espera(d.esperaMax)) + "</span>" : "",
+        p: esperando ? reloj(espera(d.esperaMax), "espera") : "",
         urge: esperando > 0, ir: { vista: "cotizaciones", estado: "nueva" } }),
 
       /* Ingresos sale de los trabajos anotados, que es plata recibida.
@@ -2730,8 +2740,7 @@
       return '<button type="button" class="aviso urge-' + grado + '" data-ir=\'' +
         escHtml(JSON.stringify(ir)) + "'>" +
         '<div class="aviso-top"><b>' + escHtml(p.nombre) + "</b>" +
-          '<span class="delta ' + (grado === "alto" ? "baja" : grado === "medio" ? "espera" : "sube") +
-            '">' + escHtml(espera(p.horas)) + "</span>" +
+          reloj(espera(p.horas), grado === "alto" ? "baja" : grado === "medio" ? "espera" : "ok") +
           '<span class="aviso-ir">' + ICO.flecha + "</span></div>" +
         '<div class="aviso-det"><span class="ref">' + escHtml(p.titulo) + "</span>" +
           (det.length ? piezas(det) : "") + "</div>" +
@@ -2756,9 +2765,8 @@
         escHtml(JSON.stringify({ vista: "cliente", id: p.clienteId })) + "'>" +
         '<div class="toca-quien"><b>' + escHtml(p.nombre) + "</b><small>" +
           piezas([p.servicio, p.lugar]) + "</small></div>" +
-        '<span class="toca-cuando"><span class="delta ' +
-          (p.dias < 0 ? "baja" : p.dias <= 7 ? "espera" : "igual") + '">' +
-          escHtml(cuando(p.dias)) + "</span>" +
+        '<span class="toca-cuando">' +
+          reloj(cuando(p.dias), p.dias < 0 ? "baja" : p.dias <= 7 ? "espera" : "neutro") +
           '<small>' + escHtml(fechaCorta(p.proximo)) + "</small></span>" +
       "</div>";
     }).join("");
@@ -3976,10 +3984,11 @@
             /* "Toca en 3 meses" no dice qué toca. Lo que toca es el
                mantenimiento, así que se nombra. Y "Toca hace 9 días"
                no se dice: lo vencido venció. */
-            marcas.push('<span class="pastilla' +
-              (dias < 0 ? " vencio" : dias <= 30 ? " toca" : "") + '">' +
-              escHtml(dias < 0 ? "Venció hace " + cuando(dias).replace("hace ", "")
-                               : "Mantenimiento " + cuando(dias)) + "</span>");
+            // Mismo trato que la espera: relojito y texto de color, no pastilla.
+            marcas.push(reloj(
+              dias < 0 ? "Venció hace " + cuando(dias).replace("hace ", "")
+                       : "Mantenimiento " + cuando(dias),
+              dias < 0 ? "baja" : dias <= 30 ? "espera" : "neutro"));
           }
           // Qué se le hace a este cliente. Es por lo que se filtra, así
           // que tiene que verse sin abrir la ficha.
@@ -5048,10 +5057,10 @@
   /* Al cambiar el ancho hay dos cosas que redibujar: el gráfico, que
      está en píxeles, y la lista, que a partir de cierto ancho deja de
      ser tabla y pasa a ser fichas. */
-  var reloj = null, eraAngosto = esAngosto();
+  var temporizadorAncho = null, eraAngosto = esAngosto();
   window.addEventListener("resize", function () {
-    clearTimeout(reloj);
-    reloj = setTimeout(function () {
+    clearTimeout(temporizadorAncho);
+    temporizadorAncho = setTimeout(function () {
       if (esAngosto() !== eraAngosto) { eraAngosto = esAngosto(); dibujarLista(); }
       if (resumenCargado) { resumenCargado = false; if (vista === "resumen") cargarResumen(); }
     }, 250);

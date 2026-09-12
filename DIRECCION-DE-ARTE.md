@@ -1994,3 +1994,28 @@ que abra directo, el login con efecto y ver-contraseña, y el arreglo del
   PDF), los bordes (nada pegado al límite, la barra flotante despegada), y
   la consola (sin errores propios; los 404 de /api en local son porque el
   servidor de prueba no tiene backend, en producción los sirve el worker).
+
+## 40. Las variaciones dejan de ser pastillas (2026-09-12)
+
+Byron señaló las pastillas de esquina redonda —"hace 1 día", "▲41%",
+"▼8%"— y pidió otra forma "llamativa, bonita, agradable la vista", y
+aplicarla en todo lugar donde saliera ese tipo de aviso o un textillo
+suelto haciendo lo mismo.
+
+- **De pastilla a texto de color con icono.** `.delta` pierde el fondo,
+  el borde redondo y el relleno. Queda como texto en color con un icono
+  chico de 14px: una flecha de tendencia (`subeF`/`bajaF`, chevron de
+  trazo grueso) para los porcentajes y un relojito (`reloj`) para las
+  esperas y los plazos. Verde sube, rojo baja, ámbar espera, gris lo
+  neutro. Se lee de un vistazo, pesa menos y no compite con las pastillas
+  de categoría de verdad (el tag "Solicitud", que sí es una etiqueta).
+
+- **Un helper `reloj(texto, tono)`** hermana de `delta(v)`, para que las
+  esperas ("hace 8 h") y los plazos ("en 3 días") salgan iguales. Se
+  aplicó en las cuatro partes: la cifra "Sin atender", los avisos de Hoy,
+  los próximos servicios y la alerta de mantenimiento en la ficha de
+  cliente.
+
+- **Bug de paso:** un `var reloj` (el temporizador del resize) pisaba a la
+  función `reloj()` en el mismo ámbito y tumbaba el Resumen entero. El
+  temporizador pasó a llamarse `temporizadorAncho`.
