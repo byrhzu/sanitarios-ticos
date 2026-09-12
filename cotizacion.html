@@ -331,6 +331,16 @@ body {
     padding: 16mm; box-shadow: none;
   }
   .acciones { display: none; }
+  /* Una sola página, garantizada. La hoja se fija a A4 exacto con
+     box-sizing border-box, así el padding no la empuja fuera; el
+     contenido (≈24cm) cabe con holgura y overflow:hidden corta
+     cualquier pelo que se quiera ir a una segunda página en blanco.
+     Antes el min-height 297mm + padding 16mm sumaba 329mm y saltaba. */
+  .hoja {
+    width: 210mm; height: 297mm; min-height: 0;
+    box-sizing: border-box; padding: 12mm 13mm; overflow: hidden;
+    page-break-after: avoid; page-break-inside: avoid;
+  }
   /* Sin esto, los navegadores le quitan el fondo a la franja naranja
      y al bloque del rango, que es justo lo que identifica el papel. */
   .hoja::before, .tabla th, .rango, .provisional {
@@ -386,7 +396,7 @@ body {
       <tr>
         <td>
           <span class="svc" id="servicio"></span>
-          <span class="incl">Incluye la succión, el transporte y la disposición final de lo extraído.</span>
+          <span class="incl" id="incluye" hidden></span>
         </td>
         <td class="monto" id="monto-fila"></td>
       </tr>
@@ -559,6 +569,10 @@ body {
 
     // Servicio y montos
     $("servicio").textContent = d.servicio;
+    // El "incluye" ya no es fijo: viene por servicio, y se esconde cuando
+    // no aplica (destaqueo, alquiler, o un servicio escrito a mano).
+    if (d.incluye) { $("incluye").textContent = d.incluye; $("incluye").hidden = false; }
+    else { $("incluye").hidden = true; }
 
     /* Hay servicios con rango de verdad —el destaqueo va de 30 a 35
        mil— y otros que sólo tienen piso, como el tanque séptico, donde

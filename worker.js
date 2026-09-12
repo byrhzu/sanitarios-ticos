@@ -1439,6 +1439,15 @@ async function agendaPanel(request, env) {
 /* Precios reales, entregados por el propietario el 8 de setiembre de 2026.
    Ya no son provisionales: cada monto de acá salió de él, y donde no hay
    número no se inventa uno — se dice "desde". */
+/* Qué incluye cada servicio, para el documento. Sólo los de extracción
+   dicen "succión, transporte y disposición"; el resto no lleva esa línea
+   —y un servicio escrito a mano nunca la lleva—. */
+const INCLUYE_SERVICIO = {
+  "tanques-septicos": "Incluye la succión, el transporte y la disposición final de lo extraído.",
+  "trampas-grasa":    "Incluye la succión, el transporte y la disposición final de lo extraído.",
+  "tanques-grasa":    "Incluye la succión, el transporte y la disposición final de lo extraído."
+};
+
 const TARIFAS = {
   provisional: false,
 
@@ -2017,6 +2026,11 @@ async function verCotizacion(request, env) {
     // Lo que se escribió a mano manda: si el encargado puso "Bombeo de
     // pozo", el documento dice eso y no la etiqueta de la lista.
     servicio: f.servicio_libre || etiqueta(f.servicio, null, "servicio"),
+    /* El "incluye…" del documento sale de acá, no del HTML fijo. Sólo lo
+       llevan los servicios de extracción, y NUNCA un servicio escrito a
+       mano: poner "incluye la succión…" en un "Bombeo de pozo" que el
+       encargado inventó da información falsa (bug que cazó Byron). */
+    incluye: f.servicio_libre ? null : (INCLUYE_SERVICIO[f.servicio] || null),
     min: f.monto_min,
     max: f.monto_max,
     minTexto: colones(f.monto_min),
