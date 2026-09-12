@@ -1898,3 +1898,60 @@ palabra con una rayita de dos píxeles debajo.
 azul medianoche, y sus colores salen todos de `--p-barra-t` con `color-mix`
 en vez de un blanco escrito a mano: con el blanco fijo, al aclarar la barra
 el texto desaparecía.
+
+## 37. Guía final: azul medianoche + naranja de acento (2026-09-12)
+
+Byron mandó un PDF de 8 páginas ("Guía final App") con el rediseño
+definitivo. Lo más grande: **el naranja deja de ser el color del
+conglomerado**. Se reserva para el logo, el FAB, los avisos y las cosas
+chicas —"es un color incómodo para el conglomerado"—, y me dio libertad de
+paleta considerando claro y oscuro, con inspiración azul (Daily Me,
+ScheduleMe). Escogió **azul medianoche + naranja**.
+
+**Dos acentos, no uno.** `--p-primario` (azul) toma todo lo que antes era
+naranja por estar *activo*: la pestaña escogida, el día de hoy, el switch,
+los enlaces, el foco. `--p-acento` (naranja) queda para el FAB, los
+contadores con algo esperando, los avisos y el filo de la cifra de
+cotizaciones. Así el naranja resalta por ser el único cálido en un mar
+azul, en vez de teñirlo todo.
+
+**Claro:** casi blanco azulado (#f6f8fc), tarjetas blancas, tinta azul.
+**Oscuro:** azul medianoche mate (#0b1220), tarjetas un paso más claro.
+
+**El fondo respira.** Dos auras borrosas —azul y naranja— que se desplazan
+30s por vuelta detrás de todo (`body::before`, `filter: blur(60px)`). Es el
+"movimiento" que pide la guía, tan lento que no distrae. Se apaga con
+`prefers-reduced-motion`.
+
+### Hoy: el switch (guía § Hoy)
+
+Fuera la portada con su aro de cierre, fuera "Requiere atención", fuera los
+botones de WhatsApp/Llamar. Hoy es ahora un **switch**: Solicitudes a la
+izquierda, Cotizaciones a la derecha, cada una con su contador (naranja
+cuando hay algo). Debajo, la lista del lado escogido: **tarjetas simples,
+cada una un atajo a atenderla**, con un filo de color a la izquierda —rojo
+pasó de un día, ámbar pasó de seis horas, verde recién—. Y "Próximos
+servicios" abajo.
+
+### Resumen (guía § Resumen)
+
+Fuera **Actividad** (la gráfica), **Cierre** (el aro) y el desglose
+**Estado**: la app no maneja un "no se realizó", así que el cierre no
+aplica. Quedan las cuatro cifras y tres desgloses renombrados a lo que de
+verdad cuentan —salen de trabajos hechos, no de cotizaciones—:
+**Servicio realizado · Zonas · Método de entrada**.
+
+### Detalles de la guía
+
+- **Cabecera**: el saludo en una sola línea a la izquierda; el logo/avatar
+  a la derecha, con los avisos y ajustes colgando de él.
+- **Fuera el separador "·"**: se reemplaza por " — " (guía: "no quiero más
+  ese separador").
+- **Iconos modernos**: el buzón de solicitudes pasa a una burbuja de
+  consulta; el documento de cotizaciones a una etiqueta de precio.
+- La campana encendida se pinta de naranja (es el aviso).
+
+Falta (fases siguientes): solicitudes a 2 estados + papelera, clientes
+divididos en posibles/clientes, el PDF de cotización a una sola página y
+que abra directo, el login con efecto y ver-contraseña, y el arreglo del
+"incluye la succión…" en servicio escrito a mano.
