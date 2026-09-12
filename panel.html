@@ -1259,8 +1259,8 @@
   .aten:hover .aten-ir { color: var(--p-acento-t); }
 
   .toca-fila {
-    display: flex; gap: .8rem; align-items: center; flex-wrap: wrap;
-    padding: .95rem 1.05rem; border-radius: var(--radio);
+    display: flex; gap: .8rem; align-items: flex-start; flex-wrap: wrap;
+    padding: 1rem 1.2rem; border-radius: var(--radio);
     background: var(--p-tarj); border: 1px solid var(--p-borde);
     box-shadow: var(--p-alza);
   }
@@ -2723,7 +2723,7 @@
     if (!items.length) {
       $("hoy-lista").innerHTML = '<p class="hoy-vacio">' +
         (hoyTipo === "solicitudes"
-          ? "No hay solicitudes esperando. Las que entren por la web salen acá."
+          ? "No hay solicitudes pendientes."
           : "No hay cotizaciones esperando respuesta.") + "</p>";
       return;
     }
@@ -2757,9 +2757,10 @@
         'Acá van a aparecer los clientes a los que les toque mantenimiento.</p>';
       return;
     }
-    /* "en 2 días" dice cuánto falta; "(12 set)" dice cuándo es. Las dos
-       juntas son lo que uno necesita para decidir si lo mete en la ruta
-       de mañana, y cada una sola obliga a hacer la cuenta a mano. */
+    /* El nombre y, a la par, "en 3 días": con eso y el servicio y el
+       lugar debajo ya se sabe qué toca y para dónde. La fecha exacta
+       ("15 set") sobraba —era el renglón que empujaba todo contra el
+       borde y hacía la tarjeta densa. */
     $("proximos").innerHTML = d.proximos.map(function (p) {
       return '<div class="toca-fila' + (p.dias < 0 ? " vencido" : "") + '" data-ir=\'' +
         escHtml(JSON.stringify({ vista: "cliente", id: p.clienteId })) + "'>" +
@@ -2767,7 +2768,7 @@
           piezas([p.servicio, p.lugar]) + "</small></div>" +
         '<span class="toca-cuando">' +
           reloj(cuando(p.dias), p.dias < 0 ? "baja" : p.dias <= 7 ? "espera" : "neutro") +
-          '<small>' + escHtml(fechaCorta(p.proximo)) + "</small></span>" +
+        "</span>" +
       "</div>";
     }).join("");
   }
