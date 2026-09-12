@@ -1163,6 +1163,13 @@ async function listaClientes(request, env) {
   if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
 
   const url = new URL(request.url);
+  /* Dos listas en una pantalla (guía § Clientes):
+       clientes — a quien ya se le HIZO un servicio (tabla clientes).
+       posibles — a quien se le cotizó pero todavía no se le ha hecho
+                  nada. Esos no viven en la tabla clientes: salen de las
+                  cotizaciones, agrupadas por teléfono, quitando a los que
+                  ya son clientes de verdad. */
+  if (url.searchParams.get("tipo") === "posibles") return listaPosibles(request, env);
   const busca = texto(url.searchParams.get("q"), 60);
   const provincia = texto(url.searchParams.get("provincia"), 40);
   const servicio = texto(url.searchParams.get("servicio"), 40);
@@ -1235,6 +1242,15 @@ async function listaClientes(request, env) {
         GROUP BY k ORDER BY n DESC`
     ).all()).results) || [];
 
+    /* El contador de la otra pestaña, para el segmento, sin otra llamada. */
+    const otros = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM (
+         SELECT c.telefono FROM cotizaciones c
+          WHERE c.telefono IS NOT NULL AND c.telefono <> ''
+            AND c.telefono NOT IN (SELECT cl.telefono FROM clientes cl JOIN servicios s ON s.cliente_id = cl.id)
+          GROUP BY c.telefono)`
+    ).first().catch(() => ({ n: 0 }));
+
     return json({
       ok: true,
       clientes: results.map((c) => Object.assign({}, c, {
@@ -1243,6 +1259,7 @@ async function listaClientes(request, env) {
                              ", le escribo de Sanitarios Ticos.")
       })),
       total: total ? total.n : 0,
+      otros: (otros && otros.n) || 0,
       pagina, porPagina: POR_PAGINA,
       paginas: Math.max(1, Math.ceil((total ? total.n : 0) / POR_PAGINA)),
       orden,
@@ -1257,6 +1274,116 @@ async function listaClientes(request, env) {
     });
   } catch (e) {
     console.error("Error al listar clientes:", e);
+    return json({ ok: false, error: "No se pudo consultar" }, 500);
+  }
+}
+
+/* -------------------------------------------------------------
+   Posibles clientes: cotizados que todavía no son clientes
+
+   Salen de las cotizaciones, una por teléfono (la más reciente), y se
+   quitan los que ya tienen un servicio hecho —esos ya son clientes—.
+   Así la lista de Cotizaciones no se vuelve una lista larga donde de
+   cien sólo diez terminan en trabajo: los cien viven acá como posibles,
+   y los que se concretan pasan a Clientes.
+   ------------------------------------------------------------- */
+async function listaPosibles(request, env) {
+  const url = new URL(request.url);
+  const busca = texto(url.searchParams.get("q"), 60);
+  const provincia = texto(url.searchParams.get("provincia"), 40);
+  const servicio = texto(url.searchParams.get("servicio"), 40);
+  const pedida = parseInt(url.searchParams.get("pagina"), 10);
+  const pagina = Number.isFinite(pedida) && pedida > 0 ? pedida : 1;
+
+  const ORDENES = {
+    reciente: "ultima DESC",
+    nombre:   "(nombre IS NULL), nombre"
+  };
+  const pedidoOrden = url.searchParams.get("orden");
+  const orden = Object.prototype.hasOwnProperty.call(ORDENES, pedidoOrden) ? pedidoOrden : "reciente";
+
+  /* Sólo teléfonos que NO tienen ningún servicio hecho. `telefono` va
+     normalizado igual en las dos tablas, así que la comparación directa
+     alcanza. */
+  const noEsCliente =
+    "c.telefono NOT IN (SELECT cl.telefono FROM clientes cl " +
+    "JOIN servicios s ON s.cliente_id = cl.id)";
+
+  const cond = [noEsCliente, "c.telefono IS NOT NULL", "c.telefono <> ''"];
+  const val = [];
+  if (busca) {
+    cond.push("(c.nombre LIKE ? OR c.telefono LIKE ? OR c.cedula LIKE ?)");
+    val.push("%" + busca + "%", "%" + busca + "%", "%" + busca + "%");
+  }
+  if (provincia) { cond.push("c.provincia = ?"); val.push(provincia); }
+  if (servicio) { cond.push("c.servicio = ?"); val.push(servicio); }
+  const donde = "WHERE " + cond.join(" AND ");
+
+  try {
+    /* Una fila por teléfono: la cotización más reciente de cada persona.
+       El GROUP BY colapsa las repetidas; MAX(creado) escoge la última y
+       las demás columnas se toman de esa misma fila vía subconsulta de
+       orden. Para no complicar, se agrupa y se toma el mayor id. */
+    const base = `FROM cotizaciones c ${donde} GROUP BY c.telefono`;
+
+    const total = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM (SELECT 1 ${base})`
+    ).bind(...val).first();
+
+    const { results } = await env.DB.prepare(
+      `SELECT c.telefono, MAX(c.nombre) AS nombre, MAX(c.cedula) AS cedula,
+              MAX(c.provincia) AS provincia, MAX(c.canton) AS canton,
+              COUNT(*) AS cotizaciones,
+              MAX(date(c.creado, '-6 hours')) AS ultima,
+              (SELECT c2.servicio FROM cotizaciones c2 WHERE c2.telefono = c.telefono
+                ORDER BY c2.creado DESC, c2.id DESC LIMIT 1) AS servicio,
+              (SELECT c3.servicio_libre FROM cotizaciones c3 WHERE c3.telefono = c.telefono
+                ORDER BY c3.creado DESC, c3.id DESC LIMIT 1) AS servicio_libre,
+              (SELECT c4.numero FROM cotizaciones c4 WHERE c4.telefono = c.telefono
+                ORDER BY c4.creado DESC, c4.id DESC LIMIT 1) AS numero
+       ${base}
+       ORDER BY ${ORDENES[orden]}
+       LIMIT ? OFFSET ?`
+    ).bind(...val, POR_PAGINA, (pagina - 1) * POR_PAGINA).all();
+
+    const provincias = ((await env.DB.prepare(
+      `SELECT provincia AS k, COUNT(DISTINCT telefono) AS n FROM cotizaciones c
+        WHERE ${noEsCliente} AND provincia IS NOT NULL AND provincia <> ''
+        GROUP BY k ORDER BY k`
+    ).all()).results) || [];
+    const servicios = ((await env.DB.prepare(
+      `SELECT servicio AS k, COUNT(DISTINCT telefono) AS n FROM cotizaciones c
+        WHERE ${noEsCliente} AND servicio IS NOT NULL AND servicio <> ''
+        GROUP BY k ORDER BY n DESC`
+    ).all()).results) || [];
+
+    const otros = await env.DB.prepare(
+      `SELECT COUNT(DISTINCT cl.id) AS n FROM clientes cl JOIN servicios s ON s.cliente_id = cl.id`
+    ).first().catch(() => ({ n: 0 }));
+
+    return json({
+      ok: true,
+      posibles: results.map((c) => ({
+        telefono: c.telefono, nombre: c.nombre, cedula: c.cedula,
+        provincia: c.provincia, canton: c.canton,
+        cotizaciones: c.cotizaciones, ultima: c.ultima, numero: c.numero,
+        servicioNombre: c.servicio_libre || (c.servicio ? etiqueta(c.servicio, null, "servicio") : null),
+        wa: waDe(c.telefono, "Buenas" + (c.nombre ? " " + primerNombre(c.nombre) : "") +
+                             ", le escribo de Sanitarios Ticos por su cotización" +
+                             (c.numero ? " " + c.numero : "") + ".")
+      })),
+      total: total ? total.n : 0,
+      otros: (otros && otros.n) || 0,
+      pagina, porPagina: POR_PAGINA,
+      paginas: Math.max(1, Math.ceil((total ? total.n : 0) / POR_PAGINA)),
+      orden,
+      filtros: {
+        provincias: provincias.map((f) => ({ id: f.k, etiqueta: f.k, n: f.n })),
+        servicios: servicios.map((f) => ({ id: f.k, etiqueta: etiqueta(f.k, null, "servicio"), n: f.n }))
+      }
+    });
+  } catch (e) {
+    console.error("Error al listar posibles:", e);
     return json({ ok: false, error: "No se pudo consultar" }, 500);
   }
 }

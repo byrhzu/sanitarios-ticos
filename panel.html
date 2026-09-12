@@ -1108,7 +1108,11 @@
     display: flex; align-items: center; gap: .7rem;
     margin-top: .75rem; padding-top: .7rem; border-top: 1px solid var(--p-linea);
   }
-  .cli-ir { flex: 1 1 auto; color: var(--p-primario); font-weight: 500; }
+  /* La flecha que abre la ficha, a la derecha del todo (guía: "modifica
+     el botón de ver ficha por una pequeña flecha"). */
+  .cli-ir { margin-left: auto; color: var(--p-tenue); display: inline-flex; }
+  .cli-ir svg { width: 18px; height: 18px; }
+  .ficha.cli:hover .cli-ir { color: var(--p-primario); }
   /* Los dos botones de contacto se agrandan: acá no hay una tabla que
      los obligue a ser chiquitos y esto se toca en la calle. */
   .acc[data-alto] a { width: 2.4rem; height: 2.4rem; border-radius: 999px; }
@@ -1982,6 +1986,16 @@
          cotización como hecha; acá se corrige, se apaga el recordatorio
          y se ve todo lo que se le ha hecho. -->
     <div class="vista" id="vista-clientes" hidden>
+      <!-- Dos listas (guía § Clientes): quien ya tuvo un servicio, y los
+           cotizados que todavía no. -->
+      <div class="hoy-sw cli-sw" role="tablist" aria-label="Qué ver">
+        <button type="button" role="tab" class="hoy-sw-b" data-cli="clientes" aria-selected="true">
+          <span class="hoy-sw-t">Clientes</span><span class="hoy-sw-n" id="sw-cli">0</span>
+        </button>
+        <button type="button" role="tab" class="hoy-sw-b" data-cli="posibles" aria-selected="false">
+          <span class="hoy-sw-t">Posibles</span><span class="hoy-sw-n" id="sw-pos">0</span>
+        </button>
+      </div>
       <div class="rango" id="clientes-barra">
         <input type="search" id="c-busca" placeholder="Buscar por nombre, teléfono o cédula" aria-label="Buscar cliente">
         <!-- El trabajo que no vino de una cotización. Es el caso más
@@ -3755,6 +3769,7 @@
   /* "Le toca" de entrada: la primera pregunta al abrir Clientes casi
      siempre es a quién hay que escribirle, no dónde está fulano. */
   var cliOrden = "pronto", cliProv = "", cliServ = "";
+  var cliVista = "clientes";   // clientes | posibles
 
   function fechaLarga(iso) {
     var p = String(iso || "").split("-");
@@ -3773,7 +3788,15 @@
     return dias < 0 ? "hace " + t : dias === 0 ? "hoy" : "en " + t;
   }
 
+  function contarSw(d) {
+    // El total de esta pestaña va en su contador; el de la otra viene en
+    // `otros`, para no hacer una segunda llamada.
+    if (cliVista === "clientes") { ponerSw("sw-cli", d.total || 0); ponerSw("sw-pos", d.otros || 0); }
+    else { ponerSw("sw-pos", d.total || 0); ponerSw("sw-cli", d.otros || 0); }
+  }
+
   function cargarClientes() {
+    if (cliVista === "posibles") return cargarPosibles();
     $("estado-clientes").textContent = "";
     $("estado-clientes").classList.remove("is-error");
     $("lista-clientes").innerHTML = esqFilas(4);
@@ -3789,6 +3812,7 @@
         CANALES = d.canales;
         if (d.periodos) { PERIODOS_SRV = d.periodos; PERIODOS = d.periodos; }
         pintarFiltrosCliente(d.filtros);
+        contarSw(d);
         $("estado-clientes").textContent = d.total
           ? (d.total === 1 ? "1 cliente." : d.total + " clientes.")
           : (cliBusca ? "Nadie con ese dato." : "Todavía no hay clientes. El primero aparece al marcar una cotización como hecha.");
@@ -3831,9 +3855,9 @@
             '<div class="cli-top"><b>' + escHtml(c.nombre) + "</b>" +
               '<span class="tel">' + escHtml(tel(c.telefono)) + "</span>" +
               '<span class="cli-marcas">' + marcas.join("") + "</span></div>" +
-            (linea.length ? '<div class="cli-linea">' + escHtml(linea.join(" · ")) + "</div>" : "") +
-            '<div class="cli-pie"><span class="cli-ir">Ver ficha</span>' +
-              '<span class="acc" data-alto>' + pie.join("") + "</span></div>" +
+            (linea.length ? '<div class="cli-linea">' + escHtml(linea.join(" — ")) + "</div>" : "") +
+            '<div class="cli-pie"><span class="acc" data-alto>' + pie.join("") + "</span>" +
+              '<span class="cli-ir" title="Ver ficha" aria-label="Ver ficha">' + ICO.flecha + "</span></div>" +
           "</article>";
         }).join("");
 
@@ -3851,6 +3875,113 @@
         $("estado-clientes").classList.add("is-error");
       });
   }
+
+  /* Los posibles: cotizados que todavía no son clientes. La tarjeta
+     dice a qué se cotizó, cuándo y cuántas veces, y deja escribirle o
+     hacerle otra cotización sin buscar nada. */
+  function cargarPosibles() {
+    $("estado-clientes").textContent = "";
+    $("estado-clientes").classList.remove("is-error");
+    $("lista-clientes").innerHTML = esqFilas(4);
+    var ord = (cliOrden === "pronto") ? "reciente" : cliOrden;
+    var p = new URLSearchParams();
+    p.set("tipo", "posibles");
+    if (cliBusca) p.set("q", cliBusca);
+    if (ord) p.set("orden", ord);
+    if (cliProv) p.set("provincia", cliProv);
+    if (cliServ) p.set("servicio", cliServ);
+    if (cliPagina > 1) p.set("pagina", String(cliPagina));
+
+    pedir("/api/panel/clientes?" + p.toString())
+      .then(function (d) {
+        pintarFiltrosCliente(d.filtros);
+        contarSw(d);
+        $("estado-clientes").textContent = d.total
+          ? (d.total === 1 ? "1 posible." : d.total + " posibles.")
+          : (cliBusca ? "Nadie con ese dato." : "Cuando cotice a alguien, aparece acá hasta que se le haga un trabajo.");
+
+        $("lista-clientes").innerHTML = d.posibles.map(function (c) {
+          var marcas = [];
+          if (c.servicioNombre) marcas.push('<span class="pastilla">' + escHtml(c.servicioNombre) + "</span>");
+          if (c.cotizaciones > 1) marcas.push('<span class="pastilla">' + c.cotizaciones + " cotizaciones</span>");
+
+          var linea = [];
+          if (c.ultima) linea.push("cotizado " + fechaLarga(c.ultima));
+          var lugar = [c.canton, c.provincia].filter(Boolean).join(", ");
+          if (lugar) linea.push(lugar);
+
+          var pie = [];
+          if (c.wa) pie.push('<a class="wa" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener" ' +
+            'title="Escribir por WhatsApp" aria-label="Escribir por WhatsApp">' + ICO.wa + "</a>");
+          pie.push('<a href="tel:+506' + escHtml(String(c.telefono).replace(/\D/g, "")) +
+            '" title="Llamar" aria-label="Llamar">' + ICO.tel + "</a>");
+
+          /* El atajo del posible es hacerle OTRA cotización con sus datos
+             ya puestos, no abrir una ficha que no existe. */
+          return '<article class="ficha cli posible" data-posible=\'' +
+              escHtml(JSON.stringify({ nombre: c.nombre, telefono: c.telefono,
+                cedula: c.cedula, provincia: c.provincia, canton: c.canton })) + "'>" +
+            '<div class="cli-top"><b>' + escHtml(c.nombre || "Sin nombre") + "</b>" +
+              '<span class="tel">' + escHtml(tel(c.telefono)) + "</span>" +
+              '<span class="cli-marcas">' + marcas.join("") + "</span></div>" +
+            (linea.length ? '<div class="cli-linea">' + escHtml(linea.join(" — ")) + "</div>" : "") +
+            '<div class="cli-pie"><span class="acc" data-alto>' + pie.join("") + "</span>" +
+              '<button type="button" class="bt fuerte pos-cotizar">' + ICO.mas + "Cotizar</button></div>" +
+          "</article>";
+        }).join("");
+
+        var hayPaginas = d.paginas > 1;
+        $("clientes-pag").hidden = !hayPaginas;
+        if (hayPaginas) {
+          $("cli-pag-txt").textContent = "Página " + d.pagina + " de " + d.paginas;
+          $("cli-antes").disabled = d.pagina <= 1;
+          $("cli-despues").disabled = d.pagina >= d.paginas;
+        }
+        sellar();
+      })
+      .catch(function () {
+        $("estado-clientes").textContent = "No se pudieron cargar los posibles.";
+        $("estado-clientes").classList.add("is-error");
+      });
+  }
+
+  /* El segmento Clientes / Posibles. */
+  function ponerVistaCli(v) {
+    cliVista = v;
+    cliPagina = 1;
+    Array.prototype.forEach.call(document.querySelectorAll(".cli-sw .hoy-sw-b"), function (b) {
+      b.setAttribute("aria-selected", String(b.dataset.cli === v));
+    });
+    // "Le toca" y "Anotar un trabajo" son de clientes; en posibles no aplican.
+    var esPos = v === "posibles";
+    $("btn-trabajo").hidden = esPos;
+    var leToca = document.querySelector('#cli-orden [data-orden="pronto"]');
+    if (leToca) {
+      leToca.hidden = esPos;
+      if (esPos && cliOrden === "pronto") {
+        cliOrden = "reciente";
+        Array.prototype.forEach.call($("cli-orden").children, function (o) {
+          o.setAttribute("aria-pressed", String(o.dataset.orden === "reciente"));
+        });
+      }
+    }
+    cliProv = ""; cliServ = "";
+    cargarClientes();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".cli-sw .hoy-sw-b"), function (b) {
+    b.addEventListener("click", function () { ponerVistaCli(b.dataset.cli); });
+  });
+
+  // En un posible, "Cotizar" abre Nueva cotización con sus datos puestos.
+  $("lista-clientes").addEventListener("click", function (e) {
+    var b = e.target.closest(".pos-cotizar");
+    if (!b) return;
+    e.stopPropagation();
+    var art = b.closest("[data-posible]");
+    if (!art) return;
+    prellenar = JSON.parse(art.dataset.posible);
+    irA("nueva", {});
+  });
 
   $("c-busca").addEventListener("input", function () {
     // Se espera a que deje de escribir: una consulta por tecla llenaría
