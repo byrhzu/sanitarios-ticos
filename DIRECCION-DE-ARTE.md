@@ -1955,3 +1955,22 @@ Falta (fases siguientes): solicitudes a 2 estados + papelera, clientes
 divididos en posibles/clientes, el PDF de cotización a una sola página y
 que abra directo, el login con efecto y ver-contraseña, y el arreglo del
 "incluye la succión…" en servicio escrito a mano.
+
+## 38. Los tres refinamientos de la guía final (2026-09-12)
+
+- **El zoom del "+".** Byron reportó que al escribir un servicio "otro" la
+  página hacía zoom y el teclado tapaba el texto. Era el zoom automático de
+  iOS al enfocar un campo de menos de 16px. En el teléfono los campos suben
+  a 16px —el mínimo que Safari respeta sin acercar— y la casilla de "otro"
+  se centra sola al abrirse, para que no quede debajo del teclado.
+
+- **La etiqueta de origen en Cotizaciones.** Cada cotización lleva una
+  pastilla azul con de dónde vino —Formulario, Frank, Panel o Solicitud— y
+  al tocarla filtra la lista por ese origen. Es lo que pidió la guía: las
+  de solicitud y las del + tienen más probabilidad de concretarse que las
+  de la web de alguien que sólo quería el precio.
+
+- **La ficha del cliente.** Deja de mostrar el formulario de edición
+  siempre abierto: ahora es un perfil (nombre, contacto e historial
+  cronológico) con un botón **Editar cliente** que revela la edición. Es lo
+  que pide la guía —"entrar a ver un perfil sin ver toda la información"—.

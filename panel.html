@@ -1001,6 +1001,12 @@
   .ficha-top .estado-hueco { margin-left: auto; }
   .ficha-nom { font-family: var(--display); font-weight: 600; font-size: 1.05rem; letter-spacing: -.015em; }
   .ficha-que { color: var(--p-tenue); margin-top: .12rem; }
+  .ficha-ori { margin-top: .5rem; }
+  .pastilla.ori {
+    cursor: pointer; background: var(--p-prim-suave); color: var(--p-primario);
+    font-weight: 600;
+  }
+  .pastilla.ori:hover { background: color-mix(in srgb, var(--p-primario) 20%, transparent); }
 
   /* El monto en su propia caja. Es el dato con el que se decide, y en
      texto corrido entre puntos medios pesaba lo mismo que la zona. */
@@ -1127,7 +1133,8 @@
   .perfil-cab { display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
   .perfil-cab h2 { font-size: 1.5rem; font-weight: 600; letter-spacing: -.025em; margin: 0; }
   .perfil-cab .sub { color: var(--p-tenue); margin-top: .2rem; }
-  .perfil-cab .acc-cab { margin-left: auto; display: flex; gap: .5rem; }
+  .perfil-cab .acc-cab { margin-left: auto; display: flex; gap: .5rem; flex-wrap: wrap; }
+  @media (max-width: 560px) { .perfil-cab .acc-cab { margin-left: 0; width: 100%; } .perfil-cab .acc-cab .bt { flex: 1 1 auto; } }
 
   .hist { list-style: none; margin: 0; padding: 0; }
   .hist li { display: flex; gap: 1rem; align-items: baseline; flex-wrap: wrap; padding: .7rem 0; border-top: 1px solid var(--p-linea); }
@@ -1396,8 +1403,17 @@
     font-size: 13.5px; border-radius: 8px; padding: .5rem .6rem;
     background: var(--p-fondo); color: var(--p-txt); border: 1px solid var(--p-linea);
   }
-  .nueva-rejilla input:focus, .nueva-rejilla select:focus, .clave-caja input:focus {
-    border-color: var(--p-acento); outline: none;
+  .nueva-rejilla input:focus, .nueva-rejilla select:focus, .clave-caja input:focus,
+  .campo-libre:focus, .libre-caja input:focus {
+    border-color: var(--p-primario); outline: none;
+  }
+  /* iOS hace zoom al enfocar un campo de menos de 16px, y ahí el teclado
+     tapa lo que se escribe (el "zoom innecesario" que reportó Byron en
+     el +). Con 16px en el teléfono no hay zoom. Es el tamaño mínimo que
+     Safari respeta sin acercar la página. */
+  @media (max-width: 859px) {
+    .panel input, .panel select, .panel textarea, .clave-caja input,
+    .campo-libre { font-size: 16px; }
   }
   .opc { font-weight: 400; color: var(--p-tenue); }
   /* Lo que se escribe a mano va sobre una superficie distinta: separa
@@ -2343,7 +2359,8 @@
     // Cotización: una etiqueta con precio. Reemplaza al documento.
     cotizacion: ico("M3 11.5V5a2 2 0 0 1 2-2h6.5a2 2 0 0 1 1.4.6l7.5 7.5a2 2 0 0 1 0 2.8l-6.6 6.6a2 2 0 0 1-2.8 0L3.6 13a2 2 0 0 1-.6-1.5z", '<circle cx="7.5" cy="7.5" r="1.4"/>'),
     ojo:    ico("M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z", '<circle cx="12" cy="12" r="3"/>'),
-    ojoNo:  ico("M3 3l18 18M10.6 10.7a3 3 0 0 0 4 4M9.9 5.2A9.5 9.5 0 0 1 12 5c6.5 0 10 7 10 7a15.5 15.5 0 0 1-3.4 4.1M6.1 6.2A15.6 15.6 0 0 0 2 12s3.5 7 10 7a9.4 9.4 0 0 0 3-.5")
+    ojoNo:  ico("M3 3l18 18M10.6 10.7a3 3 0 0 0 4 4M9.9 5.2A9.5 9.5 0 0 1 12 5c6.5 0 10 7 10 7a15.5 15.5 0 0 1-3.4 4.1M6.1 6.2A15.6 15.6 0 0 0 2 12s3.5 7 10 7a9.4 9.4 0 0 0 3-.5"),
+    lapiz:  ico("M4 20h4L18.5 9.5a2 2 0 0 0-3-3L5 17v3zM14.5 6.5l3 3")
   };
 
   /* El tema arranca por lo que tenga puesto el sistema y se queda con
@@ -2380,7 +2397,7 @@
      el resumen escribe acá y salta a la lista, y la lista dice con
      palabras qué filtro tiene puesto. Sin esto, tocar una barra sería
      magia: la lista cambiaría sin explicar por qué. */
-  var filtro = { desde: "", hasta: "", estado: "", provincia: "", servicio: "", buscar: "", svista: "" };
+  var filtro = { desde: "", hasta: "", estado: "", provincia: "", servicio: "", origen: "", buscar: "", svista: "" };
 
   var NOMBRE_VISTA = {
     hoy: "Hoy", resumen: "Resumen", cotizaciones: "Cotizaciones", solicitudes: "Solicitudes",
@@ -2979,7 +2996,7 @@
 
   var ETIQ_FILTRO = {
     desde: "Desde", hasta: "Hasta", estado: "Estado",
-    provincia: "Provincia", servicio: "Servicio", buscar: "Búsqueda"
+    provincia: "Provincia", servicio: "Servicio", origen: "Origen", buscar: "Búsqueda"
   };
 
   function urlConFiltros(base, conPagina) {
@@ -3208,10 +3225,17 @@
         : '<span class="num ref">' + titulo + "</span>" +
           '<span class="estado-hueco">' + celdaEstado(m) + "</span>";
 
+      // La pastilla de origen: dice de dónde vino y filtra al tocarla.
+      var origenPill = (!esSol && m.origenTxt)
+        ? '<button type="button" class="pastilla ori" data-ori="' + escHtml(m.origen || "") + '">' +
+          escHtml(m.origenTxt) + "</button>"
+        : "";
+
       return '<article class="ficha" data-id="' + escHtml(String(m.id)) + '">' +
         '<div class="ficha-top">' + arriba + "</div>" +
         (m.nombre ? '<div class="ficha-nom">' + escHtml(m.nombre) + "</div>" : "") +
         (que ? '<div class="ficha-que">' + escHtml(que) + "</div>" : "") +
+        (origenPill ? '<div class="ficha-ori">' + origenPill + "</div>" : "") +
         (m.monto ? '<div class="ficha-monto">' + escHtml(m.monto) + "</div>" : "") +
         (datos.length ? '<div class="ficha-datos">' + datos.join("") + "</div>" : "") +
         (esSol ? "" : '<input class="nota" type="text" value="' + escHtml(m.nota) +
@@ -3395,6 +3419,15 @@
   $("fichas").addEventListener("click", accionSolicitud);
   $("cuerpo-tabla").addEventListener("click", accionSolicitud);
 
+  // Tocar la pastilla de origen filtra la lista por ese origen.
+  $("fichas").addEventListener("click", function (e) {
+    var b = e.target.closest(".ori");
+    if (!b) return;
+    filtro.origen = (filtro.origen === b.dataset.ori) ? "" : b.dataset.ori;
+    pagina = 1;
+    cargarTabla();
+  });
+
   /* =========================================================
      Nueva cotización
 
@@ -3448,8 +3481,12 @@
     var toca = sel.value === LIBRE;
     caja.hidden = !toca;
     caja.required = toca;
-    if (!toca) caja.value = "";
-    else caja.focus();
+    if (!toca) { caja.value = ""; return; }
+    caja.focus();
+    // Que la casilla quede a la vista y no debajo del teclado.
+    setTimeout(function () {
+      try { caja.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {}
+    }, 60);
   }
 
   // Lo que quedó escrito en la casilla de un select, si la hay.
@@ -4182,6 +4219,7 @@
     if (c.wa) acc.push('<a class="bt wa" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
     acc.push('<a class="bt" href="tel:+506' + escHtml(String(c.telefono).replace(/\D/g, "")) + '">' + ICO.tel + "Llamar</a>");
     acc.unshift('<button type="button" class="bt fuerte" id="cf-cotizar">' + ICO.mas + "Nueva cotización</button>");
+    acc.push('<button type="button" class="bt" id="cf-editar-btn">' + ICO.lapiz + "Editar cliente</button>");
 
     var lugar = [c.distrito, c.canton, c.provincia].filter(Boolean).join(", ");
     var ops = Object.keys(d.canales).map(function (k) {
@@ -4192,7 +4230,7 @@
       ? '<ul class="hist">' + d.servicios.map(function (s) {
           return "<li>" +
             '<span class="f-fecha">' + escHtml(fechaLarga(s.fecha)) + "</span>" +
-            '<span class="f-que">' + escHtml(s.servicioNombre + (s.detalle ? " · " + s.detalle : "")) + "</span>" +
+            '<span class="f-que">' + escHtml(s.servicioNombre + (s.detalle ? " — " + s.detalle : "")) + "</span>" +
             '<span class="f-monto">' + (s.monto ? escHtml(colones(s.monto)) : "—") + "</span>" +
             '<span class="f-prox">' + (s.proximo ? "próximo " + escHtml(fechaLarga(s.proximo)) : "") + "</span>" +
           "</li>";
@@ -4203,9 +4241,10 @@
       '<div class="tarj">' +
         '<div class="perfil-cab">' +
           "<div><h2>" + escHtml(c.nombre) + "</h2>" +
-            '<div class="sub">' + escHtml(tel(c.telefono) + (lugar ? " · " + lugar : "")) + "</div></div>" +
+            '<div class="sub">' + escHtml(tel(c.telefono) + (lugar ? " — " + lugar : "")) + "</div></div>" +
           '<div class="acc-cab">' + acc.join("") + "</div>" +
         "</div>" +
+        '<div id="cf-editar" hidden>' +
         '<div class="nueva-rejilla">' +
           campo("cf-nombre", "Nombre", c.nombre) +
           campo("cf-cedula", "Cédula", c.cedula) +
@@ -4223,14 +4262,23 @@
           "> Mandarle recordatorio cuando le toque</label>" +
         '<div class="nueva-pie">' +
           '<button type="button" class="btn-fuerte" id="cf-guardar">Guardar</button>' +
+          '<button type="button" class="btn-suave" id="cf-cancelar">Cancelar</button>' +
           '<p class="estado-linea" id="cf-aviso" role="status" aria-live="polite"></p>' +
         "</div>" +
+        "</div>" +   /* cierra #cf-editar */
       "</div>" +
       '<div class="tarj" style="margin-top:1rem;">' +
         '<div class="tarj-h"><h2>Historial</h2><span class="meta">' +
           (d.servicios.length ? d.servicios.length + (d.servicios.length === 1 ? " trabajo" : " trabajos") : "") +
         "</span></div>" + hist +
       "</div>";
+
+    $("cf-editar-btn").addEventListener("click", function () {
+      var e = $("cf-editar");
+      e.hidden = !e.hidden;
+      if (!e.hidden) e.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+    $("cf-cancelar").addEventListener("click", function () { $("cf-editar").hidden = true; });
 
     $("cf-cotizar").addEventListener("click", function () {
       prellenar = c;

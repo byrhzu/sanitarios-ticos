@@ -309,6 +309,9 @@ const TABLAS_PANEL = {
         monto: montoTexto(f.monto_min, f.monto_max),
         lugar: [f.canton, f.provincia].filter(Boolean).join(", ") || null,
         fecha: f.creado,
+        // De dónde vino: sirve de pastilla y de filtro (guía § Cotizaciones).
+        origen: f.origen || "beto",
+        origenTxt: ORIGENES[f.origen] || "Frank",
         wa: waDe(f.telefono,
           "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") + ", le escribo de " +
           "Sanitarios Ticos por su cotización " + (f.numero || "") + ": " +
@@ -335,7 +338,7 @@ const TABLAS_PANEL = {
    solicitudes guarda el texto que escogió la persona, no el código. */
 const FILTROS_TABLA = {
   solicitudes:  ["provincia"],
-  cotizaciones: ["estado", "provincia", "servicio"]
+  cotizaciones: ["estado", "provincia", "servicio", "origen"]
 };
 
 /* Contra qué columnas busca el término libre de cada tabla. Son las
@@ -378,7 +381,8 @@ function construirConsulta(url, sinEstado) {
   const valido = {
     estado:    (v) => Object.prototype.hasOwnProperty.call(ESTADOS, v),
     provincia: (v) => Object.prototype.hasOwnProperty.call(GEOGRAFIA, v),
-    servicio:  (v) => Object.prototype.hasOwnProperty.call(TARIFAS.servicios, v)
+    servicio:  (v) => Object.prototype.hasOwnProperty.call(TARIFAS.servicios, v),
+    origen:    (v) => Object.prototype.hasOwnProperty.call(ORIGENES, v)
   };
   for (const campo of permitidos) {
     if (sinEstado && campo === "estado") continue;
