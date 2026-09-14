@@ -301,7 +301,15 @@ body {
 }
 .acciones button.primario { background: var(--naranja); border-color: var(--naranja); color: #fff; }
 .acciones button:hover, .acciones a:hover { border-color: var(--naranja); }
+.acciones button:disabled { opacity: .6; cursor: default; }
 .acciones .aviso { font-size: 8pt; color: #5d574f; align-self: center; margin-left: 2mm; }
+/* Cuando el panel llega con #enviar, un latido para ubicar el botón. */
+.acciones button.resalta { animation: resalta 1.3s ease-in-out 2; }
+@keyframes resalta {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,101,17,0); }
+  50% { box-shadow: 0 0 0 4px rgba(239,101,17,.35); }
+}
+@media (prefers-reduced-motion: reduce) { .acciones button.resalta { animation: none; } }
 
 /* --- Estados ----------------------------------------------------- */
 .estado { padding: 24mm 16mm; text-align: center; }
@@ -460,9 +468,9 @@ body {
 </article>
 
 <div class="acciones" id="acciones" hidden>
-  <button type="button" class="primario" id="btn-imprimir">Imprimir o guardar en PDF</button>
+  <button type="button" class="primario" id="btn-enviar">Enviar el PDF al cliente</button>
+  <button type="button" id="btn-descargar">Descargar el PDF</button>
   <button type="button" id="btn-copiar">Copiar el enlace</button>
-  <a id="btn-wa" href="#" target="_blank" rel="noopener">Enviar por WhatsApp</a>
   <span class="aviso" id="aviso-accion"></span>
 </div>
 
@@ -664,19 +672,168 @@ body {
     $("hoja").hidden = false;
     $("acciones").hidden = false;
 
-    $("btn-wa").href = "https://wa.me/506" + e.whatsapp.replace(/\D/g, "") +
-      "?text=" + encodeURIComponent(
-        "Hola, le comparto mi cotización " + d.numero + " (" + rango + "): " + location.href);
+    numeroDoc = d.numero || "";
+    waNum = e.whatsapp.replace(/\D/g, "");
+    mensajeWa = "Hola, le comparto mi cotización " + d.numero + " (" + rango + ").";
+    document.dispatchEvent(new Event("cotizacion-lista"));
   }
 
-  $("btn-imprimir").addEventListener("click", function () { window.print(); });
+  /* ============================================================
+     El PDF de verdad
+     ------------------------------------------------------------
+     Antes esto abría el diálogo de impresión del navegador: en la
+     compu salía bien, pero en el teléfono se veía "la web" y, peor,
+     iOS lo paginaba en dos hojas. Ahora el documento se arma como un
+     PDF de una sola página, idéntico en cualquier aparato, y se abre
+     o se comparte como archivo.
 
-  /* El panel abre el documento con ?pdf=1 al crear una cotización, para
-     que el encargado pase de "crear" a "guardar el PDF" sin un toque de
-     más. Espera un latido a que las fuentes y el logo estén puestos: sin
-     eso, el diálogo de impresión sale con la hoja a medio dibujar. */
+     Se dibuja la hoja a tamaño A4 exacto (210×297mm) y se mete en el
+     PDF de un solo golpe. Los títulos condensados usan `font-stretch`,
+     que el motor de captura no respeta —se comía los guiones y los
+     espacios—, así que en la copia se cambian por un `scaleX` que
+     condensa igual sin tocar el espaciado. */
+  var numeroDoc = "", waNum = "", mensajeWa = "";
+  var _libs = null, _pdf = null;
+
+  function cargarLibs() {
+    if (_libs) return _libs;
+    _libs = new Promise(function (res, rej) {
+      var faltan = 2;
+      function ok() { if (--faltan === 0) res(); }
+      function add(src) {
+        var s = document.createElement("script");
+        s.src = src; s.onload = ok;
+        s.onerror = function () { rej(new Error("No se pudieron cargar las librerías del PDF.")); };
+        document.head.appendChild(s);
+      }
+      add("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+      add("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+    });
+    return _libs;
+  }
+
+  function construirPDF() {
+    if (_pdf) return _pdf;
+    _pdf = cargarLibs()
+      .then(function () { return document.fonts && document.fonts.ready; })
+      .then(function () {
+        return html2canvas($("hoja"), {
+          scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 1000,
+          onclone: function (doc) {
+            var h = doc.getElementById("hoja");
+            h.style.width = "210mm"; h.style.minHeight = "297mm";
+            h.style.margin = "0"; h.style.boxShadow = "none";
+            // Condensado por escala, no por font-stretch (ver arriba).
+            var condensa = [
+              [".folio h1", 0.72, "right top"],
+              [".folio .num", 0.86, "right top"],
+              ["#servicio", 0.86, "left top"],
+              [".rango .cifra", 0.72, "left top"],
+              [".estado h2", 0.86, "center top"]
+            ];
+            condensa.forEach(function (r) {
+              Array.prototype.forEach.call(doc.querySelectorAll(r[0]), function (e) {
+                e.style.fontStretch = "normal";
+                e.style.display = "inline-block";
+                e.style.transform = "scaleX(" + r[1] + ")";
+                e.style.transformOrigin = r[2];
+              });
+            });
+          }
+        });
+      })
+      .then(function (canvas) {
+        var jsPDF = window.jspdf.jsPDF;
+        var pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+        var w = 210, h = 297, imgH = canvas.height * w / canvas.width;
+        // JPEG de alta calidad, no PNG: el PNG de una A4 a esta resolución
+        // pesaba ~14 MB y no se podía mandar por WhatsApp. A 0.95 sobre
+        // fondo blanco el texto se ve limpio y el archivo baja a ~0.5 MB.
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, w, Math.min(imgH, h));
+        var blob = pdf.output("blob");
+        return { blob: blob, url: URL.createObjectURL(blob),
+                 nombre: "Cotizacion-" + (numeroDoc || "SanitariosTicos") + ".pdf" };
+      });
+    _pdf = _pdf.catch(function (e) { _pdf = null; throw e; });   // reintentar si falla
+    return _pdf;
+  }
+
+  function decir(t) {
+    $("aviso-accion").textContent = t;
+    if (t) setTimeout(function () { $("aviso-accion").textContent = ""; }, 4000);
+  }
+
+  function ocupado(btn, si) {
+    btn.disabled = si;
+    btn.dataset.txt = btn.dataset.txt || btn.textContent;
+    btn.textContent = si ? "Un momento…" : btn.dataset.txt;
+  }
+
+  // Abrir el PDF (nueva pestaña; si el navegador la bloquea, en la misma).
+  function abrirPDF(nueva) {
+    return construirPDF().then(function (p) {
+      var v = nueva ? window.open(p.url, "_blank") : null;
+      if (!v) location.href = p.url;
+    });
+  }
+
+  function descargarPDF(p) {
+    var a = document.createElement("a");
+    a.href = p.url; a.download = p.nombre;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { a.remove(); }, 0);
+  }
+
+  $("btn-descargar").addEventListener("click", function () {
+    var b = this; ocupado(b, true); decir("");
+    construirPDF().then(function (p) { descargarPDF(p); })
+      .catch(function () { decir("No se pudo generar el PDF. Reintente."); })
+      .then(function () { ocupado(b, false); });
+  });
+
+  // Enviar al cliente el PDF como archivo (no un enlace a la web).
+  $("btn-enviar").addEventListener("click", function () {
+    var b = this; ocupado(b, true); decir("");
+    construirPDF().then(function (p) {
+      var file = new File([p.blob], p.nombre, { type: "application/pdf" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        return navigator.share({ files: [file], title: "Cotización " + numeroDoc, text: mensajeWa });
+      }
+      // Sin compartir de archivos (compu vieja): se baja el PDF y se abre
+      // WhatsApp con el texto, para adjuntarlo a mano.
+      descargarPDF(p);
+      if (waNum) window.open("https://wa.me/506" + waNum + "?text=" +
+        encodeURIComponent(mensajeWa + " Le adjunto el PDF."), "_blank");
+      decir("Se descargó el PDF: adjúntelo en el chat.");
+    }).catch(function (err) {
+      if (err && err.name === "AbortError") return;   // el usuario cerró el menú
+      decir("No se pudo compartir el PDF. Descárguelo y adjúntelo.");
+    }).then(function () { ocupado(b, false); });
+  });
+
+  /* Al crear la cotización, el panel la abre con ?pdf=1: acá se genera el
+     PDF y se abre directo, sin pasar por la vista web. Si algo falla
+     (sin señal para las librerías), cae al diálogo de impresión de antes. */
   if (new URLSearchParams(location.search).get("pdf") === "1") {
-    setTimeout(function () { window.print(); }, 400);
+    var arranca = function () { abrirPDF(true).catch(function () { window.print(); }); };
+    if ($("hoja") && !$("hoja").hidden) setTimeout(arranca, 300);
+    else document.addEventListener("cotizacion-lista", function () { setTimeout(arranca, 300); }, { once: true });
+  }
+
+  /* El panel abre acá con #enviar cuando el encargado va a mandársela al
+     cliente: se lleva el botón de compartir a la vista y se resalta, para
+     que el toque que hace falta (compartir un archivo lo pide) sea obvio.
+     No se dispara solo: navigator.share sólo corre desde un toque. */
+  function irAEnviar() {
+    var b = $("btn-enviar"); if (!b) return;
+    $("acciones").scrollIntoView({ behavior: "smooth", block: "center" });
+    b.focus();
+    b.classList.add("resalta");
+    setTimeout(function () { b.classList.remove("resalta"); }, 2600);
+  }
+  if (location.hash === "#enviar") {
+    if ($("hoja") && !$("hoja").hidden) setTimeout(irAEnviar, 350);
+    else document.addEventListener("cotizacion-lista", function () { setTimeout(irAEnviar, 350); }, { once: true });
   }
 
   $("btn-copiar").addEventListener("click", function () {

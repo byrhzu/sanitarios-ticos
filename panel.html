@@ -1628,8 +1628,10 @@
        queriendo llamar. */
     .cola-acc .bt.hecho { flex: 1 1 100%; }
 
-    /* Lo mismo para los mantenimientos que vienen. */
-    .toca-fila { padding: .8rem 0; min-height: 44px; }
+    /* Lo mismo para los mantenimientos que vienen. El padding horizontal
+       tiene que quedarse: la tarjeta ES el recuadro, y sin él el nombre y
+       la fecha se pegaban al borde. */
+    .toca-fila { padding: 1rem 1.15rem; min-height: 44px; }
   }
   @media (min-width: 860px) {
     .corto { display: none; }
@@ -3677,16 +3679,14 @@
   }
 
   function mostrarHecha(d) {
-    var tel = String(d.telefono || "").replace(/\D/g, "");
-    var wa = (tel.length === 8 && d.enlace)
-      ? "https://wa.me/506" + tel + "?text=" + encodeURIComponent(
-          "Buenas" + (d.nombre ? " " + String(d.nombre).trim().split(/\s+/)[0] : "") +
-          ", le mando la cotización de Sanitarios Ticos: " + d.enlace)
-      : null;
-
+    /* "Abrir el PDF" lo muestra ya armado; "Enviar el PDF al cliente" abre
+       el documento para compartir el archivo desde ahí (mandar un PDF de
+       verdad necesita un toque en la página que lo tiene, no se puede
+       adjuntar desde acá). Antes el segundo botón mandaba sólo el enlace
+       a la web, que es lo que Byron no quería. */
     var acc = [];
-    if (d.enlace) acc.push('<a class="btn-suave" href="' + escHtml(d.enlace) + '&pdf=1" target="_blank" rel="noopener">Ver el documento</a>');
-    if (wa) acc.push('<a class="btn-fuerte" href="' + escHtml(wa) + '" target="_blank" rel="noopener">Mandársela por WhatsApp</a>');
+    if (d.enlace) acc.push('<a class="btn-suave" href="' + escHtml(d.enlace) + '&pdf=1" target="_blank" rel="noopener">Abrir el PDF</a>');
+    if (d.enlace) acc.push('<a class="btn-fuerte" href="' + escHtml(d.enlace) + '#enviar" target="_blank" rel="noopener">Enviar el PDF al cliente</a>');
     acc.push('<button type="button" class="btn-suave" id="btn-otra">Hacer otra</button>');
 
     $("nueva-hecha").innerHTML = '<div class="tarj">' +

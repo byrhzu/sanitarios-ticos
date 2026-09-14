@@ -2052,3 +2052,43 @@ suelto haciendo lo mismo.
   alternativa —una librería que arma el PDF en el navegador— lo descarga
   de una, pero convierte el documento en imagen (texto no seleccionable,
   archivo más pesado). Queda a decisión de Byron.
+
+## 42. El PDF de verdad, y la card que respira (2026-09-13)
+
+Tres correcciones de Byron sobre la cotización y una card.
+
+- **El PDF ahora es un PDF, no "la web".** El flujo viejo abría la página
+  y disparaba el diálogo de impresión del navegador: en la compu salía
+  bien, pero en el teléfono se veía la web y —peor— iOS lo paginaba en
+  dos hojas (renderiza la maqueta de pantalla, apilada y larga). Ahora el
+  documento se arma como un PDF de una sola página con jsPDF + html2canvas
+  (cargados de cdnjs), a tamaño A4 exacto, idéntico en cualquier aparato.
+  `?pdf=1` lo abre directo; si las librerías no cargan, cae al print de
+  antes.
+
+- **Los títulos condensados, por `scaleX`.** html2canvas no respeta el
+  `font-stretch` de la fuente variable Archivo —se comía guiones y
+  espacios ("COT20260041", "Limpiezadetanque")—. En la copia que se
+  captura, esos elementos cambian `font-stretch` por un `transform:
+  scaleX(...)` que condensa igual sin tocar la medición del texto. Queda
+  igual que la laptop.
+
+- **Es una imagen a alta resolución, no texto seleccionable.** Es el
+  precio de renderizar este diseño (fuente variable incluida) en el
+  navegador. Se ve idéntico y pesa ~350 KB (JPEG 0.95; el PNG pesaba 14
+  MB y no se podía mandar). Un PDF con texto vectorial exigiría renderizar
+  del lado del servidor (Cloudflare Browser Rendering), que pide plan pago
+  y dependencias npm: fuera de alcance por ahora.
+
+- **Enviar al cliente = el archivo, no el enlace.** El botón "Enviar el
+  PDF al cliente" arma el PDF y lo comparte como archivo por
+  `navigator.share({files})` —el teléfono ofrece WhatsApp y adjunta el
+  PDF—. Si el aparato no soporta compartir archivos, baja el PDF y abre
+  WhatsApp con el texto para adjuntarlo a mano. En el panel, la pantalla
+  de "cotización creada" ya no manda el enlace: lleva a la página a
+  compartir el PDF (con `#enviar`, que resalta el botón).
+
+- **La card de Próximos servicios respiraba mal en el móvil.** La regla
+  de `@media (max-width:859px)` le ponía `padding: .8rem 0` —cero a los
+  lados—, así que el nombre y la fecha se pegaban al borde. Pasó a
+  `1rem 1.15rem`.
