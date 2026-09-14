@@ -1470,6 +1470,12 @@
   }
   .hecha-quien { color: var(--p-tenue); }
   .hecha-acc { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1.3rem; }
+  /* La lista de las creadas en la sesión: la de arriba grande, las de
+     abajo un punto más discretas para que no compitan con la última. */
+  .hecha-item + .hecha-item { margin-top: .8rem; }
+  .hecha-lista-tit { margin: 1.8rem 0 .7rem; color: var(--p-tenue); font-size: .82rem; font-weight: 600; letter-spacing: .01em; }
+  .hecha-lista-tit ~ .hecha-item .hecha-rango { font-size: 1.7rem; }
+  .hecha-lista-tit ~ .hecha-item .hecha-acc { margin-top: .9rem; }
 
   /* ---------- Clave ---------- */
   .clave-pantalla { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
@@ -2169,9 +2175,9 @@
           <section class="paso" data-paso="3" hidden>
             <p class="grupo">¿A nombre de quién?</p>
             <div class="nueva-rejilla">
-              <div class="f"><label for="n-telefono">Teléfono</label><input id="n-telefono" type="tel" inputmode="tel" required autocomplete="off" placeholder="8888-8888"></div>
+              <div class="f"><label for="n-telefono">Teléfono</label><input id="n-telefono" type="tel" inputmode="tel" required autocomplete="off"></div>
               <div class="f"><label for="n-nombre">Nombre</label><input id="n-nombre" type="text" required autocomplete="off"></div>
-              <div class="f"><label for="n-cedula">Cédula <span class="opc">opcional</span></label><input id="n-cedula" type="text" autocomplete="off" placeholder="1-2345-6789 o 3-101-123456"></div>
+              <div class="f"><label for="n-cedula">Cédula <span class="opc">opcional</span></label><input id="n-cedula" type="text" autocomplete="off"></div>
               <div class="f"><label for="n-correo">Correo <span class="opc">opcional</span></label><input id="n-correo" type="email" autocomplete="off"></div>
             </div>
             <!-- Si el teléfono ya está registrado, se ofrece traer sus
@@ -2189,15 +2195,14 @@
             <div class="libre-caja">
               <div class="f">
                 <label for="n-monto">Precio final <span class="opc">opcional</span></label>
-                <input type="number" id="n-monto" inputmode="numeric" min="1" step="1"
-                       placeholder="dejar en blanco para usar el estimado">
+                <input type="text" id="n-monto" inputmode="numeric" autocomplete="off"
+                       placeholder="₡65.000">
                 <p class="ayuda" id="n-monto-ayuda">Al escribirlo, el documento dice ese
                   monto exacto en vez del estimado, y sin la palabra “Desde”.</p>
               </div>
               <div class="f">
                 <label for="n-detalle">Detalle para el documento <span class="opc">opcional</span></label>
-                <input type="text" id="n-detalle" maxlength="200"
-                       placeholder="ej. tanque de 3 tapas, acceso por el portón de atrás">
+                <input type="text" id="n-detalle" maxlength="200" autocomplete="off">
               </div>
             </div>
           </section>
@@ -2276,7 +2281,7 @@
         <div class="f"><label for="t-fecha">Se hizo el</label>
           <input type="date" id="t-fecha"></div>
         <div class="f"><label for="t-monto">Se cobró <span class="opc">opcional</span></label>
-          <input type="number" id="t-monto" inputmode="numeric" min="0" placeholder="₡"></div>
+          <input type="text" id="t-monto" inputmode="numeric" autocomplete="off" placeholder="₡65.000"></div>
       </div>
       <div class="f"><label for="t-detalle">Detalle <span class="opc">opcional</span></label>
         <input id="t-detalle" type="text" placeholder="ej. tanque de 3 tapas, se encontró raíz en la salida"></div>
@@ -2305,7 +2310,7 @@
     </p>
     <div class="nueva-rejilla">
       <div class="f"><label for="h-fecha">Se hizo el</label><input type="date" id="h-fecha"></div>
-      <div class="f"><label for="h-monto">Se cobró <span class="opc">opcional</span></label><input type="number" id="h-monto" inputmode="numeric" placeholder="lo del rango mínimo"></div>
+      <div class="f"><label for="h-monto">Se cobró <span class="opc">opcional</span></label><input type="text" id="h-monto" inputmode="numeric" autocomplete="off" placeholder="₡65.000"></div>
       <div class="f"><label for="h-meses">Recordar en</label>
         <select id="h-meses"></select>
       </div>
@@ -2510,6 +2515,19 @@
   function colones(n) {
     return "₡" + String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   }
+
+  /* Las casillas de monto se escriben con el símbolo y los puntos de mil
+     (₡65.000) mientras se teclea, y se leen como número pelón. Así el
+     encargado ve la plata como la ve en el recibo, no un número seco. */
+  function soloDigitos(v) { return String(v == null ? "" : v).replace(/\D/g, ""); }
+  function montoLibre(input) {
+    if (!input) return;
+    input.addEventListener("input", function () {
+      var d = soloDigitos(input.value);
+      input.value = d ? "₡" + d.replace(/\B(?=(\d{3})+(?!\d))/g, ".") : "";
+    });
+  }
+  ["n-monto", "t-monto", "h-monto"].forEach(function (id) { montoLibre(document.getElementById(id)); });
 
   var MESES = ["ene","feb","mar","abr","may","jun","jul","ago","set","oct","nov","dic"];
   var MES_LARGO = ["enero","febrero","marzo","abril","mayo","junio",
@@ -3628,11 +3646,16 @@
      cambia en el paso dos, que es donde se está mirando. */
   function aplicarPrellenado() {
     var c = prellenar; prellenar = null;
-    if (!c) return;
-    // Se limpia primero: si no, arrastra el servicio de la cotización
-    // anterior y uno la manda con el dato equivocado sin darse cuenta.
+    /* Siempre se limpia primero. Abrir "+" para una cotización nueva no
+       debe arrastrar la anterior: ese era el bug —seguir con los campos
+       de la última creada—. El prellenado sólo pasa cuando se viene de un
+       cliente (o de una solicitud), que es cuando `c` trae datos. */
     $("form-nueva").reset();
     refrescarServicio();
+    refrescarCanton();
+    $("ya-existe").hidden = true;
+    $("nueva-hecha").hidden = true;
+    if (!c) return;
     $("n-nombre").value = c.nombre || "";
     $("n-telefono").value = c.telefono || "";
     $("n-cedula").value = c.cedula || "";
@@ -3678,26 +3701,41 @@
       });
   }
 
-  function mostrarHecha(d) {
+  /* Las cotizaciones creadas en esta sesión, para tener el orden a la
+     vista: la de arriba es la recién hecha, con "Hacer otra"; abajo van
+     las anteriores, cada una con sus botones. (El historial completo y
+     permanente vive en la sección Cotizaciones.) */
+  var creadas = [];
+
+  function bloqueHecha(d, principal) {
     /* "Abrir el PDF" lo muestra ya armado; "Enviar el PDF al cliente" abre
        el documento para compartir el archivo desde ahí (mandar un PDF de
-       verdad necesita un toque en la página que lo tiene, no se puede
-       adjuntar desde acá). Antes el segundo botón mandaba sólo el enlace
-       a la web, que es lo que Byron no quería. */
+       verdad necesita un toque en la página que lo tiene). Ninguno manda
+       el enlace a la web, que es lo que Byron no quería. */
     var acc = [];
     if (d.enlace) acc.push('<a class="btn-suave" href="' + escHtml(d.enlace) + '&pdf=1" target="_blank" rel="noopener">Abrir el PDF</a>');
     if (d.enlace) acc.push('<a class="btn-fuerte" href="' + escHtml(d.enlace) + '#enviar" target="_blank" rel="noopener">Enviar el PDF al cliente</a>');
-    acc.push('<button type="button" class="btn-suave" id="btn-otra">Hacer otra</button>');
+    if (principal) acc.push('<button type="button" class="btn-suave" id="btn-otra">Hacer otra</button>');
 
-    $("nueva-hecha").innerHTML = '<div class="tarj">' +
-      '<div class="hecha-num">' + escHtml(d.numero || "Cotización creada") + "</div>" +
-      // Con precio puesto a mano no se dice "Desde": vale eso.
-      '<div class="hecha-rango">' +
-        escHtml(d.aMano ? colones(d.min)
+    // Con precio puesto a mano no se dice "Desde": vale eso.
+    var rango = d.aMano ? colones(d.min)
               : (d.desde || d.min === d.max) ? "Desde " + colones(d.min)
-              : colones(d.min) + " – " + colones(d.max)) + "</div>" +
+              : colones(d.min) + " – " + colones(d.max);
+    return '<div class="tarj hecha-item">' +
+      '<div class="hecha-num">' + escHtml(d.numero || "Cotización creada") + "</div>" +
+      '<div class="hecha-rango">' + escHtml(rango) + "</div>" +
       '<div class="hecha-quien">' + piezas([d.servicioNombre, d.nombre]) + "</div>" +
       '<div class="hecha-acc">' + acc.join("") + "</div></div>";
+  }
+
+  function mostrarHecha(d) {
+    creadas.unshift(d);
+    var html = bloqueHecha(creadas[0], true);
+    if (creadas.length > 1) {
+      html += '<p class="hecha-lista-tit">Creadas en esta sesión</p>';
+      for (var i = 1; i < creadas.length; i++) html += bloqueHecha(creadas[i], false);
+    }
+    $("nueva-hecha").innerHTML = html;
     $("nueva-hecha").hidden = false;
     $("form-nueva").hidden = true;
     resumenCargado = false;
@@ -3924,7 +3962,7 @@
         nombre: $("n-nombre").value, telefono: $("n-telefono").value,
         cedula: $("n-cedula").value, correo: $("n-correo").value,
         solicitudId: prellenarSolicitud || "",
-        montoFijo: $("n-monto").value,
+        montoFijo: soloDigitos($("n-monto").value),
         servicioLibre: libreServicio,
         detalleLibre: detalle,
         lugarLibre: libreLugar
@@ -4503,7 +4541,7 @@
         senas: $("t-senas").value,
         provincia: $("t-provincia").value, canton: $("t-canton").value,
         servicio: $("t-servicio").value, fecha: $("t-fecha").value,
-        monto: $("t-monto").value, detalle: $("t-detalle").value,
+        monto: soloDigitos($("t-monto").value), detalle: $("t-detalle").value,
         meses: $("t-meses").value, canal: $("t-canal").value,
         recordatorio: $("t-recordar").checked
       })
@@ -4830,7 +4868,7 @@
   $("h-guardar").addEventListener("click", function () {
     cerrarHoja({
       fecha: $("h-fecha").value || hoyISO(),
-      monto: $("h-monto").value,
+      monto: soloDigitos($("h-monto").value),
       meses: Number($("h-meses").value),
       recordatorio: $("h-recordar").checked
     });

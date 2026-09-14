@@ -2092,3 +2092,37 @@ Tres correcciones de Byron sobre la cotización y una card.
   de `@media (max-width:859px)` le ponía `padding: .8rem 0` —cero a los
   lados—, así que el nombre y la fecha se pegaban al borde. Pasó a
   `1rem 1.15rem`.
+
+## 43. Nueva cotización más limpia, y el PDF que se ve y se comparte solo (2026-09-13)
+
+Correcciones de Byron sobre el flujo de crear y compartir.
+
+- **Formulario sin textos de ejemplo.** Las casillas del "+" tenían
+  placeholders largos ("ej. tanque de 3 tapas…", "1-2345-6789…") que
+  ensuciaban. Se quitaron; sólo las de monto muestran el formato de
+  colones "₡65.000".
+
+- **Los montos se escriben en colones.** Las tres casillas de monto
+  (cotización, trabajo, hecho) pasaron de `number` a texto que formatea
+  ₡ y puntos de mil mientras se teclea (helper `montoLibre`); al enviar
+  se leen como número pelón con `soloDigitos`. El encargado ve la plata
+  como en el recibo.
+
+- **Listado de las creadas en la sesión.** El "+" acumula las cotizaciones
+  hechas: arriba la última con "Hacer otra", abajo "Creadas en esta
+  sesión". Da orden sin abrir la sección Cotizaciones (que sigue teniendo
+  el historial completo y permanente).
+
+- **Bug: arrastraba la anterior.** Abrir "+" para una cotización nueva
+  seguía con los campos de la última creada, porque `aplicarPrellenado`
+  salía sin limpiar. Ahora siempre limpia; el prellenado sólo pasa cuando
+  se viene de un cliente o una solicitud.
+
+- **El PDF se ve DENTRO de la página, y se comparte solo el archivo.**
+  Antes, abrir la cotización navegaba al blob del PDF, y en iOS eso abría
+  la hoja de compartir (con "1 enlace y 1 documento") en vez de mostrarlo.
+  Ahora el PDF se dibuja en un marco embebido con el botón de enviar
+  arriba —sin navegar—, y `navigator.share` va con SÓLO el archivo (nada
+  de title/text/url, que es lo que metía el enlace). Si el marco no
+  pinta el PDF (iOS es quisquilloso con los PDF embebidos), hay un enlace
+  de respaldo para abrirlo.

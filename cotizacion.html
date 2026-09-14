@@ -311,6 +311,29 @@ body {
 }
 @media (prefers-reduced-motion: reduce) { .acciones button.resalta { animation: none; } }
 
+/* El visor de PDF embebido: barra blanca arriba con el botón de enviar,
+   y el PDF llenando el resto. Cubre la página entera. */
+#pdf-host { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; background: #4b4f52; }
+.pdf-barra {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 2mm; padding: 2.4mm 3mm; background: #fff;
+  border-bottom: 1px solid rgba(27,25,23,.12); flex-wrap: wrap;
+}
+.pdf-barra .pdf-acc { display: flex; gap: 2mm; flex-wrap: wrap; }
+.pdf-barra button, .pdf-barra a {
+  font-family: var(--sans); font-size: 9.5pt; font-weight: 600;
+  padding: 2.5mm 4mm; border: 1px solid rgba(27,25,23,.22);
+  background: #fff; color: var(--tinta); border-radius: 6px;
+  cursor: pointer; text-decoration: none;
+}
+.pdf-barra button.primario { background: var(--naranja); border-color: var(--naranja); color: #fff; }
+.pdf-barra button:hover, .pdf-barra a:hover { border-color: var(--naranja); }
+.pdf-barra .pdf-volver { border-color: transparent; padding-left: 1mm; }
+.pdf-marco { flex: 1 1 auto; width: 100%; border: 0; background: #4b4f52; }
+.pdf-fallback { margin: 0; padding: 2.5mm; text-align: center; background: #fff; font-size: 8.5pt; }
+.pdf-fallback a { color: var(--naranja-dk); }
+@media print { #pdf-host { display: none !important; } }
+
 /* --- Estados ----------------------------------------------------- */
 .estado { padding: 24mm 16mm; text-align: center; }
 .estado h2 { font-stretch: var(--titular); font-weight: 700; margin: 0 0 3mm; }
@@ -473,6 +496,9 @@ body {
   <button type="button" id="btn-copiar">Copiar el enlace</button>
   <span class="aviso" id="aviso-accion"></span>
 </div>
+
+<!-- El PDF, mostrado dentro de la misma página (lo llena verEnPDF). -->
+<div id="pdf-host" hidden></div>
 
 <div class="estado" id="cargando">
   <p>Abriendo la cotización…</p>
@@ -769,14 +795,6 @@ body {
     btn.textContent = si ? "Un momento…" : btn.dataset.txt;
   }
 
-  // Abrir el PDF (nueva pestaña; si el navegador la bloquea, en la misma).
-  function abrirPDF(nueva) {
-    return construirPDF().then(function (p) {
-      var v = nueva ? window.open(p.url, "_blank") : null;
-      if (!v) location.href = p.url;
-    });
-  }
-
   function descargarPDF(p) {
     var a = document.createElement("a");
     a.href = p.url; a.download = p.nombre;
@@ -791,13 +809,17 @@ body {
       .then(function () { ocupado(b, false); });
   });
 
-  // Enviar al cliente el PDF como archivo (no un enlace a la web).
-  $("btn-enviar").addEventListener("click", function () {
-    var b = this; ocupado(b, true); decir("");
-    construirPDF().then(function (p) {
+  /* Enviar al cliente el PDF como ARCHIVO, no un enlace. Reusado por el
+     botón de la vista y por el del visor. */
+  function compartirPDF(b) {
+    ocupado(b, true); decir("");
+    return construirPDF().then(function (p) {
       var file = new File([p.blob], p.nombre, { type: "application/pdf" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        return navigator.share({ files: [file], title: "Cotización " + numeroDoc, text: mensajeWa });
+        /* SÓLO el archivo: nada de title/text/url. Con `text` o `url`, iOS
+           mete además "1 enlace" a la página en la hoja de compartir, que
+           es justo lo que Byron no quiere. Que vaya el PDF y nada más. */
+        return navigator.share({ files: [file] });
       }
       // Sin compartir de archivos (compu vieja): se baja el PDF y se abre
       // WhatsApp con el texto, para adjuntarlo a mano.
@@ -809,13 +831,41 @@ body {
       if (err && err.name === "AbortError") return;   // el usuario cerró el menú
       decir("No se pudo compartir el PDF. Descárguelo y adjúntelo.");
     }).then(function () { ocupado(b, false); });
-  });
+  }
+  $("btn-enviar").addEventListener("click", function () { compartirPDF(this); });
 
-  /* Al crear la cotización, el panel la abre con ?pdf=1: acá se genera el
-     PDF y se abre directo, sin pasar por la vista web. Si algo falla
-     (sin señal para las librerías), cae al diálogo de impresión de antes. */
+  /* Ver el PDF SIN salir de la página: se dibuja dentro de un marco, con
+     el botón de enviar arriba. Navegar al blob del PDF (lo de antes)
+     hacía que iOS abriera la hoja de compartir en vez de mostrarlo, y de
+     paso metía el enlace. Embebido no pasa por ahí. */
+  function verEnPDF() {
+    return construirPDF().then(function (p) {
+      var host = $("pdf-host");
+      host.innerHTML =
+        '<div class="pdf-barra">' +
+          '<button type="button" class="pdf-volver" id="pv-volver">&larr; Cotización</button>' +
+          '<div class="pdf-acc">' +
+            '<button type="button" id="pv-descargar">Descargar</button>' +
+            '<button type="button" class="primario" id="pv-enviar">Enviar el PDF al cliente</button>' +
+          '</div>' +
+        '</div>' +
+        '<iframe class="pdf-marco" src="' + p.url + '" title="Cotización en PDF"></iframe>' +
+        '<p class="pdf-fallback"><a href="' + p.url + '" target="_blank" rel="noopener">' +
+          'Si el PDF no se ve, tocá acá para abrirlo.</a></p>';
+      $("hoja").hidden = true; $("acciones").hidden = true; host.hidden = false;
+      $("pv-enviar").addEventListener("click", function () { compartirPDF(this); });
+      $("pv-descargar").addEventListener("click", function () { descargarPDF(p); });
+      $("pv-volver").addEventListener("click", function () {
+        host.hidden = true; $("hoja").hidden = false; $("acciones").hidden = false;
+      });
+    });
+  }
+
+  /* Al crear o abrir la cotización, el panel usa ?pdf=1: se arma el PDF y
+     se muestra ya como PDF, sin la vista web. Si algo falla (sin señal
+     para las librerías), queda la cotización con sus botones. */
   if (new URLSearchParams(location.search).get("pdf") === "1") {
-    var arranca = function () { abrirPDF(true).catch(function () { window.print(); }); };
+    var arranca = function () { verEnPDF().catch(function () { /* queda la vista con botones */ }); };
     if ($("hoja") && !$("hoja").hidden) setTimeout(arranca, 300);
     else document.addEventListener("cotizacion-lista", function () { setTimeout(arranca, 300); }, { once: true });
   }
