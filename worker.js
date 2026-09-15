@@ -127,7 +127,7 @@ async function avisarPorCorreo(datos, env) {
   ].map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:#7d736a;">${k}</td><td style="padding:4px 0;"><b>${escaparHtml(v)}</b></td></tr>`).join("");
 
   const cuerpoCorreo = {
-    from: "Sanitarios Ticos <onboarding@resend.dev>",
+    from: "Sanitarios Ticos <avisos@sanitariosticoscr.com>",
     to: [env.CORREO_AVISO],
     subject: `Nueva solicitud — ${datos.nombre}`,
     html: `<div style="font-family:sans-serif;font-size:15px;color:#1b1917;">
@@ -2023,7 +2023,7 @@ async function avisarCotizacion(datos, env) {
        con el cliente${datos.provisional ? " (además, estas tarifas siguen en revisión)" : ""}.</p>`;
 
   const cuerpoCorreo = {
-    from: "Sanitarios Ticos <onboarding@resend.dev>",
+    from: "Sanitarios Ticos <avisos@sanitariosticoscr.com>",
     to: [env.CORREO_AVISO],
     subject: `Cotización ${datos.numero} — ${colones(datos.min)} a ${colones(datos.max)}`,
     html: `<div style="font-family:system-ui,sans-serif;color:#1b1917;">
@@ -2778,7 +2778,7 @@ async function correoRecordatorio(f, env) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        from: "Sanitarios Ticos <onboarding@resend.dev>",
+        from: "Sanitarios Ticos <avisos@sanitariosticoscr.com>",
         to: [f.correo],
         subject: "Le toca el mantenimiento, Sanitarios Ticos",
         html: `<div style="font-family:sans-serif;font-size:15px;color:#1b1917;line-height:1.6;">

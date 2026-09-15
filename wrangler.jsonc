@@ -54,7 +54,7 @@
   // configuran en el panel de Cloudflare, en Settings → Variables and Secrets,
   // para que nunca queden escritas en el código.
   "vars": {
-    "CORREO_AVISO": "byrhu36@gmail.com"
+    "CORREO_AVISO": "info@sanitariosticos.com"
   },
 
   // La base de datos donde quedan las solicitudes del formulario.
