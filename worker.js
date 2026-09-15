@@ -21,7 +21,16 @@ import { normalizarTelefono, normalizarCedula, normalizarCorreo, normalizarNombr
    llegan por env.CLAVE_PANEL / env.RESEND_API_KEY.
    ============================================================= */
 
-const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
+const JSON_HEADERS = {
+  "Content-Type": "application/json; charset=utf-8",
+  // La API no la indexa nadie, no se adivina el tipo, y no se guarda en
+  // cachés compartidas: casi todo lleva datos personales (lo poco público,
+  // como la geografía, fija su propio cache aparte).
+  "X-Content-Type-Options": "nosniff",
+  "X-Robots-Tag": "noindex, nofollow",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Cache-Control": "no-store"
+};
 
 function json(datos, estado) {
   return new Response(JSON.stringify(datos), { status: estado || 200, headers: JSON_HEADERS });
@@ -157,10 +166,23 @@ function escaparHtml(s) {
 // Compara la contraseña recibida contra la guardada en Cloudflare.
 // Antes de tener una clave configurada, el panel queda bloqueado
 // para todos (más seguro que dejarlo abierto por error).
+/* Comparación en tiempo constante: no corta apenas encuentra el primer
+   carácter distinto, así el tiempo de respuesta no delata cuánto de la
+   clave se acertó. */
+function igualSeguro(a, b) {
+  a = String(a); b = String(b);
+  if (a.length !== b.length) return false;
+  let r = 0;
+  for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return r === 0;
+}
+
 function claveValida(request, env) {
   if (!env.CLAVE_PANEL) return false;
-  const recibida = request.headers.get("X-Clave") || new URL(request.url).searchParams.get("clave") || "";
-  return recibida.length > 0 && recibida === env.CLAVE_PANEL;
+  // Sólo por cabecera. En la URL, una clave queda en el historial del
+  // navegador, en el Referer y en los logs de cualquier intermediario.
+  const recibida = request.headers.get("X-Clave") || "";
+  return recibida.length > 0 && igualSeguro(recibida, env.CLAVE_PANEL);
 }
 
 /* Las dos tablas que el panel muestra. Se declaran acá y no en cada
@@ -554,7 +576,11 @@ async function descargarCsv(request, env) {
     status: 200,
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${nombreArchivo}"`
+      "Content-Disposition": `attachment; filename="${nombreArchivo}"`,
+      // Es un export de datos personales: ni se indexa ni se cachea.
+      "X-Content-Type-Options": "nosniff",
+      "X-Robots-Tag": "noindex, nofollow",
+      "Cache-Control": "no-store"
     }
   });
 }

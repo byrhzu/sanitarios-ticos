@@ -9,6 +9,16 @@
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: SAMEORIGIN
   Permissions-Policy: geolocation=(), microphone=(), camera=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; frame-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
+
+# El panel y las cotizaciones llevan datos personales: que ningún buscador
+# los indexe, ni siquiera si alguien filtra un enlace. (El header manda
+# aunque no haya <meta>, y cubre las respuestas que no son HTML.)
+/panel*
+  X-Robots-Tag: noindex, nofollow
+/cotizacion*
+  X-Robots-Tag: noindex, nofollow
 
 # Las páginas siempre se revalidan: al publicar un cambio se ve de inmediato.
 /*.html
