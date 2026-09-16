@@ -1703,7 +1703,6 @@
   <div class="clave-caja">
     <div class="clave-logo"><img src="assets/img/logo-mascota.webp" alt="" width="52" height="52"></div>
     <h1>Panel interno</h1>
-    <p class="clave-sub">Solicitudes, cotizaciones y lo que está esperando.</p>
     <form id="form-clave">
       <div class="f">
         <label for="clave">Clave</label>
@@ -5196,9 +5195,7 @@
       .catch(function (err) {
         var msg = String(err && err.message);
         if (msg === "clave") {
-          $("estado-clave").textContent =
-            "Clave incorrecta. Si acaba de cambiarla en Cloudflare, revise que " +
-            "esté guardada como Secret (no como Variable) y que el Worker se haya vuelto a desplegar.";
+          $("estado-clave").textContent = "Contraseña incorrecta.";
         } else if (msg.indexOf("servidor:") === 0) {
           $("estado-clave").textContent = "El servidor respondió con un error (" + msg.slice(9) + "). No es la clave.";
         } else {
