@@ -3018,8 +3018,8 @@
     /* En el menú y en el pie va la frase completa, que es donde uno va
        cuando de verdad quiere saber la hora. */
     var t = min < 1 ? "Al día, " + hora
-          : min < 60 ? "Traído hace " + min + " min"
-          : "Traído a las " + hora;
+          : min < 60 ? "Actualizado hace " + min + " min"
+          : "Actualizado a las " + hora;
     $("frescura").textContent = t;
     $("sello").textContent = t;
     // Arriba, sólo el punto. Nada que leer si todo está fresco.
