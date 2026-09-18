@@ -1226,10 +1226,10 @@
 
   .agenda-cab {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 1rem; margin: 0 0 1rem;
+    gap: .8rem 1rem; margin: 0 0 1rem; flex-wrap: wrap;
   }
-  .agenda-cab h2 { margin: 0; }
-  #btn-cita { display: inline-flex; align-items: center; gap: .4rem; }
+  .agenda-pista { margin: 0; color: var(--p-tenue); font-size: .88rem; }
+  #btn-cita { display: inline-flex; align-items: center; gap: .4rem; margin-left: auto; }
 
   /* La cita en la lista: hora y la etiqueta "Agendado" al frente. */
   .toca-cuando.es-cita { color: var(--p-acento); font-weight: 600; }
@@ -2135,9 +2135,12 @@
       <p class="estado-linea" id="estado-agenda" role="status" aria-live="polite">Cargando…</p>
 
       <!-- La agenda de primero: el calendario y lo que viene. Las cifras
-           de recordatorios bajan, que son para consultar, no el día a día. -->
+           de recordatorios bajan, que son para consultar, no el día a día.
+           El título de la pantalla ya dice "Agenda" arriba; acá va sólo el
+           gesto para agendar, con una pista de que el calendario también
+           es un atajo. -->
       <div class="agenda-cab">
-        <h2>Agenda</h2>
+        <p class="agenda-pista">Tocá un día para agendar en esa fecha.</p>
         <button type="button" class="btn-fuerte" id="btn-cita">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
           Agendar servicio
