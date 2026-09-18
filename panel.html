@@ -1569,6 +1569,22 @@
   }
   .ayuda { color: var(--p-tenue); font-size: .8rem; margin: .35rem 0 0; }
   .ayuda:empty { display: none; }
+  /* Aviso de posible duplicado (§4): amarillo suave, no alarma. Ofrece
+     abrir la ficha que ya existe antes de crear otra. */
+  .dup-aviso {
+    margin: .5rem 0 0; padding: .6rem .75rem; border-radius: 12px;
+    background: color-mix(in srgb, var(--est-espera-tx, #d99a2b) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--est-espera-tx, #d99a2b) 30%, transparent);
+  }
+  .dup-t { display: block; font-size: .8rem; color: var(--p-tenue); margin-bottom: .4rem; }
+  .dup-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .dup-chip {
+    display: inline-flex; align-items: baseline; gap: .35rem; cursor: pointer;
+    padding: .35rem .6rem; border-radius: 999px; border: 1px solid var(--p-linea);
+    background: var(--p-sup2); color: var(--p-txt); font-size: .85rem; font-weight: 500;
+  }
+  .dup-chip small { color: var(--p-tenue); font-family: var(--datos); font-weight: 400; }
+  .dup-chip:hover { border-color: var(--p-primario); color: var(--p-primario); }
   .campo-libre { margin-top: .5rem; }
   .nueva-pie { margin-top: 1.6rem; display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap; }
   .nueva-pie .estado-linea { margin: 0; }
@@ -2455,6 +2471,7 @@
     <div class="f" style="margin-top:.9rem;"><label for="t-senas">Señas para llegar <span class="opc">opcional</span></label>
       <input id="t-senas" type="text" placeholder="ej. 300m sur de la iglesia, portón verde"></div>
     <p class="ayuda" id="t-ya" hidden></p>
+    <div class="dup-aviso" id="t-dup" hidden></div>
 
     <div class="libre-caja">
       <div class="nueva-rejilla">
@@ -5219,6 +5236,8 @@
     $("t-aviso").textContent = "";
     $("t-aviso").classList.remove("is-error");
     $("t-ya").hidden = true;
+    $("t-dup").hidden = true;
+    telRegistrado = false;
     $("velo-trabajo").hidden = false;
     $((pre ? "t-monto" : "t-telefono")).focus();
   }
@@ -5240,17 +5259,55 @@
 
   // Si el teléfono ya está registrado se avisa y se trae el nombre: es
   // lo que evita terminar con el mismo señor escrito de tres formas.
-  var tReloj = null;
+  // El teléfono es la llave: si calza, es EL cliente (no un duplicado) y
+  // se le suma el trabajo. La cédula y el nombre son la segunda red: si
+  // por ahí aparece alguien parecido con OTRO teléfono, se avisa por si
+  // es la misma persona escrita de dos formas (§4).
+  var tReloj = null, dupReloj = null, telRegistrado = false;
+
+  function revisarDup() {
+    if (telRegistrado) { $("t-dup").hidden = true; return; }
+    var ced = $("t-cedula").value.replace(/[^0-9A-Za-z]/g, "");
+    var nom = $("t-nombre").value.trim();
+    var q = ced.length >= 6 ? ced : (nom.length >= 4 ? nom : "");
+    if (!q) { $("t-dup").hidden = true; return; }
+    clearTimeout(dupReloj);
+    dupReloj = setTimeout(function () {
+      pedir("/api/panel/buscar?q=" + encodeURIComponent(q))
+        .then(function (r) {
+          var telAct = $("t-telefono").value.replace(/\D/g, "");
+          var cl = (r.resultados || []).filter(function (x) {
+            if (x.tipo !== "cliente") return false;
+            // El que ya calza por el teléfono escrito no es duplicado: es el mismo.
+            var t = (x.detalle || "").replace(/\D/g, "");
+            return !(telAct.length === 8 && t.indexOf(telAct) === 0);
+          }).slice(0, 3);
+          if (!cl.length) { $("t-dup").hidden = true; return; }
+          $("t-dup").innerHTML = '<span class="dup-t">¿Ya existe? Puede ser el mismo cliente:</span>' +
+            '<div class="dup-chips">' + cl.map(function (x) {
+              var tel = (x.detalle || "").split("   ")[0];
+              return '<button type="button" class="dup-chip" data-dup-id="' + x.ir.id + '">' +
+                escHtml(x.etiqueta) + (tel ? ' <small>' + escHtml(tel) + "</small>" : "") + "</button>";
+            }).join("") + "</div>";
+          $("t-dup").hidden = false;
+        })
+        .catch(function () { $("t-dup").hidden = true; });
+    }, 400);
+  }
+
   $("t-telefono").addEventListener("input", function () {
     var d = $("t-telefono").value.replace(/\D/g, "");
     $("t-ya").hidden = true;
-    if (d.length !== 8) return;
+    telRegistrado = false;
+    if (d.length !== 8) { revisarDup(); return; }
     clearTimeout(tReloj);
     tReloj = setTimeout(function () {
       pedir("/api/panel/buscar?q=" + encodeURIComponent(d))
         .then(function (r) {
           var c = (r.resultados || []).filter(function (x) { return x.tipo === "cliente"; })[0];
-          if (!c) return;
+          if (!c) { revisarDup(); return; }
+          telRegistrado = true;
+          $("t-dup").hidden = true;
           $("t-ya").textContent = "Ya está registrado: " + c.etiqueta + ". Se le suma este trabajo.";
           $("t-ya").hidden = false;
           if (!$("t-nombre").value) {
@@ -5259,6 +5316,18 @@
         })
         .catch(function () {});
     }, 350);
+  });
+
+  $("t-cedula").addEventListener("input", revisarDup);
+  $("t-nombre").addEventListener("input", revisarDup);
+  // Tocar un posible duplicado abre esa ficha (para revisar antes de
+  // crear otro). El formulario se cierra: si es el mismo, el trabajo se
+  // le anota desde su ficha.
+  $("t-dup").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-dup-id]");
+    if (!b) return;
+    cerrarTrabajo();
+    verCliente(b.getAttribute("data-dup-id"));
   });
 
   function guardarTrabajo(conTrabajo) {

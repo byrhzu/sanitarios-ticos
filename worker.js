@@ -92,10 +92,15 @@ async function guardarSolicitud(request, env, ctx) {
   }
 
   try {
+    // Si el teléfono ya es de un cliente conocido, la solicitud queda
+    // enlazada a él por ID (§21). NO se crea un cliente desde el
+    // formulario público: eso lo haría el spam. Solo se reconoce a quien
+    // ya existe; si no, cliente_id queda NULL y se enlaza al cotizar.
     await env.DB.prepare(
       `INSERT INTO solicitudes (nombre, telefono, servicio, zona, detalle, pagina,
-                                cedula, correo, provincia, canton, distrito)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`
+                                cedula, correo, provincia, canton, distrito, cliente_id)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11,
+               (SELECT id FROM clientes WHERE telefono = ?2 AND papelera IS NULL))`
     ).bind(datos.nombre, datos.telefono, datos.servicio, datos.zona, datos.detalle,
            datos.pagina, datos.cedula, datos.correo, provincia, canton, distrito).run();
   } catch (e) {
@@ -2810,10 +2815,14 @@ async function cotizar(request, env, ctx) {
            solicitud_id = ?3
          WHERE id = ?4`
       ).bind(numero, telefono, solId, id).run();
-      // Y la solicitud recuerda en qué cotización terminó.
+      // Y la solicitud recuerda en qué cotización terminó y, si por el
+      // teléfono se reconoció al cliente, a quién pertenece (§21).
       if (solId) {
-        await env.DB.prepare(`UPDATE solicitudes SET cotizacion_id = ?1 WHERE id = ?2`)
-          .bind(id, solId).run().catch(() => {});
+        await env.DB.prepare(
+          `UPDATE solicitudes SET cotizacion_id = ?1,
+             cliente_id = COALESCE(cliente_id, (SELECT id FROM clientes WHERE telefono = ?2 AND papelera IS NULL))
+           WHERE id = ?3`
+        ).bind(id, telefono, solId).run().catch(() => {});
       }
       // La dirección del documento: sirve de PDF, de imagen y de enlace
       // para pegar en WhatsApp, que es la que no se pierde.
