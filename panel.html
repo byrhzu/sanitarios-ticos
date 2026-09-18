@@ -1087,6 +1087,15 @@
   .acc a.wa { background: #25d366; color: #06371a; }
   .acc a:hover { background: var(--p-linea); }
   .acc a.wa:hover { background: #1fbe5b; }
+  .acc .cot-elim {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.8rem; height: 1.8rem; border-radius: 7px; border: 0;
+    background: var(--p-sup2); color: var(--p-tenue); cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .acc .cot-elim svg { width: 15px; height: 15px; }
+  .acc .cot-elim:hover { color: var(--est-mal-tx);
+    background: color-mix(in srgb, var(--est-mal-tx) 16%, var(--p-sup2)); }
 
   .estado-linea { color: var(--p-tenue); margin: .8rem 0; }
   .estado-linea.is-error { color: #e0674f; }
@@ -1194,6 +1203,25 @@
   .cli-fin { display: flex; gap: 1rem 1.4rem; flex-wrap: wrap; margin-top: .5rem; font-size: .9rem; color: var(--p-tenue); }
   .cli-fin b { color: var(--p-txt); font-weight: 600; }
   .cli-fin .cli-debe b { color: var(--est-mal-tx); }
+  /* Expediente 360°: las otras cosas del cliente (cotizaciones,
+     solicitudes, mantenimientos). Tres columnas en pantalla ancha,
+     apiladas en el teléfono. Cada fila lleva a su lista. */
+  .exp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .exp-tarj { margin: 0; }
+  .exp-tarj .tarj-h { margin-bottom: .7rem; }
+  .exp-tarj h3 { font-family: var(--display); font-size: 1rem; font-weight: 600; margin: 0; letter-spacing: -.01em; }
+  .exp-n { display: inline-block; min-width: 1.3rem; padding: 0 .35rem; margin-left: .1rem;
+    border-radius: 999px; background: var(--p-sup2); color: var(--p-tenue);
+    font-family: var(--datos); font-size: .78rem; text-align: center; }
+  .exp-list { list-style: none; margin: 0; padding: 0; }
+  .exp-row { display: flex; align-items: center; gap: .5rem; padding: .5rem 0; border-top: 1px solid var(--p-linea); font-size: .86rem; }
+  .exp-row:first-child { border-top: 0; }
+  .exp-row[data-ir] { cursor: pointer; }
+  .exp-row[data-ir]:hover { color: var(--p-primario); }
+  .exp-row .exp-a { font-weight: 600; white-space: nowrap; }
+  .exp-row .exp-b { color: var(--p-tenue); flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .exp-row .exp-c { color: var(--p-tenue); white-space: nowrap; font-size: .78rem; }
+  .exp-row svg { width: 14px; height: 14px; opacity: .5; flex: 0 0 auto; }
   .pg-resumen { display: flex; gap: 1.4rem; flex-wrap: wrap; padding: .2rem 0 .9rem; margin-bottom: .6rem; border-bottom: 1px solid var(--p-linea); color: var(--p-tenue); font-size: .9rem; }
   .pg-resumen b { display: block; color: var(--p-txt); font-size: 1.15rem; margin-top: .15rem; }
   .pg-resumen b.pg-bad { color: var(--est-mal-tx); }
@@ -1373,6 +1401,20 @@
   .toca-cuando { display: flex; flex-direction: column; align-items: flex-end; gap: .2rem; }
   .toca-cuando small { color: var(--p-tenue); font-size: .74rem; }
   .toca-acc { display: flex; gap: .4rem; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+  /* Botón discreto de eliminar dentro de una fila: se nota poco, y solo
+     se enciende (rojo) al pasar por encima. No compite con el clic de
+     la fila que abre la ficha. */
+  .fila-elim {
+    flex: 0 0 auto; align-self: center; display: inline-flex;
+    align-items: center; justify-content: center; width: 34px; height: 34px;
+    padding: 0; border-radius: 10px; border: 1px solid transparent;
+    background: transparent; color: var(--p-tenue); cursor: pointer;
+    opacity: .55; transition: opacity .15s, color .15s, background .15s, border-color .15s;
+  }
+  .fila-elim svg { width: 17px; height: 17px; }
+  .fila-elim:hover { opacity: 1; color: var(--est-mal-tx);
+    background: color-mix(in srgb, var(--est-mal-tx) 12%, transparent);
+    border-color: color-mix(in srgb, var(--est-mal-tx) 35%, transparent); }
 
   /* ---------- Avisos ----------
      Reemplazan al alert() del navegador, que congela la página, no se
@@ -2644,6 +2686,7 @@
     // Cotización: una etiqueta con precio. Reemplaza al documento.
     cotizacion: ico("M3 11.5V5a2 2 0 0 1 2-2h6.5a2 2 0 0 1 1.4.6l7.5 7.5a2 2 0 0 1 0 2.8l-6.6 6.6a2 2 0 0 1-2.8 0L3.6 13a2 2 0 0 1-.6-1.5z", '<circle cx="7.5" cy="7.5" r="1.4"/>'),
     ojo:    ico("M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z", '<circle cx="12" cy="12" r="3"/>'),
+    basura: ico("M4 7h16M10 11v6M14 11v6M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"),
     ojoNo:  ico("M3 3l18 18M10.6 10.7a3 3 0 0 0 4 4M9.9 5.2A9.5 9.5 0 0 1 12 5c6.5 0 10 7 10 7a15.5 15.5 0 0 1-3.4 4.1M6.1 6.2A15.6 15.6 0 0 0 2 12s3.5 7 10 7a9.4 9.4 0 0 0 3-.5"),
     lapiz:  ico("M4 20h4L18.5 9.5a2 2 0 0 0-3-3L5 17v3zM14.5 6.5l3 3"),
     // Flechas de tendencia y relojito, para reemplazar las pastillas.
@@ -2934,12 +2977,19 @@
       /* Sin pie cuando no hay nada: el cero ya dice que no hay trabajos
          anotados, y explicarlo con una frase era el renglón suelto más
          largo de la pantalla. */
-      cifra({ icono: ICO.cartera, n: colones(d.ingresos.monto), tono: "ok",
-        bruto: d.ingresos.monto, colones: true, t: "Cobrado",
+      /* Cobrado = plata REAL recibida (suma de pagos del rango), no el
+         monto de los trabajos: si un trabajo de ₡70.000 solo abonó
+         ₡30.000, acá entran ₡30.000. El pie dice cuántos trabajos y, si
+         queda plata por cobrar (de todo lo completado, a hoy), cuánta. */
+      cifra({ icono: ICO.cartera, n: colones(d.ingresos.cobrado || 0), tono: "ok",
+        bruto: d.ingresos.cobrado || 0, colones: true, t: "Cobrado",
         p: d.ingresos.trabajos ? delta(d.variacion.ing) : "",
-        pie: d.ingresos.trabajos
+        pie: (d.ingresos.trabajos
                ? d.ingresos.trabajos + (d.ingresos.trabajos === 1 ? " trabajo" : " trabajos")
-               : "",
+               : "") +
+             ((d.ingresos.saldo || 0) > 0
+               ? (d.ingresos.trabajos ? " · " : "") + "falta cobrar " + colones(d.ingresos.saldo)
+               : ""),
         ir: { vista: "clientes" } })
     ].join("");
     contarCifras();
@@ -3408,10 +3458,17 @@
     return '<select class="estado" data-tono="' + tono + '" aria-label="Estado">' + ops + "</select>";
   }
 
-  function celdaAcciones(m) {
+  function celdaAcciones(m, tabla) {
     var a = [];
     if (m.wa) a.push('<a class="wa" href="' + escHtml(m.wa) + '" target="_blank" rel="noopener" title="Escribir por WhatsApp" aria-label="Escribir por WhatsApp">' + ICO_WA + "</a>");
     if (m.tel) a.push('<a href="tel:+506' + escHtml(String(m.tel).replace(/\D/g, "")) + '" title="Llamar" aria-label="Llamar">' + ICO_TEL + "</a>");
+    // Botar una cotización a la papelera (F4). Solo cotizaciones: la
+    // solicitud tiene su propio botón. El estado 'perdida' es cancelar;
+    // esto es eliminar (se puede restaurar desde la papelera).
+    if (tabla === "cotizaciones") {
+      a.push('<button type="button" class="cot-elim" data-cot-elim="' + escHtml(String(m.id)) +
+        '" title="Enviar a la papelera" aria-label="Eliminar cotización">' + ICO.basura + "</button>");
+    }
     return a.length ? '<div class="acc">' + a.join("") + "</div>" : "—";
   }
 
@@ -3463,7 +3520,7 @@
         celdas += '<td class="trabajo t1">' + celdaEstado(m) + "</td>" +
                   '<td class="trabajo t2"><input class="nota" type="text" value="' + escHtml(m.nota) +
                   '" placeholder="—" aria-label="Nota"></td>' +
-                  '<td class="trabajo t3">' + celdaAcciones(m) + "</td>";
+                  '<td class="trabajo t3">' + celdaAcciones(m, d.tabla) + "</td>";
       }
       return '<tr data-id="' + (m ? escHtml(String(m.id)) : "") + '">' + celdas + "</tr>";
     }).join("");
@@ -3540,6 +3597,7 @@
         var x = [];
         if (m.wa) x.push('<a class="bt wa" href="' + escHtml(m.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
         if (m.tel) x.push('<a class="bt" href="tel:+506' + escHtml(String(m.tel).replace(/\D/g, "")) + '">' + ICO.tel + "Llamar</a>");
+        x.push('<button type="button" class="bt malo" data-cot-elim="' + escHtml(String(m.id)) + '">' + ICO.basura + "Eliminar</button>");
         return x;
       })();
 
@@ -3712,6 +3770,18 @@
   var prellenarSolicitud = null;
 
   function accionSolicitud(e) {
+    var elim = e.target.closest("[data-cot-elim]");
+    if (elim) {
+      var cid = elim.getAttribute("data-cot-elim");
+      if (!confirm("¿Enviar esta cotización a la papelera?\n\nSe puede restaurar. (Para marcarla como no cerrada, use el estado \"Perdida\".)")) return;
+      elim.disabled = true;
+      pedir("/api/panel/borrar", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tabla: "cotizacion", id: cid })
+      }).then(function () { avisar("Cotización enviada a la papelera."); resumenCargado = false; cargarTabla(); })
+        .catch(function () { elim.disabled = false; avisar("No se pudo eliminar.", "mal"); });
+      return;
+    }
     var cot = e.target.closest(".sol-cotizar");
     if (cot) {
       var m = metaSolicitud(cot.dataset.id);
@@ -4606,6 +4676,37 @@
       "</div>";
     }
 
+    // Expediente 360° (§21): cotizaciones, solicitudes y mantenimientos
+    // del cliente. Cada fila navega a su lista ya filtrada (data-ir, que
+    // recoge el manejador global). Se muestra el bloque solo si hay algo.
+    function expFila(ir, a, b, cc) {
+      return '<li class="exp-row"' + (ir ? " data-ir='" + escHtml(JSON.stringify(ir)) + "'" : "") + ">" +
+        '<span class="exp-a">' + escHtml(a) + "</span>" +
+        '<span class="exp-b">' + escHtml(b || "") + "</span>" +
+        '<span class="exp-c">' + escHtml(cc || "") + "</span>" +
+        (ir ? ICO.flecha : "") + "</li>";
+    }
+    function expBloque(titulo, items, filas) {
+      if (!items || !items.length) return "";
+      return '<div class="tarj exp-tarj">' +
+        '<div class="tarj-h"><h3>' + titulo + ' <span class="exp-n">' + items.length + "</span></h3></div>" +
+        '<ul class="exp-list">' + items.map(filas).join("") + "</ul>" +
+      "</div>";
+    }
+    var expCot = expBloque("Cotizaciones", d.cotizaciones, function (x) {
+      return expFila({ vista: "cotizaciones", buscar: x.numero }, x.numero, x.servicio + " · " + x.monto, x.estadoTxt);
+    });
+    var expSol = expBloque("Solicitudes", d.solicitudes, function (x) {
+      return expFila({ vista: "solicitudes", buscar: c.telefono || "" }, x.servicio,
+        fechaLarga(String(x.fecha || "").slice(0, 10)), x.estadoTxt);
+    });
+    var expMant = expBloque("Mantenimientos", d.mantenimientos, function (x) {
+      var et = { programado: "Programado", hecho: "Hecho", reemplazado: "Reemplazado", cancelado: "Cancelado" }[x.estado] || x.estado;
+      return expFila(x.estado === "programado" ? { vista: "agenda" } : null, x.servicio, fechaLarga(x.fecha), et);
+    });
+    var exp = (expCot || expSol || expMant)
+      ? '<div class="exp-grid">' + expCot + expSol + expMant + "</div>" : "";
+
     $("cliente-cuerpo").innerHTML =
       '<div class="tarj">' +
         '<div class="perfil-cab">' +
@@ -4641,7 +4742,7 @@
         '<div class="tarj-h"><h2>Historial</h2>' +
           '<button type="button" class="bt fuerte" id="cf-agendar">' + ICO.mas + "Agendar servicio</button>" +
         "</div>" + hist +
-      "</div>";
+      "</div>" + exp;
 
     $("cf-editar-btn").addEventListener("click", function () {
       var e = $("cf-editar");
@@ -4787,6 +4888,8 @@
             (plata ? '<span class="num" style="font-size:.85rem;">' + plata + "</span>" : "") +
             (s.proximo ? '<span class="dim" style="font-size:.75rem;">próximo ' + escHtml(fechaLarga(s.proximo)) + "</span>" : "") +
           "</div>" +
+          '<button type="button" class="fila-elim" data-elim-serv="' + s.id + '" data-elim-quien="' + escHtml(s.cliente) +
+            '" title="Enviar a la papelera" aria-label="Eliminar servicio">' + ICO.basura + "</button>" +
         "</div>";
       }).join("");
     }
@@ -4825,6 +4928,19 @@
     svFiltro.pagina++; cargarServicios(); window.scrollTo({ top: 0 });
   });
   $("lista-servicios").addEventListener("click", function (e) {
+    var del = e.target.closest("[data-elim-serv]");
+    if (del) {
+      e.stopPropagation();
+      var sid = del.getAttribute("data-elim-serv");
+      var quien = del.getAttribute("data-elim-quien") || "este servicio";
+      if (!confirm("¿Enviar a la papelera el servicio de " + quien + "?\n\nSe puede restaurar desde la papelera.")) return;
+      pedir("/api/panel/borrar", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tabla: "servicio", id: sid })
+      }).then(function () { avisar("Servicio enviado a la papelera."); cargarServicios(); })
+        .catch(function () { avisar("No se pudo eliminar.", "mal"); });
+      return;
+    }
     var f = e.target.closest("[data-cliente]");
     if (f) verCliente(f.getAttribute("data-cliente"));
   });
@@ -4934,7 +5050,7 @@
   /* =========================================================
      Papelera (F4): restaurar o eliminar de verdad
      ========================================================= */
-  var PAP_ETQ = { cliente: "cliente", cotizacion: "cotización", servicio: "servicio", pago: "pago", solicitud: "solicitud" };
+  var PAP_ETQ = { cliente: "cliente", cotizacion: "cotización", servicio: "servicio", pago: "pago", solicitud: "solicitud", mantenimiento: "mantenimiento" };
 
   function marcarPapelera(n) {
     var e = $("papelera-n"); e.textContent = String(n || 0); e.hidden = !n;

@@ -666,7 +666,7 @@ async function registrarDesdeCotizacion(env, id, extra) {
   try {
     const c = await env.DB.prepare(
       `SELECT numero, servicio, forma, medida, ultimo, dias, nombre, telefono, cedula, correo,
-              provincia, canton, distrito, monto_min
+              provincia, canton, distrito, monto_min, solicitud_id
        FROM cotizaciones WHERE id = ?`
     ).bind(id).first();
     if (!c) return null;
@@ -680,7 +680,8 @@ async function registrarDesdeCotizacion(env, id, extra) {
       detalle: detalleTrabajo(c),
       monto: extra.monto != null && extra.monto !== "" ? extra.monto : c.monto_min,
       cotizacion: c.numero,
-      cotizacion_id: id,
+      cotizacionId: id,                 // enlace por ID (lo que lee guardarServicio)
+      solicitudId: c.solicitud_id || null,
       meses: extra.meses,
       metodo: extra.metodo,
       nota: extra.nota
@@ -931,7 +932,22 @@ async function resumenPanel(request, env) {
          WHERE m.estado = 'programado' AND m.papelera IS NULL
            AND c.recordatorio = 1 AND c.papelera IS NULL
            AND m.fecha <= date('now', '-6 hours', '+45 days')
-         ORDER BY m.fecha LIMIT 8`)
+         ORDER BY m.fecha LIMIT 8`),
+      /* 16 · cobrado REAL en el rango: plata que de verdad entró, sumada
+             de los pagos (no del monto del servicio, que puede estar a
+             medias). La fecha es la del pago. */
+      q(`SELECT COALESCE(SUM(monto), 0) AS s FROM pagos
+          WHERE fecha BETWEEN ? AND ? AND papelera IS NULL`, R),
+      /* 17 · saldo pendiente TOTAL (a hoy, sin filtro de fecha): de cada
+             trabajo completado, lo que falta por cobrar. Es la plata que
+             ya se ganó pero no ha entrado. */
+      q(`SELECT COALESCE(SUM(saldo), 0) AS s FROM (
+           SELECT s.monto - COALESCE(
+                    (SELECT SUM(p.monto) FROM pagos p WHERE p.servicio_id = s.id AND p.papelera IS NULL), 0
+                  ) AS saldo
+             FROM servicios s
+            WHERE s.estado = 'completado' AND s.papelera IS NULL AND s.monto IS NOT NULL
+         ) WHERE saldo > 0`)
     ]);
 
     const filas = (i) => (r[i] && r[i].results) || [];
@@ -1050,7 +1066,11 @@ async function resumenPanel(request, env) {
       serie,
       // Lo que pasó dentro del rango
       rango: { cot: suma(estCot), sol: suma(estSol) },
-      ingresos: { monto: cobrado.s || 0, trabajos: cobrado.n || 0 },
+      // `monto` = facturado (lo que valieron los trabajos del rango).
+      // `cobrado` = plata real recibida (suma de pagos del rango).
+      // `saldo` = lo que falta por cobrar a hoy, de todo lo completado.
+      ingresos: { monto: cobrado.s || 0, trabajos: cobrado.n || 0,
+                  cobrado: (uno(16).s) || 0, saldo: (uno(17).s) || 0 },
       previo: {
         desde: previo.desde, hasta: previo.hasta,
         cot: antes.cot || 0, sol: antes.sol || 0, ing: antes.ing || 0
@@ -1519,7 +1539,7 @@ async function listaServicios(request, env) {
    ============================================================= */
 const PAPELERA_TABLAS = {
   cliente: "clientes", cotizacion: "cotizaciones", servicio: "servicios",
-  pago: "pagos", solicitud: "solicitudes"
+  pago: "pagos", solicitud: "solicitudes", mantenimiento: "mantenimientos"
 };
 
 async function papeleraAccion(request, env, accion) {
@@ -1549,14 +1569,16 @@ async function papeleraLista(request, env) {
   const money = (n) => "₡" + String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   const q = (sql) => env.DB.prepare(sql).all().then((r) => r.results || []).catch(() => []);
   try {
-    const [cli, cot, ser, pag, sol] = await Promise.all([
+    const [cli, cot, ser, pag, sol, man] = await Promise.all([
       q(`SELECT id, nombre, telefono, papelera FROM clientes WHERE papelera IS NOT NULL ORDER BY papelera DESC`),
       q(`SELECT id, numero, nombre, papelera FROM cotizaciones WHERE papelera IS NOT NULL ORDER BY papelera DESC`),
       q(`SELECT s.id, s.servicio, s.fecha, s.papelera, c.nombre FROM servicios s
           LEFT JOIN clientes c ON c.id = s.cliente_id WHERE s.papelera IS NOT NULL ORDER BY s.papelera DESC`),
       q(`SELECT p.id, p.monto, p.fecha, p.papelera, c.nombre FROM pagos p
           LEFT JOIN clientes c ON c.id = p.cliente_id WHERE p.papelera IS NOT NULL ORDER BY p.papelera DESC`),
-      q(`SELECT id, nombre, servicio, papelera FROM solicitudes WHERE papelera IS NOT NULL ORDER BY papelera DESC`)
+      q(`SELECT id, nombre, servicio, papelera FROM solicitudes WHERE papelera IS NOT NULL ORDER BY papelera DESC`),
+      q(`SELECT m.id, m.tipo, m.fecha, m.papelera, c.nombre FROM mantenimientos m
+          LEFT JOIN clientes c ON c.id = m.cliente_id WHERE m.papelera IS NOT NULL ORDER BY m.papelera DESC`)
     ]);
     const it = (tabla, id, titulo, sub, papelera) => ({ tabla, id, titulo, sub: sub || "", papelera });
     const grupos = [
@@ -1564,7 +1586,8 @@ async function papeleraLista(request, env) {
       { tabla: "cotizacion", nombre: "Cotizaciones", items: cot.map((r) => it("cotizacion", r.id, r.numero || ("Cotización " + r.id), r.nombre, r.papelera)) },
       { tabla: "servicio", nombre: "Servicios", items: ser.map((r) => it("servicio", r.id, etiqueta(r.servicio, null, "servicio"), [r.nombre, r.fecha].filter(Boolean).join(" · "), r.papelera)) },
       { tabla: "pago", nombre: "Pagos", items: pag.map((r) => it("pago", r.id, money(r.monto), [r.nombre, r.fecha].filter(Boolean).join(" · "), r.papelera)) },
-      { tabla: "solicitud", nombre: "Solicitudes", items: sol.map((r) => it("solicitud", r.id, r.nombre || "Solicitud", r.servicio, r.papelera)) }
+      { tabla: "solicitud", nombre: "Solicitudes", items: sol.map((r) => it("solicitud", r.id, r.nombre || "Solicitud", r.servicio, r.papelera)) },
+      { tabla: "mantenimiento", nombre: "Mantenimientos", items: man.map((r) => it("mantenimiento", r.id, etiqueta(r.tipo, null, "servicio"), [r.nombre, r.fecha].filter(Boolean).join(" · "), r.papelera)) }
     ].filter((g) => g.items.length);
     return json({ ok: true, grupos, total: grupos.reduce((a, g) => a + g.items.length, 0) });
   } catch (e) {
@@ -1876,6 +1899,27 @@ async function verCliente(request, env) {
     const porServicio = {};
     pagos.forEach((p) => { (porServicio[p.servicio_id] = porServicio[p.servicio_id] || []).push(p); });
 
+    // Expediente 360° (§21): las cotizaciones, solicitudes y
+    // mantenimientos del cliente, para poder navegar desde su ficha.
+    // Las solicitudes se cruzan por cliente_id O por teléfono, porque el
+    // formulario público entra sin cliente_id.
+    const cotiz = ((await env.DB.prepare(
+      `SELECT id, numero, servicio, estado, monto_min, monto_max,
+              datetime(creado,'-6 hours') AS creado
+         FROM cotizaciones WHERE cliente_id = ? AND papelera IS NULL
+         ORDER BY creado DESC LIMIT 40`
+    ).bind(id).all()).results) || [];
+    const solic = ((await env.DB.prepare(
+      `SELECT id, servicio, estado, datetime(creado,'-6 hours') AS creado
+         FROM solicitudes WHERE (cliente_id = ?1 OR telefono = ?2) AND papelera IS NULL
+         ORDER BY creado DESC LIMIT 40`
+    ).bind(id, c.telefono || "").all()).results) || [];
+    const mant = ((await env.DB.prepare(
+      `SELECT id, tipo, fecha, estado FROM mantenimientos
+        WHERE cliente_id = ? AND papelera IS NULL
+        ORDER BY (estado = 'programado') DESC, fecha DESC LIMIT 40`
+    ).bind(id).all()).results) || [];
+
     let cobrado = 0, saldoPendiente = 0;
     const servicios = results.map((s) => {
       const lista = porServicio[s.id] || [];
@@ -1899,6 +1943,20 @@ async function verCliente(request, env) {
         cobrado, saldoPendiente
       }),
       servicios,
+      cotizaciones: cotiz.map((x) => ({
+        id: x.id, numero: x.numero || ("Cotización " + x.id),
+        servicio: etiqueta(x.servicio, null, "servicio"),
+        estado: x.estado, estadoTxt: nombreEstado(x.estado),
+        monto: montoTexto(x.monto_min, x.monto_max), fecha: x.creado
+      })),
+      solicitudes: solic.map((x) => ({
+        id: x.id, servicio: x.servicio || "—",
+        estado: x.estado, estadoTxt: nombreEstado(x.estado), fecha: x.creado
+      })),
+      mantenimientos: mant.map((x) => ({
+        id: x.id, servicio: etiqueta(x.tipo, null, "servicio"),
+        fecha: x.fecha, estado: x.estado
+      })),
       metodos: METODOS_PAGO.filter((m) => m !== "no-registrado"),
       canales: CANALES,
       periodos: PERIODOS
