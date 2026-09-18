@@ -1425,6 +1425,88 @@ function estadoPago(monto, pagado) {
   return "pagado";
 }
 
+/* -------------------------------------------------------------
+   La sección Servicios (§8): todos los trabajos de todos los clientes en
+   una sola lista, con filtros por estado y tipo. Cada fila trae su cliente
+   (enlace) y su estado de pago.
+   ------------------------------------------------------------- */
+async function listaServicios(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+
+  const url = new URL(request.url);
+  const estados = ["programado", "en_proceso", "completado", "cancelado"];
+  const estado = estados.indexOf(url.searchParams.get("estado")) !== -1 ? url.searchParams.get("estado") : "";
+  const tipo = texto(url.searchParams.get("tipo"), 40);
+  const q = texto(url.searchParams.get("q"), 60);
+  const pedida = parseInt(url.searchParams.get("pagina"), 10);
+  const pagina = Number.isFinite(pedida) && pedida > 0 ? pedida : 1;
+  const POR = 30;
+
+  const cond = ["s.papelera IS NULL", "c.papelera IS NULL"];
+  const val = [];
+  if (estado) { cond.push("s.estado = ?"); val.push(estado); }
+  if (tipo) { cond.push("s.servicio = ?"); val.push(tipo); }
+  if (q) { cond.push("(c.nombre LIKE ? OR c.telefono LIKE ?)"); val.push("%" + q + "%", "%" + q + "%"); }
+  const donde = "WHERE " + cond.join(" AND ");
+
+  try {
+    const total = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM servicios s JOIN clientes c ON c.id = s.cliente_id ${donde}`
+    ).bind(...val).first();
+
+    const { results } = await env.DB.prepare(
+      `SELECT s.id, s.fecha, s.hora, s.servicio, s.detalle, s.monto, s.estado, s.proximo,
+              s.cotizacion, s.cotizacion_id,
+              c.id AS cliente_id, c.nombre, c.telefono, c.provincia, c.canton,
+              (SELECT COALESCE(SUM(p.monto), 0) FROM pagos p
+                WHERE p.servicio_id = s.id AND p.papelera IS NULL) AS pagado
+         FROM servicios s JOIN clientes c ON c.id = s.cliente_id
+         ${donde}
+         ORDER BY (s.estado = 'programado') DESC, s.fecha DESC, s.id DESC
+         LIMIT ? OFFSET ?`
+    ).bind(...val, POR, (pagina - 1) * POR).all();
+
+    // Conteo por estado (para las pastillas de los filtros) y tipos que hay.
+    const cnt = ((await env.DB.prepare(
+      `SELECT estado, COUNT(*) AS n FROM servicios WHERE papelera IS NULL GROUP BY estado`
+    ).all()).results) || [];
+    const counts = {};
+    cnt.forEach((r) => { counts[r.estado] = r.n; });
+
+    const tipos = ((await env.DB.prepare(
+      `SELECT servicio AS k, COUNT(*) AS n FROM servicios
+        WHERE papelera IS NULL AND servicio IS NOT NULL AND servicio <> ''
+        GROUP BY k ORDER BY n DESC`
+    ).all()).results) || [];
+
+    return json({
+      ok: true,
+      servicios: results.map((s) => {
+        const monto = s.monto || 0, pagado = s.pagado || 0;
+        return {
+          id: s.id, clienteId: s.cliente_id, cliente: s.nombre, telefono: s.telefono || null,
+          servicio: etiqueta(s.servicio, null, "servicio"), servicioKey: s.servicio,
+          detalle: s.detalle || null,
+          lugar: [s.canton, s.provincia].filter(Boolean).join(", ") || null,
+          fecha: s.fecha, hora: s.hora || null, estado: s.estado, proximo: s.proximo || null,
+          cotizacion: s.cotizacion || null, cotizacionId: s.cotizacion_id || null,
+          monto, pagado,
+          saldo: s.estado === "completado" ? Math.max(0, monto - pagado) : 0,
+          estadoPago: estadoPago(monto, pagado)
+        };
+      }),
+      total: total ? total.n : 0,
+      pagina, porPagina: POR,
+      paginas: Math.max(1, Math.ceil((total ? total.n : 0) / POR)),
+      counts,
+      tipos: tipos.map((t) => ({ id: t.k, etiqueta: etiqueta(t.k, null, "servicio"), n: t.n }))
+    });
+  } catch (e) {
+    console.error("Error al listar servicios:", e);
+    return json({ ok: false, error: "No se pudo consultar" }, 500);
+  }
+}
+
 // El texto del recordatorio. Sale del servidor porque es el que tiene
 // la fecha y el servicio; el panel sólo lo abre en WhatsApp.
 function mensajeRecordatorio(f) {
@@ -3273,6 +3355,9 @@ export default {
     }
     if (url.pathname === "/api/panel/pago/borrar" && request.method === "POST") {
       return borrarPago(request, env);
+    }
+    if (url.pathname === "/api/panel/servicios" && request.method === "GET") {
+      return listaServicios(request, env);
     }
     if (url.pathname === "/api/panel/buscar" && request.method === "GET") {
       return buscarPanel(request, env);

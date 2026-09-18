@@ -1125,6 +1125,21 @@
   .pastilla.toca { background: var(--est-espera-bg); color: var(--est-espera-tx); }
   .pastilla.vencio { background: var(--est-mal-bg); color: var(--est-mal-tx); }
   .pastilla.mudo { opacity: .65; }
+  /* Estados de un servicio (sección Servicios) */
+  .pastilla.est-programado { background: var(--p-prim-suave); color: var(--p-primario); }
+  .pastilla.est-en_proceso { background: var(--est-espera-bg); color: var(--est-espera-tx); }
+  .pastilla.est-completado { background: var(--est-ok-bg); color: var(--est-ok-tx); }
+  .pastilla.est-cancelado  { background: var(--p-sup2); color: var(--p-tenue); }
+  /* El buscador de la sección y el tipo, en la misma barra de filtros */
+  .sv-tipo { min-width: 0; }
+  .sv-tipo select { min-width: 9rem; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  /* En móvil el tipo baja a su propia línea para no salirse de pantalla. */
+  @media (max-width: 640px) {
+    #vista-servicios .cli-orden { flex-wrap: wrap; }
+    #vista-servicios .sv-tipo { flex: 1 1 100%; }
+    #vista-servicios .sv-tipo select { width: 100%; }
+  }
   .cli-linea { color: var(--p-tenue); margin-top: .5rem; }
   /* Fragmentos de una línea, separados por espacio y no por un carácter. */
   .pzs { display: inline-flex; flex-wrap: wrap; gap: .05rem .7rem; }
@@ -1823,6 +1838,12 @@
         Clientes
       </button>
       <span class="grupo-nav">Operación</span>
+      <button type="button" role="tab" data-vista="servicios" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.5 5.5a3.6 3.6 0 0 0 4.7 4.7L21 12l-9 9-4-4 9-9zM7 17l-3.5 3.5"/>
+        </svg>
+        <span class="largo">Servicios</span><span class="corto">Servic.</span>
+      </button>
       <button type="button" role="tab" data-vista="agenda" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/>
@@ -2138,6 +2159,35 @@
         <button class="btn-suave" type="button" id="cli-antes">&larr; Anteriores</button>
         <span class="estado-linea" style="margin:0;" id="cli-pag-txt"></span>
         <button class="btn-suave" type="button" id="cli-despues">Siguientes &rarr;</button>
+      </div>
+    </div>
+
+    <!-- ============ SERVICIOS ============ -->
+    <div class="vista" id="vista-servicios" hidden>
+      <div class="rango">
+        <input type="search" id="sv-busca" placeholder="Buscar por cliente o teléfono" aria-label="Buscar servicio">
+        <button type="button" class="btn-fuerte crear" id="sv-agendar" title="Agendar un servicio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <span class="largo">Agendar servicio</span>
+        </button>
+      </div>
+      <div class="rango cli-orden">
+        <span class="presets" id="sv-estado" role="group" aria-label="Estado del servicio">
+          <button type="button" data-estado="" aria-pressed="true">Todos</button>
+          <button type="button" data-estado="programado">Programados</button>
+          <button type="button" data-estado="completado">Completados</button>
+          <button type="button" data-estado="cancelado">Cancelados</button>
+        </span>
+        <span class="f sv-tipo"><label for="sv-tipo" class="sr-only">Tipo</label>
+          <select id="sv-tipo" aria-label="Tipo de servicio"></select></span>
+      </div>
+
+      <p class="estado-linea" id="estado-servicios" role="status" aria-live="polite"></p>
+      <div class="fichas escalona" id="lista-servicios"></div>
+      <div class="paginacion" id="servicios-pag" hidden>
+        <button class="btn-suave" type="button" id="sv-antes">&larr; Anteriores</button>
+        <span class="estado-linea" style="margin:0;" id="sv-pag-txt"></span>
+        <button class="btn-suave" type="button" id="sv-despues">Siguientes &rarr;</button>
       </div>
     </div>
 
@@ -2604,7 +2654,7 @@
 
   var NOMBRE_VISTA = {
     hoy: "Hoy", resumen: "Resumen", cotizaciones: "Cotizaciones", solicitudes: "Solicitudes",
-    clientes: "Clientes", cliente: "Cliente", agenda: "Agenda", nueva: "Nueva cotización"
+    clientes: "Clientes", cliente: "Cliente", servicios: "Servicios", agenda: "Agenda", nueva: "Nueva cotización"
   };
 
   /* Junta fragmentos de una línea SIN carácter separador: cada uno es
@@ -4459,7 +4509,7 @@
     Array.prototype.forEach.call(document.querySelectorAll(".barra nav button"), function (b) {
       b.setAttribute("aria-selected", String(b.dataset.vista === "clientes"));
     });
-    ["hoy", "resumen", "tabla", "nueva", "clientes", "agenda"].forEach(function (v) { $("vista-" + v).hidden = true; });
+    ["hoy", "resumen", "tabla", "nueva", "clientes", "servicios", "agenda"].forEach(function (v) { $("vista-" + v).hidden = true; });
     $("vista-cliente").hidden = false;
     $("cliente-cuerpo").innerHTML = '<p class="estado-linea">Cargando…</p>';
     window.scrollTo({ top: 0 });
@@ -4601,6 +4651,114 @@
         });
     });
   }
+
+  /* =========================================================
+     La sección Servicios (§8): todos los trabajos en una lista
+     ========================================================= */
+  var svFiltro = { estado: "", tipo: "", q: "", pagina: 1 };
+  var svReloj = null;
+  var SV_ESTADO = {
+    programado: { t: "Programado", cls: "est-programado" },
+    en_proceso: { t: "En proceso", cls: "est-en_proceso" },
+    completado: { t: "Completado", cls: "est-completado" },
+    cancelado:  { t: "Cancelado",  cls: "est-cancelado" }
+  };
+
+  function cargarServicios() {
+    $("estado-servicios").textContent = "";
+    $("estado-servicios").classList.remove("is-error");
+    $("lista-servicios").innerHTML = esqFilas(4);
+    var p = new URLSearchParams();
+    if (svFiltro.estado) p.set("estado", svFiltro.estado);
+    if (svFiltro.tipo) p.set("tipo", svFiltro.tipo);
+    if (svFiltro.q) p.set("q", svFiltro.q);
+    if (svFiltro.pagina > 1) p.set("pagina", svFiltro.pagina);
+    pedir("/api/panel/servicios" + (p.toString() ? "?" + p.toString() : ""))
+      .then(function (d) { pintarServicios(d); })
+      .catch(function () {
+        $("estado-servicios").textContent = "No se pudo cargar los servicios.";
+        $("estado-servicios").classList.add("is-error");
+      });
+  }
+
+  function pintarServicios(d) {
+    Array.prototype.forEach.call($("sv-estado").querySelectorAll("button"), function (b) {
+      var e = b.dataset.estado;
+      var n = e ? (d.counts[e] || 0)
+                : Object.keys(d.counts).reduce(function (a, k) { return a + d.counts[k]; }, 0);
+      b.setAttribute("aria-pressed", String(svFiltro.estado === e));
+      b.textContent = b.textContent.replace(/\s*\(\d+\)\s*$/, "") + " (" + n + ")";
+    });
+    if ($("sv-tipo").dataset.lleno !== "1") {
+      opciones($("sv-tipo"), (d.tipos || []).map(function (t) {
+        return { id: t.id, etiqueta: t.etiqueta + " (" + t.n + ")" };
+      }), "Todos los tipos", false);
+      $("sv-tipo").dataset.lleno = "1";
+      $("sv-tipo").value = svFiltro.tipo || "";
+    }
+
+    if (!d.servicios.length) {
+      $("lista-servicios").innerHTML = '<p class="vacio-ok">No hay servicios con ese filtro.</p>';
+    } else {
+      $("lista-servicios").innerHTML = d.servicios.map(function (s) {
+        var es = SV_ESTADO[s.estado] || { t: s.estado, cls: "mudo" };
+        var plata = "";
+        if (s.estado === "completado" && s.monto) {
+          plata = escHtml(colones(s.monto)) +
+            (s.estadoPago === "pagado" ? ' · <span class="pg-ok">pagado</span>'
+             : s.saldo > 0 ? ' · <span class="pg-bad">falta ' + escHtml(colones(s.saldo)) + "</span>" : "");
+        } else if (s.monto) { plata = escHtml(colones(s.monto)); }
+        return '<div class="toca-fila" data-cliente="' + s.clienteId + '">' +
+          '<div class="toca-quien"><b>' + escHtml(s.cliente) + "</b><small>" +
+            piezas([s.servicio, fechaLarga(s.fecha) + (s.hora ? " " + s.hora : ""), s.lugar]) +
+          "</small></div>" +
+          '<div class="toca-cuando" style="align-items:flex-end;gap:.35rem;">' +
+            '<span class="pastilla ' + es.cls + '">' + escHtml(es.t) + "</span>" +
+            (plata ? '<span class="num" style="font-size:.85rem;">' + plata + "</span>" : "") +
+            (s.proximo ? '<span class="dim" style="font-size:.75rem;">próximo ' + escHtml(fechaLarga(s.proximo)) + "</span>" : "") +
+          "</div>" +
+        "</div>";
+      }).join("");
+    }
+
+    if (d.paginas > 1) {
+      $("servicios-pag").hidden = false;
+      $("sv-pag-txt").textContent = "Página " + d.pagina + " de " + d.paginas + " · " + d.total + " servicios";
+      $("sv-antes").disabled = d.pagina <= 1;
+      $("sv-despues").disabled = d.pagina >= d.paginas;
+    } else {
+      $("servicios-pag").hidden = true;
+    }
+  }
+
+  $("sv-estado").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-estado]");
+    if (!b) return;
+    svFiltro.estado = b.dataset.estado; svFiltro.pagina = 1;
+    cargarServicios();
+  });
+  $("sv-tipo").addEventListener("change", function () {
+    svFiltro.tipo = $("sv-tipo").value; svFiltro.pagina = 1;
+    cargarServicios();
+  });
+  $("sv-busca").addEventListener("input", function () {
+    clearTimeout(svReloj);
+    svReloj = setTimeout(function () {
+      svFiltro.q = $("sv-busca").value.trim(); svFiltro.pagina = 1;
+      cargarServicios();
+    }, 350);
+  });
+  $("sv-antes").addEventListener("click", function () {
+    if (svFiltro.pagina > 1) { svFiltro.pagina--; cargarServicios(); window.scrollTo({ top: 0 }); }
+  });
+  $("sv-despues").addEventListener("click", function () {
+    svFiltro.pagina++; cargarServicios(); window.scrollTo({ top: 0 });
+  });
+  $("lista-servicios").addEventListener("click", function (e) {
+    var f = e.target.closest("[data-cliente]");
+    if (f) verCliente(f.getAttribute("data-cliente"));
+  });
+  $("sv-agendar").addEventListener("click", function () { abrirCita({}); });
 
   /* =========================================================
      Pagos de un servicio (F3)
@@ -5595,11 +5753,12 @@
     menuYo(false);
 
     var esTabla = nueva === "cotizaciones" || nueva === "solicitudes";
-    $("top-busca").hidden = esTabla || nueva === "clientes";
+    $("top-busca").hidden = esTabla || nueva === "clientes" || nueva === "servicios";
     $("vista-hoy").hidden = nueva !== "hoy";
     $("vista-resumen").hidden = nueva !== "resumen";
     $("vista-nueva").hidden = nueva !== "nueva";
     $("vista-clientes").hidden = nueva !== "clientes";
+    $("vista-servicios").hidden = nueva !== "servicios";
     $("vista-cliente").hidden = true;
     $("vista-agenda").hidden = nueva !== "agenda";
     $("vista-tabla").hidden = !esTabla;
@@ -5611,6 +5770,7 @@
     if (nueva === "hoy" || nueva === "resumen") { if (!resumenCargado) cargarResumen(); }
     else if (nueva === "nueva") { cargarNueva(); }
     else if (nueva === "clientes") { cargarClientes(); }
+    else if (nueva === "servicios") { cargarServicios(); }
     else if (nueva === "agenda") { if (!agendaCargada) cargarAgenda(); else pintarAgendaLista(); }
     else { $("cuerpo-tabla").innerHTML = ""; cargarTabla(); }
   }
