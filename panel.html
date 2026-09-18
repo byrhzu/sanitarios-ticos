@@ -1259,6 +1259,32 @@
   .mant-cuando[hidden] { display: none; }
   .mant-cuando label { display: block; color: var(--p-tenue); margin-bottom: .3rem; }
   .mant-cuando select, .mant-cuando input { width: 100%; }
+  /* Campos obligatorios: un punto de acento en la etiqueta, en vez de
+     escribir "opcional" en todos los demás. Los que no lo llevan son
+     opcionales. */
+  .hoja .f.req > label::after { content: " •"; color: var(--p-acento); font-weight: 700; }
+  /* Autocompletar de nombre: al escribir, se despliegan los clientes que
+     calzan para escogerlos y no digitar todo. */
+  .nom-caja { position: relative; }
+  .ac-lista {
+    position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 40;
+    background: var(--p-tarj); border: 1px solid var(--p-linea); border-radius: 12px;
+    box-shadow: var(--p-alza); overflow: hidden; max-height: 15rem; overflow-y: auto;
+  }
+  .ac-item {
+    display: flex; flex-direction: column; gap: .1rem; width: 100%;
+    padding: .55rem .7rem; border: 0; border-top: 1px solid var(--p-linea);
+    background: transparent; color: var(--p-txt); font: inherit; text-align: left; cursor: pointer;
+  }
+  .ac-item:first-child { border-top: 0; }
+  .ac-item:hover { background: var(--p-sup2); }
+  .ac-item small { color: var(--p-tenue); font-family: var(--datos); font-size: .78rem; }
+  /* Card de agenda: se abre tocándola; WhatsApp y Hecho del mismo tamaño. */
+  .toca-fila.clic { cursor: pointer; }
+  .toca-fila.clic:hover { background: var(--p-sup2); border-color: var(--p-linea); }
+  .toca-fila.cita .toca-acc { flex: 1 1 100%; margin-left: 0; flex-wrap: nowrap; }
+  .toca-fila.cita .cita-bt { flex: 1 1 0; justify-content: center; min-width: 0; }
+  .toca-fila.cita .cita-mas { flex: 0 0 auto; }
 
   /* El calendario. Una rejilla de siete, con un punto en los días que
      tienen algo. El día se toca y filtra la lista de al lado. */
@@ -1577,7 +1603,11 @@
   .nueva-rejilla input, .nueva-rejilla select, .clave-caja input {
     font-size: 13.5px; border-radius: 8px; padding: .5rem .6rem;
     background: var(--p-fondo); color: var(--p-txt); border: 1px solid var(--p-linea);
+    /* Sin esto, los campos date/time traen un ancho mínimo propio que
+       desborda su columna y se montan unos sobre otros en el modal. */
+    width: 100%; min-width: 0; box-sizing: border-box;
   }
+  .nueva-rejilla .f { min-width: 0; }
   .nueva-rejilla input:focus, .nueva-rejilla select:focus, .clave-caja input:focus,
   .campo-libre:focus, .libre-caja input:focus {
     border-color: var(--p-primario); outline: none;
@@ -2549,40 +2579,39 @@
 
 <!-- ============ AGENDAR UN TRABAJO (cita) ============ -->
 <div class="velo" id="velo-cita" hidden>
-  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="c-titulo">
+  <div class="hoja hoja-form" role="dialog" aria-modal="true" aria-labelledby="c-titulo">
     <h2 id="c-titulo">Agendar un trabajo</h2>
-    <p class="dim" style="color:var(--p-tenue); margin:.3rem 0 1.1rem;">
-      Un trabajo que se va a hacer. Queda en el calendario y enlazado al cliente.
-    </p>
 
     <input type="hidden" id="c-id">
-    <div class="libre-caja">
-      <div class="nueva-rejilla">
-        <div class="f"><label for="c-servicio">Qué se va a hacer</label>
-          <select id="c-servicio"></select></div>
-        <div class="f"><label for="c-fecha">Qué día</label>
-          <input type="date" id="c-fecha"></div>
-        <div class="f"><label for="c-hora">A qué hora <span class="opc">opcional</span></label>
-          <input type="time" id="c-hora"></div>
-      </div>
+    <div class="nueva-rejilla" style="margin-top:.4rem;">
+      <div class="f req"><label for="c-servicio">Qué se va a hacer</label>
+        <select id="c-servicio"></select></div>
+      <div class="f req"><label for="c-fecha">Qué día</label>
+        <input type="date" id="c-fecha"></div>
+      <div class="f"><label for="c-hora">A qué hora</label>
+        <input type="time" id="c-hora"></div>
     </div>
 
     <div class="nueva-rejilla" style="margin-top:.9rem;">
-      <div class="f"><label for="c-telefono">Teléfono</label>
+      <div class="f req"><label for="c-telefono">Teléfono</label>
         <input id="c-telefono" type="tel" inputmode="tel" autocomplete="off" placeholder="8888-8888"></div>
-      <div class="f"><label for="c-nombre">Nombre</label>
-        <input id="c-nombre" type="text" autocomplete="off"></div>
+      <div class="f req nom-caja"><label for="c-nombre">Nombre</label>
+        <input id="c-nombre" type="text" autocomplete="off">
+        <div class="ac-lista" id="c-ac" hidden></div></div>
     </div>
+    <p class="ayuda" id="c-ya" hidden></p>
     <div class="nueva-rejilla" style="margin-top:.9rem;">
-      <div class="f"><label for="c-provincia">Provincia <span class="opc">opcional</span></label>
+      <div class="f"><label for="c-provincia">Provincia</label>
         <select id="c-provincia"></select></div>
       <div class="f"><label for="c-canton">Cantón</label>
         <select id="c-canton" disabled></select></div>
+      <div class="f"><label for="c-distrito">Distrito</label>
+        <select id="c-distrito" disabled></select></div>
     </div>
-    <p class="ayuda" id="c-ya" hidden></p>
-    <div class="dup-aviso" id="c-dup" hidden></div>
-    <div class="f" style="margin-top:.9rem;"><label for="c-detalle">Nota para la visita <span class="opc">opcional</span></label>
+    <div class="f" style="margin-top:.9rem;"><label for="c-detalle">Nota para la visita</label>
       <input id="c-detalle" type="text" placeholder="ej. llevar manguera larga, hay perro"></div>
+    <div class="f" style="margin-top:.9rem;"><label for="c-senas">Otras señas</label>
+      <input id="c-senas" type="text" placeholder="ej. portón verde, 300 m sur de la iglesia"></div>
 
     <p class="estado-linea" id="c-aviso" role="status" aria-live="polite"></p>
     <div class="hoja-pie">
@@ -4729,6 +4758,7 @@
     acc.push('<a class="bt" href="tel:+506' + escHtml(String(c.telefono).replace(/\D/g, "")) + '">' + ICO.tel + "Llamar</a>");
     acc.unshift('<button type="button" class="bt fuerte" id="cf-cotizar">' + ICO.mas + "Nueva cotización</button>");
     acc.push('<button type="button" class="bt" id="cf-editar-btn">' + ICO.lapiz + "Editar cliente</button>");
+    acc.push('<button type="button" class="bt malo" id="cf-eliminar">' + ICO.basura + "Eliminar</button>");
 
     var lugar = [c.distrito, c.canton, c.provincia].filter(Boolean).join(", ");
     var ops = Object.keys(d.canales).map(function (k) {
@@ -4826,7 +4856,6 @@
         '<div class="nueva-pie">' +
           '<button type="button" class="btn-fuerte" id="cf-guardar">Guardar</button>' +
           '<button type="button" class="btn-suave" id="cf-cancelar">Cancelar</button>' +
-          '<button type="button" class="btn-suave malo" id="cf-eliminar">Eliminar cliente</button>' +
           '<p class="estado-linea" id="cf-aviso" role="status" aria-live="polite"></p>' +
         "</div>" +
         "</div>" +   /* cierra #cf-editar */
@@ -4854,7 +4883,7 @@
       var ult = d.servicios[0];
       abrirCita({ cliente: {
         telefono: c.telefono, nombre: c.nombre,
-        provincia: c.provincia, canton: c.canton,
+        provincia: c.provincia, canton: c.canton, distrito: c.distrito, senas: c.senas,
         servicioKey: ult ? ult.servicio : null
       } });
     });
@@ -5579,6 +5608,8 @@
       opciones($("c-provincia"), Object.keys(GEO).map(function (k) { return { id: k, etiqueta: k }; }), "Sin anotar", false);
       $("c-canton").innerHTML = '<option value="">Escoja…</option>';
       $("c-canton").disabled = true;
+      $("c-distrito").innerHTML = '<option value="">Escoja…</option>';
+      $("c-distrito").disabled = true;
     }
     if (GEO) prov();
     else pedir("/api/geografia").then(function (r) { GEO = r.geografia; prov(); }).catch(function () {});
@@ -5589,6 +5620,15 @@
     var lista = (p && GEO && GEO[p]) ? Object.keys(GEO[p]) : [];
     $("c-canton").disabled = !lista.length;
     opciones($("c-canton"), lista.map(function (k) { return { id: k, etiqueta: k }; }), "Escoja…", false);
+    // Al cambiar la provincia, el distrito se limpia y espera cantón.
+    $("c-distrito").disabled = true;
+    opciones($("c-distrito"), [], "Escoja…", false);
+  });
+  $("c-canton").addEventListener("change", function () {
+    var p = $("c-provincia").value, ct = $("c-canton").value;
+    var lista = (p && ct && GEO && GEO[p] && GEO[p][ct]) ? GEO[p][ct] : [];
+    $("c-distrito").disabled = !lista.length;
+    opciones($("c-distrito"), lista.map(function (k) { return { id: k, etiqueta: k }; }), "Escoja…", false);
   });
 
   // opts: { fecha? } para una cita nueva en ese día,
@@ -5602,19 +5642,20 @@
 
     $("c-id").value = c ? c.id : "";
     $("c-titulo").textContent = c ? "Reagendar el trabajo" : "Agendar un trabajo";
-    ["c-telefono", "c-nombre", "c-detalle"].forEach(function (id) { $(id).value = ""; });
+    ["c-telefono", "c-nombre", "c-detalle", "c-senas"].forEach(function (id) { $(id).value = ""; });
     $("c-hora").value = c && c.hora ? c.hora : "";
     $("c-fecha").value = c ? c.fecha : (opts.fecha || hoyISO());
     $("c-aviso").textContent = "";
     $("c-aviso").classList.remove("is-error");
     $("c-ya").hidden = true;
-    $("c-dup").hidden = true;
+    $("c-ac").hidden = true;
     cTelReg = false;
 
     var origen = c || cli;
     if (origen) {
       $("c-telefono").value = origen.telefono || "";
       $("c-nombre").value = origen.nombre || "";
+      if (origen.senas) $("c-senas").value = origen.senas;
     }
     if (c) {
       if (c.detalle) $("c-detalle").value = c.detalle;
@@ -5624,12 +5665,14 @@
     var svc = c ? c.servicioKey : (cli && cli.servicioKey);
     var prov = (c && c.provincia) || (cli && cli.provincia);
     var cant = (c && c.canton) || (cli && cli.canton);
+    var dist = (c && c.distrito) || (cli && cli.distrito);
     function aplicar() {
       if (svc && OPC && OPC.servicios[svc]) $("c-servicio").value = svc;
       if (prov && GEO && GEO[prov]) {
         $("c-provincia").value = prov;
         $("c-provincia").dispatchEvent(new Event("change"));
-        if (cant) $("c-canton").value = cant;
+        if (cant) { $("c-canton").value = cant; $("c-canton").dispatchEvent(new Event("change")); }
+        if (dist) $("c-distrito").value = dist;
       }
     }
     if (OPC && GEO) aplicar(); else setTimeout(aplicar, 400);
@@ -5646,64 +5689,87 @@
   $("c-cerrar").addEventListener("click", cerrarCita);
   $("velo-cita").addEventListener("click", function (e) { if (e.target === $("velo-cita")) cerrarCita(); });
 
-  // Si el teléfono ya es de un cliente, se avisa y se trae el nombre.
-  var cReloj = null;
-  var cDupReloj = null, cTelReg = false;
+  var cReloj = null, cAcReloj = false, cTelReg = false;
 
-  function revisarDupC() {
-    if (cTelReg) { $("c-dup").hidden = true; return; }
+  // Trae la ficha completa de un cliente y llena TODO el formulario:
+  // teléfono, nombre, zona (provincia/cantón/distrito) y señas. Así no
+  // hay que volver a digitar nada de alguien que ya existe.
+  function llenarClienteEnCita(cl) {
+    if (!cl) return;
+    if (cl.telefono) $("c-telefono").value = cl.telefono;
+    $("c-nombre").value = cl.nombre || "";
+    $("c-senas").value = cl.senas || "";
+    cTelReg = true; $("c-ya").hidden = true; $("c-ac").hidden = true;
+    function apply() {
+      if (cl.provincia && GEO && GEO[cl.provincia]) {
+        $("c-provincia").value = cl.provincia;
+        $("c-provincia").dispatchEvent(new Event("change"));
+        if (cl.canton) { $("c-canton").value = cl.canton; $("c-canton").dispatchEvent(new Event("change")); }
+        if (cl.distrito) $("c-distrito").value = cl.distrito;
+      }
+    }
+    if (GEO) apply(); else setTimeout(apply, 300);
+  }
+
+  function traerYllenar(id) {
+    pedir("/api/panel/cliente?id=" + encodeURIComponent(id))
+      .then(function (d) { if (d && d.cliente) llenarClienteEnCita(d.cliente); })
+      .catch(function () {});
+  }
+
+  // Al escribir el nombre, se despliegan los clientes que calzan para
+  // escogerlos y no digitar todo.
+  function autocompletarNombre() {
     var nom = $("c-nombre").value.trim();
-    if (nom.length < 4) { $("c-dup").hidden = true; return; }
-    clearTimeout(cDupReloj);
-    cDupReloj = setTimeout(function () {
+    if (nom.length < 2) { $("c-ac").hidden = true; return; }
+    clearTimeout(cAcReloj);
+    cAcReloj = setTimeout(function () {
       pedir("/api/panel/buscar?q=" + encodeURIComponent(nom))
         .then(function (r) {
-          var telAct = $("c-telefono").value.replace(/\D/g, "");
-          var cl = (r.resultados || []).filter(function (x) {
-            if (x.tipo !== "cliente") return false;
-            var t = (x.detalle || "").replace(/\D/g, "");
-            return !(telAct.length === 8 && t.indexOf(telAct) === 0);
-          }).slice(0, 3);
-          if (!cl.length) { $("c-dup").hidden = true; return; }
-          $("c-dup").innerHTML = '<span class="dup-t">¿Ya existe? Puede ser el mismo cliente:</span>' +
-            '<div class="dup-chips">' + cl.map(function (x) {
-              var tel = (x.detalle || "").split("   ")[0];
-              return '<button type="button" class="dup-chip" data-dup-id="' + x.ir.id + '">' +
-                escHtml(x.etiqueta) + (tel ? ' <small>' + escHtml(tel) + "</small>" : "") + "</button>";
-            }).join("") + "</div>";
-          $("c-dup").hidden = false;
+          var cl = (r.resultados || []).filter(function (x) { return x.tipo === "cliente"; }).slice(0, 6);
+          if (!cl.length) { $("c-ac").hidden = true; return; }
+          $("c-ac").innerHTML = cl.map(function (x) {
+            return '<button type="button" class="ac-item" data-ac-id="' + x.ir.id + '">' +
+              "<b>" + escHtml(x.etiqueta) + "</b>" +
+              (x.detalle ? "<small>" + escHtml(x.detalle) + "</small>" : "") + "</button>";
+          }).join("");
+          $("c-ac").hidden = false;
         })
-        .catch(function () { $("c-dup").hidden = true; });
-    }, 400);
+        .catch(function () { $("c-ac").hidden = true; });
+    }, 250);
   }
 
   $("c-telefono").addEventListener("input", function () {
     var d = $("c-telefono").value.replace(/\D/g, "");
     $("c-ya").hidden = true;
     cTelReg = false;
-    if (d.length !== 8) { revisarDupC(); return; }
+    if (d.length !== 8) return;
     clearTimeout(cReloj);
     cReloj = setTimeout(function () {
       pedir("/api/panel/buscar?q=" + encodeURIComponent(d))
         .then(function (r) {
           var x = (r.resultados || []).filter(function (y) { return y.tipo === "cliente"; })[0];
-          if (!x) { revisarDupC(); return; }
-          cTelReg = true;
-          $("c-dup").hidden = true;
-          $("c-ya").textContent = "Ya está registrado: " + x.etiqueta + ".";
+          if (!x) return;
+          // Ya existe: se trae toda su ficha y se llena el formulario.
+          $("c-ya").textContent = "Ya está registrado: " + x.etiqueta + ". Se trajeron sus datos.";
           $("c-ya").hidden = false;
-          if (!$("c-nombre").value) $("c-nombre").value = String(x.etiqueta).split(" · ")[0] || "";
+          traerYllenar(x.ir.id);
         })
         .catch(function () {});
     }, 350);
   });
 
-  $("c-nombre").addEventListener("input", revisarDupC);
-  $("c-dup").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-dup-id]");
+  $("c-nombre").addEventListener("input", autocompletarNombre);
+  // El clic (mousedown, antes del blur) escoge un cliente y llena todo.
+  $("c-ac").addEventListener("mousedown", function (e) {
+    var b = e.target.closest("[data-ac-id]");
     if (!b) return;
-    cerrarCita();
-    verCliente(b.getAttribute("data-dup-id"));
+    e.preventDefault();
+    $("c-ac").hidden = true;
+    traerYllenar(b.getAttribute("data-ac-id"));
+  });
+  $("c-nombre").addEventListener("blur", function () {
+    setTimeout(function () { $("c-ac").hidden = true; }, 150);
   });
 
   function guardarCita() {
@@ -5718,6 +5784,7 @@
         id: $("c-id").value || undefined,
         telefono: $("c-telefono").value, nombre: $("c-nombre").value,
         provincia: $("c-provincia").value, canton: $("c-canton").value,
+        distrito: $("c-distrito").value, senas: $("c-senas").value,
         servicio: $("c-servicio").value, fecha: $("c-fecha").value,
         hora: $("c-hora").value, detalle: $("c-detalle").value
       })
@@ -6113,15 +6180,15 @@
   // Una cita en la lista, con sus acciones. Vale para la vista de citas y
   // para el día escogido en el calendario.
   function filaCita(c) {
+    // Card más limpia: se abre el cliente tocándola (como en Clientes).
+    // Solo quedan WhatsApp, Hecho y "⋯" (el resto de acciones va ahí).
     var acc = [];
-    if (c.wa) acc.push('<a class="bt wa" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Confirmar</a>");
-    acc.push('<button type="button" class="bt" data-cliente="' + c.clienteId + '">Ver</button>');
-    acc.push('<button type="button" class="bt" data-reagendar="' + c.id + '">Reagendar</button>');
-    acc.push('<button type="button" class="bt fuerte" data-hecho="' + c.id + '">Hecho</button>');
-    acc.push('<button type="button" class="bt" data-menu-cita="' + c.id + '" title="Más acciones" aria-label="Más acciones">' + ICO.puntos + "</button>");
+    if (c.wa) acc.push('<a class="bt wa cita-bt" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
+    acc.push('<button type="button" class="bt fuerte cita-bt" data-hecho="' + c.id + '">Hecho</button>');
+    acc.push('<button type="button" class="bt cita-mas" data-menu-cita="' + c.id + '" title="Más acciones" aria-label="Más acciones">' + ICO.puntos + "</button>");
 
     var atrasada = c.dias < 0;
-    return '<div class="toca-fila cita' + (atrasada ? " vencido" : "") + '">' +
+    return '<div class="toca-fila cita clic' + (atrasada ? " vencido" : "") + '" data-ver-cliente="' + c.clienteId + '" role="button" tabindex="0">' +
       '<div class="toca-quien"><b>' + escHtml(c.nombre) + "</b><small>" +
         piezas([c.servicio, c.lugar, c.hora ? c.hora + " h" : "", c.detalle]) +
       "</small></div>" +
@@ -6197,7 +6264,12 @@
 
   $("agenda-lista").addEventListener("click", function (e) {
     var b = e.target.closest("[data-cliente],[data-reagendar],[data-hecho],[data-cancelar],[data-eliminar-serv],[data-agendar-dia],[data-menu-cita]");
-    if (!b) return;
+    if (!b) {
+      // Clic en el cuerpo de la card (no en un botón/enlace) → ver cliente.
+      var card = e.target.closest("[data-ver-cliente]");
+      if (card && !e.target.closest("a,button")) return verCliente(card.getAttribute("data-ver-cliente"));
+      return;
+    }
     if (b.dataset.cliente != null) return verCliente(b.dataset.cliente);
     if (b.dataset.agendarDia != null) return abrirCita({ fecha: b.dataset.agendarDia });
     var buscar = b.dataset.reagendar || b.dataset.hecho || b.dataset.cancelar || b.dataset.eliminarServ || b.dataset.menuCita;
@@ -6210,6 +6282,13 @@
     if (b.dataset.hecho != null) return marcarCitaHecha(cita);
     if (b.dataset.cancelar != null) return cancelarCita(cita);
     if (b.dataset.eliminarServ != null) return eliminarServicio(cita);
+  });
+
+  // Enter/Espacio sobre una card de la agenda abre el cliente.
+  $("agenda-lista").addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    var card = e.target.closest("[data-ver-cliente]");
+    if (card && e.target === card) { e.preventDefault(); verCliente(card.getAttribute("data-ver-cliente")); }
   });
 
   // Eliminar un trabajo programado creado por error → a la papelera

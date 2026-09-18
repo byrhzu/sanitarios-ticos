@@ -1228,8 +1228,8 @@ async function guardarCliente(env, d) {
   if (!tel.ok) return null;
 
   await env.DB.prepare(
-    `INSERT INTO clientes (nombre, telefono, cedula, correo, provincia, canton, distrito, actualizado)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, datetime('now'))
+    `INSERT INTO clientes (nombre, telefono, cedula, correo, provincia, canton, distrito, senas, actualizado)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, datetime('now'))
      ON CONFLICT(telefono) DO UPDATE SET
        nombre      = COALESCE(NULLIF(excluded.nombre, ''), clientes.nombre),
        cedula      = COALESCE(NULLIF(excluded.cedula, ''), clientes.cedula),
@@ -1237,11 +1237,12 @@ async function guardarCliente(env, d) {
        provincia   = COALESCE(NULLIF(excluded.provincia, ''), clientes.provincia),
        canton      = COALESCE(NULLIF(excluded.canton, ''), clientes.canton),
        distrito    = COALESCE(NULLIF(excluded.distrito, ''), clientes.distrito),
+       senas       = COALESCE(NULLIF(excluded.senas, ''), clientes.senas),
        actualizado = datetime('now')`
   ).bind(
     texto(d.nombre, 120) || "Sin nombre", tel.valor, texto(d.cedula, 20) || "",
     texto(d.correo, 120) || "", texto(d.provincia, 40) || "",
-    texto(d.canton, 60) || "", texto(d.distrito, 80) || ""
+    texto(d.canton, 60) || "", texto(d.distrito, 80) || "", texto(d.senas, 200) || ""
   ).run();
 
   const fila = await env.DB.prepare(`SELECT id, meses FROM clientes WHERE telefono = ?`)
@@ -2131,7 +2132,7 @@ async function agendaPanel(request, env) {
     try {
       const cr = await env.DB.prepare(
         `SELECT s.id, s.cliente_id, s.servicio, s.detalle, s.fecha, s.hora, s.nota,
-                c.nombre, c.telefono, c.provincia, c.canton,
+                c.nombre, c.telefono, c.provincia, c.canton, c.distrito, c.senas,
                 CAST(julianday(s.fecha) - julianday(date('now','-6 hours')) AS INTEGER) AS dias
          FROM servicios s
          JOIN clientes c ON c.id = s.cliente_id
@@ -2144,6 +2145,7 @@ async function agendaPanel(request, env) {
         servicioKey: c.servicio,             // la clave cruda, para reabrir el formulario
         detalle: c.detalle || null,
         provincia: c.provincia || null, canton: c.canton || null,
+        distrito: c.distrito || null, senas: c.senas || null,
         lugar: [c.canton, c.provincia].filter(Boolean).join(", ") || null,
         fecha: c.fecha, hora: c.hora || null, nota: c.nota || null, dias: c.dias,
         wa: waDe(c.telefono, "Buenas" + (c.nombre ? " " + primerNombre(c.nombre) : "") +
@@ -2208,7 +2210,7 @@ async function guardarCita(request, env) {
     // El cliente es la fuente de verdad de la ubicación: se guarda ahí, no
     // en cada trabajo. Agendar crea o reconoce al cliente por teléfono.
     const cliente = await guardarCliente(env, Object.assign({}, persona.datos, {
-      provincia, canton, distrito: texto(cuerpo.distrito, 80)
+      provincia, canton, distrito: texto(cuerpo.distrito, 80), senas: texto(cuerpo.senas, 200)
     }));
     if (!cliente) return json({ ok: false, error: "No se pudo enlazar el cliente" }, 500);
 
