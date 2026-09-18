@@ -2126,3 +2126,37 @@ Correcciones de Byron sobre el flujo de crear y compartir.
   de title/text/url, que es lo que metía el enlace). Si el marco no
   pinta el PDF (iOS es quisquilloso con los PDF embebidos), hay un enlace
   de respaldo para abrirlo.
+
+## 44 · La Agenda ahora agenda de verdad
+
+- **El problema.** La "Agenda" no guardaba nada: era una vista calculada
+  (el último servicio de cada cliente + los meses = "a quién le toca").
+  El encargado quiso anotar un trabajo para mañana y no tenía dónde: los
+  `servicios` son lo YA hecho, no lo que viene. Metí una tabla nueva,
+  `citas` (trabajos programados), aparte de `servicios` para no correrle
+  el recordatorio ni sumar en lo cobrado algo que nadie ha cobrado.
+
+- **La agenda pasa a ser lo primero.** El calendario y "Trabajos
+  agendados" van arriba, con un botón grande "+ Agendar servicio". Las
+  cifras de recordatorios (a quién le toca) bajan: son para consultar,
+  no el día a día. Inspirado en cómo abren Apple/Microsoft Calendar: el
+  mes y lo que viene, no un tablero de números.
+
+- **Dos marcas en el calendario.** Un aro naranja con punto = trabajo
+  agendado (cita). El fondo de color (ámbar/rojo) = recordatorio que le
+  toca/venció. Un día puede tener las dos. Hay leyenda debajo.
+
+- **Todo enlaza con el cliente.** Agendar entra por el teléfono, igual
+  que el resto del panel: crea o reconoce al cliente. Se puede agendar
+  desde el botón de la agenda, tocando un día del calendario, o desde la
+  ficha del cliente (botón "Agendar servicio" en el Historial).
+
+- **Ciclo de una cita.** Confirmar (WhatsApp) · Ver (cliente) ·
+  Reagendar (mueve la fecha) · Hecho (abre "anotar trabajo" prellenado,
+  para que el servicio real nazca con su monto y de paso cierra la cita)
+  · Cancelar. La cita nunca se borra: queda como historia (hecho/cancelado).
+
+- **Migración.** Necesita `tools/crear-citas.sql` pegado una vez en la
+  consola D1. Si la tabla falta, la agenda de recordatorios sigue
+  funcionando (las citas caen a lista vacía) — pero agendar dará error
+  hasta correrla.

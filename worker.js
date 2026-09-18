@@ -1181,6 +1181,12 @@ function mesYAno(iso) {
   return p.length >= 2 ? MESES_LARGO[Number(p[1]) - 1] + " de " + p[0] : "";
 }
 
+// "el 18 de setiembre" — para confirmarle una cita al cliente.
+function fechaTexto(iso) {
+  const p = String(iso || "").split("-");
+  return p.length === 3 ? "el " + Number(p[2]) + " de " + MESES_LARGO[Number(p[1]) - 1] : "";
+}
+
 /* Crea el cliente o lo actualiza si ya existe. El teléfono es la llave:
    la cédula mucha gente no la da y el correo se pierde, pero el número
    siempre está. Los datos nuevos sólo pisan a los viejos cuando traen
@@ -1604,19 +1610,144 @@ async function agendaPanel(request, env) {
     }));
 
     const activos = items.filter((i) => i.recordatorio);
+
+    /* Las citas: trabajos programados que todavía no se hacen. Salen de
+       su propia tabla, no de `servicios`. Sólo las pendientes van al
+       calendario; las hechas y las canceladas son historia. */
+    let citas = [];
+    try {
+      const cr = await env.DB.prepare(
+        `SELECT id, cliente_id, nombre, telefono, provincia, canton,
+                servicio, detalle, fecha, hora, nota,
+                CAST(julianday(fecha) - julianday(date('now','-6 hours')) AS INTEGER) AS dias
+         FROM citas WHERE estado = 'pendiente' ORDER BY fecha, hora, id`
+      ).all();
+      citas = (cr.results || []).map((c) => ({
+        id: c.id, clienteId: c.cliente_id, nombre: c.nombre, telefono: c.telefono || null,
+        servicio: etiqueta(c.servicio, null, "servicio"),
+        servicioKey: c.servicio,             // la clave cruda, para reabrir el formulario
+        detalle: c.detalle || null,
+        provincia: c.provincia || null, canton: c.canton || null,
+        lugar: [c.canton, c.provincia].filter(Boolean).join(", ") || null,
+        fecha: c.fecha, hora: c.hora || null, nota: c.nota || null, dias: c.dias,
+        wa: waDe(c.telefono, "Buenas" + (c.nombre ? " " + primerNombre(c.nombre) : "") +
+                 ", le confirmo de Sanitarios Ticos la visita para " + fechaTexto(c.fecha) +
+                 (c.hora ? " a las " + c.hora : "") + ".")
+      }));
+    } catch (e) {
+      // Si la tabla todavía no existe (falta correr la migración), la
+      // agenda de recordatorios sigue funcionando sin las citas.
+      console.error("No se pudieron leer las citas:", e);
+    }
+
     return json({
       ok: true,
       items,
+      citas,
       resumen: {
         vencidos: activos.filter((i) => i.dias < 0).length,
         mes:      activos.filter((i) => i.dias >= 0 && i.dias <= 30).length,
         trimestre:activos.filter((i) => i.dias >= 0 && i.dias <= 90).length,
-        apagados: items.length - activos.length
+        apagados: items.length - activos.length,
+        citas:    citas.length
       }
     });
   } catch (e) {
     console.error("Error al armar la agenda:", e);
     return json({ ok: false, error: "No se pudo consultar" }, 500);
+  }
+}
+
+/* -------------------------------------------------------------
+   Agendar un trabajo (crear o mover una cita)
+
+   Sin `id` crea; con `id` mueve/edita la que ya existe. La cita SIEMPRE
+   queda enlazada a un cliente: el teléfono lo crea o lo reconoce, igual
+   que "anotar un trabajo". Lo que cambia es que acá no nace ningún
+   servicio ni se toca lo cobrado — es un plan, no un hecho.
+   ------------------------------------------------------------- */
+async function guardarCita(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+
+  let cuerpo;
+  try { cuerpo = await request.json(); }
+  catch { return json({ ok: false, error: "Formato inválido" }, 400); }
+
+  const persona = limpiarDatosPersona(cuerpo, ["nombre", "telefono"]);
+  if (persona.error) return json({ ok: false, error: persona.error }, 400);
+
+  const fecha = soloFecha(cuerpo.fecha);
+  if (!fecha) return json({ ok: false, error: "Falta la fecha del trabajo" }, 400);
+  if (!texto(cuerpo.servicio, 40)) return json({ ok: false, error: "Falta decir qué trabajo es" }, 400);
+
+  const provincia = texto(cuerpo.provincia, 40);
+  const canton = texto(cuerpo.canton, 60);
+  if (provincia && !direccionValida(provincia, canton, null)) {
+    return json({ ok: false, error: "Esa dirección no existe en la lista de Costa Rica" }, 400);
+  }
+
+  // La hora es opcional; si viene, se guarda como HH:MM y nada más.
+  const hm = String(cuerpo.hora || "").match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+  const hora = hm ? (hm[1].padStart(2, "0") + ":" + hm[2]) : null;
+
+  try {
+    const cliente = await guardarCliente(env, Object.assign({}, persona.datos, {
+      provincia, canton, distrito: texto(cuerpo.distrito, 80)
+    }));
+    if (!cliente) return json({ ok: false, error: "No se pudo enlazar el cliente" }, 500);
+
+    const campos = [
+      cliente.id, texto(cuerpo.nombre, 120) || persona.datos.nombre,
+      persona.datos.telefono, provincia || null, canton || null,
+      texto(cuerpo.servicio, 40), texto(cuerpo.detalle, 200) || null,
+      fecha, hora, texto(cuerpo.nota, 300) || null
+    ];
+
+    const id = parseInt(cuerpo.id, 10);
+    if (Number.isFinite(id)) {
+      await env.DB.prepare(
+        `UPDATE citas SET cliente_id=?1, nombre=?2, telefono=?3, provincia=?4, canton=?5,
+                          servicio=?6, detalle=?7, fecha=?8, hora=?9, nota=?10, estado='pendiente'
+         WHERE id=?11`
+      ).bind(...campos, id).run();
+      return json({ ok: true, id, movida: true });
+    }
+
+    const r = await env.DB.prepare(
+      `INSERT INTO citas (cliente_id, nombre, telefono, provincia, canton,
+                          servicio, detalle, fecha, hora, nota)
+       VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)`
+    ).bind(...campos).run();
+
+    return json({ ok: true, id: r.meta && r.meta.last_row_id, clienteId: cliente.id });
+  } catch (e) {
+    console.error("No se pudo guardar la cita:", e);
+    return json({ ok: false, error: "No se pudo agendar" }, 500);
+  }
+}
+
+/* Cerrar una cita: 'hecho' (ya se hizo — el servicio se anota aparte) o
+   'cancelado'. No borra la fila: queda como historia de la agenda. */
+async function estadoCita(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+
+  let cuerpo;
+  try { cuerpo = await request.json(); }
+  catch { return json({ ok: false, error: "Formato inválido" }, 400); }
+
+  const id = parseInt(cuerpo.id, 10);
+  if (!Number.isFinite(id)) return json({ ok: false, error: "Cita inválida" }, 400);
+  if (["hecho", "cancelado", "pendiente"].indexOf(cuerpo.estado) === -1) {
+    return json({ ok: false, error: "Estado inválido" }, 400);
+  }
+
+  try {
+    await env.DB.prepare(`UPDATE citas SET estado = ?1 WHERE id = ?2`)
+      .bind(cuerpo.estado, id).run();
+    return json({ ok: true });
+  } catch (e) {
+    console.error("No se pudo cambiar la cita:", e);
+    return json({ ok: false, error: "No se pudo actualizar" }, 500);
   }
 }
 
@@ -2854,6 +2985,12 @@ export default {
     }
     if (url.pathname === "/api/panel/agenda" && request.method === "GET") {
       return agendaPanel(request, env);
+    }
+    if (url.pathname === "/api/panel/cita" && request.method === "POST") {
+      return guardarCita(request, env);
+    }
+    if (url.pathname === "/api/panel/cita/estado" && request.method === "POST") {
+      return estadoCita(request, env);
     }
     if (url.pathname === "/api/panel/buscar" && request.method === "GET") {
       return buscarPanel(request, env);

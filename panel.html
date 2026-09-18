@@ -713,7 +713,7 @@
   .rejilla.dos { grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr); }
   .rejilla.dos > .tarj { display: flex; flex-direction: column; }
   #cola { overflow-y: auto; max-height: 22rem; }
-  @media (max-width: 1050px) { .rejilla.dos { grid-template-columns: 1fr; } }
+  @media (max-width: 1050px) { .rejilla.dos { grid-template-columns: minmax(0, 1fr); } }
 
   /* ---------- Cifras ---------- */
   /* Cada una es un botón: tocar el 2 de "sin atender" abre esas dos. */
@@ -1204,6 +1204,36 @@
   .cal button.vencido { background: var(--est-mal-bg); color: var(--est-mal-tx); font-weight: 600; }
   .cal button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--p-primario); }
   .cal i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+  /* Los puntos van en fila bajo el número: uno por tipo de marca. */
+  .cal .puntos { display: flex; gap: 2px; height: 5px; align-items: center; }
+  /* Una cita (trabajo agendado) se marca con un aro naranja y un punto
+     naranja, para que se distinga del color de fondo de los
+     recordatorios: un día puede tener las dos cosas. */
+  .cal button.tiene-cita { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--p-acento) 60%, transparent); }
+  .cal button.tiene-cita[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--p-primario); }
+  .cal i.pt-cita { width: 5px; height: 5px; background: var(--p-acento); }
+  .cal button.hoy i.pt-cita { background: #fff; }
+
+  .cal-leyenda {
+    display: flex; flex-wrap: wrap; gap: .3rem 1rem; margin-top: .8rem;
+    font-size: .74rem; color: var(--p-tenue);
+  }
+  .cal-leyenda span { display: inline-flex; align-items: center; gap: .35rem; }
+  .cal-leyenda i { width: 9px; height: 9px; border-radius: 3px; }
+  .cal-leyenda .lg-cita { background: transparent; box-shadow: inset 0 0 0 1.5px var(--p-acento); }
+  .cal-leyenda .lg-toca { background: var(--est-espera-bg); }
+  .cal-leyenda .lg-venc { background: var(--est-mal-bg); }
+
+  .agenda-cab {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; margin: 0 0 1rem;
+  }
+  .agenda-cab h2 { margin: 0; }
+  #btn-cita { display: inline-flex; align-items: center; gap: .4rem; }
+
+  /* La cita en la lista: hora y la etiqueta "Agendado" al frente. */
+  .toca-cuando.es-cita { color: var(--p-acento); font-weight: 600; }
+  .cita-hora { font-variant-numeric: tabular-nums; }
   /* El mes y el año, tocables. Se ven como el título porque lo son; el
      subrayado punteado es lo único que avisa que además se pueden
      apretar, sin convertirlos en dos botones que compitan con el riel. */
@@ -1297,7 +1327,7 @@
   /* Lo vencido lo marca la pastilla roja, no el naranja de la marca. */
   .toca-cuando { display: flex; flex-direction: column; align-items: flex-end; gap: .2rem; }
   .toca-cuando small { color: var(--p-tenue); font-size: .74rem; }
-  .toca-acc { display: flex; gap: .4rem; margin-left: auto; }
+  .toca-acc { display: flex; gap: .4rem; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
 
   /* ---------- Avisos ----------
      Reemplazan al alert() del navegador, que congela la página, no se
@@ -2103,7 +2133,16 @@
          reciente. -->
     <div class="vista" id="vista-agenda" hidden>
       <p class="estado-linea" id="estado-agenda" role="status" aria-live="polite">Cargando…</p>
-      <div class="rejilla cifras escalona" id="agenda-cifras"></div>
+
+      <!-- La agenda de primero: el calendario y lo que viene. Las cifras
+           de recordatorios bajan, que son para consultar, no el día a día. -->
+      <div class="agenda-cab">
+        <h2>Agenda</h2>
+        <button type="button" class="btn-fuerte" id="btn-cita">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Agendar servicio
+        </button>
+      </div>
 
       <div class="rejilla dos">
         <div class="tarj">
@@ -2122,13 +2161,21 @@
             </span>
           </div>
           <div class="cal" id="cal"></div>
+          <!-- Qué significa cada marca del calendario. -->
+          <div class="cal-leyenda">
+            <span><i class="lg-cita"></i>Agendado</span>
+            <span><i class="lg-toca"></i>Le toca</span>
+            <span><i class="lg-venc"></i>Vencido</span>
+          </div>
         </div>
 
         <div class="tarj">
-          <div class="tarj-h"><h2 id="agenda-titulo">Le toca</h2><span class="meta" id="agenda-n"></span></div>
+          <div class="tarj-h"><h2 id="agenda-titulo">Trabajos agendados</h2><span class="meta" id="agenda-n"></span></div>
           <div id="agenda-lista" class="escalona"></div>
         </div>
       </div>
+
+      <div class="rejilla cifras escalona" id="agenda-cifras"></div>
     </div>
 
     <!-- ============ NUEVA COTIZACIÓN ============ -->
@@ -2297,6 +2344,50 @@
       <button type="button" class="btn-suave" id="t-cerrar">Cancelar</button>
       <button type="button" class="btn-suave" id="t-solo-cliente">Sólo guardar el cliente</button>
       <button type="button" class="btn-fuerte" id="t-guardar">Guardar el trabajo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ AGENDAR UN TRABAJO (cita) ============ -->
+<div class="velo" id="velo-cita" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="c-titulo">
+    <h2 id="c-titulo">Agendar un trabajo</h2>
+    <p class="dim" style="color:var(--p-tenue); margin:.3rem 0 1.1rem;">
+      Un trabajo que se va a hacer. Queda en el calendario y enlazado al cliente.
+    </p>
+
+    <input type="hidden" id="c-id">
+    <div class="libre-caja">
+      <div class="nueva-rejilla">
+        <div class="f"><label for="c-servicio">Qué se va a hacer</label>
+          <select id="c-servicio"></select></div>
+        <div class="f"><label for="c-fecha">Qué día</label>
+          <input type="date" id="c-fecha"></div>
+        <div class="f"><label for="c-hora">A qué hora <span class="opc">opcional</span></label>
+          <input type="time" id="c-hora"></div>
+      </div>
+    </div>
+
+    <div class="nueva-rejilla" style="margin-top:.9rem;">
+      <div class="f"><label for="c-telefono">Teléfono</label>
+        <input id="c-telefono" type="tel" inputmode="tel" autocomplete="off" placeholder="8888-8888"></div>
+      <div class="f"><label for="c-nombre">Nombre</label>
+        <input id="c-nombre" type="text" autocomplete="off"></div>
+    </div>
+    <div class="nueva-rejilla" style="margin-top:.9rem;">
+      <div class="f"><label for="c-provincia">Provincia <span class="opc">opcional</span></label>
+        <select id="c-provincia"></select></div>
+      <div class="f"><label for="c-canton">Cantón</label>
+        <select id="c-canton" disabled></select></div>
+    </div>
+    <p class="ayuda" id="c-ya" hidden></p>
+    <div class="f" style="margin-top:.9rem;"><label for="c-detalle">Nota para la visita <span class="opc">opcional</span></label>
+      <input id="c-detalle" type="text" placeholder="ej. llevar manguera larga, hay perro"></div>
+
+    <p class="estado-linea" id="c-aviso" role="status" aria-live="polite"></p>
+    <div class="hoja-pie">
+      <button type="button" class="btn-suave" id="c-cerrar">Cancelar</button>
+      <button type="button" class="btn-fuerte" id="c-guardar">Agendar</button>
     </div>
   </div>
 </div>
@@ -4359,9 +4450,9 @@
         "</div>" +   /* cierra #cf-editar */
       "</div>" +
       '<div class="tarj" style="margin-top:1rem;">' +
-        '<div class="tarj-h"><h2>Historial</h2><span class="meta">' +
-          (d.servicios.length ? d.servicios.length + (d.servicios.length === 1 ? " trabajo" : " trabajos") : "") +
-        "</span></div>" + hist +
+        '<div class="tarj-h"><h2>Historial</h2>' +
+          '<button type="button" class="bt fuerte" id="cf-agendar">' + ICO.mas + "Agendar servicio</button>" +
+        "</div>" + hist +
       "</div>";
 
     $("cf-editar-btn").addEventListener("click", function () {
@@ -4374,6 +4465,16 @@
     $("cf-cotizar").addEventListener("click", function () {
       prellenar = c;
       irA("nueva", {});
+    });
+
+    $("cf-agendar").addEventListener("click", function () {
+      // Le agenda un trabajo a este cliente, con el último servicio ya escogido.
+      var ult = d.servicios[0];
+      abrirCita({ cliente: {
+        telefono: c.telefono, nombre: c.nombre,
+        provincia: c.provincia, canton: c.canton,
+        servicioKey: ult ? ult.servicio : null
+      } });
     });
 
     $("cf-guardar").addEventListener("click", function () {
@@ -4424,7 +4525,7 @@
 
   var AGENDA = null, agendaCargada = false;
   var calMes = null;                       // primer día del mes mostrado
-  var agendaFiltro = { tipo: "pronto" };   // pronto | vencidos | trimestre | dia
+  var agendaFiltro = { tipo: "citas" };     // citas | pronto | vencidos | trimestre | apagados | dia
 
   /* =========================================================
      Anotar un trabajo a mano
@@ -4437,7 +4538,16 @@
 
      El teléfono manda, igual que en todo el panel: si ya existe se
      actualiza, y si no, se crea. */
-  function abrirTrabajo() {
+  // Al marcar una cita como "Hecho" se abre esta misma hoja prellenada:
+  // así el trabajo real nace con su monto y detalle, y de paso la cita
+  // queda cerrada. Se recuerda cuál para marcarla al guardar.
+  var citaAlGuardar = null;
+
+  function abrirTrabajo(pre) {
+    pre = pre || null;
+    citaAlGuardar = (pre && pre.citaId) || null;
+    $("t-titulo").textContent = pre ? "Anotar el trabajo hecho" : "Anotar un trabajo";
+
     $("t-meses").innerHTML = PERIODOS.map(function (m) {
       return '<option value="' + m + '"' + (m === 24 ? " selected" : "") + ">" + textoPeriodo(m) + "</option>";
     }).join("");
@@ -4453,6 +4563,7 @@
       opciones($("t-servicio"), Object.keys(OPC.servicios).map(function (k) {
         return { id: k, etiqueta: OPC.servicios[k].nombre };
       }), "Escoja…");
+      if (pre && pre.servicio) $("t-servicio").value = pre.servicio;
     }
     if (OPC) llenarServicios();
     else {
@@ -4467,6 +4578,11 @@
       }), "Sin anotar", false);
       $("t-canton").innerHTML = '<option value="">Escoja…</option>';
       $("t-canton").disabled = true;
+      if (pre && pre.provincia && GEO[pre.provincia]) {
+        $("t-provincia").value = pre.provincia;
+        $("t-provincia").dispatchEvent(new Event("change"));
+        if (pre.canton) $("t-canton").value = pre.canton;
+      }
     }
     if (GEO) llenarProvincias();
     else {
@@ -4476,13 +4592,18 @@
 
     ["t-telefono", "t-nombre", "t-cedula", "t-correo", "t-senas", "t-monto", "t-detalle"]
       .forEach(function (id) { $(id).value = ""; });
+    if (pre) {
+      if (pre.telefono) $("t-telefono").value = pre.telefono;
+      if (pre.nombre) $("t-nombre").value = pre.nombre;
+      if (pre.detalle) $("t-detalle").value = pre.detalle;
+    }
     $("t-fecha").value = hoyISO();
     $("t-recordar").checked = true;
     $("t-aviso").textContent = "";
     $("t-aviso").classList.remove("is-error");
     $("t-ya").hidden = true;
     $("velo-trabajo").hidden = false;
-    $("t-telefono").focus();
+    $((pre ? "t-monto" : "t-telefono")).focus();
   }
 
   function cerrarTrabajo() { $("velo-trabajo").hidden = true; }
@@ -4546,15 +4667,26 @@
       })
     })
       .then(function (d) {
-        cerrarTrabajo();
-        avisar(d.conTrabajo
-          ? "Trabajo anotado" + (d.nuevo ? " y cliente registrado." : ".")
-          : (d.nuevo ? "Cliente registrado." : "Cliente actualizado."));
-        // El trabajo cambia lo cobrado y la agenda, así que las dos
-        // pantallas quedan marcadas como viejas.
-        resumenCargado = false;
-        agendaCargada = false;
-        cargarClientes();
+        // Si este trabajo venía de una cita, cerrarla (queda como hecha).
+        var cierre = citaAlGuardar
+          ? pedir("/api/panel/cita/estado", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: citaAlGuardar, estado: "hecho" })
+            }).catch(function () {})
+          : Promise.resolve();
+        citaAlGuardar = null;
+        cierre.then(function () {
+          cerrarTrabajo();
+          avisar(d.conTrabajo
+            ? "Trabajo anotado" + (d.nuevo ? " y cliente registrado." : ".")
+            : (d.nuevo ? "Cliente registrado." : "Cliente actualizado."));
+          // El trabajo cambia lo cobrado y la agenda, así que las dos
+          // pantallas quedan marcadas como viejas.
+          resumenCargado = false;
+          agendaCargada = false;
+          if (vista === "agenda") cargarAgenda();
+          cargarClientes();
+        });
       })
       .catch(function (err) {
         aviso.textContent = String((err && err.message) || "No se pudo guardar.");
@@ -4568,6 +4700,172 @@
 
   $("t-guardar").addEventListener("click", function () { guardarTrabajo(true); });
   $("t-solo-cliente").addEventListener("click", function () { guardarTrabajo(false); });
+
+  /* =========================================================
+     Agendar un trabajo (cita)
+
+     Una cita es un trabajo que se VA a hacer: queda en el calendario y
+     enlazado al cliente por el teléfono. No es un servicio todavía —eso
+     nace cuando se marca "Hecho"—, así que no toca lo cobrado ni corre
+     el recordatorio.
+     ========================================================= */
+  function llenarCitaOpciones() {
+    function serv() {
+      opciones($("c-servicio"), Object.keys(OPC.servicios).map(function (k) {
+        return { id: k, etiqueta: OPC.servicios[k].nombre };
+      }), "Escoja…");
+    }
+    if (OPC) serv();
+    else {
+      $("c-servicio").innerHTML = '<option value="">Cargando…</option>';
+      pedir("/api/cotizar/opciones").then(function (r) { OPC = r; serv(); })
+        .catch(function () { $("c-servicio").innerHTML = '<option value="">No se pudo cargar</option>'; });
+    }
+    function prov() {
+      opciones($("c-provincia"), Object.keys(GEO).map(function (k) { return { id: k, etiqueta: k }; }), "Sin anotar", false);
+      $("c-canton").innerHTML = '<option value="">Escoja…</option>';
+      $("c-canton").disabled = true;
+    }
+    if (GEO) prov();
+    else pedir("/api/geografia").then(function (r) { GEO = r.geografia; prov(); }).catch(function () {});
+  }
+
+  $("c-provincia").addEventListener("change", function () {
+    var p = $("c-provincia").value;
+    var lista = (p && GEO && GEO[p]) ? Object.keys(GEO[p]) : [];
+    $("c-canton").disabled = !lista.length;
+    opciones($("c-canton"), lista.map(function (k) { return { id: k, etiqueta: k }; }), "Escoja…", false);
+  });
+
+  // opts: { fecha? } para una cita nueva en ese día,
+  //       { cita }  para reagendar/editar una existente,
+  //       { cliente } para agendarle a un cliente ya abierto.
+  function abrirCita(opts) {
+    opts = opts || {};
+    var c = opts.cita || null;
+    var cli = opts.cliente || null;
+    llenarCitaOpciones();
+
+    $("c-id").value = c ? c.id : "";
+    $("c-titulo").textContent = c ? "Reagendar el trabajo" : "Agendar un trabajo";
+    ["c-telefono", "c-nombre", "c-detalle"].forEach(function (id) { $(id).value = ""; });
+    $("c-hora").value = c && c.hora ? c.hora : "";
+    $("c-fecha").value = c ? c.fecha : (opts.fecha || hoyISO());
+    $("c-aviso").textContent = "";
+    $("c-aviso").classList.remove("is-error");
+    $("c-ya").hidden = true;
+
+    var origen = c || cli;
+    if (origen) {
+      $("c-telefono").value = origen.telefono || "";
+      $("c-nombre").value = origen.nombre || "";
+    }
+    if (c) {
+      if (c.detalle) $("c-detalle").value = c.detalle;
+    }
+
+    // El servicio y la zona dependen de que ya hayan cargado las listas.
+    var svc = c ? c.servicioKey : (cli && cli.servicioKey);
+    var prov = (c && c.provincia) || (cli && cli.provincia);
+    var cant = (c && c.canton) || (cli && cli.canton);
+    function aplicar() {
+      if (svc && OPC && OPC.servicios[svc]) $("c-servicio").value = svc;
+      if (prov && GEO && GEO[prov]) {
+        $("c-provincia").value = prov;
+        $("c-provincia").dispatchEvent(new Event("change"));
+        if (cant) $("c-canton").value = cant;
+      }
+    }
+    if (OPC && GEO) aplicar(); else setTimeout(aplicar, 400);
+
+    $("velo-cita").hidden = false;
+    $((c || cli) ? "c-servicio" : "c-telefono").focus();
+  }
+
+  function cerrarCita() { $("velo-cita").hidden = true; }
+  $("btn-cita").addEventListener("click", function () {
+    // Si hay un día escogido en el calendario, se agenda para ese día.
+    abrirCita(agendaFiltro.tipo === "dia" ? { fecha: agendaFiltro.valor } : {});
+  });
+  $("c-cerrar").addEventListener("click", cerrarCita);
+  $("velo-cita").addEventListener("click", function (e) { if (e.target === $("velo-cita")) cerrarCita(); });
+
+  // Si el teléfono ya es de un cliente, se avisa y se trae el nombre.
+  var cReloj = null;
+  $("c-telefono").addEventListener("input", function () {
+    var d = $("c-telefono").value.replace(/\D/g, "");
+    $("c-ya").hidden = true;
+    if (d.length !== 8) return;
+    clearTimeout(cReloj);
+    cReloj = setTimeout(function () {
+      pedir("/api/panel/buscar?q=" + encodeURIComponent(d))
+        .then(function (r) {
+          var x = (r.resultados || []).filter(function (y) { return y.tipo === "cliente"; })[0];
+          if (!x) return;
+          $("c-ya").textContent = "Ya está registrado: " + x.etiqueta + ".";
+          $("c-ya").hidden = false;
+          if (!$("c-nombre").value) $("c-nombre").value = String(x.etiqueta).split(" · ")[0] || "";
+        })
+        .catch(function () {});
+    }, 350);
+  });
+
+  function guardarCita() {
+    var aviso = $("c-aviso");
+    aviso.classList.remove("is-error");
+    aviso.textContent = "Guardando…";
+    $("c-guardar").disabled = true;
+
+    pedir("/api/panel/cita", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: $("c-id").value || undefined,
+        telefono: $("c-telefono").value, nombre: $("c-nombre").value,
+        provincia: $("c-provincia").value, canton: $("c-canton").value,
+        servicio: $("c-servicio").value, fecha: $("c-fecha").value,
+        hora: $("c-hora").value, detalle: $("c-detalle").value
+      })
+    })
+      .then(function (d) {
+        cerrarCita();
+        avisar(d.movida ? "Cita reagendada." : "Trabajo agendado.");
+        agendaCargada = false;
+        // Que quede seleccionado el día de la cita para verla de una.
+        agendaFiltro = { tipo: "dia", valor: $("c-fecha").value };
+        cargarAgenda();
+      })
+      .catch(function (err) {
+        aviso.textContent = String((err && err.message) || "No se pudo agendar.");
+        aviso.classList.add("is-error");
+      })
+      .then(function () { $("c-guardar").disabled = false; });
+  }
+  $("c-guardar").addEventListener("click", guardarCita);
+
+  function marcarCitaHecha(c) {
+    // Abre "anotar trabajo" prellenado; al guardar, la cita queda cerrada.
+    abrirCita_cerrarSiAbierta();
+    abrirTrabajo({
+      citaId: c.id, telefono: c.telefono, nombre: c.nombre,
+      servicio: c.servicioKey, provincia: c.provincia, canton: c.canton,
+      detalle: c.detalle
+    });
+  }
+  function abrirCita_cerrarSiAbierta() { if (!$("velo-cita").hidden) cerrarCita(); }
+
+  function cancelarCita(c) {
+    if (!confirm("¿Cancelar la cita de " + c.nombre + "? No se borra el cliente.")) return;
+    pedir("/api/panel/cita/estado", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: c.id, estado: "cancelado" })
+    })
+      .then(function () {
+        avisar("Cita cancelada.");
+        agendaCargada = false;
+        cargarAgenda();
+      })
+      .catch(function (err) { avisar(String((err && err.message) || "No se pudo cancelar."), "mal"); });
+  }
 
   function cargarAgenda() {
     $("estado-agenda").textContent = "";
@@ -4608,12 +4906,12 @@
         (pie ? '<div class="cifra-p">' + escHtml(pie) + "</div>" : "") + "</button>";
     }
     $("agenda-cifras").innerHTML =
-      /* Sin pies. "Vencidos / ya pasó la fecha" y "Sin recordatorio / no
-         se les escribe" decían dos veces lo mismo, y el renglón de
-         abajo era el que no aportaba. La etiqueta se explica sola. */
+      /* La primera es la agenda de verdad: los trabajos ya programados.
+         Las otras cuatro son los recordatorios (a quién le toca), que se
+         consultan de vez en cuando, no todos los días. */
+      t(ICO.dia, r.citas || 0, "Agendados", "", false, "citas", "marca") +
       t(ICO.alerta, r.vencidos, "Vencidos", "", r.vencidos > 0, "vencidos", "mal") +
-      t(ICO.dia, r.mes, "Este mes", "", false, "pronto", "espera") +
-      t(ICO.sube, r.trimestre, "Próximos 90 días", "", false, "trimestre", "dato") +
+      t(ICO.sube, r.mes, "Le toca este mes", "", false, "pronto", "espera") +
       t(ICO.silencio, r.apagados, "Sin recordatorio", "", false, "apagados");
   }
 
@@ -4632,13 +4930,21 @@
     $("cal-mes").textContent = MES_LARGO[m];
     $("cal-anio").textContent = y;
 
-    // Cuántos caen cada día de este mes.
+    // Cuántos recordatorios caen cada día de este mes…
     var porDia = {};
     AGENDA.items.forEach(function (i) {
       if (!i.recordatorio) return;
       var p = i.proximo.split("-");
       if (Number(p[0]) === y && Number(p[1]) === m + 1) {
         porDia[Number(p[2])] = (porDia[Number(p[2])] || 0) + 1;
+      }
+    });
+    // …y cuántas citas (trabajos agendados).
+    var citaDia = {};
+    (AGENDA.citas || []).forEach(function (c) {
+      var p = c.fecha.split("-");
+      if (Number(p[0]) === y && Number(p[1]) === m + 1) {
+        citaDia[Number(p[2])] = (citaDia[Number(p[2])] || 0) + 1;
       }
     });
 
@@ -4661,14 +4967,20 @@
 
     for (var dia = 1; dia <= ultimo; dia++) {
       var n = porDia[dia] || 0;
+      var nc = citaDia[dia] || 0;
       var iso = y + "-" + String(m + 1).padStart(2, "0") + "-" + String(dia).padStart(2, "0");
       var vencido = n > 0 && iso < hoyISO();
       var cls = ["", n ? (vencido ? "vencido" : "con") : "",
-                 esMesDeHoy && dia === hoy.getDate() ? "hoy" : ""].join(" ").trim();
+                 nc ? "tiene-cita" : "",
+                 esMesDeHoy && dia === hoy.getDate() ? "hoy" : ""].join(" ").replace(/\s+/g, " ").trim();
+      var puntos = (n ? "<i></i>" : "") + (nc ? '<i class="pt-cita"></i>' : "");
+      var titulo = [];
+      if (nc) titulo.push(nc + (nc === 1 ? " agendado" : " agendados"));
+      if (n) titulo.push(n + (n === 1 ? " le toca" : " le tocan"));
       celdas.push('<button type="button" class="' + cls + '" data-dia="' + iso + '"' +
         (agendaFiltro.tipo === "dia" && agendaFiltro.valor === iso ? ' aria-pressed="true"' : "") +
-        (n ? ' title="' + n + (n === 1 ? " cliente" : " clientes") + '"' : "") + ">" +
-        dia + (n ? "<i></i>" : "") + "</button>");
+        (titulo.length ? ' title="' + titulo.join(" · ") + '"' : "") + ">" +
+        dia + (puntos ? '<span class="puntos">' + puntos + "</span>" : "") + "</button>");
     }
 
     // Y se completa la última fila con los primeros del mes que viene.
@@ -4683,7 +4995,7 @@
     if (!b) return;
     // Volver a tocar el mismo día lo deselecciona.
     agendaFiltro = (agendaFiltro.tipo === "dia" && agendaFiltro.valor === b.dataset.dia)
-      ? { tipo: "pronto" } : { tipo: "dia", valor: b.dataset.dia };
+      ? { tipo: "citas" } : { tipo: "dia", valor: b.dataset.dia };
     pintarCalendario();
     pintarAgendaLista();
   });
@@ -4769,53 +5081,105 @@
   });
 
   var TITULO_AGENDA = {
-    pronto: "Le toca ahora", vencidos: "Ya se pasó la fecha",
+    citas: "Trabajos agendados", pronto: "Le toca ahora", vencidos: "Ya se pasó la fecha",
     trimestre: "Próximos 90 días", apagados: "Sin recordatorio", dia: "Ese día"
   };
 
+  // Una cita en la lista, con sus acciones. Vale para la vista de citas y
+  // para el día escogido en el calendario.
+  function filaCita(c) {
+    var acc = [];
+    if (c.wa) acc.push('<a class="bt wa" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Confirmar</a>");
+    acc.push('<button type="button" class="bt" data-cliente="' + c.clienteId + '">Ver</button>');
+    acc.push('<button type="button" class="bt" data-reagendar="' + c.id + '">Reagendar</button>');
+    acc.push('<button type="button" class="bt fuerte" data-hecho="' + c.id + '">Hecho</button>');
+    acc.push('<button type="button" class="bt malo" data-cancelar="' + c.id + '">Cancelar</button>');
+
+    var atrasada = c.dias < 0;
+    return '<div class="toca-fila cita' + (atrasada ? " vencido" : "") + '">' +
+      '<div class="toca-quien"><b>' + escHtml(c.nombre) + "</b><small>" +
+        piezas([c.servicio, c.lugar, c.hora ? c.hora + " h" : "", c.detalle]) +
+      "</small></div>" +
+      '<span class="toca-cuando es-cita">' + escHtml(atrasada ? "atrasado" : cuando(c.dias)) + "</span>" +
+      '<div class="toca-acc">' + acc.join("") + "</div>" +
+    "</div>";
+  }
+
+  function filaToca(i) {
+    var acc = [];
+    if (i.wa && i.canal !== "correo") {
+      acc.push('<a class="bt wa" href="' + escHtml(i.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Recordar</a>");
+    }
+    if (i.correoEnlace && i.canal !== "whatsapp") {
+      acc.push('<a class="bt" href="' + escHtml(i.correoEnlace) + '">Correo</a>');
+    }
+    acc.push('<button type="button" class="bt" data-cliente="' + i.clienteId + '">Ver</button>');
+
+    return '<div class="toca-fila' + (i.dias < 0 ? " vencido" : "") + '">' +
+      '<div class="toca-quien"><b>' + escHtml(i.nombre) + "</b><small>" +
+        piezas([i.servicio, i.lugar, "último " + fechaLarga(i.fecha)]) +
+      "</small></div>" +
+      '<span class="toca-cuando">' + escHtml(cuando(i.dias)) + "</span>" +
+      '<div class="toca-acc">' + acc.join("") + "</div>" +
+    "</div>";
+  }
+
   function pintarAgendaLista() {
     var f = agendaFiltro;
+    var citas = AGENDA.citas || [];
+
+    // Vista de citas: todos los trabajos agendados, los atrasados primero.
+    if (f.tipo === "citas") {
+      $("agenda-titulo").textContent = TITULO_AGENDA.citas;
+      $("agenda-n").textContent = citas.length ? String(citas.length) : "";
+      $("agenda-lista").innerHTML = citas.length
+        ? citas.map(filaCita).join("")
+        : '<p class="vacio-ok">No hay nada agendado. Tocá “Agendar servicio”.</p>';
+      return;
+    }
+
+    // Un día del calendario: primero sus citas, luego a quién le toca ese día.
+    if (f.tipo === "dia") {
+      var cd = citas.filter(function (c) { return c.fecha === f.valor; });
+      var td = AGENDA.items.filter(function (i) { return i.recordatorio && i.proximo === f.valor; });
+      $("agenda-titulo").textContent = fechaLarga(f.valor);
+      $("agenda-n").textContent = (cd.length + td.length) ? String(cd.length + td.length) : "";
+      if (!cd.length && !td.length) {
+        $("agenda-lista").innerHTML =
+          '<p class="vacio-ok" style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">Nada ese día. ' +
+          '<button type="button" class="bt fuerte" data-agendar-dia="' + f.valor + '">Agendar acá</button></p>';
+        return;
+      }
+      $("agenda-lista").innerHTML = cd.map(filaCita).join("") + td.map(filaToca).join("");
+      return;
+    }
+
+    // Recordatorios (a quién le toca), como antes.
     var items = AGENDA.items.filter(function (i) {
       if (f.tipo === "apagados") return !i.recordatorio;
       if (!i.recordatorio) return false;
       if (f.tipo === "vencidos") return i.dias < 0;
       if (f.tipo === "trimestre") return i.dias >= 0 && i.dias <= 90;
-      if (f.tipo === "dia") return i.proximo === f.valor;
       return i.dias <= 30;                 // "pronto": lo vencido y lo del mes
     });
 
-    $("agenda-titulo").textContent = f.tipo === "dia"
-      ? fechaLarga(f.valor) : TITULO_AGENDA[f.tipo];
+    $("agenda-titulo").textContent = TITULO_AGENDA[f.tipo] || "Le toca";
     $("agenda-n").textContent = items.length ? String(items.length) : "";
-
-    if (!items.length) {
-      $("agenda-lista").innerHTML = '<p class="vacio-ok">Nadie por acá.</p>';
-      return;
-    }
-
-    $("agenda-lista").innerHTML = items.map(function (i) {
-      var acc = [];
-      if (i.wa && i.canal !== "correo") {
-        acc.push('<a class="bt wa" href="' + escHtml(i.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Recordar</a>");
-      }
-      if (i.correoEnlace && i.canal !== "whatsapp") {
-        acc.push('<a class="bt" href="' + escHtml(i.correoEnlace) + '">Correo</a>');
-      }
-      acc.push('<button type="button" class="bt" data-cliente="' + i.clienteId + '">Ver</button>');
-
-      return '<div class="toca-fila' + (i.dias < 0 ? " vencido" : "") + '">' +
-        '<div class="toca-quien"><b>' + escHtml(i.nombre) + "</b><small>" +
-          piezas([i.servicio, i.lugar, "último " + fechaLarga(i.fecha)]) +
-        "</small></div>" +
-        '<span class="toca-cuando">' + escHtml(cuando(i.dias)) + "</span>" +
-        '<div class="toca-acc">' + acc.join("") + "</div>" +
-      "</div>";
-    }).join("");
+    $("agenda-lista").innerHTML = items.length
+      ? items.map(filaToca).join("")
+      : '<p class="vacio-ok">Nadie por acá.</p>';
   }
 
   $("agenda-lista").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-cliente]");
-    if (b) verCliente(b.dataset.cliente);
+    var b = e.target.closest("[data-cliente],[data-reagendar],[data-hecho],[data-cancelar],[data-agendar-dia]");
+    if (!b) return;
+    if (b.dataset.cliente != null) return verCliente(b.dataset.cliente);
+    if (b.dataset.agendarDia != null) return abrirCita({ fecha: b.dataset.agendarDia });
+    var cita = (AGENDA.citas || []).filter(function (c) { return String(c.id) === b.dataset.reagendar || String(c.id) === b.dataset.hecho || String(c.id) === b.dataset.cancelar; })[0];
+    if (!cita) return;
+    if (b.dataset.reagendar != null) return abrirCita({ cita: cita });
+    if (b.dataset.hecho != null) return marcarCitaHecha(cita);
+    if (b.dataset.cancelar != null) return cancelarCita(cita);
   });
 
   /* =========================================================
