@@ -1342,10 +1342,18 @@ async function gestionarMantenimiento(env, s, decision) {
       ).bind(adelantado ? "reemplazado" : "hecho", adelantado ? (s.id || null) : null, prev.id).run();
     }
 
-    const r = await env.DB.prepare(
-      `INSERT INTO mantenimientos (cliente_id, servicio_id, tipo, fecha, meses, estado)
-       VALUES (?1, ?2, ?3, date(?4, '+' || ?5 || ' months'), ?5, 'programado')`
-    ).bind(s.clienteId, s.id || null, s.tipo, s.fecha, m).run();
+    // La fecha del próximo: una escrita a mano (fechaManual) o la del
+    // trabajo + la periodicidad.
+    const fechaManual = soloFecha(s.fechaManual);
+    const r = fechaManual
+      ? await env.DB.prepare(
+          `INSERT INTO mantenimientos (cliente_id, servicio_id, tipo, fecha, meses, estado)
+           VALUES (?1, ?2, ?3, date(?4), ?5, 'programado')`
+        ).bind(s.clienteId, s.id || null, s.tipo, fechaManual, m).run()
+      : await env.DB.prepare(
+          `INSERT INTO mantenimientos (cliente_id, servicio_id, tipo, fecha, meses, estado)
+           VALUES (?1, ?2, ?3, date(?4, '+' || ?5 || ' months'), ?5, 'programado')`
+        ).bind(s.clienteId, s.id || null, s.tipo, s.fecha, m).run();
 
     return { accion, anterior, id: r.meta && r.meta.last_row_id };
   } catch (e) {
@@ -1512,12 +1520,16 @@ async function listaServicios(request, env) {
           id: s.id, clienteId: s.cliente_id, cliente: s.nombre, telefono: s.telefono || null,
           servicio: etiqueta(s.servicio, null, "servicio"), servicioKey: s.servicio,
           detalle: s.detalle || null,
+          provincia: s.provincia || null, canton: s.canton || null,
           lugar: [s.canton, s.provincia].filter(Boolean).join(", ") || null,
           fecha: s.fecha, hora: s.hora || null, estado: s.estado, proximo: s.proximo || null,
           cotizacion: s.cotizacion || null, cotizacionId: s.cotizacion_id || null,
           monto, pagado,
           saldo: s.estado === "completado" ? Math.max(0, monto - pagado) : 0,
-          estadoPago: estadoPago(monto, pagado)
+          estadoPago: estadoPago(monto, pagado),
+          // Un WhatsApp ya armado para contactar sin salir de la lista.
+          wa: waDe(s.telefono, "Buenas" + (s.nombre ? " " + primerNombre(s.nombre) : "") +
+                   ", le escribo de Sanitarios Ticos.")
         };
       }),
       total: total ? total.n : 0,
@@ -2269,23 +2281,34 @@ async function estadoCita(request, env) {
                   new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
     const monto = Number.isFinite(+cuerpo.monto) ? Math.round(+cuerpo.monto) : null;
 
+    // ¿Requiere mantenimiento? (§ mantenimiento del servicio)
+    //   sinMantenimiento = no se le programa próximo (proximo = NULL).
+    //   proximoManual    = una fecha exacta escrita a mano.
+    //   por defecto      = fecha del trabajo + la periodicidad (meses).
+    const sinMant = cuerpo.sinMantenimiento === true;
+    const proxManual = sinMant ? null : soloFecha(cuerpo.proximoManual);
+    const proxExpr = sinMant ? "NULL"
+      : (proxManual ? "date(?3)" : "date(?1, '+' || ?3 || ' months')");
+    const proxBind = sinMant ? meses : (proxManual || meses);
+
     await env.DB.prepare(
       `UPDATE servicios
           SET estado='completado', fecha=?1, monto=COALESCE(?2, monto),
-              proximo=date(?1, '+' || ?3 || ' months'), actualizado=datetime('now')
+              proximo=${proxExpr}, actualizado=datetime('now')
         WHERE id=?4 AND papelera IS NULL`
-    ).bind(fecha, monto, meses, id).run();
+    ).bind(fecha, monto, proxBind, id).run();
 
     // El cliente se queda con la periodicidad usada, para el próximo.
-    if (meses !== s.meses) {
+    if (!sinMant && !proxManual && meses !== s.meses) {
       await env.DB.prepare(`UPDATE clientes SET meses=?1, actualizado=datetime('now') WHERE id=?2`)
         .bind(meses, s.cliente_id).run();
     }
 
-    // Arma/reemplaza el mantenimiento (§14). La decisión ('mantener' vs
-    // reemplazar) viene del panel cuando había uno a futuro.
-    const mant = await gestionarMantenimiento(env, {
-      id, clienteId: s.cliente_id, tipo: s.servicio, fecha, meses
+    // Arma/reemplaza el mantenimiento (§14). Si se dijo que NO requiere,
+    // no se crea ninguno. La decisión ('mantener' vs reemplazar) viene del
+    // panel cuando había uno a futuro.
+    const mant = sinMant ? null : await gestionarMantenimiento(env, {
+      id, clienteId: s.cliente_id, tipo: s.servicio, fecha, meses, fechaManual: proxManual
     }, cuerpo.mantenimiento);
 
     // Si se dijo cómo pagó, queda el pago registrado (F3).

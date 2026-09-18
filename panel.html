@@ -1193,6 +1193,7 @@
   .hist .f-que { flex: 1 1 12rem; color: var(--p-txt2); }
   .hist .f-monto { font-variant-numeric: tabular-nums; font-weight: 500; }
   .hist .f-prox { color: var(--p-tenue); white-space: nowrap; }
+  .hist .f-menu { margin-left: auto; align-self: center; }
   /* ---------- Pagos (F3) ---------- */
   .hist .f-pago { white-space: nowrap; font-weight: 600; font-size: .82rem; }
   .hist li[data-pagos] { cursor: pointer; border-radius: 10px; }
@@ -1246,6 +1247,18 @@
 
   .marca-check { display: flex; align-items: center; gap: .5rem; margin: 1rem 0 0; cursor: pointer; }
   .marca-check input { width: 16px; height: 16px; accent-color: var(--p-acento); }
+  /* "¿Requiere mantenimiento?" — un interruptor Sí/No y, si es Sí, cada
+     cuánto (o una fecha exacta). Vive en la hoja de completar. */
+  .mant-bloque { margin-top: 1.1rem; padding-top: 1rem; border-top: 1px solid var(--p-linea); }
+  .mant-lbl { display: block; color: var(--p-tenue); font-size: .85rem; margin-bottom: .5rem; }
+  .seg { display: inline-flex; background: var(--p-sup2); border: 1px solid var(--p-borde); border-radius: 12px; padding: 3px; gap: 3px; }
+  .seg-b { border: 0; background: transparent; color: var(--p-tenue); padding: .45rem 1.3rem;
+    border-radius: 9px; font: inherit; font-weight: 600; cursor: pointer; }
+  .seg-b[aria-pressed="true"] { background: var(--p-primario); color: #fff; }
+  .mant-cuando { margin-top: .8rem; }
+  .mant-cuando[hidden] { display: none; }
+  .mant-cuando label { display: block; color: var(--p-tenue); margin-bottom: .3rem; }
+  .mant-cuando select, .mant-cuando input { width: 100%; }
 
   /* El calendario. Una rejilla de siete, con un punto en los días que
      tienen algo. El día se toca y filtra la lista de al lado. */
@@ -1405,17 +1418,35 @@
   /* Botón discreto de eliminar dentro de una fila: se nota poco, y solo
      se enciende (rojo) al pasar por encima. No compite con el clic de
      la fila que abre la ficha. */
-  .fila-elim {
+  .fila-elim, .fila-menu {
     flex: 0 0 auto; align-self: center; display: inline-flex;
     align-items: center; justify-content: center; width: 34px; height: 34px;
     padding: 0; border-radius: 10px; border: 1px solid transparent;
     background: transparent; color: var(--p-tenue); cursor: pointer;
     opacity: .55; transition: opacity .15s, color .15s, background .15s, border-color .15s;
   }
-  .fila-elim svg { width: 17px; height: 17px; }
+  .fila-elim svg, .fila-menu svg { width: 17px; height: 17px; }
   .fila-elim:hover { opacity: 1; color: var(--est-mal-tx);
     background: color-mix(in srgb, var(--est-mal-tx) 12%, transparent);
     border-color: color-mix(in srgb, var(--est-mal-tx) 35%, transparent); }
+  .fila-menu:hover { opacity: 1; color: var(--p-txt);
+    background: var(--p-sup2); border-color: var(--p-linea); }
+  /* Menú de acciones de un servicio: lista de opciones grandes, cómodas
+     de tocar. Cada una abre un flujo que ya existe. */
+  .accs-lista { display: flex; flex-direction: column; gap: .4rem; }
+  .acc-fila {
+    display: flex; align-items: center; gap: .7rem; width: 100%;
+    padding: .8rem .9rem; border-radius: 12px; border: 1px solid var(--p-borde);
+    background: var(--p-sup2); color: var(--p-txt); font: inherit; font-weight: 500;
+    cursor: pointer; text-align: left; text-decoration: none;
+  }
+  .acc-fila svg { width: 19px; height: 19px; flex: 0 0 auto; color: var(--p-tenue); }
+  .acc-fila:hover { border-color: var(--p-linea); background: var(--p-tarj); }
+  .acc-fila.fuerte { color: var(--p-primario); }
+  .acc-fila.fuerte svg { color: var(--p-primario); }
+  .acc-fila.malo { color: var(--est-mal-tx); }
+  .acc-fila.malo svg { color: var(--est-mal-tx); }
+  .acc-fila.wa svg { color: #25d366; }
 
   /* ---------- Avisos ----------
      Reemplazan al alert() del navegador, que congela la página, no se
@@ -2643,14 +2674,35 @@
           <option value="pendiente">Queda pendiente</option>
         </select>
       </div>
-      <div class="f"><label for="h-meses">Recordar en</label>
+    </div>
+    <div class="mant-bloque">
+      <span class="mant-lbl">¿Requiere mantenimiento?</span>
+      <div class="seg" id="h-mant-sw" role="group" aria-label="¿Requiere mantenimiento?">
+        <button type="button" class="seg-b" data-mant="si" aria-pressed="true">Sí</button>
+        <button type="button" class="seg-b" data-mant="no" aria-pressed="false">No</button>
+      </div>
+      <div id="h-mant-cuando" class="mant-cuando">
+        <label for="h-meses" class="opc">¿Cada cuánto?</label>
         <select id="h-meses"></select>
+        <input type="date" id="h-fecha-mant" hidden aria-label="Fecha del próximo mantenimiento">
       </div>
     </div>
-    <label class="marca-check"><input type="checkbox" id="h-recordar" checked> Mandarle recordatorio cuando toque</label>
     <div class="hoja-pie">
       <button type="button" class="btn-suave" id="h-saltar">Sólo marcar como hecha</button>
       <button type="button" class="btn-fuerte" id="h-guardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Acciones de un servicio: el MISMO menú desde Servicios, Agenda y la
+     ficha del cliente. Cada acción abre el flujo que ya existe. -->
+<div class="velo" id="velo-accs" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="accs-t">
+    <h2 id="accs-t">Servicio</h2>
+    <p class="dim" id="accs-sub" style="color:var(--p-tenue); margin:.3rem 0 1rem;"></p>
+    <div class="accs-lista" id="accs-lista"></div>
+    <div class="hoja-pie">
+      <button type="button" class="btn-suave" id="accs-cerrar">Cerrar</button>
     </div>
   </div>
 </div>
@@ -2725,6 +2777,7 @@
     cotizacion: ico("M3 11.5V5a2 2 0 0 1 2-2h6.5a2 2 0 0 1 1.4.6l7.5 7.5a2 2 0 0 1 0 2.8l-6.6 6.6a2 2 0 0 1-2.8 0L3.6 13a2 2 0 0 1-.6-1.5z", '<circle cx="7.5" cy="7.5" r="1.4"/>'),
     ojo:    ico("M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z", '<circle cx="12" cy="12" r="3"/>'),
     basura: ico("M4 7h16M10 11v6M14 11v6M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"),
+    puntos: ico("M12 5.5h.01M12 12h.01M12 18.5h.01"),
     ojoNo:  ico("M3 3l18 18M10.6 10.7a3 3 0 0 0 4 4M9.9 5.2A9.5 9.5 0 0 1 12 5c6.5 0 10 7 10 7a15.5 15.5 0 0 1-3.4 4.1M6.1 6.2A15.6 15.6 0 0 0 2 12s3.5 7 10 7a9.4 9.4 0 0 0 3-.5"),
     lapiz:  ico("M4 20h4L18.5 9.5a2 2 0 0 0-3-3L5 17v3zM14.5 6.5l3 3"),
     // Flechas de tendencia y relojito, para reemplazar las pastillas.
@@ -4649,7 +4702,7 @@
     });
   });
 
-  function verCliente(id) {
+  function verCliente(id, luego) {
     vista = "cliente";
     $("titulo-caja").hidden = false;
     $("titulo-vista").textContent = "Cliente";
@@ -4661,8 +4714,8 @@
     $("cliente-cuerpo").innerHTML = '<p class="estado-linea">Cargando…</p>';
     window.scrollTo({ top: 0 });
 
-    pedir("/api/panel/cliente?id=" + encodeURIComponent(id))
-      .then(function (d) { pintarCliente(d); })
+    return pedir("/api/panel/cliente?id=" + encodeURIComponent(id))
+      .then(function (d) { pintarCliente(d); if (typeof luego === "function") luego(d); })
       .catch(function () {
         $("cliente-cuerpo").innerHTML = '<p class="estado-linea is-error">No se pudo cargar el cliente.</p>';
       });
@@ -4699,6 +4752,8 @@
             '<span class="f-monto">' + (s.monto ? escHtml(colones(s.monto)) : "—") + "</span>" +
             '<span class="f-pago">' + pago + "</span>" +
             '<span class="f-prox">' + (s.proximo ? "próximo " + escHtml(fechaLarga(s.proximo)) : "") + "</span>" +
+            '<button type="button" class="fila-menu f-menu" data-svc-menu-ficha="' + s.id +
+              '" title="Acciones" aria-label="Acciones del servicio">' + ICO.puntos + "</button>" +
           "</li>";
         }).join("") + "</ul>"
       : '<p class="vacio-ok">Todavía no hay trabajos anotados.</p>';
@@ -4866,6 +4921,7 @@
      ========================================================= */
   var svFiltro = { estado: "", tipo: "", q: "", pagina: 1 };
   var svReloj = null;
+  var svServicios = [];        // el último lote pintado, para el menú de acciones
   var SV_ESTADO = {
     programado: { t: "Programado", cls: "est-programado" },
     en_proceso: { t: "En proceso", cls: "est-en_proceso" },
@@ -4906,6 +4962,7 @@
       $("sv-tipo").value = svFiltro.tipo || "";
     }
 
+    svServicios = d.servicios || [];
     if (!d.servicios.length) {
       $("lista-servicios").innerHTML = '<p class="vacio-ok">No hay servicios con ese filtro.</p>';
     } else {
@@ -4926,8 +4983,8 @@
             (plata ? '<span class="num" style="font-size:.85rem;">' + plata + "</span>" : "") +
             (s.proximo ? '<span class="dim" style="font-size:.75rem;">próximo ' + escHtml(fechaLarga(s.proximo)) + "</span>" : "") +
           "</div>" +
-          '<button type="button" class="fila-elim" data-elim-serv="' + s.id + '" data-elim-quien="' + escHtml(s.cliente) +
-            '" title="Enviar a la papelera" aria-label="Eliminar servicio">' + ICO.basura + "</button>" +
+          '<button type="button" class="fila-menu" data-svc-menu="' + s.id +
+            '" title="Acciones" aria-label="Acciones del servicio">' + ICO.puntos + "</button>" +
         "</div>";
       }).join("");
     }
@@ -4966,17 +5023,13 @@
     svFiltro.pagina++; cargarServicios(); window.scrollTo({ top: 0 });
   });
   $("lista-servicios").addEventListener("click", function (e) {
-    var del = e.target.closest("[data-elim-serv]");
-    if (del) {
+    var menu = e.target.closest("[data-svc-menu]");
+    if (menu) {
       e.stopPropagation();
-      var sid = del.getAttribute("data-elim-serv");
-      var quien = del.getAttribute("data-elim-quien") || "este servicio";
-      if (!confirm("¿Enviar a la papelera el servicio de " + quien + "?\n\nSe puede restaurar desde la papelera.")) return;
-      pedir("/api/panel/borrar", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tabla: "servicio", id: sid })
-      }).then(function () { avisar("Servicio enviado a la papelera."); cargarServicios(); })
-        .catch(function () { avisar("No se pudo eliminar.", "mal"); });
+      var sid = menu.getAttribute("data-svc-menu");
+      var svc = svServicios.filter(function (x) { return String(x.id) === String(sid); })[0];
+      // El menú usa 'nombre'; en la lista el cliente viene como 'cliente'.
+      if (svc) abrirAccionesServicio(Object.assign({ nombre: svc.cliente }, svc));
       return;
     }
     var f = e.target.closest("[data-cliente]");
@@ -5041,7 +5094,31 @@
     });
   }
 
+  // Un servicio del historial → el mismo objeto que usa el menú de
+  // acciones, compuesto con los datos del cliente de la ficha.
+  function svcDeFicha(sid) {
+    if (!fichaActual) return null;
+    var c = fichaActual.cliente;
+    var s = fichaActual.servicios.filter(function (x) { return String(x.id) === String(sid); })[0];
+    if (!s) return null;
+    return {
+      id: s.id, clienteId: c.id, nombre: c.nombre, telefono: c.telefono,
+      servicioKey: s.servicio, servicio: s.servicioNombre || s.servicio,
+      fecha: s.fecha, hora: s.hora, detalle: s.detalle, estado: s.estado,
+      proximo: s.proximo, saldo: s.saldo, estadoPago: s.estadoPago,
+      provincia: c.provincia, canton: c.canton,
+      lugar: [c.canton, c.provincia].filter(Boolean).join(", ") || null, wa: c.wa
+    };
+  }
+
   $("cliente-cuerpo").addEventListener("click", function (e) {
+    var menu = e.target.closest("[data-svc-menu-ficha]");
+    if (menu) {
+      e.stopPropagation();
+      var svc = svcDeFicha(menu.getAttribute("data-svc-menu-ficha"));
+      if (svc) abrirAccionesServicio(svc);
+      return;
+    }
     var li = e.target.closest("[data-pagos]");
     if (li) abrirPago(li.getAttribute("data-pagos"));
   });
@@ -5648,8 +5725,11 @@
       .then(function (d) {
         cerrarCita();
         avisar(d.movida ? "Cita reagendada." : "Trabajo agendado.");
-        agendaCargada = false;
-        // Que quede seleccionado el día de la cita para verla de una.
+        agendaCargada = false; resumenCargado = false;
+        // En Servicios o en la ficha, se repinta ahí mismo (es el mismo
+        // registro). Desde la Agenda, se salta al día de la cita para verla.
+        if (vista === "servicios") { cargarServicios(); return; }
+        if (vista === "cliente" && fichaActual && fichaActual.cliente) { verCliente(fichaActual.cliente.id); return; }
         agendaFiltro = { tipo: "dia", valor: $("c-fecha").value };
         cargarAgenda();
       })
@@ -5676,7 +5756,9 @@
           body: JSON.stringify({
             id: c.id, estado: "hecho",
             monto: r.soloEstado ? "" : r.monto,
-            fecha: r.fecha, meses: r.meses, metodo: r.metodo, mantenimiento: decision
+            fecha: r.fecha, meses: r.meses, metodo: r.metodo, mantenimiento: decision,
+            sinMantenimiento: r.sinMantenimiento === true,
+            proximoManual: r.proximoManual || null
           })
         })
           .then(function (d) {
@@ -5685,11 +5767,13 @@
               ? " Reemplazó el mantenimiento anterior (queda en el historial)."
               : (m && m.accion === "mantenido") ? " Se mantuvo el mantenimiento anterior." : "";
             avisar("Trabajo completado." + extra);
-            agendaCargada = false; resumenCargado = false;
-            cargarAgenda();
+            refrescarTrasCambio();
           })
           .catch(function (err) { avisar(String((err && err.message) || "No se pudo completar."), "mal"); });
       }
+
+      // Si se dijo que NO requiere mantenimiento, no hay nada que decidir.
+      if (r.sinMantenimiento === true) return completar();
 
       // §14: si este cliente ya tenía un mantenimiento a futuro de este
       // mismo tipo, se pregunta si este trabajo lo reemplaza o si se
@@ -5712,6 +5796,78 @@
     });
   }
 
+  /* =========================================================
+     Menú de acciones de un servicio — EL MISMO desde Servicios,
+     Agenda y la ficha del cliente. Cada opción abre el flujo que ya
+     existe (no hay versiones duplicadas). Servicios, Agenda y Clientes
+     así son tres vistas del MISMO registro.
+     ========================================================= */
+  var accsSvc = null;
+
+  function botAcc(acc, icono, texto, cls) {
+    return '<button type="button" class="acc-fila' + (cls ? " " + cls : "") + '" data-acc="' + acc + '">' +
+      icono + "<span>" + escHtml(texto) + "</span></button>";
+  }
+
+  function abrirAccionesServicio(svc) {
+    if (!svc || !svc.id) return;
+    accsSvc = svc;
+    var prog = svc.estado === "programado" || svc.estado === "en_proceso";
+    var comp = svc.estado === "completado";
+    $("accs-t").textContent = svc.servicio || "Servicio";
+    $("accs-sub").textContent = [
+      svc.nombre,
+      svc.fecha ? (fechaLarga(svc.fecha) + (svc.hora ? " " + svc.hora : "")) : "",
+      svc.lugar
+    ].filter(Boolean).join(" · ");
+    var a = [];
+    a.push(botAcc("ver", ICO.ojo, "Ver cliente"));
+    if (svc.wa) {
+      a.push('<a class="acc-fila wa" href="' + escHtml(svc.wa) + '" target="_blank" rel="noopener" data-acc="contactar">' +
+        ICO.wa + "<span>Contactar por WhatsApp</span></a>");
+    }
+    if (prog) {
+      a.push(botAcc("reagendar", ICO.dia, svc.fecha ? "Reagendar" : "Agendar servicio"));
+      a.push(botAcc("hecho", ICO.visto, "Marcar realizado", "fuerte"));
+      a.push(botAcc("cancelar", ICO.alerta, "Cancelar", "malo"));
+    }
+    if (comp) {
+      a.push(botAcc("pago", ICO.cartera,
+        (svc.saldo > 0 ? "Registrar pago · falta " + colones(svc.saldo) : "Registrar pago")));
+    }
+    a.push(botAcc("mant", ICO.dia,
+      svc.proximo ? "Mantenimiento · próximo " + fechaLarga(svc.proximo) : "Mantenimiento"));
+    a.push(botAcc("eliminar", ICO.basura, "Eliminar", "malo"));
+    $("accs-lista").innerHTML = a.join("");
+    $("velo-accs").hidden = false;
+  }
+
+  function cerrarAccs() { $("velo-accs").hidden = true; }
+
+  // Registrar pago desde cualquier lista: se abre la ficha del cliente
+  // (fuente del recuadro de pagos) y ahí mismo el pago de ESE servicio.
+  function pagoDeServicio(clienteId, servicioId) {
+    verCliente(clienteId, function () { abrirPago(servicioId); });
+  }
+
+  $("accs-cerrar").addEventListener("click", cerrarAccs);
+  $("velo-accs").addEventListener("click", function (e) { if (e.target === $("velo-accs")) cerrarAccs(); });
+  $("accs-lista").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-acc]");
+    if (!b) return;
+    var acc = b.dataset.acc, s = accsSvc;
+    if (acc === "contactar") { cerrarAccs(); return; }   // el <a> abre WhatsApp solo
+    cerrarAccs();
+    if (!s) return;
+    if (acc === "ver") return verCliente(s.clienteId);
+    if (acc === "reagendar") return abrirCita({ cita: s });
+    if (acc === "hecho") return marcarCitaHecha(s);
+    if (acc === "cancelar") return cancelarCita(s);
+    if (acc === "pago") return pagoDeServicio(s.clienteId, s.id);
+    if (acc === "mant") return verCliente(s.clienteId);   // la ficha muestra el próximo + el expediente
+    if (acc === "eliminar") return eliminarServicio(s);
+  });
+
   function cancelarCita(c) {
     if (!confirm("¿Cancelar la cita de " + c.nombre + "? No se borra el cliente.")) return;
     pedir("/api/panel/cita/estado", {
@@ -5720,10 +5876,20 @@
     })
       .then(function () {
         avisar("Cita cancelada.");
-        agendaCargada = false;
-        cargarAgenda();
+        refrescarTrasCambio();
       })
       .catch(function (err) { avisar(String((err && err.message) || "No se pudo cancelar."), "mal"); });
+  }
+
+  /* Tras cambiar un servicio (reagendar, completar, cancelar, pagar,
+     eliminar) se repinta la vista donde está el usuario, para que el
+     cambio se vea de una en Servicios, Agenda o la ficha — es el mismo
+     registro. Se invalidan también los cachés de agenda y resumen. */
+  function refrescarTrasCambio() {
+    agendaCargada = false; resumenCargado = false;
+    if (vista === "servicios") return cargarServicios();
+    if (vista === "cliente" && fichaActual && fichaActual.cliente) return verCliente(fichaActual.cliente.id);
+    return cargarAgenda();
   }
 
   function cargarAgenda() {
@@ -5952,8 +6118,7 @@
     acc.push('<button type="button" class="bt" data-cliente="' + c.clienteId + '">Ver</button>');
     acc.push('<button type="button" class="bt" data-reagendar="' + c.id + '">Reagendar</button>');
     acc.push('<button type="button" class="bt fuerte" data-hecho="' + c.id + '">Hecho</button>');
-    acc.push('<button type="button" class="bt malo" data-cancelar="' + c.id + '">Cancelar</button>');
-    acc.push('<button type="button" class="bt malo" data-eliminar-serv="' + c.id + '">Eliminar</button>');
+    acc.push('<button type="button" class="bt" data-menu-cita="' + c.id + '" title="Más acciones" aria-label="Más acciones">' + ICO.puntos + "</button>");
 
     var atrasada = c.dias < 0;
     return '<div class="toca-fila cita' + (atrasada ? " vencido" : "") + '">' +
@@ -6031,13 +6196,16 @@
   }
 
   $("agenda-lista").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-cliente],[data-reagendar],[data-hecho],[data-cancelar],[data-eliminar-serv],[data-agendar-dia]");
+    var b = e.target.closest("[data-cliente],[data-reagendar],[data-hecho],[data-cancelar],[data-eliminar-serv],[data-agendar-dia],[data-menu-cita]");
     if (!b) return;
     if (b.dataset.cliente != null) return verCliente(b.dataset.cliente);
     if (b.dataset.agendarDia != null) return abrirCita({ fecha: b.dataset.agendarDia });
-    var buscar = b.dataset.reagendar || b.dataset.hecho || b.dataset.cancelar || b.dataset.eliminarServ;
+    var buscar = b.dataset.reagendar || b.dataset.hecho || b.dataset.cancelar || b.dataset.eliminarServ || b.dataset.menuCita;
     var cita = (AGENDA.citas || []).filter(function (c) { return String(c.id) === buscar; })[0];
     if (!cita) return;
+    // El menú "⋯" abre las MISMAS acciones que Servicios y la ficha.
+    // Una cita de la agenda es un servicio 'programado'.
+    if (b.dataset.menuCita != null) return abrirAccionesServicio(Object.assign({ estado: "programado" }, cita));
     if (b.dataset.reagendar != null) return abrirCita({ cita: cita });
     if (b.dataset.hecho != null) return marcarCitaHecha(cita);
     if (b.dataset.cancelar != null) return cancelarCita(cita);
@@ -6052,7 +6220,7 @@
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tabla: "servicio", id: c.id })
     })
-      .then(function () { avisar("Trabajo enviado a la papelera."); agendaCargada = false; cargarAgenda(); })
+      .then(function () { avisar("Trabajo enviado a la papelera."); refrescarTrasCambio(); })
       .catch(function (err) { avisar(String((err && err.message) || "No se pudo."), "mal"); });
   }
 
@@ -6066,22 +6234,44 @@
   // que carga el panel; si todavía no llegó, se usa el mínimo seguro.
   var PERIODOS = [3, 6, 9, 12, 18, 24, 36, 48];
 
+  // Modo del mantenimiento en la hoja: "si" (con periodicidad o fecha) o "no".
+  function ponerMantModo(modo) {
+    Array.prototype.forEach.call($("h-mant-sw").querySelectorAll("[data-mant]"), function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.mant === modo));
+    });
+    $("h-mant-cuando").hidden = (modo !== "si");
+  }
+
   function abrirHoja() {
     // Se anota dónde estaba el teclado para devolverlo al cerrar: si no,
     // el foco queda en el aire y quien navega con teclado se pierde.
     hojaVolverA = document.activeElement;
+    // Periodos + la opción de escribir una fecha exacta.
     $("h-meses").innerHTML = PERIODOS.map(function (m) {
       return '<option value="' + m + '"' + (m === 24 ? " selected" : "") + ">" + textoPeriodo(m) + "</option>";
-    }).join("");
+    }).join("") + '<option value="fecha">Fecha personalizada…</option>';
     $("h-fecha").value = hoyISO();
     $("h-monto").value = "";
     $("h-meses").value = "24";
     $("h-metodo").value = "efectivo";
-    $("h-recordar").checked = true;
+    $("h-fecha-mant").value = "";
+    $("h-fecha-mant").hidden = true;
+    ponerMantModo("si");
     $("velo").hidden = false;
     $("h-fecha").focus();
     return new Promise(function (res) { hojaResuelve = res; });
   }
+
+  $("h-mant-sw").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-mant]");
+    if (b) ponerMantModo(b.dataset.mant);
+  });
+  // "Fecha personalizada…" revela el campo de fecha.
+  $("h-meses").addEventListener("change", function () {
+    var pers = $("h-meses").value === "fecha";
+    $("h-fecha-mant").hidden = !pers;
+    if (pers && !$("h-fecha-mant").value) $("h-fecha-mant").focus();
+  });
 
   function cerrarHoja(valor) {
     $("velo").hidden = true;
@@ -6104,12 +6294,17 @@
   });
 
   $("h-guardar").addEventListener("click", function () {
+    var mantSi = $("h-mant-sw").querySelector('[data-mant="si"]').getAttribute("aria-pressed") === "true";
+    var personalizada = mantSi && $("h-meses").value === "fecha";
     cerrarHoja({
       fecha: $("h-fecha").value || hoyISO(),
       monto: soloDigitos($("h-monto").value),
-      meses: Number($("h-meses").value),
-      metodo: $("h-metodo").value,
-      recordatorio: $("h-recordar").checked
+      // Sí con periodicidad → meses; Sí con fecha exacta → proximoManual;
+      // No → sinMantenimiento (no se le programa próximo).
+      sinMantenimiento: !mantSi,
+      meses: (mantSi && !personalizada) ? Number($("h-meses").value) : 24,
+      proximoManual: personalizada ? ($("h-fecha-mant").value || null) : null,
+      metodo: $("h-metodo").value
     });
   });
   $("h-saltar").addEventListener("click", function () { cerrarHoja({ soloEstado: true }); });
