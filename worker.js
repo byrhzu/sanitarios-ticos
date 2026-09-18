@@ -1532,6 +1532,52 @@ async function listaServicios(request, env) {
   }
 }
 
+/* Todos los mantenimientos, agrupados para la vista dedicada (§12). No es
+   la Agenda (que solo muestra los 'programado' con recordatorio): acá
+   está TODO, incluido el historial de reemplazos (§14), para poder ver
+   qué le tocó a quién y qué pasó con cada uno. Se lee de `mantenimientos`,
+   la única fuente. La ubicación y el nombre salen del cliente. */
+async function listaMantenimientos(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT m.id, m.tipo, m.fecha, m.estado, m.meses, m.reemplazado_por,
+              so.fecha AS hechoFecha,
+              c.id AS cliente_id, c.nombre, c.telefono, c.canton, c.provincia, c.recordatorio,
+              CAST(julianday(m.fecha) - julianday(date('now','-6 hours')) AS INTEGER) AS dias
+         FROM mantenimientos m
+         JOIN clientes c ON c.id = m.cliente_id
+         LEFT JOIN servicios so ON so.id = m.servicio_id
+        WHERE m.papelera IS NULL AND c.papelera IS NULL
+        ORDER BY m.fecha DESC, m.id DESC`
+    ).all();
+
+    const items = (results || []).map((m) => ({
+      id: m.id, clienteId: m.cliente_id, nombre: m.nombre, telefono: m.telefono || null,
+      servicio: etiqueta(m.tipo, null, "servicio"), tipo: m.tipo,
+      lugar: [m.canton, m.provincia].filter(Boolean).join(", ") || null,
+      fecha: m.fecha, hechoFecha: m.hechoFecha || null, estado: m.estado,
+      dias: m.dias, recordatorio: !!m.recordatorio
+    }));
+
+    // Un mantenimiento 'programado' con fecha pasada es un VENCIDO: se
+    // saca aparte porque es lo que de verdad hay que atender.
+    const vencidos = items.filter((i) => i.estado === "programado" && i.dias < 0);
+    const proximos = items.filter((i) => i.estado === "programado" && i.dias >= 0)
+                          .sort((a, b) => a.dias - b.dias);
+    const historial = items.filter((i) => i.estado !== "programado");
+
+    return json({
+      ok: true,
+      vencidos, proximos, historial,
+      counts: { vencidos: vencidos.length, proximos: proximos.length, historial: historial.length }
+    });
+  } catch (e) {
+    console.error("Error al listar mantenimientos:", e);
+    return json({ ok: false, error: "No se pudo consultar" }, 500);
+  }
+}
+
 /* =============================================================
    F4 · Papelera universal (borrado lógico)
 
@@ -3518,6 +3564,9 @@ export default {
     }
     if (url.pathname === "/api/panel/pago/borrar" && request.method === "POST") {
       return borrarPago(request, env);
+    }
+    if (url.pathname === "/api/panel/mantenimientos" && request.method === "GET") {
+      return listaMantenimientos(request, env);
     }
     if (url.pathname === "/api/panel/servicios" && request.method === "GET") {
       return listaServicios(request, env);

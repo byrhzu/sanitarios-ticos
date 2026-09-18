@@ -1242,6 +1242,7 @@
   .pap-quien small { display: block; color: var(--p-tenue); font-size: .8rem; }
   .pap-acc { display: flex; gap: .4rem; flex: 0 0 auto; }
   .menu-yo-n { margin-left: auto; background: var(--p-acento); color: #20130a; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 700; }
+  .menu-yo-n.malo { background: var(--est-mal-tx); color: #fff; }
 
   .marca-check { display: flex; align-items: center; gap: .5rem; margin: 1rem 0 0; cursor: pointer; }
   .marca-check input { width: 16px; height: 16px; accent-color: var(--p-acento); }
@@ -1985,6 +1986,12 @@
               <small class="frescura" id="frescura">Cargando…</small>
             </div>
             <button type="button" id="btn-avisos" hidden></button>
+            <button type="button" id="btn-mant">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M8 2v4M16 2v4M3 9.5h18"/><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M12 12.5v4M10 14.5h4"/>
+              </svg>
+              Mantenimientos<span class="menu-yo-n malo" id="mant-n" hidden></span>
+            </button>
             <button type="button" id="btn-papelera">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 11v6M14 11v6"/>
@@ -2542,6 +2549,7 @@
         <select id="c-canton" disabled></select></div>
     </div>
     <p class="ayuda" id="c-ya" hidden></p>
+    <div class="dup-aviso" id="c-dup" hidden></div>
     <div class="f" style="margin-top:.9rem;"><label for="c-detalle">Nota para la visita <span class="opc">opcional</span></label>
       <input id="c-detalle" type="text" placeholder="ej. llevar manguera larga, hay perro"></div>
 
@@ -2554,6 +2562,19 @@
 </div>
 
 <!-- Papelera (F4): todo lo borrado, para restaurar o eliminar de verdad. -->
+<div class="velo" id="velo-mantenimientos" hidden>
+  <div class="hoja hoja-ancha" role="dialog" aria-modal="true" aria-labelledby="mant-t">
+    <h2 id="mant-t">Mantenimientos</h2>
+    <p class="dim" style="color:var(--p-tenue); margin:.3rem 0 1.1rem;">
+      A quién le toca y cuándo. Los vencidos van de primero. El historial guarda los ya hechos y los reemplazados.
+    </p>
+    <div id="mant-cuerpo"></div>
+    <div class="hoja-pie">
+      <button type="button" class="btn-suave" id="mant-cerrar">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="velo" id="velo-papelera" hidden>
   <div class="hoja hoja-ancha" role="dialog" aria-modal="true" aria-labelledby="pap-t">
     <h2 id="pap-t">Papelera</h2>
@@ -5137,6 +5158,76 @@
     }
   });
 
+  /* =========================================================
+     Mantenimientos (§12): la vista dedicada. Vive en el menú del
+     avatar para no romper el 3+3 de la barra. Es TODO —vencidos,
+     próximos e historial de reemplazos—, no solo lo que sale en la
+     Agenda. Cada fila abre la ficha del cliente.
+     ========================================================= */
+  var MANT_EST = {
+    programado: { t: "Programado", cls: "toca" },
+    hecho:      { t: "Hecho",      cls: "ok" },
+    reemplazado:{ t: "Reemplazado",cls: "mudo" },
+    cancelado:  { t: "Cancelado",  cls: "mudo" }
+  };
+
+  function textoDias(d) {
+    if (d < 0) return "vencido hace " + (-d) + (d === -1 ? " día" : " días");
+    if (d === 0) return "es hoy";
+    if (d === 1) return "en 1 día";
+    return "en " + d + " días";
+  }
+
+  function filaMant(m, mostrarDias) {
+    var es = MANT_EST[m.estado] || { t: m.estado, cls: "mudo" };
+    var cuando = mostrarDias
+      ? '<span class="dim" style="font-size:.75rem;">' + escHtml(textoDias(m.dias)) +
+        (m.dias < 0 ? "" : " · " + escHtml(fechaLarga(m.fecha))) + "</span>"
+      : '<span class="dim" style="font-size:.75rem;">' + escHtml(fechaLarga(m.fecha)) + "</span>";
+    return '<div class="toca-fila" data-cliente="' + m.clienteId + '">' +
+      '<div class="toca-quien"><b>' + escHtml(m.nombre) + "</b><small>" +
+        piezas([m.servicio, m.lugar]) + "</small></div>" +
+      '<div class="toca-cuando" style="align-items:flex-end;gap:.35rem;">' +
+        '<span class="pastilla ' + es.cls + '">' + escHtml(es.t) + "</span>" + cuando +
+      "</div></div>";
+  }
+
+  function grupoMant(titulo, lista, mostrarDias) {
+    if (!lista || !lista.length) return "";
+    return '<div class="pap-grupo"><h3>' + escHtml(titulo) + " (" + lista.length + ")</h3>" +
+      '<div class="fichas">' + lista.map(function (m) { return filaMant(m, mostrarDias); }).join("") + "</div></div>";
+  }
+
+  function marcarMant(n) {
+    var e = $("mant-n"); e.textContent = String(n || 0); e.hidden = !n;
+  }
+
+  function abrirMantenimientos() {
+    menuYo(false);
+    $("mant-cuerpo").innerHTML = '<p class="estado-linea">Cargando…</p>';
+    $("velo-mantenimientos").hidden = false;
+    pedir("/api/panel/mantenimientos").then(function (d) {
+      marcarMant((d.counts && d.counts.vencidos) || 0);
+      var html = grupoMant("Vencidos", d.vencidos, true) +
+                 grupoMant("Próximos", d.proximos, true) +
+                 grupoMant("Historial", d.historial, false);
+      $("mant-cuerpo").innerHTML = html ||
+        '<p class="vacio-ok">Todavía no hay mantenimientos.</p>';
+    }).catch(function () {
+      $("mant-cuerpo").innerHTML = '<p class="estado-linea is-error">No se pudo cargar.</p>';
+    });
+  }
+
+  $("btn-mant").addEventListener("click", abrirMantenimientos);
+  $("mant-cerrar").addEventListener("click", function () { $("velo-mantenimientos").hidden = true; });
+  $("velo-mantenimientos").addEventListener("click", function (e) {
+    if (e.target === $("velo-mantenimientos")) $("velo-mantenimientos").hidden = true;
+  });
+  $("mant-cuerpo").addEventListener("click", function (e) {
+    var f = e.target.closest("[data-cliente]");
+    if (f) { $("velo-mantenimientos").hidden = true; verCliente(f.getAttribute("data-cliente")); }
+  });
+
   /* Un año se dice "1 año", no "12 meses". Con periodicidades que ahora
      van de 3 a 48, escribirlo todo en meses obliga a dividir de cabeza. */
   function textoPeriodo(m) {
@@ -5440,6 +5531,8 @@
     $("c-aviso").textContent = "";
     $("c-aviso").classList.remove("is-error");
     $("c-ya").hidden = true;
+    $("c-dup").hidden = true;
+    cTelReg = false;
 
     var origen = c || cli;
     if (origen) {
@@ -5478,22 +5571,62 @@
 
   // Si el teléfono ya es de un cliente, se avisa y se trae el nombre.
   var cReloj = null;
+  var cDupReloj = null, cTelReg = false;
+
+  function revisarDupC() {
+    if (cTelReg) { $("c-dup").hidden = true; return; }
+    var nom = $("c-nombre").value.trim();
+    if (nom.length < 4) { $("c-dup").hidden = true; return; }
+    clearTimeout(cDupReloj);
+    cDupReloj = setTimeout(function () {
+      pedir("/api/panel/buscar?q=" + encodeURIComponent(nom))
+        .then(function (r) {
+          var telAct = $("c-telefono").value.replace(/\D/g, "");
+          var cl = (r.resultados || []).filter(function (x) {
+            if (x.tipo !== "cliente") return false;
+            var t = (x.detalle || "").replace(/\D/g, "");
+            return !(telAct.length === 8 && t.indexOf(telAct) === 0);
+          }).slice(0, 3);
+          if (!cl.length) { $("c-dup").hidden = true; return; }
+          $("c-dup").innerHTML = '<span class="dup-t">¿Ya existe? Puede ser el mismo cliente:</span>' +
+            '<div class="dup-chips">' + cl.map(function (x) {
+              var tel = (x.detalle || "").split("   ")[0];
+              return '<button type="button" class="dup-chip" data-dup-id="' + x.ir.id + '">' +
+                escHtml(x.etiqueta) + (tel ? ' <small>' + escHtml(tel) + "</small>" : "") + "</button>";
+            }).join("") + "</div>";
+          $("c-dup").hidden = false;
+        })
+        .catch(function () { $("c-dup").hidden = true; });
+    }, 400);
+  }
+
   $("c-telefono").addEventListener("input", function () {
     var d = $("c-telefono").value.replace(/\D/g, "");
     $("c-ya").hidden = true;
-    if (d.length !== 8) return;
+    cTelReg = false;
+    if (d.length !== 8) { revisarDupC(); return; }
     clearTimeout(cReloj);
     cReloj = setTimeout(function () {
       pedir("/api/panel/buscar?q=" + encodeURIComponent(d))
         .then(function (r) {
           var x = (r.resultados || []).filter(function (y) { return y.tipo === "cliente"; })[0];
-          if (!x) return;
+          if (!x) { revisarDupC(); return; }
+          cTelReg = true;
+          $("c-dup").hidden = true;
           $("c-ya").textContent = "Ya está registrado: " + x.etiqueta + ".";
           $("c-ya").hidden = false;
           if (!$("c-nombre").value) $("c-nombre").value = String(x.etiqueta).split(" · ")[0] || "";
         })
         .catch(function () {});
     }, 350);
+  });
+
+  $("c-nombre").addEventListener("input", revisarDupC);
+  $("c-dup").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-dup-id]");
+    if (!b) return;
+    cerrarCita();
+    verCliente(b.getAttribute("data-dup-id"));
   });
 
   function guardarCita() {
