@@ -487,9 +487,9 @@ strong, b { font-weight: 600; }
 .fact { display: grid; align-content: start; }
 
 .fact strong {
-  font-family: var(--display); font-weight: 700;
-  font-size: clamp(2rem, 3.2vw, 2.7rem); line-height: 1;
-  color: var(--orange); letter-spacing: -.035em;
+  font-family: var(--display); font-stretch: var(--ancho-cartel); font-weight: 800;
+  font-size: clamp(2.6rem, 4.8vw, 3.9rem); line-height: .9;
+  color: var(--orange); letter-spacing: -.04em;
   font-variant-numeric: tabular-nums;
 }
 .fact b {
@@ -504,16 +504,32 @@ strong, b { font-weight: 600; }
   max-width: 17rem; text-wrap: pretty;
 }
 
-/* --- Índice de servicios (filas, no tarjetas) --- */
-.index { }
+/* --- Índice de servicios (filas, no tarjetas) ---
+   Deja de ser una lista y pasa a ser un índice numerado: 01–05 en el
+   corte de cartel, el único sistema de énfasis del sitio (§5). El número
+   grande en naranja hace que la sección más plana pegue como el resto —
+   y en móvil, donde no hay foto al pasar el mouse, es lo que le da peso. */
+.index { counter-reset: svc; }
 .row {
   position: relative;
-  display: grid; grid-template-columns: 1fr auto; gap: 1.2rem;
+  counter-increment: svc;
+  display: grid; grid-template-columns: auto 1fr auto;
+  gap: clamp(.9rem, 2.5vw, 1.8rem);
   align-items: center;
   padding-block: clamp(1.4rem, 3vw, 2.1rem);
   transition: background-color .3s var(--ease);
 }
+.row::before {
+  content: counter(svc, decimal-leading-zero);
+  align-self: center;
+  font-family: var(--display); font-stretch: var(--ancho-cartel);
+  font-weight: 800; font-variant-numeric: tabular-nums;
+  font-size: clamp(1.55rem, 3.6vw, 2.7rem); line-height: .9;
+  letter-spacing: -.04em; color: var(--orange);
+  transition: color .3s var(--ease), transform .3s var(--ease);
+}
 .row:hover { background: var(--paper-3); }
+.row:hover::before { color: var(--orange-dk); transform: translateX(2px); }
 .row-t { min-width: 0; }
 .row-t h3 { font-size: clamp(1.25rem, 2.6vw, 1.85rem); letter-spacing: -.03em; }
 .row-t p { margin-top: .35rem; color: var(--muted); font-size: .93rem; max-width: 44ch; }
