@@ -680,7 +680,9 @@ async function registrarDesdeCotizacion(env, id, extra) {
       detalle: detalleTrabajo(c),
       monto: extra.monto != null && extra.monto !== "" ? extra.monto : c.monto_min,
       cotizacion: c.numero,
+      cotizacion_id: id,
       meses: extra.meses,
+      metodo: extra.metodo,
       nota: extra.nota
     }, cliente.meses);
 
@@ -777,6 +779,7 @@ async function trabajoAMano(request, env) {
         monto: cuerpo.monto,
         cotizacion: null,
         meses: meses,
+        metodo: cuerpo.metodo,
         nota: texto(cuerpo.notaTrabajo, 300)
       }, meses);
     }
@@ -1264,11 +1267,16 @@ async function guardarServicio(env, clienteId, d, meses) {
   }
   const id = r.meta && r.meta.last_row_id;
 
-  // Un trabajo COMPLETADO arma (o reemplaza) el mantenimiento del cliente.
+  // Un trabajo COMPLETADO arma (o reemplaza) el mantenimiento del cliente
+  // y, si se dijo cómo pagó (no "pendiente"), deja el pago registrado.
   if (estado === "completado") {
     await gestionarMantenimiento(env, {
       id, clienteId, tipo: texto(d.servicio, 40) || "servicio", fecha, meses: m
     }, d.mantenimiento);
+    const montoNum = Number.isFinite(+d.monto) ? Math.round(+d.monto) : 0;
+    if (d.metodo && d.metodo !== "pendiente" && montoNum > 0) {
+      await registrarPago(env, { servicioId: id, clienteId, monto: montoNum, metodo: d.metodo, fecha });
+    }
   }
   return id;
 }
@@ -1342,6 +1350,79 @@ async function mantenimientoFuturo(request, env) {
   } catch (e) {
     return json({ ok: true, mantenimiento: null });
   }
+}
+
+/* -------------------------------------------------------------
+   Pagos (F3): un servicio puede recibir varios abonos. El saldo y el
+   estado se calculan; nunca se guardan a mano.
+   ------------------------------------------------------------- */
+const METODOS_PAGO = ["efectivo", "sinpe", "transferencia", "tarjeta", "otro", "no-registrado"];
+
+async function registrarPago(env, p) {
+  if (!p || !Number.isFinite(+p.servicioId)) return null;
+  const monto = Math.round(+p.monto);
+  if (!Number.isFinite(monto) || monto <= 0) return null;
+  const metodo = METODOS_PAGO.indexOf(p.metodo) !== -1 ? p.metodo : "otro";
+  const fecha = soloFecha(p.fecha) || new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
+  const r = await env.DB.prepare(
+    `INSERT INTO pagos (servicio_id, cliente_id, monto, metodo, fecha, nota)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6)`
+  ).bind(+p.servicioId, Number.isFinite(+p.clienteId) ? +p.clienteId : null,
+         monto, metodo, fecha, texto(p.nota, 300) || null).run();
+  return r.meta && r.meta.last_row_id;
+}
+
+// Registrar un abono desde el panel (pago parcial o total de un servicio).
+async function crearPago(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+  let b;
+  try { b = await request.json(); }
+  catch { return json({ ok: false, error: "Formato inválido" }, 400); }
+
+  const servicioId = parseInt(b.servicioId, 10);
+  if (!Number.isFinite(servicioId)) return json({ ok: false, error: "Servicio inválido" }, 400);
+  const monto = Math.round(+soloDigitos(b.monto));
+  if (!Number.isFinite(monto) || monto <= 0) return json({ ok: false, error: "El monto del pago no es válido" }, 400);
+
+  try {
+    // El cliente del pago sale del propio servicio, para no confiar en el panel.
+    const s = await env.DB.prepare(`SELECT cliente_id FROM servicios WHERE id = ? AND papelera IS NULL`)
+      .bind(servicioId).first();
+    if (!s) return json({ ok: false, error: "No existe ese servicio" }, 404);
+    const id = await registrarPago(env, {
+      servicioId, clienteId: s.cliente_id, monto, metodo: b.metodo, fecha: b.fecha, nota: b.nota
+    });
+    return json({ ok: true, id });
+  } catch (e) {
+    console.error("No se pudo registrar el pago:", e);
+    return json({ ok: false, error: "No se pudo guardar el pago" }, 500);
+  }
+}
+
+// Borrar un pago = mandarlo a la papelera (nunca se destruye: §29).
+async function borrarPago(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+  let b;
+  try { b = await request.json(); }
+  catch { return json({ ok: false, error: "Formato inválido" }, 400); }
+  const id = parseInt(b.id, 10);
+  if (!Number.isFinite(id)) return json({ ok: false, error: "Pago inválido" }, 400);
+  try {
+    await env.DB.prepare(`UPDATE pagos SET papelera = datetime('now') WHERE id = ?`).bind(id).run();
+    return json({ ok: true });
+  } catch (e) {
+    console.error("No se pudo borrar el pago:", e);
+    return json({ ok: false, error: "No se pudo borrar el pago" }, 500);
+  }
+}
+
+// El estado de pago de un servicio, a partir de su monto final y lo pagado.
+function estadoPago(monto, pagado) {
+  const m = Math.round(+monto) || 0, p = Math.round(+pagado) || 0;
+  if (m <= 0) return p > 0 ? "pagado" : "sin-monto";
+  if (p <= 0) return "pendiente";
+  if (p < m) return "parcial";
+  return "pagado";
 }
 
 // El texto del recordatorio. Sale del servidor porque es el que tiene
@@ -1609,15 +1690,38 @@ async function verCliente(request, env) {
        FROM servicios WHERE cliente_id = ? AND papelera IS NULL ORDER BY fecha DESC, id DESC`
     ).bind(id).all();
 
+    // Pagos del cliente (F3), agrupados por servicio para calcular saldo.
+    const pagos = ((await env.DB.prepare(
+      `SELECT id, servicio_id, monto, metodo, fecha FROM pagos
+        WHERE cliente_id = ? AND papelera IS NULL ORDER BY fecha, id`
+    ).bind(id).all()).results) || [];
+    const porServicio = {};
+    pagos.forEach((p) => { (porServicio[p.servicio_id] = porServicio[p.servicio_id] || []).push(p); });
+
+    let cobrado = 0, saldoPendiente = 0;
+    const servicios = results.map((s) => {
+      const lista = porServicio[s.id] || [];
+      const pagado = lista.reduce((a, p) => a + (p.monto || 0), 0);
+      const monto = s.monto || 0;
+      cobrado += pagado;
+      // El saldo solo cuenta en trabajos completados (un programado aún no cobra).
+      const saldo = s.estado === "completado" ? Math.max(0, monto - pagado) : 0;
+      saldoPendiente += saldo;
+      return Object.assign({}, s, {
+        servicioNombre: etiqueta(s.servicio, null, "servicio"),
+        pagado, saldo, estadoPago: estadoPago(monto, pagado), pagos: lista
+      });
+    });
+
     return json({
       ok: true,
       cliente: Object.assign({}, c, {
         wa: waDe(c.telefono, "Buenas" + (c.nombre ? " " + primerNombre(c.nombre) : "") +
-                             ", le escribo de Sanitarios Ticos.")
+                             ", le escribo de Sanitarios Ticos."),
+        cobrado, saldoPendiente
       }),
-      servicios: results.map((s) => Object.assign({}, s, {
-        servicioNombre: etiqueta(s.servicio, null, "servicio")
-      })),
+      servicios,
+      metodos: METODOS_PAGO.filter((m) => m !== "no-registrado"),
       canales: CANALES,
       periodos: PERIODOS
     });
@@ -1896,6 +2000,11 @@ async function estadoCita(request, env) {
     const mant = await gestionarMantenimiento(env, {
       id, clienteId: s.cliente_id, tipo: s.servicio, fecha, meses
     }, cuerpo.mantenimiento);
+
+    // Si se dijo cómo pagó, queda el pago registrado (F3).
+    if (cuerpo.metodo && cuerpo.metodo !== "pendiente" && Number.isFinite(monto) && monto > 0) {
+      await registrarPago(env, { servicioId: id, clienteId: s.cliente_id, monto, metodo: cuerpo.metodo, fecha });
+    }
     return json({ ok: true, mant: mant });
   } catch (e) {
     console.error("No se pudo cambiar el trabajo:", e);
@@ -3158,6 +3267,12 @@ export default {
     }
     if (url.pathname === "/api/panel/mantenimiento/futuro" && request.method === "GET") {
       return mantenimientoFuturo(request, env);
+    }
+    if (url.pathname === "/api/panel/pago" && request.method === "POST") {
+      return crearPago(request, env);
+    }
+    if (url.pathname === "/api/panel/pago/borrar" && request.method === "POST") {
+      return borrarPago(request, env);
     }
     if (url.pathname === "/api/panel/buscar" && request.method === "GET") {
       return buscarPanel(request, env);

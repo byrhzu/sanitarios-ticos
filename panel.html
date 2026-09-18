@@ -1169,6 +1169,26 @@
   .hist .f-que { flex: 1 1 12rem; color: var(--p-txt2); }
   .hist .f-monto { font-variant-numeric: tabular-nums; font-weight: 500; }
   .hist .f-prox { color: var(--p-tenue); white-space: nowrap; }
+  /* ---------- Pagos (F3) ---------- */
+  .hist .f-pago { white-space: nowrap; font-weight: 600; font-size: .82rem; }
+  .hist li[data-pagos] { cursor: pointer; border-radius: 10px; }
+  .hist li[data-pagos]:hover { background: var(--p-sup2); }
+  .pg-ok  { color: var(--est-ok-tx); }
+  .pg-mid { color: var(--est-espera-tx); }
+  .pg-bad { color: var(--est-mal-tx); }
+  .cli-fin { display: flex; gap: 1rem 1.4rem; flex-wrap: wrap; margin-top: .5rem; font-size: .9rem; color: var(--p-tenue); }
+  .cli-fin b { color: var(--p-txt); font-weight: 600; }
+  .cli-fin .cli-debe b { color: var(--est-mal-tx); }
+  .pg-resumen { display: flex; gap: 1.4rem; flex-wrap: wrap; padding: .2rem 0 .9rem; margin-bottom: .6rem; border-bottom: 1px solid var(--p-linea); color: var(--p-tenue); font-size: .9rem; }
+  .pg-resumen b { display: block; color: var(--p-txt); font-size: 1.15rem; margin-top: .15rem; }
+  .pg-resumen b.pg-bad { color: var(--est-mal-tx); }
+  .pg-lista { list-style: none; margin: 0 0 1rem; padding: 0; }
+  .pg-lista li { display: flex; align-items: center; gap: .8rem; padding: .55rem 0; border-bottom: 1px solid var(--p-linea); }
+  .pg-lista li .num { margin-left: auto; font-weight: 600; }
+  .pg-lista .pg-met { color: var(--p-tenue); font-size: .85rem; }
+  .pg-lista .pg-vacio { justify-content: center; color: var(--p-tenue); }
+  .pg-x { border: none; background: none; color: var(--p-tenue); font-size: 1.25rem; line-height: 1; cursor: pointer; padding: 0 .35rem; border-radius: 7px; }
+  .pg-x:hover { color: var(--est-mal-tx); background: var(--est-mal-bg); }
 
   .marca-check { display: flex; align-items: center; gap: .5rem; margin: 1rem 0 0; cursor: pointer; }
   .marca-check input { width: 16px; height: 16px; accent-color: var(--p-acento); }
@@ -2331,6 +2351,14 @@
           <input type="date" id="t-fecha"></div>
         <div class="f"><label for="t-monto">Se cobró <span class="opc">opcional</span></label>
           <input type="text" id="t-monto" inputmode="numeric" autocomplete="off" placeholder="₡65.000"></div>
+        <div class="f"><label for="t-metodo">Pagó con</label>
+          <select id="t-metodo">
+            <option value="efectivo">Efectivo</option>
+            <option value="sinpe">SINPE Móvil</option>
+            <option value="transferencia">Transferencia</option>
+            <option value="tarjeta">Tarjeta</option>
+            <option value="pendiente">Queda pendiente</option>
+          </select></div>
       </div>
       <div class="f"><label for="t-detalle">Detalle <span class="opc">opcional</span></label>
         <input id="t-detalle" type="text" placeholder="ej. tanque de 3 tapas, se encontró raíz en la salida"></div>
@@ -2395,6 +2423,42 @@
   </div>
 </div>
 
+<!-- Pagos de un servicio (F3): monto final, lo pagado, el saldo y los
+     abonos. El saldo se calcula solo; acá no se edita a mano. -->
+<div class="velo" id="velo-pago" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="pg-t">
+    <h2 id="pg-t">Pagos del trabajo</h2>
+    <p class="dim" id="pg-sub" style="color:var(--p-tenue); margin:.3rem 0 1rem;"></p>
+    <div class="pg-resumen">
+      <span>Monto <b class="num" id="pg-monto">—</b></span>
+      <span>Pagado <b class="num" id="pg-pagado">—</b></span>
+      <span id="pg-saldo-w">Saldo <b class="num" id="pg-saldo">—</b></span>
+    </div>
+    <ul class="pg-lista" id="pg-lista"></ul>
+    <div class="libre-caja">
+      <p class="grupo">Registrar un pago</p>
+      <div class="nueva-rejilla">
+        <div class="f"><label for="pg-monto-n">Monto</label>
+          <input type="text" id="pg-monto-n" inputmode="numeric" autocomplete="off" placeholder="₡0"></div>
+        <div class="f"><label for="pg-metodo-n">Con</label>
+          <select id="pg-metodo-n">
+            <option value="efectivo">Efectivo</option>
+            <option value="sinpe">SINPE Móvil</option>
+            <option value="transferencia">Transferencia</option>
+            <option value="tarjeta">Tarjeta</option>
+            <option value="otro">Otro</option>
+          </select></div>
+        <div class="f"><label for="pg-fecha-n">Fecha</label><input type="date" id="pg-fecha-n"></div>
+      </div>
+    </div>
+    <p class="estado-linea" id="pg-aviso" role="status" aria-live="polite"></p>
+    <div class="hoja-pie">
+      <button type="button" class="btn-suave" id="pg-cerrar">Cerrar</button>
+      <button type="button" class="btn-fuerte" id="pg-agregar">Registrar pago</button>
+    </div>
+  </div>
+</div>
+
 <div class="velo" id="velo" hidden>
   <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="hoja-t">
     <h2 id="hoja-t">Anotar el trabajo</h2>
@@ -2404,6 +2468,15 @@
     <div class="nueva-rejilla">
       <div class="f"><label for="h-fecha">Se hizo el</label><input type="date" id="h-fecha"></div>
       <div class="f"><label for="h-monto">Se cobró <span class="opc">opcional</span></label><input type="text" id="h-monto" inputmode="numeric" autocomplete="off" placeholder="₡65.000"></div>
+      <div class="f"><label for="h-metodo">Pagó con</label>
+        <select id="h-metodo">
+          <option value="efectivo">Efectivo</option>
+          <option value="sinpe">SINPE Móvil</option>
+          <option value="transferencia">Transferencia</option>
+          <option value="tarjeta">Tarjeta</option>
+          <option value="pendiente">Queda pendiente</option>
+        </select>
+      </div>
       <div class="f"><label for="h-meses">Recordar en</label>
         <select id="h-meses"></select>
       </div>
@@ -2620,7 +2693,7 @@
       input.value = d ? "₡" + d.replace(/\B(?=(\d{3})+(?!\d))/g, ".") : "";
     });
   }
-  ["n-monto", "t-monto", "h-monto"].forEach(function (id) { montoLibre(document.getElementById(id)); });
+  ["n-monto", "t-monto", "h-monto", "pg-monto-n"].forEach(function (id) { montoLibre(document.getElementById(id)); });
 
   var MESES = ["ene","feb","mar","abr","may","jun","jul","ago","set","oct","nov","dic"];
   var MES_LARGO = ["enero","febrero","marzo","abril","mayo","junio",
@@ -4399,6 +4472,7 @@
   }
 
   function pintarCliente(d) {
+    fichaActual = d;               // para el recuadro de pagos (F3)
     var c = d.cliente;
     var acc = [];
     if (c.wa) acc.push('<a class="bt wa" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
@@ -4411,22 +4485,43 @@
       return '<option value="' + k + '"' + (k === c.canal ? " selected" : "") + ">" + escHtml(d.canales[k]) + "</option>";
     }).join("");
 
+    var ESTADO_SERV = { programado: "Programado", en_proceso: "En proceso", cancelado: "Cancelado" };
     var hist = d.servicios.length
       ? '<ul class="hist">' + d.servicios.map(function (s) {
-          return "<li>" +
-            '<span class="f-fecha">' + escHtml(fechaLarga(s.fecha)) + "</span>" +
-            '<span class="f-que">' + piezas([s.servicioNombre, s.detalle]) + "</span>" +
+          var esComp = s.estado === "completado";
+          var trab = esComp ? "" : '<span class="pastilla mudo">' + escHtml(ESTADO_SERV[s.estado] || s.estado) + "</span>";
+          var pago = "";
+          if (esComp && s.monto) {
+            if (s.estadoPago === "pagado") pago = '<span class="pg pg-ok">Pagado</span>';
+            else if (s.estadoPago === "parcial") pago = '<span class="pg pg-mid">Falta ' + escHtml(colones(s.saldo)) + "</span>";
+            else if (s.estadoPago === "pendiente") pago = '<span class="pg pg-bad">Debe ' + escHtml(colones(s.saldo)) + "</span>";
+          }
+          return '<li' + (esComp ? ' data-pagos="' + s.id + '"' : "") + ">" +
+            '<span class="f-fecha">' + escHtml(fechaLarga(s.fecha)) + (s.hora ? " " + escHtml(s.hora) : "") + "</span>" +
+            '<span class="f-que">' + piezas([s.servicioNombre, s.detalle]) + (trab ? " " + trab : "") + "</span>" +
             '<span class="f-monto">' + (s.monto ? escHtml(colones(s.monto)) : "—") + "</span>" +
+            '<span class="f-pago">' + pago + "</span>" +
             '<span class="f-prox">' + (s.proximo ? "próximo " + escHtml(fechaLarga(s.proximo)) : "") + "</span>" +
           "</li>";
         }).join("") + "</ul>"
       : '<p class="vacio-ok">Todavía no hay trabajos anotados.</p>';
 
+    // Resumen económico del cliente (F3).
+    var fin = "";
+    if ((d.cliente.cobrado || 0) > 0 || (d.cliente.saldoPendiente || 0) > 0) {
+      fin = '<div class="cli-fin">' +
+        '<span>Cobrado <b class="num">' + escHtml(colones(d.cliente.cobrado || 0)) + "</b></span>" +
+        ((d.cliente.saldoPendiente || 0) > 0
+          ? '<span class="cli-debe">Saldo pendiente <b class="num">' + escHtml(colones(d.cliente.saldoPendiente)) + "</b></span>"
+          : "") +
+      "</div>";
+    }
+
     $("cliente-cuerpo").innerHTML =
       '<div class="tarj">' +
         '<div class="perfil-cab">' +
           "<div><h2>" + escHtml(c.nombre) + "</h2>" +
-            '<div class="sub">' + piezas([tel(c.telefono), lugar]) + "</div></div>" +
+            '<div class="sub">' + piezas([tel(c.telefono), lugar]) + "</div>" + fin + "</div>" +
           '<div class="acc-cab">' + acc.join("") + "</div>" +
         "</div>" +
         '<div id="cf-editar" hidden>' +
@@ -4506,6 +4601,107 @@
         });
     });
   }
+
+  /* =========================================================
+     Pagos de un servicio (F3)
+     ========================================================= */
+  var fichaActual = null;        // último cliente pintado, para los pagos
+  var pagoServicioId = null;
+
+  var METODO_TXT = {
+    efectivo: "Efectivo", sinpe: "SINPE Móvil", transferencia: "Transferencia",
+    tarjeta: "Tarjeta", otro: "Otro", "no-registrado": "Sin registrar"
+  };
+
+  function renderPago(s) {
+    $("pg-sub").textContent = [s.servicioNombre, fechaLarga(s.fecha)].filter(Boolean).join(" · ");
+    $("pg-monto").textContent = colones(s.monto || 0);
+    $("pg-pagado").textContent = colones(s.pagado || 0);
+    $("pg-saldo").textContent = colones(s.saldo || 0);
+    $("pg-saldo").className = "num " + ((s.saldo || 0) > 0 ? "pg-bad" : "pg-ok");
+    $("pg-lista").innerHTML = (s.pagos && s.pagos.length)
+      ? s.pagos.map(function (p) {
+          return "<li><span>" + escHtml(fechaLarga(p.fecha)) + "</span>" +
+            '<span class="pg-met">' + escHtml(METODO_TXT[p.metodo] || p.metodo || "") + "</span>" +
+            '<span class="num">' + escHtml(colones(p.monto)) + "</span>" +
+            '<button type="button" class="pg-x" data-borrar-pago="' + p.id + '" aria-label="Borrar pago">&times;</button></li>';
+        }).join("")
+      : '<li class="pg-vacio">Todavía no hay pagos.</li>';
+    $("pg-monto-n").value = (s.saldo || 0) > 0 ? colones(s.saldo) : "";
+    $("pg-fecha-n").value = hoyISO();
+    $("pg-metodo-n").value = "efectivo";
+    $("pg-aviso").textContent = "";
+    $("pg-aviso").classList.remove("is-error");
+  }
+
+  function abrirPago(servicioId) {
+    if (!fichaActual) return;
+    var s = fichaActual.servicios.filter(function (x) { return String(x.id) === String(servicioId); })[0];
+    if (!s) return;
+    pagoServicioId = servicioId;
+    renderPago(s);
+    $("velo-pago").hidden = false;
+    $("pg-monto-n").focus();
+  }
+
+  // Después de un pago (o de borrarlo) se re-trae el cliente y se
+  // repintan la ficha y el propio recuadro de pagos, para que el saldo
+  // quede al día sin adivinar nada del lado del navegador.
+  function refrescarFichaYPago() {
+    var id = fichaActual && fichaActual.cliente && fichaActual.cliente.id;
+    if (!id) return Promise.resolve();
+    return pedir("/api/panel/cliente?id=" + encodeURIComponent(id)).then(function (d) {
+      pintarCliente(d);
+      if (!$("velo-pago").hidden && pagoServicioId) {
+        var s = d.servicios.filter(function (x) { return String(x.id) === String(pagoServicioId); })[0];
+        if (s) renderPago(s);
+      }
+    });
+  }
+
+  $("cliente-cuerpo").addEventListener("click", function (e) {
+    var li = e.target.closest("[data-pagos]");
+    if (li) abrirPago(li.getAttribute("data-pagos"));
+  });
+  $("pg-agregar").addEventListener("click", function () {
+    var monto = soloDigitos($("pg-monto-n").value);
+    if (!monto || Number(monto) <= 0) {
+      $("pg-aviso").textContent = "Poné el monto del pago.";
+      $("pg-aviso").classList.add("is-error");
+      return;
+    }
+    $("pg-agregar").disabled = true;
+    pedir("/api/panel/pago", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        servicioId: pagoServicioId, monto: monto,
+        metodo: $("pg-metodo-n").value, fecha: $("pg-fecha-n").value
+      })
+    })
+      .then(function () { return refrescarFichaYPago(); })
+      .then(function () { avisar("Pago registrado."); })
+      .catch(function (err) {
+        $("pg-aviso").textContent = String((err && err.message) || "No se pudo registrar.");
+        $("pg-aviso").classList.add("is-error");
+      })
+      .then(function () { $("pg-agregar").disabled = false; });
+  });
+  $("pg-lista").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-borrar-pago]");
+    if (!b) return;
+    if (!confirm("¿Borrar este pago? Queda en la papelera, no se pierde.")) return;
+    pedir("/api/panel/pago/borrar", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: b.getAttribute("data-borrar-pago") })
+    })
+      .then(function () { return refrescarFichaYPago(); })
+      .then(function () { avisar("Pago borrado."); })
+      .catch(function (err) { avisar(String((err && err.message) || "No se pudo borrar."), "mal"); });
+  });
+  $("pg-cerrar").addEventListener("click", function () { $("velo-pago").hidden = true; });
+  $("velo-pago").addEventListener("click", function (e) {
+    if (e.target === $("velo-pago")) $("velo-pago").hidden = true;
+  });
 
   /* Un año se dice "1 año", no "12 meses". Con periodicidades que ahora
      van de 3 a 48, escribirlo todo en meses obliga a dividir de cabeza. */
@@ -4595,6 +4791,7 @@
 
     ["t-telefono", "t-nombre", "t-cedula", "t-correo", "t-senas", "t-monto", "t-detalle"]
       .forEach(function (id) { $(id).value = ""; });
+    $("t-metodo").value = "efectivo";
     if (pre) {
       if (pre.telefono) $("t-telefono").value = pre.telefono;
       if (pre.nombre) $("t-nombre").value = pre.nombre;
@@ -4664,7 +4861,7 @@
         senas: $("t-senas").value,
         provincia: $("t-provincia").value, canton: $("t-canton").value,
         servicio: $("t-servicio").value, fecha: $("t-fecha").value,
-        monto: soloDigitos($("t-monto").value), detalle: $("t-detalle").value,
+        monto: soloDigitos($("t-monto").value), metodo: $("t-metodo").value, detalle: $("t-detalle").value,
         meses: $("t-meses").value, canal: $("t-canal").value,
         recordatorio: $("t-recordar").checked
       })
@@ -4860,7 +5057,7 @@
           body: JSON.stringify({
             id: c.id, estado: "hecho",
             monto: r.soloEstado ? "" : r.monto,
-            fecha: r.fecha, meses: r.meses, mantenimiento: decision
+            fecha: r.fecha, meses: r.meses, metodo: r.metodo, mantenimiento: decision
           })
         })
           .then(function (d) {
@@ -5245,6 +5442,7 @@
     $("h-fecha").value = hoyISO();
     $("h-monto").value = "";
     $("h-meses").value = "24";
+    $("h-metodo").value = "efectivo";
     $("h-recordar").checked = true;
     $("velo").hidden = false;
     $("h-fecha").focus();
@@ -5276,6 +5474,7 @@
       fecha: $("h-fecha").value || hoyISO(),
       monto: soloDigitos($("h-monto").value),
       meses: Number($("h-meses").value),
+      metodo: $("h-metodo").value,
       recordatorio: $("h-recordar").checked
     });
   });
