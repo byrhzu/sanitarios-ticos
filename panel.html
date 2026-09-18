@@ -1204,6 +1204,16 @@
   .pg-lista .pg-vacio { justify-content: center; color: var(--p-tenue); }
   .pg-x { border: none; background: none; color: var(--p-tenue); font-size: 1.25rem; line-height: 1; cursor: pointer; padding: 0 .35rem; border-radius: 7px; }
   .pg-x:hover { color: var(--est-mal-tx); background: var(--est-mal-bg); }
+  /* ---------- Papelera (F4) ---------- */
+  .hoja-ancha { max-width: 600px; }
+  .pap-grupo { margin-bottom: 1.1rem; }
+  .pap-grupo h3 { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--p-tenue); margin: 0 0 .3rem; }
+  .pap-item { display: flex; align-items: center; gap: 1rem; padding: .55rem 0; border-top: 1px solid var(--p-linea); }
+  .pap-quien { flex: 1 1 auto; min-width: 0; }
+  .pap-quien b { font-weight: 500; }
+  .pap-quien small { display: block; color: var(--p-tenue); font-size: .8rem; }
+  .pap-acc { display: flex; gap: .4rem; flex: 0 0 auto; }
+  .menu-yo-n { margin-left: auto; background: var(--p-acento); color: #20130a; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 700; }
 
   .marca-check { display: flex; align-items: center; gap: .5rem; margin: 1rem 0 0; cursor: pointer; }
   .marca-check input { width: 16px; height: 16px; accent-color: var(--p-acento); }
@@ -1811,18 +1821,9 @@
         Resumen
       </button>
       <span class="grupo-nav">Gestión</span>
-      <button type="button" role="tab" data-vista="solicitudes" aria-selected="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M8.5 19 5 21.5V18H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-7.5z"/>
-          <path d="M8 10h8M8 13.5h5"/>
-        </svg>
-        <span class="largo">Solicitudes</span><span class="corto">Solic.</span><span class="pendiente" id="pend-sol" hidden></span>
-      </button>
-      <!-- El hueco donde se para el botón redondo: justo en el medio,
-           tres destinos de cada lado. En escritorio la barra es lateral,
-           el botón vuelve a tener su nombre y el hueco desaparece. -->
-      <span class="hueco-fab" aria-hidden="true"></span>
-
+      <!-- Cotizaciones incluye las Solicitudes (se ven en un sub-switch
+           adentro). La solicitud es rara y solo antecede a la cotización,
+           así que no gana un destino propio: avisa con el punto de acá. -->
       <button type="button" role="tab" data-vista="cotizaciones" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 11.5V5a2 2 0 0 1 2-2h6.5a2 2 0 0 1 1.4.6l7.5 7.5a2 2 0 0 1 0 2.8l-6.6 6.6a2 2 0 0 1-2.8 0L3.6 13a2 2 0 0 1-.6-1.5z"/>
@@ -1830,6 +1831,10 @@
         </svg>
         <span class="largo">Cotizaciones</span><span class="corto">Cotiz.</span><span class="pendiente" id="pend-cot" hidden></span>
       </button>
+      <!-- El hueco donde se para el botón redondo: justo en el medio,
+           tres destinos de cada lado. En escritorio la barra es lateral,
+           el botón vuelve a tener su nombre y el hueco desaparece. -->
+      <span class="hueco-fab" aria-hidden="true"></span>
       <button type="button" role="tab" data-vista="clientes" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7.5" r="3.5"/>
@@ -1922,6 +1927,12 @@
               <small class="frescura" id="frescura">Cargando…</small>
             </div>
             <button type="button" id="btn-avisos" hidden></button>
+            <button type="button" id="btn-papelera">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 11v6M14 11v6"/>
+              </svg>
+              Papelera<span class="menu-yo-n" id="papelera-n" hidden></span>
+            </button>
             <button type="button" id="btn-tema"></button>
             <button type="button" id="btn-salir">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2050,6 +2061,16 @@
 
     <!-- ================= TABLAS ================= -->
     <div class="vista" id="vista-tabla" hidden>
+      <!-- Solicitudes vive adentro de Cotizaciones: son el mismo embudo,
+           la solicitud es el paso previo. Este switch pasa de una a otra. -->
+      <div class="hoy-sw tabla-sw" role="tablist" aria-label="Cotizaciones o solicitudes" id="tabla-sw">
+        <button type="button" role="tab" class="hoy-sw-b" data-tab="cotizaciones" aria-selected="true">
+          <span class="hoy-sw-t">Cotizaciones</span><span class="hoy-sw-n" id="sw-cotiz">0</span>
+        </button>
+        <button type="button" role="tab" class="hoy-sw-b" data-tab="solicitudes" aria-selected="false">
+          <span class="hoy-sw-t">Solicitudes</span><span class="hoy-sw-n" id="sw-solic">0</span>
+        </button>
+      </div>
       <!-- Las pestañas responden "¿cuántas hay en cada punto del
            embudo?" antes de que uno tenga que abrir ninguna. -->
       <div class="pest-est" id="pest-est" role="tablist" aria-label="Filtrar por estado"></div>
@@ -2469,6 +2490,21 @@
     <div class="hoja-pie">
       <button type="button" class="btn-suave" id="c-cerrar">Cancelar</button>
       <button type="button" class="btn-fuerte" id="c-guardar">Agendar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Papelera (F4): todo lo borrado, para restaurar o eliminar de verdad. -->
+<div class="velo" id="velo-papelera" hidden>
+  <div class="hoja hoja-ancha" role="dialog" aria-modal="true" aria-labelledby="pap-t">
+    <h2 id="pap-t">Papelera</h2>
+    <p class="dim" style="color:var(--p-tenue); margin:.3rem 0 1.1rem;">
+      Lo que se borra no se pierde: queda acá y se puede restaurar. Eliminar desde acá sí es definitivo.
+    </p>
+    <div id="pap-cuerpo"></div>
+    <p class="estado-linea" id="pap-aviso" role="status" aria-live="polite"></p>
+    <div class="hoja-pie">
+      <button type="button" class="btn-suave" id="pap-cerrar">Cerrar</button>
     </div>
   </div>
 </div>
@@ -3195,8 +3231,11 @@
         marcar("pend-hoy", d.esperando.total);
         // El puntito de la campana: hay algo esperando respuesta.
         $("punto-campana").hidden = !d.esperando.total;
-        marcar("pend-cot", d.esperando.cot);
-        marcar("pend-sol", d.esperando.sol);
+        // El botón Cotizaciones avisa por las dos: cotizaciones y
+        // solicitudes sin atender (una solicitud que entra "brinca" acá).
+        marcar("pend-cot", (d.esperando.cot || 0) + (d.esperando.sol || 0));
+        ponerSw("sw-cotiz", d.esperando.cot || 0);
+        ponerSw("sw-solic", d.esperando.sol || 0);
         sellar();
         resumenCargado = true;
       })
@@ -4593,6 +4632,7 @@
         '<div class="nueva-pie">' +
           '<button type="button" class="btn-fuerte" id="cf-guardar">Guardar</button>' +
           '<button type="button" class="btn-suave" id="cf-cancelar">Cancelar</button>' +
+          '<button type="button" class="btn-suave malo" id="cf-eliminar">Eliminar cliente</button>' +
           '<p class="estado-linea" id="cf-aviso" role="status" aria-live="polite"></p>' +
         "</div>" +
         "</div>" +   /* cierra #cf-editar */
@@ -4649,6 +4689,36 @@
           aviso.textContent = "";
           avisar("No se pudo guardar el cliente.", "mal");
         });
+    });
+
+    // Eliminar el cliente = a la papelera. Antes avisa qué cuelga de él
+    // (§21): nada se borra en cascada, dejan de verse y vuelven si se
+    // restaura.
+    $("cf-eliminar").addEventListener("click", function () {
+      pedir("/api/panel/dependencias?tabla=cliente&id=" + encodeURIComponent(c.id))
+        .then(function (r) {
+          var dep = r.dep || {}, partes = [];
+          if (dep.servicios) partes.push(dep.servicios + (dep.servicios === 1 ? " servicio" : " servicios"));
+          if (dep.cotizaciones) partes.push(dep.cotizaciones + (dep.cotizaciones === 1 ? " cotización" : " cotizaciones"));
+          if (dep.mantenimientos) partes.push(dep.mantenimientos + " en mantenimiento");
+          if (dep.pagos) partes.push(dep.pagos + (dep.pagos === 1 ? " pago" : " pagos"));
+          var msg = "¿Enviar a la papelera a " + c.nombre + "?";
+          if (partes.length) {
+            msg += "\n\nTiene " + partes.join(", ") + ". No se borran: dejan de verse y vuelven si lo restaurás desde la papelera.";
+          }
+          if (!confirm(msg)) return;
+          pedir("/api/panel/borrar", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tabla: "cliente", id: c.id })
+          })
+            .then(function () {
+              avisar("Cliente enviado a la papelera.");
+              resumenCargado = false; agendaCargada = false;
+              irA("clientes", {});
+            })
+            .catch(function (err) { avisar(String((err && err.message) || "No se pudo."), "mal"); });
+        })
+        .catch(function () { avisar("No se pudo consultar.", "mal"); });
     });
   }
 
@@ -4859,6 +4929,79 @@
   $("pg-cerrar").addEventListener("click", function () { $("velo-pago").hidden = true; });
   $("velo-pago").addEventListener("click", function (e) {
     if (e.target === $("velo-pago")) $("velo-pago").hidden = true;
+  });
+
+  /* =========================================================
+     Papelera (F4): restaurar o eliminar de verdad
+     ========================================================= */
+  var PAP_ETQ = { cliente: "cliente", cotizacion: "cotización", servicio: "servicio", pago: "pago", solicitud: "solicitud" };
+
+  function marcarPapelera(n) {
+    var e = $("papelera-n"); e.textContent = String(n || 0); e.hidden = !n;
+  }
+
+  function abrirPapelera() {
+    menuYo(false);
+    $("pap-aviso").textContent = "";
+    $("pap-cuerpo").innerHTML = '<p class="estado-linea">Cargando…</p>';
+    $("velo-papelera").hidden = false;
+    cargarPapelera();
+  }
+
+  function cargarPapelera() {
+    pedir("/api/panel/papelera").then(function (d) {
+      marcarPapelera(d.total || 0);
+      if (!d.grupos || !d.grupos.length) {
+        $("pap-cuerpo").innerHTML = '<p class="vacio-ok">La papelera está vacía.</p>';
+        return;
+      }
+      $("pap-cuerpo").innerHTML = d.grupos.map(function (g) {
+        return '<div class="pap-grupo"><h3>' + escHtml(g.nombre) + " (" + g.items.length + ")</h3>" +
+          g.items.map(function (i) {
+            var ref = i.tabla + ":" + i.id;
+            return '<div class="pap-item">' +
+              '<div class="pap-quien"><b>' + escHtml(i.titulo) + "</b>" +
+                (i.sub ? "<small>" + escHtml(i.sub) + "</small>" : "") + "</div>" +
+              '<div class="pap-acc">' +
+                '<button type="button" class="bt" data-pap-rest="' + ref + '">Restaurar</button>' +
+                '<button type="button" class="bt malo" data-pap-elim="' + ref + '">Eliminar</button>' +
+              "</div></div>";
+          }).join("") + "</div>";
+      }).join("");
+    }).catch(function () {
+      $("pap-cuerpo").innerHTML = '<p class="estado-linea is-error">No se pudo cargar la papelera.</p>';
+    });
+  }
+
+  function papeleraOp(ruta, ref, aviso) {
+    var p = ref.split(":");
+    return pedir("/api/panel/" + ruta, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tabla: p[0], id: p[1] })
+    })
+      .then(function () {
+        avisar(aviso);
+        resumenCargado = false; agendaCargada = false;
+        cargarPapelera();
+      })
+      .catch(function (err) { avisar(String((err && err.message) || "No se pudo."), "mal"); });
+  }
+
+  $("btn-papelera").addEventListener("click", abrirPapelera);
+  $("pap-cerrar").addEventListener("click", function () { $("velo-papelera").hidden = true; });
+  $("velo-papelera").addEventListener("click", function (e) {
+    if (e.target === $("velo-papelera")) $("velo-papelera").hidden = true;
+  });
+  $("pap-cuerpo").addEventListener("click", function (e) {
+    var r = e.target.closest("[data-pap-rest]");
+    var x = e.target.closest("[data-pap-elim]");
+    if (r) return papeleraOp("restaurar", r.getAttribute("data-pap-rest"), "Restaurado.");
+    if (x) {
+      var ref = x.getAttribute("data-pap-elim");
+      if (!confirm("Eliminar definitivamente este " + (PAP_ETQ[ref.split(":")[0]] || "registro") +
+                   "?\n\nEsta acción no se puede deshacer.")) return;
+      papeleraOp("eliminar", ref, "Eliminado definitivamente.");
+    }
   });
 
   /* Un año se dice "1 año", no "12 meses". Con periodicidades que ahora
@@ -5492,6 +5635,7 @@
     acc.push('<button type="button" class="bt" data-reagendar="' + c.id + '">Reagendar</button>');
     acc.push('<button type="button" class="bt fuerte" data-hecho="' + c.id + '">Hecho</button>');
     acc.push('<button type="button" class="bt malo" data-cancelar="' + c.id + '">Cancelar</button>');
+    acc.push('<button type="button" class="bt malo" data-eliminar-serv="' + c.id + '">Eliminar</button>');
 
     var atrasada = c.dias < 0;
     return '<div class="toca-fila cita' + (atrasada ? " vencido" : "") + '">' +
@@ -5569,16 +5713,30 @@
   }
 
   $("agenda-lista").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-cliente],[data-reagendar],[data-hecho],[data-cancelar],[data-agendar-dia]");
+    var b = e.target.closest("[data-cliente],[data-reagendar],[data-hecho],[data-cancelar],[data-eliminar-serv],[data-agendar-dia]");
     if (!b) return;
     if (b.dataset.cliente != null) return verCliente(b.dataset.cliente);
     if (b.dataset.agendarDia != null) return abrirCita({ fecha: b.dataset.agendarDia });
-    var cita = (AGENDA.citas || []).filter(function (c) { return String(c.id) === b.dataset.reagendar || String(c.id) === b.dataset.hecho || String(c.id) === b.dataset.cancelar; })[0];
+    var buscar = b.dataset.reagendar || b.dataset.hecho || b.dataset.cancelar || b.dataset.eliminarServ;
+    var cita = (AGENDA.citas || []).filter(function (c) { return String(c.id) === buscar; })[0];
     if (!cita) return;
     if (b.dataset.reagendar != null) return abrirCita({ cita: cita });
     if (b.dataset.hecho != null) return marcarCitaHecha(cita);
     if (b.dataset.cancelar != null) return cancelarCita(cita);
+    if (b.dataset.eliminarServ != null) return eliminarServicio(cita);
   });
+
+  // Eliminar un trabajo programado creado por error → a la papelera
+  // (distinto de Cancelar, que lo deja como 'cancelado'). §22.
+  function eliminarServicio(c) {
+    if (!confirm("¿Eliminar este trabajo de " + c.nombre + "?\n\nVa a la papelera; se puede restaurar.")) return;
+    pedir("/api/panel/borrar", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tabla: "servicio", id: c.id })
+    })
+      .then(function () { avisar("Trabajo enviado a la papelera."); agendaCargada = false; cargarAgenda(); })
+      .catch(function (err) { avisar(String((err && err.message) || "No se pudo."), "mal"); });
+  }
 
   /* =========================================================
      La hoja de "anotar el trabajo"
@@ -5731,8 +5889,10 @@
       }
     }
 
+    // Solicitudes no tiene botón propio: vive bajo Cotizaciones.
+    var navSel = (nueva === "solicitudes") ? "cotizaciones" : nueva;
     Array.prototype.forEach.call(document.querySelectorAll(".barra nav button"), function (b) {
-      b.setAttribute("aria-selected", String(b.dataset.vista === nueva));
+      b.setAttribute("aria-selected", String(b.dataset.vista === navSel));
     });
     /* Hoy saluda; las demás pantallas se nombran. Un "Buenos días" en la
        lista de cotizaciones sería ruido: ahí uno vino a trabajar, no a
@@ -5753,6 +5913,12 @@
     menuYo(false);
 
     var esTabla = nueva === "cotizaciones" || nueva === "solicitudes";
+    // El sub-switch de la tabla marca en cuál de las dos está.
+    if (esTabla) {
+      Array.prototype.forEach.call($("tabla-sw").querySelectorAll("button"), function (b) {
+        b.setAttribute("aria-selected", String(b.dataset.tab === nueva));
+      });
+    }
     $("top-busca").hidden = esTabla || nueva === "clientes" || nueva === "servicios";
     $("vista-hoy").hidden = nueva !== "hoy";
     $("vista-resumen").hidden = nueva !== "resumen";
@@ -5774,6 +5940,12 @@
     else if (nueva === "agenda") { if (!agendaCargada) cargarAgenda(); else pintarAgendaLista(); }
     else { $("cuerpo-tabla").innerHTML = ""; cargarTabla(); }
   }
+
+  // El sub-switch Cotizaciones / Solicitudes (dentro de la misma sección).
+  $("tabla-sw").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-tab]");
+    if (b) irA(b.dataset.tab, {});
+  });
 
   Array.prototype.forEach.call(document.querySelectorAll(".barra nav button"), function (b) {
     b.addEventListener("click", function () {

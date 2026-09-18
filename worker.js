@@ -1507,6 +1507,102 @@ async function listaServicios(request, env) {
   }
 }
 
+/* =============================================================
+   F4 · Papelera universal (borrado lógico)
+
+   Nada se destruye al borrar: se marca `papelera` con la fecha. Deja de
+   verse en las listas, pero se puede restaurar. Eliminar de verdad
+   (DELETE) es un segundo paso, solo desde la papelera. Borrar un cliente
+   NO borra en cascada sus cotizaciones/servicios/pagos: quedan, y como
+   las listas filtran por el cliente activo, no aparecen huérfanos; al
+   restaurar el cliente vuelven a verse.
+   ============================================================= */
+const PAPELERA_TABLAS = {
+  cliente: "clientes", cotizacion: "cotizaciones", servicio: "servicios",
+  pago: "pagos", solicitud: "solicitudes"
+};
+
+async function papeleraAccion(request, env, accion) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+  let b;
+  try { b = await request.json(); } catch { return json({ ok: false, error: "Formato inválido" }, 400); }
+  const tabla = PAPELERA_TABLAS[b.tabla];   // clave de un allowlist: nunca texto libre
+  const id = parseInt(b.id, 10);
+  if (!tabla || !Number.isFinite(id)) return json({ ok: false, error: "Registro inválido" }, 400);
+  try {
+    if (accion === "borrar") {
+      await env.DB.prepare(`UPDATE ${tabla} SET papelera = datetime('now') WHERE id = ?`).bind(id).run();
+    } else if (accion === "restaurar") {
+      await env.DB.prepare(`UPDATE ${tabla} SET papelera = NULL WHERE id = ?`).bind(id).run();
+    } else { // eliminar definitivo: solo lo que YA está en la papelera
+      await env.DB.prepare(`DELETE FROM ${tabla} WHERE id = ? AND papelera IS NOT NULL`).bind(id).run();
+    }
+    return json({ ok: true });
+  } catch (e) {
+    console.error("Papelera (" + accion + "):", e);
+    return json({ ok: false, error: "No se pudo completar" }, 500);
+  }
+}
+
+async function papeleraLista(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+  const money = (n) => "₡" + String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const q = (sql) => env.DB.prepare(sql).all().then((r) => r.results || []).catch(() => []);
+  try {
+    const [cli, cot, ser, pag, sol] = await Promise.all([
+      q(`SELECT id, nombre, telefono, papelera FROM clientes WHERE papelera IS NOT NULL ORDER BY papelera DESC`),
+      q(`SELECT id, numero, nombre, papelera FROM cotizaciones WHERE papelera IS NOT NULL ORDER BY papelera DESC`),
+      q(`SELECT s.id, s.servicio, s.fecha, s.papelera, c.nombre FROM servicios s
+          LEFT JOIN clientes c ON c.id = s.cliente_id WHERE s.papelera IS NOT NULL ORDER BY s.papelera DESC`),
+      q(`SELECT p.id, p.monto, p.fecha, p.papelera, c.nombre FROM pagos p
+          LEFT JOIN clientes c ON c.id = p.cliente_id WHERE p.papelera IS NOT NULL ORDER BY p.papelera DESC`),
+      q(`SELECT id, nombre, servicio, papelera FROM solicitudes WHERE papelera IS NOT NULL ORDER BY papelera DESC`)
+    ]);
+    const it = (tabla, id, titulo, sub, papelera) => ({ tabla, id, titulo, sub: sub || "", papelera });
+    const grupos = [
+      { tabla: "cliente", nombre: "Clientes", items: cli.map((r) => it("cliente", r.id, r.nombre || "Sin nombre", r.telefono, r.papelera)) },
+      { tabla: "cotizacion", nombre: "Cotizaciones", items: cot.map((r) => it("cotizacion", r.id, r.numero || ("Cotización " + r.id), r.nombre, r.papelera)) },
+      { tabla: "servicio", nombre: "Servicios", items: ser.map((r) => it("servicio", r.id, etiqueta(r.servicio, null, "servicio"), [r.nombre, r.fecha].filter(Boolean).join(" · "), r.papelera)) },
+      { tabla: "pago", nombre: "Pagos", items: pag.map((r) => it("pago", r.id, money(r.monto), [r.nombre, r.fecha].filter(Boolean).join(" · "), r.papelera)) },
+      { tabla: "solicitud", nombre: "Solicitudes", items: sol.map((r) => it("solicitud", r.id, r.nombre || "Solicitud", r.servicio, r.papelera)) }
+    ].filter((g) => g.items.length);
+    return json({ ok: true, grupos, total: grupos.reduce((a, g) => a + g.items.length, 0) });
+  } catch (e) {
+    console.error("Lista de papelera:", e);
+    return json({ ok: false, error: "No se pudo consultar" }, 500);
+  }
+}
+
+// Qué cuelga de un registro, para avisar antes de borrarlo (§21).
+async function dependenciasRegistro(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+  const url = new URL(request.url);
+  const tabla = texto(url.searchParams.get("tabla"), 20);
+  const id = parseInt(url.searchParams.get("id"), 10);
+  if (!Number.isFinite(id)) return json({ ok: true, dep: {} });
+  try {
+    if (tabla === "cliente") {
+      const r = await env.DB.prepare(
+        `SELECT
+           (SELECT COUNT(*) FROM cotizaciones  WHERE cliente_id = ?1 AND papelera IS NULL) AS cotizaciones,
+           (SELECT COUNT(*) FROM servicios     WHERE cliente_id = ?1 AND papelera IS NULL) AS servicios,
+           (SELECT COUNT(*) FROM pagos         WHERE cliente_id = ?1 AND papelera IS NULL) AS pagos,
+           (SELECT COUNT(*) FROM mantenimientos WHERE cliente_id = ?1 AND papelera IS NULL AND estado = 'programado') AS mantenimientos`
+      ).bind(id).first();
+      return json({ ok: true, dep: r || {} });
+    }
+    if (tabla === "servicio") {
+      const r = await env.DB.prepare(
+        `SELECT (SELECT COUNT(*) FROM pagos WHERE servicio_id = ?1 AND papelera IS NULL) AS pagos`
+      ).bind(id).first();
+      return json({ ok: true, dep: r || {} });
+    }
+    return json({ ok: true, dep: {} });
+  } catch (e) {
+    return json({ ok: true, dep: {} });
+  }
+}
+
 // El texto del recordatorio. Sale del servidor porque es el que tiene
 // la fecha y el servicio; el panel sólo lo abre en WhatsApp.
 function mensajeRecordatorio(f) {
@@ -3358,6 +3454,21 @@ export default {
     }
     if (url.pathname === "/api/panel/servicios" && request.method === "GET") {
       return listaServicios(request, env);
+    }
+    if (url.pathname === "/api/panel/borrar" && request.method === "POST") {
+      return papeleraAccion(request, env, "borrar");
+    }
+    if (url.pathname === "/api/panel/restaurar" && request.method === "POST") {
+      return papeleraAccion(request, env, "restaurar");
+    }
+    if (url.pathname === "/api/panel/eliminar" && request.method === "POST") {
+      return papeleraAccion(request, env, "eliminar");
+    }
+    if (url.pathname === "/api/panel/papelera" && request.method === "GET") {
+      return papeleraLista(request, env);
+    }
+    if (url.pathname === "/api/panel/dependencias" && request.method === "GET") {
+      return dependenciasRegistro(request, env);
     }
     if (url.pathname === "/api/panel/buscar" && request.method === "GET") {
       return buscarPanel(request, env);
