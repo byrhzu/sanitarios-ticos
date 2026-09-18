@@ -1,7 +1,7 @@
 /* =====================================================================
    Cotizador público — /cotizar
    ---------------------------------------------------------------------
-   La misma cotización que hace Frank en el chat, pero para quien
+   La misma cotización que hace Víctor en el chat, pero para quien
    prefiere botones a conversación. Usa los mismos tres endpoints
    (/api/cotizar/opciones, /api/geografia, /api/cotizar) y manda
    origen "formulario", que el servidor acepta sin clave del panel.
