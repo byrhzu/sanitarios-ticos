@@ -919,16 +919,16 @@ async function resumenPanel(request, env) {
            AND ${dia} <= date('now', '-6 hours', '-${Math.max(1, TARIFAS.vigenciaDias - 5)} days')`),
       /* 15 · los mantenimientos que vienen. Sólo el último trabajo de
              cada cliente y sólo si tiene el recordatorio prendido. */
-      q(`SELECT s.proximo, s.fecha, s.servicio, c.id AS cliente_id, c.nombre,
+      q(`SELECT m.fecha AS proximo, so.fecha AS fecha, m.tipo AS servicio, c.id AS cliente_id, c.nombre,
                 c.telefono, c.canton, c.provincia,
-                CAST(julianday(s.proximo) - julianday(date('now','-6 hours')) AS INTEGER) AS dias
-         FROM servicios s JOIN clientes c ON c.id = s.cliente_id
-         WHERE s.id = (SELECT s2.id FROM servicios s2
-                       WHERE s2.cliente_id = c.id AND s2.estado = 'completado' AND s2.papelera IS NULL
-                       ORDER BY s2.fecha DESC, s2.id DESC LIMIT 1)
-           AND s.proximo IS NOT NULL AND c.recordatorio = 1 AND c.papelera IS NULL
-           AND s.proximo <= date('now', '-6 hours', '+45 days')
-         ORDER BY s.proximo LIMIT 8`)
+                CAST(julianday(m.fecha) - julianday(date('now','-6 hours')) AS INTEGER) AS dias
+         FROM mantenimientos m
+         JOIN clientes c ON c.id = m.cliente_id
+         LEFT JOIN servicios so ON so.id = m.servicio_id
+         WHERE m.estado = 'programado' AND m.papelera IS NULL
+           AND c.recordatorio = 1 AND c.papelera IS NULL
+           AND m.fecha <= date('now', '-6 hours', '+45 days')
+         ORDER BY m.fecha LIMIT 8`)
     ]);
 
     const filas = (i) => (r[i] && r[i].results) || [];
@@ -1262,7 +1262,86 @@ async function guardarServicio(env, clienteId, d, meses) {
     await env.DB.prepare(`UPDATE clientes SET meses = ?1, actualizado = datetime('now') WHERE id = ?2`)
       .bind(m, clienteId).run();
   }
-  return r.meta && r.meta.last_row_id;
+  const id = r.meta && r.meta.last_row_id;
+
+  // Un trabajo COMPLETADO arma (o reemplaza) el mantenimiento del cliente.
+  if (estado === "completado") {
+    await gestionarMantenimiento(env, {
+      id, clienteId, tipo: texto(d.servicio, 40) || "servicio", fecha, meses: m
+    }, d.mantenimiento);
+  }
+  return id;
+}
+
+/* El mantenimiento como entidad (F2). Cuando un servicio se completa,
+   este es el único lugar que decide qué pasa con "cuándo le toca la
+   próxima" de ese cliente para ese tipo de trabajo:
+
+     - No tenía mantenimiento de ese tipo → nace uno 'programado'.
+     - Ya tenía uno y llegó su fecha → el viejo queda 'hecho' y nace el
+       siguiente.
+     - Ya tenía uno a FUTURO y el cliente re-contrató antes (§14):
+         · decisión 'mantener' → se respeta el viejo, no nace ninguno.
+         · por defecto → el viejo queda 'reemplazado' (apuntando a qué
+           servicio lo reemplazó) y nace el nuevo. NUNCA se borra: el
+           historial queda entero. */
+async function gestionarMantenimiento(env, s, decision) {
+  if (!s || !s.clienteId || !s.tipo || !s.fecha) return null;
+  const m = PERIODOS.indexOf(+s.meses) !== -1 ? +s.meses : 24;
+  try {
+    const prev = await env.DB.prepare(
+      `SELECT id, fecha FROM mantenimientos
+        WHERE cliente_id = ?1 AND tipo = ?2 AND estado = 'programado' AND papelera IS NULL
+        ORDER BY fecha DESC, id DESC LIMIT 1`
+    ).bind(s.clienteId, s.tipo).first();
+
+    let accion = "nuevo", anterior = null;
+    if (prev) {
+      anterior = prev.fecha;
+      const adelantado = String(s.fecha) < String(prev.fecha);
+      if (adelantado && decision === "mantener") {
+        return { accion: "mantenido", anterior };           // se respeta el viejo
+      }
+      accion = adelantado ? "reemplazado" : "renovado";
+      await env.DB.prepare(
+        `UPDATE mantenimientos SET estado = ?1, reemplazado_por = ?2, actualizado = datetime('now')
+          WHERE id = ?3`
+      ).bind(adelantado ? "reemplazado" : "hecho", adelantado ? (s.id || null) : null, prev.id).run();
+    }
+
+    const r = await env.DB.prepare(
+      `INSERT INTO mantenimientos (cliente_id, servicio_id, tipo, fecha, meses, estado)
+       VALUES (?1, ?2, ?3, date(?4, '+' || ?5 || ' months'), ?5, 'programado')`
+    ).bind(s.clienteId, s.id || null, s.tipo, s.fecha, m).run();
+
+    return { accion, anterior, id: r.meta && r.meta.last_row_id };
+  } catch (e) {
+    console.error("No se pudo gestionar el mantenimiento:", e);
+    return null;
+  }
+}
+
+/* ¿Este cliente ya tiene un mantenimiento a FUTURO de este tipo? Lo usa el
+   panel antes de completar un trabajo, para ofrecer la decisión del §14
+   (reemplazarlo o mantenerlo) en vez de decidir a ciegas. */
+async function mantenimientoFuturo(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+  const url = new URL(request.url);
+  const cliente = parseInt(url.searchParams.get("cliente"), 10);
+  const tipo = texto(url.searchParams.get("tipo"), 40);
+  const fecha = soloFecha(url.searchParams.get("fecha")) ||
+                new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
+  if (!Number.isFinite(cliente) || !tipo) return json({ ok: true, mantenimiento: null });
+  try {
+    const prev = await env.DB.prepare(
+      `SELECT id, fecha FROM mantenimientos
+        WHERE cliente_id = ?1 AND tipo = ?2 AND estado = 'programado' AND papelera IS NULL AND fecha > ?3
+        ORDER BY fecha DESC LIMIT 1`
+    ).bind(cliente, tipo, fecha).first();
+    return json({ ok: true, mantenimiento: prev ? { id: prev.id, fecha: prev.fecha } : null });
+  } catch (e) {
+    return json({ ok: true, mantenimiento: null });
+  }
 }
 
 // El texto del recordatorio. Sale del servidor porque es el que tiene
@@ -1607,21 +1686,21 @@ async function agendaPanel(request, env) {
   if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
 
   try {
-    // Recordatorios: el ÚLTIMO trabajo COMPLETADO de cada cliente y su
-    // fecha de mantenimiento. Solo 'completado' cuenta — un trabajo
-    // programado a futuro no puede pasar por "último servicio hecho".
+    // Recordatorios: salen de la tabla `mantenimientos` (F2), que es la
+    // única fuente de "a quién le toca y cuándo". Cada mantenimiento
+    // 'programado' es una fila; el servicio que lo originó da la fecha de
+    // "la última vez" y el detalle.
     const { results } = await env.DB.prepare(
-      `SELECT s.id, s.fecha, s.servicio, s.detalle, s.monto, s.proximo,
+      `SELECT m.id, so.fecha AS fecha, m.tipo AS servicio, so.detalle AS detalle,
+              so.monto AS monto, m.fecha AS proximo,
               c.id AS cliente_id, c.nombre, c.telefono, c.correo,
               c.provincia, c.canton, c.distrito, c.recordatorio, c.canal, c.meses,
-              CAST(julianday(s.proximo) - julianday(date('now','-6 hours')) AS INTEGER) AS dias
-       FROM servicios s
-       JOIN clientes c ON c.id = s.cliente_id
-       WHERE s.id = (SELECT s2.id FROM servicios s2
-                     WHERE s2.cliente_id = c.id AND s2.estado = 'completado' AND s2.papelera IS NULL
-                     ORDER BY s2.fecha DESC, s2.id DESC LIMIT 1)
-         AND s.proximo IS NOT NULL AND c.papelera IS NULL
-       ORDER BY s.proximo`
+              CAST(julianday(m.fecha) - julianday(date('now','-6 hours')) AS INTEGER) AS dias
+       FROM mantenimientos m
+       JOIN clientes c ON c.id = m.cliente_id
+       LEFT JOIN servicios so ON so.id = m.servicio_id
+       WHERE m.estado = 'programado' AND m.papelera IS NULL AND c.papelera IS NULL
+       ORDER BY m.fecha`
     ).all();
 
     const items = results.map((f) => ({
@@ -1789,7 +1868,7 @@ async function estadoCita(request, env) {
 
     // 'hecho' = completar: nace el cobro y arranca el mantenimiento.
     const s = await env.DB.prepare(
-      `SELECT s.cliente_id, s.fecha, c.meses FROM servicios s
+      `SELECT s.cliente_id, s.fecha, s.servicio, c.meses FROM servicios s
        JOIN clientes c ON c.id = s.cliente_id WHERE s.id = ?`
     ).bind(id).first();
     if (!s) return json({ ok: false, error: "No existe ese trabajo" }, 404);
@@ -1811,7 +1890,13 @@ async function estadoCita(request, env) {
       await env.DB.prepare(`UPDATE clientes SET meses=?1, actualizado=datetime('now') WHERE id=?2`)
         .bind(meses, s.cliente_id).run();
     }
-    return json({ ok: true });
+
+    // Arma/reemplaza el mantenimiento (§14). La decisión ('mantener' vs
+    // reemplazar) viene del panel cuando había uno a futuro.
+    const mant = await gestionarMantenimiento(env, {
+      id, clienteId: s.cliente_id, tipo: s.servicio, fecha, meses
+    }, cuerpo.mantenimiento);
+    return json({ ok: true, mant: mant });
   } catch (e) {
     console.error("No se pudo cambiar el trabajo:", e);
     return json({ ok: false, error: "No se pudo actualizar" }, 500);
@@ -2948,14 +3033,13 @@ async function tareaDiaria(env) {
        `recordado` es lo que evita escribirle todos los días desde que le
        toca hasta que por fin hace el trabajo. */
     vencen = (await env.DB.prepare(
-      `SELECT s.id, s.fecha, s.servicio, s.proximo, c.id AS cliente_id, c.nombre,
-              c.correo, c.canton, c.canal
-         FROM servicios s JOIN clientes c ON c.id = s.cliente_id
-        WHERE s.id = (SELECT s2.id FROM servicios s2
-                      WHERE s2.cliente_id = c.id AND s2.estado = 'completado' AND s2.papelera IS NULL
-                      ORDER BY s2.fecha DESC, s2.id DESC LIMIT 1)
-          AND s.proximo IS NOT NULL AND s.proximo <= ?1
-          AND s.recordado IS NULL
+      `SELECT m.id, so.fecha AS fecha, m.tipo AS servicio, m.fecha AS proximo,
+              c.id AS cliente_id, c.nombre, c.correo, c.canton, c.canal
+         FROM mantenimientos m
+         JOIN clientes c ON c.id = m.cliente_id
+         LEFT JOIN servicios so ON so.id = m.servicio_id
+        WHERE m.estado = 'programado' AND m.papelera IS NULL AND m.fecha <= ?1
+          AND m.recordado IS NULL
           AND c.recordatorio = 1 AND c.papelera IS NULL`
     ).bind(hoy).all()).results || [];
   } catch (e) {
@@ -2969,7 +3053,7 @@ async function tareaDiaria(env) {
     const ok = await correoRecordatorio(f, env);
     if (!ok) continue;
     enviados++;
-    await env.DB.prepare(`UPDATE servicios SET recordado = ?1 WHERE id = ?2`)
+    await env.DB.prepare(`UPDATE mantenimientos SET recordado = ?1 WHERE id = ?2`)
       .bind(hoy, f.id).run().catch(() => {});
   }
 
@@ -3071,6 +3155,9 @@ export default {
     }
     if (url.pathname === "/api/panel/cita/estado" && request.method === "POST") {
       return estadoCita(request, env);
+    }
+    if (url.pathname === "/api/panel/mantenimiento/futuro" && request.method === "GET") {
+      return mantenimientoFuturo(request, env);
     }
     if (url.pathname === "/api/panel/buscar" && request.method === "GET") {
       return buscarPanel(request, env);

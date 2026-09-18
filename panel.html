@@ -4852,20 +4852,47 @@
     if (!$("velo-cita").hidden) cerrarCita();
     abrirHoja().then(function (r) {
       if (!r) return;                                  // canceló
-      pedir("/api/panel/cita/estado", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: c.id, estado: "hecho",
-          monto: r.soloEstado ? "" : r.monto,
-          fecha: r.fecha, meses: r.meses
+      var fechaHecho = (r.soloEstado ? hoyISO() : (r.fecha || hoyISO()));
+
+      function completar(decision) {
+        return pedir("/api/panel/cita/estado", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: c.id, estado: "hecho",
+            monto: r.soloEstado ? "" : r.monto,
+            fecha: r.fecha, meses: r.meses, mantenimiento: decision
+          })
         })
-      })
-        .then(function () {
-          avisar("Trabajo completado.");
-          agendaCargada = false; resumenCargado = false;
-          cargarAgenda();
+          .then(function (d) {
+            var m = d && d.mant;
+            var extra = (m && m.accion === "reemplazado")
+              ? " Reemplazó el mantenimiento anterior (queda en el historial)."
+              : (m && m.accion === "mantenido") ? " Se mantuvo el mantenimiento anterior." : "";
+            avisar("Trabajo completado." + extra);
+            agendaCargada = false; resumenCargado = false;
+            cargarAgenda();
+          })
+          .catch(function (err) { avisar(String((err && err.message) || "No se pudo completar."), "mal"); });
+      }
+
+      // §14: si este cliente ya tenía un mantenimiento a futuro de este
+      // mismo tipo, se pregunta si este trabajo lo reemplaza o si se
+      // mantiene el anterior. El servidor conserva el historial en ambos casos.
+      pedir("/api/panel/mantenimiento/futuro?cliente=" + encodeURIComponent(c.clienteId) +
+            "&tipo=" + encodeURIComponent(c.servicioKey || "") +
+            "&fecha=" + encodeURIComponent(fechaHecho))
+        .then(function (res) {
+          if (res && res.mantenimiento) {
+            var reemplazar = confirm(
+              "Este cliente ya tenía un mantenimiento programado para el " +
+              fechaLarga(res.mantenimiento.fecha) + ".\n\n" +
+              "Aceptar: reemplazarlo por este trabajo (el anterior queda en el historial).\n" +
+              "Cancelar: mantener el mantenimiento anterior.");
+            return completar(reemplazar ? "actualizar" : "mantener");
+          }
+          return completar();
         })
-        .catch(function (err) { avisar(String((err && err.message) || "No se pudo completar."), "mal"); });
+        .catch(function () { return completar(); });   // si el chequeo falla, completa normal
     });
   }
 
