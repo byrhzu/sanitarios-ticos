@@ -879,10 +879,12 @@ async function resumenPanel(request, env) {
              Además así entran los trabajos anotados a mano, que no
              tienen cotización y antes no aparecían en ningún desglose. */
       q(`SELECT servicio AS k, COUNT(*) AS n, COALESCE(SUM(monto), 0) AS m
-         FROM servicios WHERE fecha BETWEEN ? AND ? GROUP BY k ORDER BY n DESC`, R),
+         FROM servicios WHERE fecha BETWEEN ? AND ? AND estado = 'completado' AND papelera IS NULL
+         GROUP BY k ORDER BY n DESC`, R),
       q(`SELECT COALESCE(NULLIF(c.provincia, ''), '—') AS k, COUNT(*) AS n
          FROM servicios s JOIN clientes c ON c.id = s.cliente_id
-         WHERE s.fecha BETWEEN ? AND ? GROUP BY k ORDER BY n DESC`, R),
+         WHERE s.fecha BETWEEN ? AND ? AND s.estado = 'completado' AND s.papelera IS NULL
+         GROUP BY k ORDER BY n DESC`, R),
       // 8 · por dónde entró: dice si Víctor está sirviendo
       q(`SELECT COALESCE(origen, 'beto') AS k, COUNT(*) AS n FROM cotizaciones WHERE ${enRango} GROUP BY k ORDER BY n DESC`, R),
       /* 9 · el monto que sigue vivo. También sin filtro de fecha: es
@@ -898,14 +900,14 @@ async function resumenPanel(request, env) {
              es plata real recibida — no del rango de las cotizaciones,
              que es una estimación de algo que puede no pasar. */
       q(`SELECT COUNT(*) AS n, COALESCE(SUM(monto), 0) AS s
-         FROM servicios WHERE fecha BETWEEN ? AND ?`, R),
+         FROM servicios WHERE fecha BETWEEN ? AND ? AND estado = 'completado' AND papelera IS NULL`, R),
       /* 12 · el mismo periodo, corrido hacia atrás. Sin esto un número
              solo no dice nada: 38 cotizaciones puede ser un buen mes o
              la mitad del anterior. */
       q(`SELECT
            (SELECT COUNT(*) FROM cotizaciones WHERE ${dia} BETWEEN ?1 AND ?2) AS cot,
            (SELECT COUNT(*) FROM solicitudes  WHERE ${dia} BETWEEN ?1 AND ?2) AS sol,
-           (SELECT COALESCE(SUM(monto),0) FROM servicios WHERE fecha BETWEEN ?1 AND ?2) AS ing`,
+           (SELECT COALESCE(SUM(monto),0) FROM servicios WHERE fecha BETWEEN ?1 AND ?2 AND estado = 'completado' AND papelera IS NULL) AS ing`,
         [previo.desde, previo.hasta]),
       // 13 · solicitudes que llevan más de un día sin que nadie las toque
       q(`SELECT COUNT(*) AS n FROM solicitudes
@@ -921,9 +923,10 @@ async function resumenPanel(request, env) {
                 c.telefono, c.canton, c.provincia,
                 CAST(julianday(s.proximo) - julianday(date('now','-6 hours')) AS INTEGER) AS dias
          FROM servicios s JOIN clientes c ON c.id = s.cliente_id
-         WHERE s.id = (SELECT s2.id FROM servicios s2 WHERE s2.cliente_id = c.id
+         WHERE s.id = (SELECT s2.id FROM servicios s2
+                       WHERE s2.cliente_id = c.id AND s2.estado = 'completado' AND s2.papelera IS NULL
                        ORDER BY s2.fecha DESC, s2.id DESC LIMIT 1)
-           AND s.proximo IS NOT NULL AND c.recordatorio = 1
+           AND s.proximo IS NOT NULL AND c.recordatorio = 1 AND c.papelera IS NULL
            AND s.proximo <= date('now', '-6 hours', '+45 days')
          ORDER BY s.proximo LIMIT 8`)
     ]);
@@ -1221,18 +1224,36 @@ async function guardarCliente(env, d) {
 /* Anota el trabajo y calcula cuándo toca el siguiente. La fecha es la
    del trabajo, no la del registro: de ella sale el recordatorio, así
    que anotarla mal corre la fecha dos años. */
+/* `servicios` es ahora la única tabla de trabajos: programados, en
+   proceso, completados o cancelados (F1). El ESTADO manda:
+     - 'completado' es lo que de verdad se hizo. SOLO ese lleva `proximo`
+       (corre el mantenimiento) y cuenta como cobrado.
+     - 'programado' es un trabajo con fecha futura (lo que antes era una
+       cita): sin `proximo` ni `monto`, para no correr el reloj ni sumar
+       plata que nadie ha cobrado.
+   Devuelve el id del servicio recién creado. */
 async function guardarServicio(env, clienteId, d, meses) {
   const m = PERIODOS.indexOf(+d.meses) !== -1 ? +d.meses : (meses || 24);
+  const estado = ["programado", "en_proceso", "completado", "cancelado"].indexOf(d.estado) !== -1
+    ? d.estado : "completado";
   const fecha = soloFecha(d.fecha) || new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
+  const hm = String(d.hora || "").match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+  const hora = hm ? (hm[1].padStart(2, "0") + ":" + hm[2]) : null;
+  // El reloj del mantenimiento solo arranca cuando el trabajo se hizo.
+  const proximo = estado === "completado" ? `date(?2, '+' || ${m} || ' months')` : "NULL";
 
-  await env.DB.prepare(
-    `INSERT INTO servicios (cliente_id, fecha, servicio, detalle, monto, cotizacion, proximo, nota)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, date(?2, '+' || ?7 || ' months'), ?8)`
+  const r = await env.DB.prepare(
+    `INSERT INTO servicios (cliente_id, fecha, hora, servicio, detalle, monto,
+                            cotizacion, cotizacion_id, solicitud_id, proximo, nota, estado)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ${proximo}, ?10, ?11)`
   ).bind(
-    clienteId, fecha, texto(d.servicio, 40) || "servicio",
+    clienteId, fecha, hora, texto(d.servicio, 40) || "servicio",
     texto(d.detalle, 200) || null,
     Number.isFinite(+d.monto) ? Math.round(+d.monto) : null,
-    texto(d.cotizacion, 30) || null, m, texto(d.nota, 300) || null
+    texto(d.cotizacion, 30) || null,
+    Number.isFinite(+d.cotizacionId) ? +d.cotizacionId : null,
+    Number.isFinite(+d.solicitudId) ? +d.solicitudId : null,
+    texto(d.nota, 300) || null, estado
   ).run();
 
   // Si en el registro se cambió la periodicidad, el cliente se queda
@@ -1241,6 +1262,7 @@ async function guardarServicio(env, clienteId, d, meses) {
     await env.DB.prepare(`UPDATE clientes SET meses = ?1, actualizado = datetime('now') WHERE id = ?2`)
       .bind(m, clienteId).run();
   }
+  return r.meta && r.meta.last_row_id;
 }
 
 // El texto del recordatorio. Sale del servidor porque es el que tiene
@@ -1315,10 +1337,13 @@ async function listaClientes(request, env) {
               COUNT(s.id) AS trabajos,
               MAX(s.fecha) AS ultimo,
               (SELECT s2.proximo FROM servicios s2 WHERE s2.cliente_id = c.id
+                AND s2.estado = 'completado' AND s2.papelera IS NULL
                 ORDER BY s2.fecha DESC, s2.id DESC LIMIT 1) AS proximo,
               (SELECT s3.servicio FROM servicios s3 WHERE s3.cliente_id = c.id
+                AND s3.estado = 'completado' AND s3.papelera IS NULL
                 ORDER BY s3.fecha DESC, s3.id DESC LIMIT 1) AS servicio
-       FROM clientes c LEFT JOIN servicios s ON s.cliente_id = c.id
+       FROM clientes c LEFT JOIN servicios s
+            ON s.cliente_id = c.id AND s.estado = 'completado' AND s.papelera IS NULL
        ${donde}
        GROUP BY c.id
        ORDER BY ${ORDENES[orden]}
@@ -1336,7 +1361,7 @@ async function listaClientes(request, env) {
 
     const servicios = ((await env.DB.prepare(
       `SELECT servicio AS k, COUNT(*) AS n FROM servicios
-        WHERE servicio IS NOT NULL AND servicio <> ''
+        WHERE servicio IS NOT NULL AND servicio <> '' AND estado = 'completado' AND papelera IS NULL
         GROUP BY k ORDER BY n DESC`
     ).all()).results) || [];
 
@@ -1500,8 +1525,9 @@ async function verCliente(request, env) {
     if (!c) return json({ ok: false, error: "No existe ese cliente" }, 404);
 
     const { results } = await env.DB.prepare(
-      `SELECT id, fecha, servicio, detalle, monto, cotizacion, proximo, nota
-       FROM servicios WHERE cliente_id = ? ORDER BY fecha DESC, id DESC`
+      `SELECT id, fecha, hora, servicio, detalle, monto, cotizacion, cotizacion_id,
+              proximo, nota, estado
+       FROM servicios WHERE cliente_id = ? AND papelera IS NULL ORDER BY fecha DESC, id DESC`
     ).bind(id).all();
 
     return json({
@@ -1558,7 +1584,8 @@ async function editarCliente(request, env) {
        cuando se hicieron. */
     await env.DB.prepare(
       `UPDATE servicios SET proximo = date(fecha, '+' || ?1 || ' months')
-       WHERE id = (SELECT s.id FROM servicios s WHERE s.cliente_id = ?2
+       WHERE id = (SELECT s.id FROM servicios s
+                   WHERE s.cliente_id = ?2 AND s.estado = 'completado' AND s.papelera IS NULL
                    ORDER BY s.fecha DESC, s.id DESC LIMIT 1)`
     ).bind(meses, id).run();
 
@@ -1580,6 +1607,9 @@ async function agendaPanel(request, env) {
   if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
 
   try {
+    // Recordatorios: el ÚLTIMO trabajo COMPLETADO de cada cliente y su
+    // fecha de mantenimiento. Solo 'completado' cuenta — un trabajo
+    // programado a futuro no puede pasar por "último servicio hecho".
     const { results } = await env.DB.prepare(
       `SELECT s.id, s.fecha, s.servicio, s.detalle, s.monto, s.proximo,
               c.id AS cliente_id, c.nombre, c.telefono, c.correo,
@@ -1587,9 +1617,10 @@ async function agendaPanel(request, env) {
               CAST(julianday(s.proximo) - julianday(date('now','-6 hours')) AS INTEGER) AS dias
        FROM servicios s
        JOIN clientes c ON c.id = s.cliente_id
-       WHERE s.id = (SELECT s2.id FROM servicios s2 WHERE s2.cliente_id = c.id
+       WHERE s.id = (SELECT s2.id FROM servicios s2
+                     WHERE s2.cliente_id = c.id AND s2.estado = 'completado' AND s2.papelera IS NULL
                      ORDER BY s2.fecha DESC, s2.id DESC LIMIT 1)
-         AND s.proximo IS NOT NULL
+         AND s.proximo IS NOT NULL AND c.papelera IS NULL
        ORDER BY s.proximo`
     ).all();
 
@@ -1611,16 +1642,19 @@ async function agendaPanel(request, env) {
 
     const activos = items.filter((i) => i.recordatorio);
 
-    /* Las citas: trabajos programados que todavía no se hacen. Salen de
-       su propia tabla, no de `servicios`. Sólo las pendientes van al
-       calendario; las hechas y las canceladas son historia. */
+    /* Los trabajos PROGRAMADOS (lo que el calendario llama "citas"): salen
+       de la misma tabla `servicios`, filtrando por estado. La ubicación se
+       toma del cliente, que es la fuente de verdad. */
     let citas = [];
     try {
       const cr = await env.DB.prepare(
-        `SELECT id, cliente_id, nombre, telefono, provincia, canton,
-                servicio, detalle, fecha, hora, nota,
-                CAST(julianday(fecha) - julianday(date('now','-6 hours')) AS INTEGER) AS dias
-         FROM citas WHERE estado = 'pendiente' ORDER BY fecha, hora, id`
+        `SELECT s.id, s.cliente_id, s.servicio, s.detalle, s.fecha, s.hora, s.nota,
+                c.nombre, c.telefono, c.provincia, c.canton,
+                CAST(julianday(s.fecha) - julianday(date('now','-6 hours')) AS INTEGER) AS dias
+         FROM servicios s
+         JOIN clientes c ON c.id = s.cliente_id
+         WHERE s.estado = 'programado' AND s.papelera IS NULL AND c.papelera IS NULL
+         ORDER BY s.fecha, s.hora, s.id`
       ).all();
       citas = (cr.results || []).map((c) => ({
         id: c.id, clienteId: c.cliente_id, nombre: c.nombre, telefono: c.telefono || null,
@@ -1635,9 +1669,7 @@ async function agendaPanel(request, env) {
                  (c.hora ? " a las " + c.hora : "") + ".")
       }));
     } catch (e) {
-      // Si la tabla todavía no existe (falta correr la migración), la
-      // agenda de recordatorios sigue funcionando sin las citas.
-      console.error("No se pudieron leer las citas:", e);
+      console.error("No se pudieron leer los trabajos programados:", e);
     }
 
     return json({
@@ -1691,35 +1723,36 @@ async function guardarCita(request, env) {
   const hora = hm ? (hm[1].padStart(2, "0") + ":" + hm[2]) : null;
 
   try {
+    // El cliente es la fuente de verdad de la ubicación: se guarda ahí, no
+    // en cada trabajo. Agendar crea o reconoce al cliente por teléfono.
     const cliente = await guardarCliente(env, Object.assign({}, persona.datos, {
       provincia, canton, distrito: texto(cuerpo.distrito, 80)
     }));
     if (!cliente) return json({ ok: false, error: "No se pudo enlazar el cliente" }, 500);
 
-    const campos = [
-      cliente.id, texto(cuerpo.nombre, 120) || persona.datos.nombre,
-      persona.datos.telefono, provincia || null, canton || null,
-      texto(cuerpo.servicio, 40), texto(cuerpo.detalle, 200) || null,
-      fecha, hora, texto(cuerpo.nota, 300) || null
-    ];
-
     const id = parseInt(cuerpo.id, 10);
     if (Number.isFinite(id)) {
+      // Reagendar: solo mueve trabajos que aún no se completaron.
       await env.DB.prepare(
-        `UPDATE citas SET cliente_id=?1, nombre=?2, telefono=?3, provincia=?4, canton=?5,
-                          servicio=?6, detalle=?7, fecha=?8, hora=?9, nota=?10, estado='pendiente'
-         WHERE id=?11`
-      ).bind(...campos, id).run();
+        `UPDATE servicios SET cliente_id=?1, servicio=?2, detalle=?3, fecha=?4, hora=?5,
+                              nota=?6, actualizado=datetime('now')
+         WHERE id=?7 AND estado IN ('programado','en_proceso') AND papelera IS NULL`
+      ).bind(
+        cliente.id, texto(cuerpo.servicio, 40), texto(cuerpo.detalle, 200) || null,
+        fecha, hora, texto(cuerpo.nota, 300) || null, id
+      ).run();
       return json({ ok: true, id, movida: true });
     }
 
-    const r = await env.DB.prepare(
-      `INSERT INTO citas (cliente_id, nombre, telefono, provincia, canton,
-                          servicio, detalle, fecha, hora, nota)
-       VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)`
-    ).bind(...campos).run();
+    // Nuevo trabajo programado: nace en `servicios` con estado 'programado'.
+    const nuevoId = await guardarServicio(env, cliente.id, {
+      estado: "programado", fecha, hora,
+      servicio: texto(cuerpo.servicio, 40),
+      detalle: texto(cuerpo.detalle, 200),
+      nota: texto(cuerpo.nota, 300)
+    }, cliente.meses);
 
-    return json({ ok: true, id: r.meta && r.meta.last_row_id, clienteId: cliente.id });
+    return json({ ok: true, id: nuevoId, clienteId: cliente.id });
   } catch (e) {
     console.error("No se pudo guardar la cita:", e);
     return json({ ok: false, error: "No se pudo agendar" }, 500);
@@ -1736,17 +1769,51 @@ async function estadoCita(request, env) {
   catch { return json({ ok: false, error: "Formato inválido" }, 400); }
 
   const id = parseInt(cuerpo.id, 10);
-  if (!Number.isFinite(id)) return json({ ok: false, error: "Cita inválida" }, 400);
+  if (!Number.isFinite(id)) return json({ ok: false, error: "Trabajo inválido" }, 400);
+  // 'hecho' → completado; 'cancelado'; 'pendiente' → vuelve a programado.
   if (["hecho", "cancelado", "pendiente"].indexOf(cuerpo.estado) === -1) {
     return json({ ok: false, error: "Estado inválido" }, 400);
   }
 
   try {
-    await env.DB.prepare(`UPDATE citas SET estado = ?1 WHERE id = ?2`)
-      .bind(cuerpo.estado, id).run();
+    if (cuerpo.estado === "cancelado" || cuerpo.estado === "pendiente") {
+      const nuevo = cuerpo.estado === "cancelado" ? "cancelado" : "programado";
+      // Al re-programar (o cancelar) el reloj del mantenimiento se apaga:
+      // solo un trabajo completado lo corre.
+      await env.DB.prepare(
+        `UPDATE servicios SET estado=?1, proximo=NULL, actualizado=datetime('now')
+         WHERE id=?2 AND papelera IS NULL`
+      ).bind(nuevo, id).run();
+      return json({ ok: true });
+    }
+
+    // 'hecho' = completar: nace el cobro y arranca el mantenimiento.
+    const s = await env.DB.prepare(
+      `SELECT s.cliente_id, s.fecha, c.meses FROM servicios s
+       JOIN clientes c ON c.id = s.cliente_id WHERE s.id = ?`
+    ).bind(id).first();
+    if (!s) return json({ ok: false, error: "No existe ese trabajo" }, 404);
+
+    const meses = PERIODOS.indexOf(+cuerpo.meses) !== -1 ? +cuerpo.meses : (s.meses || 24);
+    const fecha = soloFecha(cuerpo.fecha) || s.fecha ||
+                  new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
+    const monto = Number.isFinite(+cuerpo.monto) ? Math.round(+cuerpo.monto) : null;
+
+    await env.DB.prepare(
+      `UPDATE servicios
+          SET estado='completado', fecha=?1, monto=COALESCE(?2, monto),
+              proximo=date(?1, '+' || ?3 || ' months'), actualizado=datetime('now')
+        WHERE id=?4 AND papelera IS NULL`
+    ).bind(fecha, monto, meses, id).run();
+
+    // El cliente se queda con la periodicidad usada, para el próximo.
+    if (meses !== s.meses) {
+      await env.DB.prepare(`UPDATE clientes SET meses=?1, actualizado=datetime('now') WHERE id=?2`)
+        .bind(meses, s.cliente_id).run();
+    }
     return json({ ok: true });
   } catch (e) {
-    console.error("No se pudo cambiar la cita:", e);
+    console.error("No se pudo cambiar el trabajo:", e);
     return json({ ok: false, error: "No se pudo actualizar" }, 500);
   }
 }
@@ -2304,8 +2371,20 @@ async function cotizar(request, env, ctx) {
     const id = res.meta && res.meta.last_row_id;
     if (id) {
       numero = numeroCotizacion(id);
-      await env.DB.prepare(`UPDATE cotizaciones SET numero = ?1 WHERE id = ?2`)
-        .bind(numero, id).run();
+      const solId = (Number.isFinite(solicitudId) && solicitudId > 0) ? solicitudId : null;
+      // Enlaza la cotización a su cliente (por teléfono, si ya existe) y a
+      // la solicitud de la que salió — por ID, no por nombre (F0).
+      await env.DB.prepare(
+        `UPDATE cotizaciones SET numero = ?1,
+           cliente_id = (SELECT cl.id FROM clientes cl WHERE cl.telefono = ?2),
+           solicitud_id = ?3
+         WHERE id = ?4`
+      ).bind(numero, telefono, solId, id).run();
+      // Y la solicitud recuerda en qué cotización terminó.
+      if (solId) {
+        await env.DB.prepare(`UPDATE solicitudes SET cotizacion_id = ?1 WHERE id = ?2`)
+          .bind(id, solId).run().catch(() => {});
+      }
       // La dirección del documento: sirve de PDF, de imagen y de enlace
       // para pegar en WhatsApp, que es la que no se pierde.
       enlace = new URL(request.url).origin +
@@ -2872,11 +2951,12 @@ async function tareaDiaria(env) {
       `SELECT s.id, s.fecha, s.servicio, s.proximo, c.id AS cliente_id, c.nombre,
               c.correo, c.canton, c.canal
          FROM servicios s JOIN clientes c ON c.id = s.cliente_id
-        WHERE s.id = (SELECT s2.id FROM servicios s2 WHERE s2.cliente_id = c.id
+        WHERE s.id = (SELECT s2.id FROM servicios s2
+                      WHERE s2.cliente_id = c.id AND s2.estado = 'completado' AND s2.papelera IS NULL
                       ORDER BY s2.fecha DESC, s2.id DESC LIMIT 1)
           AND s.proximo IS NOT NULL AND s.proximo <= ?1
           AND s.recordado IS NULL
-          AND c.recordatorio = 1`
+          AND c.recordatorio = 1 AND c.papelera IS NULL`
     ).bind(hoy).all()).results || [];
   } catch (e) {
     console.error("No se pudo leer la agenda del día:", e);

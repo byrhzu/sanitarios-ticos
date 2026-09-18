@@ -4846,15 +4846,28 @@
   $("c-guardar").addEventListener("click", guardarCita);
 
   function marcarCitaHecha(c) {
-    // Abre "anotar trabajo" prellenado; al guardar, la cita queda cerrada.
-    abrirCita_cerrarSiAbierta();
-    abrirTrabajo({
-      citaId: c.id, telefono: c.telefono, nombre: c.nombre,
-      servicio: c.servicioKey, provincia: c.provincia, canton: c.canton,
-      detalle: c.detalle
+    // El trabajo programado YA existe en servicios: completarlo no crea
+    // otro, lo cierra con su monto y arranca el mantenimiento. La hoja
+    // pregunta cuánto se cobró, qué día y cada cuánto recordar.
+    if (!$("velo-cita").hidden) cerrarCita();
+    abrirHoja().then(function (r) {
+      if (!r) return;                                  // canceló
+      pedir("/api/panel/cita/estado", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: c.id, estado: "hecho",
+          monto: r.soloEstado ? "" : r.monto,
+          fecha: r.fecha, meses: r.meses
+        })
+      })
+        .then(function () {
+          avisar("Trabajo completado.");
+          agendaCargada = false; resumenCargado = false;
+          cargarAgenda();
+        })
+        .catch(function (err) { avisar(String((err && err.message) || "No se pudo completar."), "mal"); });
     });
   }
-  function abrirCita_cerrarSiAbierta() { if (!$("velo-cita").hidden) cerrarCita(); }
 
   function cancelarCita(c) {
     if (!confirm("¿Cancelar la cita de " + c.nombre + "? No se borra el cliente.")) return;
