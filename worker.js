@@ -2811,6 +2811,12 @@ async function cotizar(request, env, ctx) {
      cotiza a sí mismo lo que quiera. */
   const esPanel = claveValida(request, env);
 
+  // Factura electrónica (solo desde el panel):
+  //   'iva' → cobrar IVA 13%
+  //   'exo' → exonerado (IVA 0, se rotula "Exonerado" en el documento)
+  //   'no'  → sin factura electrónica (el monto sale tal cual)
+  const factura = esPanel && ["iva", "exo"].indexOf(cuerpo.factura) !== -1 ? cuerpo.factura : "no";
+
   const provincia = texto(cuerpo.provincia, 40);
   const canton = texto(cuerpo.canton, 60);
   const distrito = texto(cuerpo.distrito, 80);
@@ -2904,9 +2910,9 @@ async function cotizar(request, env, ctx) {
          (servicio, forma, medida, ultimo, dias, zona, monto_min, monto_max,
           provisional, origen, nombre, telefono, llave,
           cedula, correo, provincia, canton, distrito,
-          a_mano, servicio_libre, detalle_libre, lugar_libre)
+          a_mano, servicio_libre, detalle_libre, lugar_libre, factura)
        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13,
-               ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22)`
+               ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23)`
     ).bind(
       // `ultimo` guarda la antigüedad: es la misma pregunta de siempre
       // —hace cuánto fue el último servicio— con otro nombre en el
@@ -2915,7 +2921,8 @@ async function cotizar(request, env, ctx) {
       entrada.antiguedad || null, calculo.dias || null, entrada.zona,
       calculo.min, calculo.max, calculo.provisional ? 1 : 0, origen, nombre, telefono, llave,
       cedula, correo, provincia, canton, distrito,
-      montoFijo !== null ? 1 : 0, servicioLibre || null, detalleLibre || null, lugarLibre || null
+      montoFijo !== null ? 1 : 0, servicioLibre || null, detalleLibre || null, lugarLibre || null,
+      factura
     ).run();
 
     const id = res.meta && res.meta.last_row_id;
@@ -2998,7 +3005,7 @@ async function verCotizacion(request, env) {
       `SELECT numero, datetime(creado, '-6 hours') AS creado, servicio, forma, medida,
               ultimo, dias, perfil, acceso, zona, monto_min, monto_max, provisional,
               nombre, telefono, cedula, correo, provincia, canton, distrito,
-              a_mano, servicio_libre, detalle_libre, lugar_libre
+              a_mano, servicio_libre, detalle_libre, lugar_libre, factura
          FROM cotizaciones
         WHERE numero = ?1 AND llave = ?2`
     ).bind(numero, llave).first();
@@ -3035,6 +3042,13 @@ async function verCotizacion(request, env) {
     maxTexto: colones(f.monto_max),
     provisional: !!f.provisional,
     ivaIncluido: TARIFAS.iva.incluido,
+    // Factura electrónica (si aplica): 'iva' 13%, 'exo' exonerado, 'no'
+    // sin FE. El documento decide qué línea mostrar.
+    factura: f.factura || "no",
+    ivaTasa: TARIFAS.iva.tasa,
+    ivaMonto: f.factura === "iva" ? Math.round(f.monto_max * TARIFAS.iva.tasa) : 0,
+    totalConIVA: f.factura === "iva" ? f.monto_max + Math.round(f.monto_max * TARIFAS.iva.tasa)
+               : f.factura === "exo" ? f.monto_max : null,
     cliente: {
       nombre: f.nombre || null,
       cedula: f.cedula || null,

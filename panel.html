@@ -1631,6 +1631,18 @@
      al lado, para que el par se lea alineado. */
   #sv-busca { min-height: 44px; padding: .55rem .8rem; }
   #sv-busca:focus, #sv-tipo:focus { border-color: var(--p-primario); outline: none; }
+  /* Bloque de factura electrónica en el paso Confirmar de una cotización. */
+  .fe-bloque { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--p-linea); }
+  .fe-bloque .seg { margin-top: .7rem; }
+  .fe-total { display: flex; flex-wrap: wrap; gap: .8rem 1.4rem; margin-top: .8rem;
+    color: var(--p-tenue); font-size: .9rem; }
+  .fe-total b { color: var(--p-txt); font-family: var(--datos); font-weight: 600; margin-left: .35rem; }
+  .fe-total .fe-t b { color: var(--p-acento); }
+  /* El buscador de cliente en la nueva cotización comparte el look del
+     paso 1: input + lista de autocompletar. */
+  #n-buscar-cli { width: 100%; font-size: 13.5px; border-radius: 8px; padding: .55rem .8rem;
+    background: var(--p-fondo); color: var(--p-txt); border: 1px solid var(--p-linea); box-sizing: border-box; }
+  #n-buscar-cli:focus { border-color: var(--p-primario); outline: none; }
   .nueva-rejilla input:focus, .nueva-rejilla select:focus, .clave-caja input:focus,
   .campo-libre:focus, .libre-caja input:focus {
     border-color: var(--p-primario); outline: none;
@@ -2431,13 +2443,38 @@
                responde una pregunta y no se puede pasar sin contestarla,
                que es lo que evita llegar al final con un hueco. -->
           <ol class="pasos" id="pasos">
-            <li data-n="1">Servicio</li>
-            <li data-n="2">Ubicación</li>
-            <li data-n="3">Cliente</li>
-            <li data-n="4">Confirmar</li>
+            <li data-n="1">Cliente</li>
+            <li data-n="2">Servicio</li>
+            <li data-n="3">Confirmar</li>
           </ol>
 
           <section class="paso" data-paso="1">
+            <p class="grupo">¿A nombre de quién?</p>
+            <!-- Autocompletar: al escribir nombre/teléfono/cédula sale la
+                 lista de clientes que calzan; al escoger uno se trae su
+                 ficha entera (teléfono, cédula, correo, dirección). Así
+                 no se digita nada de quien ya está. -->
+            <div class="nom-caja">
+              <input id="n-buscar-cli" type="search" placeholder="Buscar cliente por nombre, teléfono o cédula" autocomplete="off">
+              <div class="ac-lista" id="n-ac" hidden></div>
+            </div>
+            <div class="nueva-rejilla" style="margin-top:.9rem;">
+              <div class="f req"><label for="n-nombre">Nombre</label><input id="n-nombre" type="text" required autocomplete="off"></div>
+              <div class="f req"><label for="n-telefono">Teléfono</label><input id="n-telefono" type="tel" inputmode="tel" required autocomplete="off"></div>
+              <div class="f"><label for="n-cedula">Cédula</label><input id="n-cedula" type="text" autocomplete="off"></div>
+              <div class="f"><label for="n-correo">Correo</label><input id="n-correo" type="email" autocomplete="off"></div>
+            </div>
+            <div class="nueva-rejilla" style="margin-top:.9rem;">
+              <div class="f"><label for="n-provincia">Provincia</label><select id="n-provincia" required></select></div>
+              <div class="f" id="campo-canton"><label for="n-canton">Cantón</label><select id="n-canton" required disabled></select></div>
+              <div class="f" id="campo-distrito"><label for="n-distrito">Distrito</label><select id="n-distrito" disabled></select></div>
+            </div>
+            <!-- Si el teléfono ya está registrado, se ofrece traer sus
+                 datos en vez de crear un doble. -->
+            <div class="ya-existe" id="ya-existe" hidden></div>
+          </section>
+
+          <section class="paso" data-paso="2" hidden>
             <p class="grupo">¿Qué necesita?</p>
             <!-- Lo que se pregunta depende del servicio: un tanque
                  séptico necesita forma, medida y antigüedad; un alquiler
@@ -2452,36 +2489,14 @@
             <p class="vacio-ok" id="sin-preguntas" hidden>Este servicio tiene precio de tabla: no hay nada más que preguntar acá.</p>
           </section>
 
-          <section class="paso" data-paso="2" hidden>
-            <p class="grupo">¿Dónde queda?</p>
-            <div class="nueva-rejilla">
-              <div class="f"><label for="n-provincia">Provincia</label><select id="n-provincia" required></select></div>
-              <div class="f" id="campo-canton"><label for="n-canton">Cantón</label><select id="n-canton" required disabled></select></div>
-              <div class="f" id="campo-distrito"><label for="n-distrito">Distrito</label><select id="n-distrito" disabled></select></div>
-            </div>
-          </section>
-
           <section class="paso" data-paso="3" hidden>
-            <p class="grupo">¿A nombre de quién?</p>
-            <div class="nueva-rejilla">
-              <div class="f"><label for="n-telefono">Teléfono</label><input id="n-telefono" type="tel" inputmode="tel" required autocomplete="off"></div>
-              <div class="f"><label for="n-nombre">Nombre</label><input id="n-nombre" type="text" required autocomplete="off"></div>
-              <div class="f"><label for="n-cedula">Cédula</label><input id="n-cedula" type="text" autocomplete="off"></div>
-              <div class="f"><label for="n-correo">Correo</label><input id="n-correo" type="email" autocomplete="off"></div>
-            </div>
-            <!-- Si el teléfono ya está registrado, se ofrece traer sus
-                 datos en vez de volver a escribirlos y crear un doble. -->
-            <div class="ya-existe" id="ya-existe" hidden></div>
-          </section>
-
-          <section class="paso" data-paso="4" hidden>
             <p class="grupo">Revise antes de crearla</p>
             <dl class="repaso" id="repaso"></dl>
 
             <!-- El precio real. Es para cuando ya se fue a ver el trabajo:
                  ahí no hay estimado que valga, hay un monto. Si se deja
                  en blanco, manda el cálculo de la tabla. -->
-            <div class="libre-caja">
+            <div class="nueva-rejilla" style="margin-top:.6rem;">
               <div class="f">
                 <label for="n-monto">Precio final</label>
                 <input type="text" id="n-monto" inputmode="numeric" autocomplete="off"
@@ -2493,6 +2508,18 @@
                 <label for="n-detalle">Detalle para el documento</label>
                 <input type="text" id="n-detalle" maxlength="200" autocomplete="off">
               </div>
+            </div>
+
+            <!-- Factura electrónica: al marcarla se suma el IVA al monto
+                 (o se anota "Exonerado"). El desglose sale abajo y en el
+                 documento; sin marcar, el monto se muestra tal cual. -->
+            <div class="fe-bloque">
+              <label class="marca-check"><input type="checkbox" id="n-fe"> Cliente requiere factura electrónica</label>
+              <div class="seg" id="n-fe-modo" role="group" aria-label="IVA" hidden>
+                <button type="button" class="seg-b" data-fe="iva" aria-pressed="true">Cobrar IVA 13%</button>
+                <button type="button" class="seg-b" data-fe="exo" aria-pressed="false">Exonerado</button>
+              </div>
+              <p class="fe-total" id="n-fe-total" hidden></p>
             </div>
           </section>
 
@@ -4262,27 +4289,20 @@
   /* ---------- El recorrido por pasos ---------- */
 
   var paso = 1;
-  var TOTAL_PASOS = 4;
+  var TOTAL_PASOS = 3;
 
-  // Qué hay que tener contestado para poder seguir. Se comprueba acá y
-  // no al final: llegar al paso cuatro y descubrir que falta el cantón
-  // obliga a devolverse a buscarlo.
-  var REQUIERE = {
-    3: [["n-telefono", "el teléfono"], ["n-nombre", "el nombre"]]
-  };
+  // Paso 1 (Cliente + Ubicación): teléfono y nombre son mínimos; si se
+  // escoge un cliente existente, ambos ya quedan llenos.
+  function requiereDelPaso1() {
+    return [["n-telefono", "el teléfono"], ["n-nombre", "el nombre"]];
+  }
 
-  // El primer paso pide cosas distintas según el servicio, así que su
-  // lista se arma en el momento en vez de estar escrita arriba.
-  function requiereDelPrimerPaso() {
+  // Paso 2 (Servicio): pide cosas distintas según el servicio escogido.
+  function requiereDelPaso2() {
     var lista = [["n-servicio", "el servicio"]];
-    // Servicio escrito a mano: lo único que falta es escribirlo.
     if ($("n-servicio").value === LIBRE) return lista.concat([["n-servicio-libre", "qué trabajo es"]]);
-
     var s = OPC && OPC.servicios[$("n-servicio").value];
     if (s && s.tipo === "tanque") {
-      /* Cada lista pide su casilla escrita cuando está en "Otro". Sin
-         esto se podría pasar el paso con la lista en "Otro" y el texto
-         vacío, y la cotización saldría sin decir de qué tanque habla. */
       [["n-forma", "la forma del tanque"], ["n-medida", "la medida"],
        ["n-antiguedad", "cuándo fue la última limpieza"]].forEach(function (par) {
         lista.push($(par[0]).value === LIBRE ? [par[0] + "-libre", par[1]] : par);
@@ -4291,17 +4311,10 @@
     return lista;
   }
 
-  /* El segundo paso: con dirección escrita a mano no se pide cantón,
-     porque no hay. Lo que cierra el paso es el texto. */
-  function requiereDelSegundoPaso() {
-    if (direccionLibre()) return [["n-provincia-libre", "la dirección"]];
-    return [["n-provincia", "la provincia"], ["n-canton", "el cantón"]];
-  }
-
   function faltaEnPaso(n) {
-    var lista = n === 1 ? requiereDelPrimerPaso()
-              : n === 2 ? requiereDelSegundoPaso()
-              : (REQUIERE[n] || []);
+    var lista = n === 1 ? requiereDelPaso1()
+              : n === 2 ? requiereDelPaso2()
+              : [];
     for (var i = 0; i < lista.length; i++) {
       var campo = $(lista[i][0]);
       if (!campo || !campo.value.trim()) return lista[i];
@@ -4360,23 +4373,26 @@
       ? valorLibre($("n-provincia"))
       : [$("n-distrito").value, $("n-canton").value, $("n-provincia").value]
           .filter(Boolean).join(", ");
-    var filas = [["Servicio", textoCampo("n-servicio")]];
+    var filas = [
+      ["Cliente", $("n-nombre").value || "—"],
+      ["Teléfono", $("n-telefono").value || "—"],
+      ["Cédula", $("n-cedula").value || "—"],
+      ["Correo", $("n-correo").value || "—"],
+      ["Ubicación", lugar || "—"],
+      ["Servicio", textoCampo("n-servicio")]
+    ];
     if (!$("campo-forma").hidden) {
       filas.push(["Forma del tanque", textoCampo("n-forma")],
                  ["Medida", textoCampo("n-medida")],
                  ["Última limpieza", textoCampo("n-antiguedad")]);
     }
     if (!$("campo-dias").hidden) filas.push(["Días de alquiler", $("n-dias").value || "—"]);
-    filas = filas.concat([
-      ["Ubicación", lugar || "—"],
-      ["Cliente", $("n-nombre").value || "—"],
-      ["Teléfono", $("n-telefono").value || "—"],
-      ["Cédula", $("n-cedula").value || "—"],
-      ["Correo", $("n-correo").value || "—"]
-    ]);
     $("repaso").innerHTML = filas.map(function (f) {
       return "<div><dt>" + escHtml(f[0]) + "</dt><dd>" + escHtml(f[1]) + "</dd></div>";
     }).join("");
+    // Al llegar al repaso, se recalcula el desglose de IVA con el monto
+    // actual (si el usuario ya lo había escrito).
+    actualizarFE();
   }
 
   /* Si el teléfono ya está registrado, se ofrece traer los datos en vez
@@ -4404,15 +4420,20 @@
   $("ya-existe").addEventListener("click", function (e) {
     var b = e.target.closest("#usar-cliente");
     if (!b) return;
-    pedir("/api/panel/cliente?id=" + encodeURIComponent(b.dataset.id))
+    traerClienteANueva(b.dataset.id);
+  });
+
+  // Trae la ficha de un cliente y llena TODO el paso 1: nombre, teléfono,
+  // cédula, correo y la dirección (provincia/cantón/distrito).
+  function traerClienteANueva(id) {
+    pedir("/api/panel/cliente?id=" + encodeURIComponent(id))
       .then(function (d) {
         var c = d.cliente;
         $("n-nombre").value = c.nombre || "";
+        $("n-telefono").value = c.telefono || "";
         $("n-cedula").value = c.cedula || "";
         $("n-correo").value = c.correo || "";
-        // La ubicación del cliente sólo se trae si el paso anterior
-        // quedó en blanco: el trabajo puede ser en otra propiedad.
-        if (!$("n-provincia").value && c.provincia && GEO[c.provincia]) {
+        if (c.provincia && GEO && GEO[c.provincia]) {
           $("n-provincia").value = c.provincia; refrescarCanton();
           if (c.canton && GEO[c.provincia][c.canton]) {
             $("n-canton").value = c.canton; refrescarDistrito();
@@ -4420,9 +4441,80 @@
           }
         }
         $("ya-existe").innerHTML = "<span>Datos traídos de <b>" + escHtml(c.nombre) + "</b>.</span>";
+        $("ya-existe").hidden = false;
+        $("n-ac").hidden = true;
       })
       .catch(function () {});
+  }
+
+  // Buscador de cliente existente: al escribir (nombre/tel/cédula) se
+  // despliegan los que calzan; al escoger uno se trae su ficha completa.
+  var nBusReloj = null;
+  $("n-buscar-cli").addEventListener("input", function () {
+    var q = $("n-buscar-cli").value.trim();
+    if (q.length < 2) { $("n-ac").hidden = true; return; }
+    clearTimeout(nBusReloj);
+    nBusReloj = setTimeout(function () {
+      pedir("/api/panel/buscar?q=" + encodeURIComponent(q))
+        .then(function (r) {
+          var cl = (r.resultados || []).filter(function (x) { return x.tipo === "cliente"; }).slice(0, 6);
+          if (!cl.length) { $("n-ac").hidden = true; return; }
+          $("n-ac").innerHTML = cl.map(function (x) {
+            return '<button type="button" class="ac-item" data-ac-id="' + x.ir.id + '">' +
+              "<b>" + escHtml(x.etiqueta) + "</b>" +
+              (x.detalle ? "<small>" + escHtml(x.detalle) + "</small>" : "") + "</button>";
+          }).join("");
+          $("n-ac").hidden = false;
+        })
+        .catch(function () { $("n-ac").hidden = true; });
+    }, 250);
   });
+  $("n-ac").addEventListener("mousedown", function (e) {
+    var b = e.target.closest("[data-ac-id]");
+    if (!b) return;
+    e.preventDefault();
+    traerClienteANueva(b.getAttribute("data-ac-id"));
+    $("n-buscar-cli").value = "";
+  });
+  $("n-buscar-cli").addEventListener("blur", function () {
+    setTimeout(function () { $("n-ac").hidden = true; }, 150);
+  });
+
+  /* ---------- Factura electrónica (paso 3) ---------- */
+  var feModo = "iva";   // 'iva' | 'exo', solo importa si feOn=true
+  function feOn() { return $("n-fe").checked; }
+  function feCalc(monto) {
+    if (!feOn()) return { subtotal: monto, iva: 0, total: monto, modo: "no" };
+    if (feModo === "exo") return { subtotal: monto, iva: 0, total: monto, modo: "exo" };
+    var iva = Math.round(monto * 0.13);
+    return { subtotal: monto, iva: iva, total: monto + iva, modo: "iva" };
+  }
+  function actualizarFE() {
+    var monto = Number(soloDigitos($("n-monto").value)) || 0;
+    $("n-fe-modo").hidden = !feOn();
+    var caja = $("n-fe-total");
+    if (!feOn() || monto <= 0) { caja.hidden = true; return; }
+    var r = feCalc(monto);
+    caja.innerHTML = r.modo === "exo"
+      ? '<span>Subtotal <b>' + escHtml(colones(r.subtotal)) + '</b></span>' +
+        '<span>IVA <b>Exonerado</b></span>' +
+        '<span class="fe-t">Total <b>' + escHtml(colones(r.total)) + '</b></span>'
+      : '<span>Subtotal <b>' + escHtml(colones(r.subtotal)) + '</b></span>' +
+        '<span>IVA 13% <b>' + escHtml(colones(r.iva)) + '</b></span>' +
+        '<span class="fe-t">Total <b>' + escHtml(colones(r.total)) + '</b></span>';
+    caja.hidden = false;
+  }
+  $("n-fe").addEventListener("change", actualizarFE);
+  $("n-fe-modo").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-fe]");
+    if (!b) return;
+    feModo = b.dataset.fe;
+    Array.prototype.forEach.call($("n-fe-modo").querySelectorAll("[data-fe]"), function (o) {
+      o.setAttribute("aria-pressed", String(o === b));
+    });
+    actualizarFE();
+  });
+  $("n-monto").addEventListener("input", actualizarFE);
 
   $("n-servicio").addEventListener("change", refrescarServicio);
   $("n-forma").addEventListener("change", refrescarMedida);
@@ -4471,7 +4563,9 @@
         montoFijo: soloDigitos($("n-monto").value),
         servicioLibre: libreServicio,
         detalleLibre: detalle,
-        lugarLibre: libreLugar
+        lugarLibre: libreLugar,
+        // Factura electrónica: 'no' (sin FE), 'iva' (13%) o 'exo' (exonerado).
+        factura: feOn() ? feModo : "no"
       })
     })
       .then(function (d) {

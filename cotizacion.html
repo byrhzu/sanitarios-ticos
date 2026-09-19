@@ -649,9 +649,25 @@ body {
     $("cifra").textContent = rango;
     $("min").textContent = d.minTexto;
     $("max").textContent = (esDesde || exacto) ? "—" : d.maxTexto;
-    $("iva").textContent = d.ivaIncluido === null
-      ? "Por confirmar"
-      : (d.ivaIncluido ? "Incluido" : "Se suma aparte");
+    // Factura electrónica: si la cotización la lleva, el IVA deja de ser
+    // una nota general y pasa a ser una línea concreta del documento.
+    // 'iva' = 13% sobre el monto; 'exo' = "Exonerado"; 'no' = como antes.
+    function _c(n) { return "₡" + String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+    if (d.factura === "iva") {
+      $("iva").textContent = "13% · " + _c(d.ivaMonto);
+      if (exacto || esDesde) {
+        // Con precio cerrado se muestra el total con IVA en la cifra.
+        var totalTxt = _c(d.totalConIVA);
+        $("cifra").textContent = totalTxt;
+        $("monto-fila").textContent = totalTxt;
+      }
+    } else if (d.factura === "exo") {
+      $("iva").textContent = "Exonerado";
+    } else {
+      $("iva").textContent = d.ivaIncluido === null
+        ? "Por confirmar"
+        : (d.ivaIncluido ? "Incluido" : "Se suma aparte");
+    }
 
     // Cómo se calculó
     var base = $("base");
