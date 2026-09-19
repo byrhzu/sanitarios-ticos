@@ -2635,7 +2635,8 @@
     <input type="hidden" id="c-id">
     <div class="nueva-rejilla" style="margin-top:.4rem;">
       <div class="f req"><label for="c-servicio">Qué se va a hacer</label>
-        <select id="c-servicio"></select></div>
+        <select id="c-servicio"></select>
+        <input type="text" id="c-servicio-libre" placeholder="Escríbalo" autocomplete="off" hidden style="margin-top:.4rem;"></div>
       <div class="f req"><label for="c-fecha">Qué día</label>
         <input type="date" id="c-fecha"></div>
       <div class="f"><label for="c-hora">A qué hora</label>
@@ -5904,6 +5905,14 @@
     else pedir("/api/geografia").then(function (r) { GEO = r.geografia; prov(); }).catch(function () {});
   }
 
+  // Al escoger "Otro (escribir)" en el servicio, se muestra un campo
+  // para tipearlo. Con cualquier otra opción se oculta y se limpia.
+  $("c-servicio").addEventListener("change", function () {
+    var esLibre = $("c-servicio").value === LIBRE;
+    $("c-servicio-libre").hidden = !esLibre;
+    if (esLibre) $("c-servicio-libre").focus(); else $("c-servicio-libre").value = "";
+  });
+
   $("c-provincia").addEventListener("change", function () {
     var p = $("c-provincia").value;
     var lista = (p && GEO && GEO[p]) ? Object.keys(GEO[p]) : [];
@@ -5931,7 +5940,8 @@
 
     $("c-id").value = c ? c.id : "";
     $("c-titulo").textContent = c ? "Reagendar el trabajo" : "Agendar un trabajo";
-    ["c-telefono", "c-nombre", "c-detalle", "c-senas"].forEach(function (id) { $(id).value = ""; });
+    ["c-telefono", "c-nombre", "c-detalle", "c-senas", "c-servicio-libre"].forEach(function (id) { $(id).value = ""; });
+    $("c-servicio-libre").hidden = true;
     $("c-hora").value = c && c.hora ? c.hora : "";
     $("c-fecha").value = c ? c.fecha : (opts.fecha || hoyISO());
     $("c-aviso").textContent = "";
@@ -6074,7 +6084,9 @@
         telefono: $("c-telefono").value, nombre: $("c-nombre").value,
         provincia: $("c-provincia").value, canton: $("c-canton").value,
         distrito: $("c-distrito").value, senas: $("c-senas").value,
-        servicio: $("c-servicio").value, fecha: $("c-fecha").value,
+        // Si se escogió "Otro (escribir)", se manda el texto libre como servicio.
+        servicio: $("c-servicio").value === LIBRE ? ($("c-servicio-libre").value.trim() || "otro") : $("c-servicio").value,
+        fecha: $("c-fecha").value,
         hora: $("c-hora").value, detalle: $("c-detalle").value
       })
     })
