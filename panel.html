@@ -6177,7 +6177,7 @@
       icono + "<span>" + escHtml(texto) + "</span></button>";
   }
 
-  function abrirAccionesServicio(svc) {
+  function abrirAccionesServicio(svc, enAgenda) {
     if (!svc || !svc.id) return;
     accsSvc = svc;
     var prog = svc.estado === "programado" || svc.estado === "en_proceso";
@@ -6189,23 +6189,33 @@
       svc.lugar
     ].filter(Boolean).join(" · ");
     var a = [];
-    a.push(botAcc("ver", ICO.ojo, "Ver cliente"));
-    if (svc.wa) {
-      a.push('<a class="acc-fila wa" href="' + escHtml(svc.wa) + '" target="_blank" rel="noopener" data-acc="contactar">' +
-        ICO.wa + "<span>Contactar por WhatsApp</span></a>");
-    }
-    if (prog) {
+    // Desde la Agenda el menú se reduce a Reagendar / Cancelar / Eliminar:
+    // Ver cliente ya se hace tocando la card, WhatsApp y Marcar realizado
+    // ya son botones grandes de la card, y el mantenimiento se define al
+    // completar el trabajo.
+    if (enAgenda) {
       a.push(botAcc("reagendar", ICO.dia, svc.fecha ? "Reagendar" : "Agendar servicio"));
-      a.push(botAcc("hecho", ICO.visto, "Marcar realizado", "fuerte"));
       a.push(botAcc("cancelar", ICO.alerta, "Cancelar", "malo"));
+      a.push(botAcc("eliminar", ICO.basura, "Eliminar", "malo"));
+    } else {
+      a.push(botAcc("ver", ICO.ojo, "Ver cliente"));
+      if (svc.wa) {
+        a.push('<a class="acc-fila wa" href="' + escHtml(svc.wa) + '" target="_blank" rel="noopener" data-acc="contactar">' +
+          ICO.wa + "<span>Contactar por WhatsApp</span></a>");
+      }
+      if (prog) {
+        a.push(botAcc("reagendar", ICO.dia, svc.fecha ? "Reagendar" : "Agendar servicio"));
+        a.push(botAcc("hecho", ICO.visto, "Marcar realizado", "fuerte"));
+        a.push(botAcc("cancelar", ICO.alerta, "Cancelar", "malo"));
+      }
+      if (comp) {
+        a.push(botAcc("pago", ICO.cartera,
+          (svc.saldo > 0 ? "Registrar pago · falta " + colones(svc.saldo) : "Registrar pago")));
+      }
+      a.push(botAcc("mant", ICO.dia,
+        svc.proximo ? "Mantenimiento · próximo " + fechaLarga(svc.proximo) : "Mantenimiento"));
+      a.push(botAcc("eliminar", ICO.basura, "Eliminar", "malo"));
     }
-    if (comp) {
-      a.push(botAcc("pago", ICO.cartera,
-        (svc.saldo > 0 ? "Registrar pago · falta " + colones(svc.saldo) : "Registrar pago")));
-    }
-    a.push(botAcc("mant", ICO.dia,
-      svc.proximo ? "Mantenimiento · próximo " + fechaLarga(svc.proximo) : "Mantenimiento"));
-    a.push(botAcc("eliminar", ICO.basura, "Eliminar", "malo"));
     $("accs-lista").innerHTML = a.join("");
     $("velo-accs").hidden = false;
   }
@@ -6578,7 +6588,7 @@
     if (!cita) return;
     // El menú "⋯" abre las MISMAS acciones que Servicios y la ficha.
     // Una cita de la agenda es un servicio 'programado'.
-    if (b.dataset.menuCita != null) return abrirAccionesServicio(Object.assign({ estado: "programado" }, cita));
+    if (b.dataset.menuCita != null) return abrirAccionesServicio(Object.assign({ estado: "programado" }, cita), true);
     if (b.dataset.reagendar != null) return abrirCita({ cita: cita });
     if (b.dataset.hecho != null) return marcarCitaHecha(cita);
     if (b.dataset.cancelar != null) return cancelarCita(cita);
