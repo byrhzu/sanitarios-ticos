@@ -1620,6 +1620,14 @@
   .hoja .f > input:focus, .hoja .f > select:focus, .hoja .f > textarea:focus {
     border-color: var(--p-primario); outline: none;
   }
+  /* El buscador y el select de tipos de Servicios viven en la vista
+     (no en un modal), y por eso quedaban con el estilo del navegador. */
+  #sv-busca, #sv-tipo {
+    font-size: 13.5px; border-radius: 8px; padding: .5rem .6rem;
+    background: var(--p-fondo); color: var(--p-txt); border: 1px solid var(--p-linea);
+    box-sizing: border-box;
+  }
+  #sv-busca:focus, #sv-tipo:focus { border-color: var(--p-primario); outline: none; }
   .nueva-rejilla input:focus, .nueva-rejilla select:focus, .clave-caja input:focus,
   .campo-libre:focus, .libre-caja input:focus {
     border-color: var(--p-primario); outline: none;
