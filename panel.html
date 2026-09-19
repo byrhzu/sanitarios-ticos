@@ -1627,6 +1627,9 @@
     background: var(--p-fondo); color: var(--p-txt); border: 1px solid var(--p-linea);
     box-sizing: border-box;
   }
+  /* El buscador iguala su altura con el botón "Agendar servicio" que va
+     al lado, para que el par se lea alineado. */
+  #sv-busca { min-height: 44px; padding: .55rem .8rem; }
   #sv-busca:focus, #sv-tipo:focus { border-color: var(--p-primario); outline: none; }
   .nueva-rejilla input:focus, .nueva-rejilla select:focus, .clave-caja input:focus,
   .campo-libre:focus, .libre-caja input:focus {
