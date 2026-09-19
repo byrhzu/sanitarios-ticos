@@ -1608,6 +1608,18 @@
     width: 100%; min-width: 0; box-sizing: border-box;
   }
   .nueva-rejilla .f { min-width: 0; }
+  /* Cualquier .f dentro de una hoja hereda el mismo look de la rejilla:
+     sin esto los campos sueltos ("Otras señas", "Nota…") heredaban el
+     estilo por defecto del navegador (fondo blanco, borde ancho). */
+  .hoja .f > label { color: var(--p-tenue); }
+  .hoja .f > input, .hoja .f > select, .hoja .f > textarea {
+    font-size: 13.5px; border-radius: 8px; padding: .5rem .6rem;
+    background: var(--p-fondo); color: var(--p-txt); border: 1px solid var(--p-linea);
+    width: 100%; min-width: 0; box-sizing: border-box;
+  }
+  .hoja .f > input:focus, .hoja .f > select:focus, .hoja .f > textarea:focus {
+    border-color: var(--p-primario); outline: none;
+  }
   .nueva-rejilla input:focus, .nueva-rejilla select:focus, .clave-caja input:focus,
   .campo-libre:focus, .libre-caja input:focus {
     border-color: var(--p-primario); outline: none;
@@ -2443,8 +2455,8 @@
             <div class="nueva-rejilla">
               <div class="f"><label for="n-telefono">Teléfono</label><input id="n-telefono" type="tel" inputmode="tel" required autocomplete="off"></div>
               <div class="f"><label for="n-nombre">Nombre</label><input id="n-nombre" type="text" required autocomplete="off"></div>
-              <div class="f"><label for="n-cedula">Cédula <span class="opc">opcional</span></label><input id="n-cedula" type="text" autocomplete="off"></div>
-              <div class="f"><label for="n-correo">Correo <span class="opc">opcional</span></label><input id="n-correo" type="email" autocomplete="off"></div>
+              <div class="f"><label for="n-cedula">Cédula</label><input id="n-cedula" type="text" autocomplete="off"></div>
+              <div class="f"><label for="n-correo">Correo</label><input id="n-correo" type="email" autocomplete="off"></div>
             </div>
             <!-- Si el teléfono ya está registrado, se ofrece traer sus
                  datos en vez de volver a escribirlos y crear un doble. -->
@@ -2460,14 +2472,14 @@
                  en blanco, manda el cálculo de la tabla. -->
             <div class="libre-caja">
               <div class="f">
-                <label for="n-monto">Precio final <span class="opc">opcional</span></label>
+                <label for="n-monto">Precio final</label>
                 <input type="text" id="n-monto" inputmode="numeric" autocomplete="off"
                        placeholder="₡65.000">
                 <p class="ayuda" id="n-monto-ayuda">Al escribirlo, el documento dice ese
                   monto exacto en vez del estimado, y sin la palabra “Desde”.</p>
               </div>
               <div class="f">
-                <label for="n-detalle">Detalle para el documento <span class="opc">opcional</span></label>
+                <label for="n-detalle">Detalle para el documento</label>
                 <input type="text" id="n-detalle" maxlength="200" autocomplete="off">
               </div>
             </div>
@@ -2522,21 +2534,21 @@
         <input id="t-telefono" type="tel" inputmode="tel" autocomplete="off" placeholder="8888-8888"></div>
       <div class="f"><label for="t-nombre">Nombre</label>
         <input id="t-nombre" type="text" autocomplete="off"></div>
-      <div class="f"><label for="t-cedula">Cédula <span class="opc">opcional</span></label>
+      <div class="f"><label for="t-cedula">Cédula</label>
         <input id="t-cedula" type="text" autocomplete="off"></div>
-      <div class="f"><label for="t-correo">Correo <span class="opc">opcional</span></label>
+      <div class="f"><label for="t-correo">Correo</label>
         <input id="t-correo" type="email" autocomplete="off"></div>
     </div>
     <!-- La zona no es un adorno: de acá sale el desglose de dónde se
          está trabajando más. Un trabajo anotado sin provincia no aparece
          en ese conteo, y el conteo queda mintiendo. -->
     <div class="nueva-rejilla" style="margin-top:.9rem;">
-      <div class="f"><label for="t-provincia">Provincia <span class="opc">opcional</span></label>
+      <div class="f"><label for="t-provincia">Provincia</label>
         <select id="t-provincia"></select></div>
       <div class="f"><label for="t-canton">Cantón</label>
         <select id="t-canton" disabled></select></div>
     </div>
-    <div class="f" style="margin-top:.9rem;"><label for="t-senas">Señas para llegar <span class="opc">opcional</span></label>
+    <div class="f" style="margin-top:.9rem;"><label for="t-senas">Señas para llegar</label>
       <input id="t-senas" type="text" placeholder="ej. 300m sur de la iglesia, portón verde"></div>
     <p class="ayuda" id="t-ya" hidden></p>
     <div class="dup-aviso" id="t-dup" hidden></div>
@@ -2547,7 +2559,7 @@
           <select id="t-servicio"></select></div>
         <div class="f"><label for="t-fecha">Se hizo el</label>
           <input type="date" id="t-fecha"></div>
-        <div class="f"><label for="t-monto">Se cobró <span class="opc">opcional</span></label>
+        <div class="f"><label for="t-monto">Se cobró</label>
           <input type="text" id="t-monto" inputmode="numeric" autocomplete="off" placeholder="₡65.000"></div>
         <div class="f"><label for="t-metodo">Pagó con</label>
           <select id="t-metodo">
@@ -2558,7 +2570,7 @@
             <option value="pendiente">Queda pendiente</option>
           </select></div>
       </div>
-      <div class="f"><label for="t-detalle">Detalle <span class="opc">opcional</span></label>
+      <div class="f"><label for="t-detalle">Detalle</label>
         <input id="t-detalle" type="text" placeholder="ej. tanque de 3 tapas, se encontró raíz en la salida"></div>
     </div>
 
@@ -2608,10 +2620,10 @@
       <div class="f"><label for="c-distrito">Distrito</label>
         <select id="c-distrito" disabled></select></div>
     </div>
-    <div class="f" style="margin-top:.9rem;"><label for="c-detalle">Nota para la visita</label>
-      <input id="c-detalle" type="text" placeholder="ej. llevar manguera larga, hay perro"></div>
     <div class="f" style="margin-top:.9rem;"><label for="c-senas">Otras señas</label>
       <input id="c-senas" type="text" placeholder="ej. portón verde, 300 m sur de la iglesia"></div>
+    <div class="f" style="margin-top:.9rem;"><label for="c-detalle">Nota para la visita</label>
+      <input id="c-detalle" type="text" placeholder="ej. llevar manguera larga, hay perro"></div>
 
     <p class="estado-linea" id="c-aviso" role="status" aria-live="polite"></p>
     <div class="hoja-pie">
@@ -2731,7 +2743,7 @@
     </p>
     <div class="nueva-rejilla">
       <div class="f"><label for="h-fecha">Se hizo el</label><input type="date" id="h-fecha"></div>
-      <div class="f"><label for="h-monto">Se cobró <span class="opc">opcional</span></label><input type="text" id="h-monto" inputmode="numeric" autocomplete="off" placeholder="₡65.000"></div>
+      <div class="f"><label for="h-monto">Se cobró</label><input type="text" id="h-monto" inputmode="numeric" autocomplete="off" placeholder="₡65.000"></div>
       <div class="f"><label for="h-metodo">Pagó con</label>
         <select id="h-metodo">
           <option value="efectivo">Efectivo</option>
