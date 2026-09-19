@@ -2267,13 +2267,13 @@
       </div>
       <div class="rango" id="clientes-barra">
         <input type="search" id="c-busca" placeholder="Buscar por nombre, teléfono o cédula" aria-label="Buscar cliente">
-        <!-- El trabajo que no vino de una cotización. Es el caso más
-             común de todos y era el único que no entraba por ningún lado. -->
-        <button type="button" class="btn-fuerte crear" id="btn-trabajo" title="Anotar un trabajo">
+        <!-- Alta de cliente sin trabajo: útil para llamadas o walk-ins.
+             Un trabajo se registra desde Agenda o el menú "⋯" del servicio. -->
+        <button type="button" class="btn-fuerte crear" id="btn-nuevo-cliente" title="Agregar cliente">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
             <path d="M12 5v14M5 12h14"/>
           </svg>
-          <span class="largo">Anotar un trabajo</span>
+          <span class="largo">Agregar cliente</span>
         </button>
       </div>
       <!-- Ordenar y filtrar. El orden alfabético es el único que no
@@ -2617,6 +2617,44 @@
     <div class="hoja-pie">
       <button type="button" class="btn-suave" id="c-cerrar">Cancelar</button>
       <button type="button" class="btn-fuerte" id="c-guardar">Agendar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ AGREGAR CLIENTE ============
+     Alta manual desde el listado de Clientes: llamada nueva, walk-in,
+     alguien que aún no tiene servicio. El trabajo se agenda aparte. -->
+<div class="velo" id="velo-nuevo-cliente" hidden>
+  <div class="hoja hoja-form" role="dialog" aria-modal="true" aria-labelledby="nc-titulo">
+    <h2 id="nc-titulo">Agregar cliente</h2>
+
+    <div class="nueva-rejilla" style="margin-top:.4rem;">
+      <div class="f req"><label for="nc-nombre">Nombre</label>
+        <input id="nc-nombre" type="text" autocomplete="off"></div>
+      <div class="f"><label for="nc-cedula">Cédula</label>
+        <input id="nc-cedula" type="text" autocomplete="off"></div>
+      <div class="f req"><label for="nc-telefono">Teléfono</label>
+        <input id="nc-telefono" type="tel" inputmode="tel" autocomplete="off" placeholder="8888-8888"></div>
+      <div class="f"><label for="nc-correo">Correo</label>
+        <input id="nc-correo" type="email" autocomplete="off"></div>
+    </div>
+    <p class="ayuda" id="nc-ya" hidden></p>
+
+    <div class="nueva-rejilla" style="margin-top:.9rem;">
+      <div class="f"><label for="nc-provincia">Provincia</label>
+        <select id="nc-provincia"></select></div>
+      <div class="f"><label for="nc-canton">Cantón</label>
+        <select id="nc-canton" disabled></select></div>
+      <div class="f"><label for="nc-distrito">Distrito</label>
+        <select id="nc-distrito" disabled></select></div>
+    </div>
+    <div class="f" style="margin-top:.9rem;"><label for="nc-senas">Otras señas</label>
+      <input id="nc-senas" type="text" placeholder="ej. portón verde, 300 m sur de la iglesia"></div>
+
+    <p class="estado-linea" id="nc-aviso" role="status" aria-live="polite"></p>
+    <div class="hoja-pie">
+      <button type="button" class="btn-suave" id="nc-cerrar">Cancelar</button>
+      <button type="button" class="btn-fuerte" id="nc-guardar">Guardar</button>
     </div>
   </div>
 </div>
@@ -4630,9 +4668,9 @@
     Array.prototype.forEach.call(document.querySelectorAll(".cli-sw .hoy-sw-b"), function (b) {
       b.setAttribute("aria-selected", String(b.dataset.cli === v));
     });
-    // "Le toca" y "Anotar un trabajo" son de clientes; en posibles no aplican.
+    // "Le toca" y "Agregar cliente" son de clientes; en posibles no aplican.
     var esPos = v === "posibles";
-    $("btn-trabajo").hidden = esPos;
+    $("btn-nuevo-cliente").hidden = esPos;
     var leToca = document.querySelector('#cli-orden [data-orden="pronto"]');
     if (leToca) {
       leToca.hidden = esPos;
@@ -4761,9 +4799,6 @@
     acc.push('<button type="button" class="bt malo" id="cf-eliminar">' + ICO.basura + "Eliminar</button>");
 
     var lugar = [c.distrito, c.canton, c.provincia].filter(Boolean).join(", ");
-    var ops = Object.keys(d.canales).map(function (k) {
-      return '<option value="' + k + '"' + (k === c.canal ? " selected" : "") + ">" + escHtml(d.canales[k]) + "</option>";
-    }).join("");
 
     var ESTADO_SERV = { programado: "Programado", en_proceso: "En proceso", cancelado: "Cancelado" };
     var hist = d.servicios.length
@@ -4841,18 +4876,20 @@
         '<div class="nueva-rejilla">' +
           campo("cf-nombre", "Nombre", c.nombre) +
           campo("cf-cedula", "Cédula", c.cedula) +
+          campo("cf-telefono", "Teléfono", c.telefono) +
           campo("cf-correo", "Correo", c.correo) +
-          campo("cf-senas", "Señas para llegar", c.senas) +
-          '<div class="f"><label for="cf-canal">Recordar por</label><select id="cf-canal">' + ops + "</select></div>" +
-          '<div class="f"><label for="cf-meses">Cada cuánto</label><select id="cf-meses">' +
-            (d.periodos || [24]).map(function (m) {
-              return '<option value="' + m + '"' + (m === c.meses ? " selected" : "") + ">" + textoPeriodo(m) + "</option>";
-            }).join("") + "</select></div>" +
         "</div>" +
+        // Dirección: cascada Provincia → Cantón → Distrito. El estado
+        // inicial de los selects lo pone abrirEditarCliente().
+        '<div class="nueva-rejilla" style="margin-top:.9rem;">' +
+          '<div class="f"><label for="cf-provincia">Provincia</label><select id="cf-provincia"></select></div>' +
+          '<div class="f"><label for="cf-canton">Cantón</label><select id="cf-canton" disabled></select></div>' +
+          '<div class="f"><label for="cf-distrito">Distrito</label><select id="cf-distrito" disabled></select></div>' +
+        "</div>" +
+        '<div class="f" style="margin-top:.9rem;"><label for="cf-senas">Otras señas</label>' +
+          '<input type="text" id="cf-senas" value="' + escHtml(c.senas || "") + '"></div>' +
         '<div class="f" style="margin-top:.9rem;"><label for="cf-nota">Nota</label>' +
           '<input type="text" id="cf-nota" value="' + escHtml(c.nota || "") + '"></div>' +
-        '<label class="marca-check"><input type="checkbox" id="cf-rec"' + (c.recordatorio ? " checked" : "") +
-          "> Mandarle recordatorio cuando le toque</label>" +
         '<div class="nueva-pie">' +
           '<button type="button" class="btn-fuerte" id="cf-guardar">Guardar</button>' +
           '<button type="button" class="btn-suave" id="cf-cancelar">Cancelar</button>' +
@@ -4866,10 +4903,43 @@
         "</div>" + hist +
       "</div>" + exp;
 
+    // Cascada de dirección + prellenar con lo que ya tiene el cliente.
+    function llenarCfZona() {
+      if (!GEO) { pedir("/api/geografia").then(function (r) { GEO = r.geografia; llenarCfZona(); }); return; }
+      opciones($("cf-provincia"), Object.keys(GEO).map(function (k) { return { id: k, etiqueta: k }; }), "Sin anotar", false);
+      if (c.provincia && GEO[c.provincia]) {
+        $("cf-provincia").value = c.provincia;
+        var cs = Object.keys(GEO[c.provincia]);
+        $("cf-canton").disabled = false;
+        opciones($("cf-canton"), cs.map(function (k) { return { id: k, etiqueta: k }; }), "Escoja…", false);
+        if (c.canton && GEO[c.provincia][c.canton]) {
+          $("cf-canton").value = c.canton;
+          var ds = GEO[c.provincia][c.canton];
+          $("cf-distrito").disabled = false;
+          opciones($("cf-distrito"), ds.map(function (k) { return { id: k, etiqueta: k }; }), "Escoja…", false);
+          if (c.distrito) $("cf-distrito").value = c.distrito;
+        }
+      }
+    }
+    $("cf-provincia").addEventListener("change", function () {
+      var p = $("cf-provincia").value;
+      var lista = (p && GEO && GEO[p]) ? Object.keys(GEO[p]) : [];
+      $("cf-canton").disabled = !lista.length;
+      opciones($("cf-canton"), lista.map(function (k) { return { id: k, etiqueta: k }; }), "Escoja…", false);
+      $("cf-distrito").disabled = true;
+      opciones($("cf-distrito"), [], "Escoja…", false);
+    });
+    $("cf-canton").addEventListener("change", function () {
+      var p = $("cf-provincia").value, ct = $("cf-canton").value;
+      var lista = (p && ct && GEO && GEO[p] && GEO[p][ct]) ? GEO[p][ct] : [];
+      $("cf-distrito").disabled = !lista.length;
+      opciones($("cf-distrito"), lista.map(function (k) { return { id: k, etiqueta: k }; }), "Escoja…", false);
+    });
+
     $("cf-editar-btn").addEventListener("click", function () {
       var e = $("cf-editar");
       e.hidden = !e.hidden;
-      if (!e.hidden) e.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      if (!e.hidden) { llenarCfZona(); e.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
     });
     $("cf-cancelar").addEventListener("click", function () { $("cf-editar").hidden = true; });
 
@@ -4898,19 +4968,21 @@
         body: JSON.stringify({
           id: c.id,
           nombre: $("cf-nombre").value, cedula: $("cf-cedula").value,
-          correo: $("cf-correo").value, senas: $("cf-senas").value,
-          nota: $("cf-nota").value, canal: $("cf-canal").value,
-          meses: Number($("cf-meses").value), recordatorio: $("cf-rec").checked
+          telefono: $("cf-telefono").value, correo: $("cf-correo").value,
+          provincia: $("cf-provincia").value, canton: $("cf-canton").value,
+          distrito: $("cf-distrito").value, senas: $("cf-senas").value,
+          nota: $("cf-nota").value
         })
       })
-        .then(function (r) {
+        .then(function () {
           aviso.textContent = "";
           agendaCargada = false;
-          avisar("Guardado. La próxima fecha quedó a " + textoPeriodo(r.meses) + ".");
+          avisar("Cliente actualizado.");
+          verCliente(c.id);              // repinta con los datos nuevos
         })
-        .catch(function () {
-          aviso.textContent = "";
-          avisar("No se pudo guardar el cliente.", "mal");
+        .catch(function (err) {
+          aviso.textContent = String((err && err.message) || "No se pudo guardar el cliente.");
+          aviso.classList.add("is-error");
         });
     });
 
@@ -5448,10 +5520,110 @@
     opciones($("t-canton"), lista.map(function (k) { return { id: k, etiqueta: k }; }), "Escoja…", false);
   });
 
-  $("btn-trabajo").addEventListener("click", abrirTrabajo);
+  // "Anotar un trabajo" ya no es la acción principal de Clientes: un
+  // trabajo se registra desde Agenda o desde el kebab del servicio. El
+  // modal sigue existiendo (lo usa la conversión de solicitud/cotización),
+  // pero no hay botón directo desde acá.
   $("t-cerrar").addEventListener("click", cerrarTrabajo);
   $("velo-trabajo").addEventListener("click", function (e) {
     if (e.target === $("velo-trabajo")) cerrarTrabajo();
+  });
+
+  /* ================ AGREGAR CLIENTE (formulario) ================
+     Alta manual. Todo lo obligatorio va marcado con "•"; los demás son
+     opcionales. Si el teléfono ya calza con un cliente existente, el
+     endpoint hace ON CONFLICT y actualiza en vez de duplicar. */
+  function abrirNuevoCliente() {
+    // Provincias/cantones/distritos comparten cascada con la cita.
+    llenarCitaOpciones();
+    // Provincia: mismo select cargado que en cita, pero acá el elemento
+    // es #nc-provincia. Espejamos las opciones.
+    function espejar() {
+      if (!GEO) return;
+      opciones($("nc-provincia"), Object.keys(GEO).map(function (k) { return { id: k, etiqueta: k }; }), "Sin anotar", false);
+      $("nc-canton").innerHTML = '<option value="">Escoja…</option>';
+      $("nc-canton").disabled = true;
+      $("nc-distrito").innerHTML = '<option value="">Escoja…</option>';
+      $("nc-distrito").disabled = true;
+    }
+    if (GEO) espejar(); else setTimeout(espejar, 400);
+
+    ["nc-nombre", "nc-cedula", "nc-telefono", "nc-correo", "nc-senas"]
+      .forEach(function (id) { $(id).value = ""; });
+    $("nc-ya").hidden = true;
+    $("nc-aviso").textContent = "";
+    $("nc-aviso").classList.remove("is-error");
+    $("velo-nuevo-cliente").hidden = false;
+    $("nc-nombre").focus();
+  }
+  function cerrarNuevoCliente() { $("velo-nuevo-cliente").hidden = true; }
+
+  $("nc-provincia").addEventListener("change", function () {
+    var p = $("nc-provincia").value;
+    var lista = (p && GEO && GEO[p]) ? Object.keys(GEO[p]) : [];
+    $("nc-canton").disabled = !lista.length;
+    opciones($("nc-canton"), lista.map(function (k) { return { id: k, etiqueta: k }; }), "Escoja…", false);
+    $("nc-distrito").disabled = true;
+    opciones($("nc-distrito"), [], "Escoja…", false);
+  });
+  $("nc-canton").addEventListener("change", function () {
+    var p = $("nc-provincia").value, ct = $("nc-canton").value;
+    var lista = (p && ct && GEO && GEO[p] && GEO[p][ct]) ? GEO[p][ct] : [];
+    $("nc-distrito").disabled = !lista.length;
+    opciones($("nc-distrito"), lista.map(function (k) { return { id: k, etiqueta: k }; }), "Escoja…", false);
+  });
+
+  // Si el teléfono ya existe se avisa antes de guardar: el servidor va a
+  // hacer merge, pero el usuario debería saberlo.
+  var ncTelReloj = null;
+  $("nc-telefono").addEventListener("input", function () {
+    var d = $("nc-telefono").value.replace(/\D/g, "");
+    $("nc-ya").hidden = true;
+    if (d.length !== 8) return;
+    clearTimeout(ncTelReloj);
+    ncTelReloj = setTimeout(function () {
+      pedir("/api/panel/buscar?q=" + encodeURIComponent(d))
+        .then(function (r) {
+          var x = (r.resultados || []).filter(function (y) { return y.tipo === "cliente"; })[0];
+          if (!x) return;
+          $("nc-ya").textContent = "Ese teléfono ya es de " + x.etiqueta + ". Al guardar se actualizarán sus datos.";
+          $("nc-ya").hidden = false;
+        })
+        .catch(function () {});
+    }, 350);
+  });
+
+  $("btn-nuevo-cliente").addEventListener("click", abrirNuevoCliente);
+  $("nc-cerrar").addEventListener("click", cerrarNuevoCliente);
+  $("velo-nuevo-cliente").addEventListener("click", function (e) {
+    if (e.target === $("velo-nuevo-cliente")) cerrarNuevoCliente();
+  });
+  $("nc-guardar").addEventListener("click", function () {
+    var aviso = $("nc-aviso");
+    aviso.classList.remove("is-error");
+    aviso.textContent = "Guardando…";
+    $("nc-guardar").disabled = true;
+    pedir("/api/panel/cliente/nuevo", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nombre: $("nc-nombre").value, cedula: $("nc-cedula").value,
+        telefono: $("nc-telefono").value, correo: $("nc-correo").value,
+        provincia: $("nc-provincia").value, canton: $("nc-canton").value,
+        distrito: $("nc-distrito").value, senas: $("nc-senas").value
+      })
+    })
+      .then(function (r) {
+        cerrarNuevoCliente();
+        avisar("Cliente guardado.");
+        // Abre su ficha para seguir trabajando desde ahí.
+        if (r && r.id) verCliente(r.id);
+        else { cliPagina = 1; cargarClientes(); }
+      })
+      .catch(function (err) {
+        aviso.textContent = String((err && err.message) || "No se pudo guardar.");
+        aviso.classList.add("is-error");
+      })
+      .then(function () { $("nc-guardar").disabled = false; });
   });
 
   // Si el teléfono ya está registrado se avisa y se trae el nombre: es

@@ -2031,8 +2031,11 @@ async function verCliente(request, env) {
   }
 }
 
-/* Guardar los datos de un cliente desde el panel. Sirve para corregir
-   un nombre, apagar el recordatorio o cambiar el canal. */
+/* Guardar los datos de un cliente desde el panel: nombre, cédula, correo,
+   teléfono y dirección. El "cada cuánto" (mantenimiento) ya NO se
+   configura acá: se decide en cada servicio al completarlo. Se conserva
+   el valor viejo del cliente como default para el próximo trabajo, pero
+   la fuente de verdad del recordatorio es la tabla `mantenimientos`. */
 async function editarCliente(request, env) {
   if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
 
@@ -2043,38 +2046,79 @@ async function editarCliente(request, env) {
   const id = parseInt(b.id, 10);
   if (!Number.isFinite(id)) return json({ ok: false, error: "Cliente inválido" }, 400);
 
-  const canal = Object.prototype.hasOwnProperty.call(CANALES, b.canal) ? b.canal : "whatsapp";
-  const meses = PERIODOS.indexOf(+b.meses) !== -1 ? +b.meses : 24;
+  // Teléfono: solo se acepta si viene bien; si no lo mandan, se deja el que ya está.
+  let telUp = null;
+  if (b.telefono != null && String(b.telefono).trim() !== "") {
+    const t = normalizarTelefono(b.telefono);
+    if (!t.ok) return json({ ok: false, error: "Teléfono inválido" }, 400);
+    telUp = t.valor;
+  }
 
   try {
+    // COALESCE mantiene lo viejo si no llega un campo nuevo (útil para
+    // ir editando de a poco sin borrar datos por accidente).
     await env.DB.prepare(
-      `UPDATE clientes SET nombre = ?1, cedula = ?2, correo = ?3, senas = ?4, nota = ?5,
-                           recordatorio = ?6, canal = ?7, meses = ?8, actualizado = datetime('now')
-       WHERE id = ?9`
+      `UPDATE clientes SET nombre = ?1, cedula = ?2, correo = ?3,
+                           provincia = COALESCE(?4, provincia),
+                           canton    = COALESCE(?5, canton),
+                           distrito  = COALESCE(?6, distrito),
+                           senas = ?7, nota = ?8,
+                           telefono = COALESCE(?9, telefono),
+                           actualizado = datetime('now')
+       WHERE id = ?10`
     ).bind(
-      texto(b.nombre, 120) || "Sin nombre", texto(b.cedula, 20) || null,
-      texto(b.correo, 120) || null, texto(b.senas, 200) || null, texto(b.nota, 400) || null,
-      b.recordatorio ? 1 : 0, canal, meses, id
+      texto(b.nombre, 120) || "Sin nombre",
+      texto(b.cedula, 20) || null,
+      texto(b.correo, 120) || null,
+      texto(b.provincia, 40),
+      texto(b.canton, 60),
+      texto(b.distrito, 80),
+      texto(b.senas, 200) || null,
+      texto(b.nota, 400) || null,
+      telUp, id
     ).run();
 
-    /* Cambiar cada cuánto se le hace el servicio tiene que mover la
-       fecha que ya estaba calculada. Sin esto uno ponía "6 meses" y la
-       agenda seguía mostrando los 24 con que se registró — el ajuste
-       sólo servía para el trabajo siguiente, que es dentro de dos años.
-
-       Se recalcula ÚNICAMENTE el último servicio: es el que manda la
-       agenda. Los anteriores son historia y dicen lo que era cierto
-       cuando se hicieron. */
-    await env.DB.prepare(
-      `UPDATE servicios SET proximo = date(fecha, '+' || ?1 || ' months')
-       WHERE id = (SELECT s.id FROM servicios s
-                   WHERE s.cliente_id = ?2 AND s.estado = 'completado' AND s.papelera IS NULL
-                   ORDER BY s.fecha DESC, s.id DESC LIMIT 1)`
-    ).bind(meses, id).run();
-
-    return json({ ok: true, meses });
+    return json({ ok: true });
   } catch (e) {
+    // El teléfono es UNIQUE: si chocó con otro cliente, avisarlo con
+    // texto útil en vez del error crudo de SQLite.
+    if (String((e && e.message) || "").indexOf("UNIQUE") !== -1) {
+      return json({ ok: false, error: "Ese teléfono ya está registrado en otro cliente." }, 409);
+    }
     console.error("Error al guardar el cliente:", e);
+    return json({ ok: false, error: "No se pudo guardar" }, 500);
+  }
+}
+
+/* Crear un cliente desde el panel (formulario "Agregar cliente"). Usa
+   `guardarCliente`, que hace el ON CONFLICT por teléfono — si ya existe
+   uno con ese número, se enlaza a ESE en vez de fallar (y se completan
+   los datos que faltaban). */
+async function crearCliente(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+
+  let b;
+  try { b = await request.json(); }
+  catch { return json({ ok: false, error: "Petición mal formada" }, 400); }
+
+  const persona = limpiarDatosPersona(b, ["nombre", "telefono"]);
+  if (persona.error) return json({ ok: false, error: persona.error }, 400);
+
+  const provincia = texto(b.provincia, 40);
+  const canton = texto(b.canton, 60);
+  const distrito = texto(b.distrito, 80);
+  if (provincia && !direccionValida(provincia, canton, distrito)) {
+    return json({ ok: false, error: "Esa dirección no existe en la lista de Costa Rica" }, 400);
+  }
+
+  try {
+    const cl = await guardarCliente(env, Object.assign({}, persona.datos, {
+      provincia, canton, distrito, senas: texto(b.senas, 200)
+    }));
+    if (!cl) return json({ ok: false, error: "No se pudo guardar" }, 500);
+    return json({ ok: true, id: cl.id });
+  } catch (e) {
+    console.error("Error al crear el cliente:", e);
     return json({ ok: false, error: "No se pudo guardar" }, 500);
   }
 }
@@ -3571,6 +3615,9 @@ export default {
     }
     if (url.pathname === "/api/panel/cliente" && request.method === "POST") {
       return editarCliente(request, env);
+    }
+    if (url.pathname === "/api/panel/cliente/nuevo" && request.method === "POST") {
+      return crearCliente(request, env);
     }
     if (url.pathname === "/api/panel/agenda" && request.method === "GET") {
       return agendaPanel(request, env);
