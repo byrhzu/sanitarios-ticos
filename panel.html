@@ -1672,12 +1672,12 @@
   .hoy-nota { margin: .7rem 0 0; color: var(--p-tenue); font-size: .8rem; }
   /* Top clientes: ranking con posición, nombre, barra y monto. */
   #top-clientes { display: flex; flex-direction: column; gap: .5rem; }
-  .top-fila {
+  .top-cli {
     display: grid; grid-template-columns: 1.6rem minmax(0, 1.4fr) minmax(6rem, 2fr) auto;
     align-items: center; gap: .8rem; padding: .55rem .6rem; border-radius: 12px;
     background: var(--p-sup2); cursor: pointer; transition: background .12s;
   }
-  .top-fila:hover { background: var(--p-tarj); }
+  .top-cli:hover { background: var(--p-tarj); }
   .top-pos { font-family: var(--datos); font-weight: 700; color: var(--p-tenue); text-align: center; }
   .top-quien { min-width: 0; }
   .top-quien b { display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1686,8 +1686,8 @@
   .top-rell { height: 100%; background: linear-gradient(90deg, var(--p-primario), var(--p-acento)); border-radius: 999px; }
   .top-monto { color: var(--p-txt); font-weight: 600; white-space: nowrap; }
   @media (max-width: 640px) {
-    .top-fila { grid-template-columns: 1.4rem minmax(0, 1fr) auto; }
-    .top-fila .top-barra { display: none; }
+    .top-cli { grid-template-columns: 1.4rem minmax(0, 1fr) auto; }
+    .top-cli .top-barra { display: none; }
   }
   /* Barras por facturación: el subtítulo con la cantidad de trabajos. */
   .barras .b-n .b-sub { color: var(--p-tenue); font-weight: 400; margin-left: .2rem; }
@@ -3428,7 +3428,7 @@
     var tope = lista[0].monto || 1;
     $("top-clientes").innerHTML = lista.map(function (c, i) {
       var pct = Math.max(4, Math.round((c.monto / tope) * 100));
-      return '<div class="top-fila" data-ir=\'' + escHtml(JSON.stringify({ vista: "cliente", id: c.id })) + "'>" +
+      return '<div class="top-cli" data-ir=\'' + escHtml(JSON.stringify({ vista: "cliente", id: c.id })) + "'>" +
         '<span class="top-pos">' + (i + 1) + "</span>" +
         '<div class="top-quien"><b>' + escHtml(c.nombre) + "</b><small>" +
           c.trabajos + (c.trabajos === 1 ? " trabajo" : " trabajos") + "</small></div>" +
