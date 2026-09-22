@@ -2424,7 +2424,7 @@ const TARIFAS = {
      encargado y NO se explica en la página. */
   iva: { incluido: false, tasa: 0.13 },
 
-  vigenciaDias: 15,
+  vigenciaDias: 30,
 
   /* Cuánto sube por el tiempo sin limpiar. Más años es más lodo
      compactado, que es más trabajo. Sólo aplica al tanque séptico. */
@@ -2711,7 +2711,7 @@ function limpiarDatosPersona(cuerpo, obligatorios) {
    documento para que un cambio de teléfono se haga en un solo lugar. */
 const EMPRESA = {
   nombre: "Sanitarios Ticos",
-  razonSocial: "Grupo Ticos Sanitarios S.A.",
+  razonSocial: "Ticos Sanitarios S.A.",
   cedula: "3-101-702385",
   telefonos: ["2440-1110", "2265-4150"],
   whatsapp: "8341-7547",
