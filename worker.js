@@ -2204,10 +2204,39 @@ async function agendaPanel(request, env) {
       console.error("No se pudieron leer los trabajos programados:", e);
     }
 
+    /* Los trabajos YA HECHOS (estado='completado'): salen en el
+       calendario con otro color, para poder mirar hacia atrás qué se
+       hizo y cuándo. Solo se traen los últimos 6 meses para no cargar
+       de más el JSON en agendas con años de historial. */
+    let completados = [];
+    try {
+      const cr = await env.DB.prepare(
+        `SELECT s.id, s.cliente_id, s.servicio, s.detalle, s.fecha, s.hora, s.monto,
+                c.nombre, c.telefono, c.provincia, c.canton
+         FROM servicios s
+         JOIN clientes c ON c.id = s.cliente_id
+         WHERE s.estado = 'completado' AND s.papelera IS NULL AND c.papelera IS NULL
+           AND s.fecha >= date('now','-6 hours','-6 months')
+         ORDER BY s.fecha DESC, s.id DESC`
+      ).all();
+      completados = (cr.results || []).map((c) => ({
+        id: c.id, clienteId: c.cliente_id, nombre: c.nombre, telefono: c.telefono || null,
+        servicio: etiqueta(c.servicio, null, "servicio"), servicioKey: c.servicio,
+        detalle: c.detalle || null, monto: c.monto || 0,
+        lugar: [c.canton, c.provincia].filter(Boolean).join(", ") || null,
+        fecha: c.fecha, hora: c.hora || null, estado: "completado",
+        wa: waDe(c.telefono, "Buenas" + (c.nombre ? " " + primerNombre(c.nombre) : "") +
+                 ", le escribo de Sanitarios Ticos.")
+      }));
+    } catch (e) {
+      console.error("No se pudieron leer los trabajos completados:", e);
+    }
+
     return json({
       ok: true,
       items,
       citas,
+      completados,
       resumen: {
         vencidos: activos.filter((i) => i.dias < 0).length,
         mes:      activos.filter((i) => i.dias >= 0 && i.dias <= 30).length,
