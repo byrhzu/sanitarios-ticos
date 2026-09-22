@@ -956,7 +956,60 @@ async function resumenPanel(request, env) {
                   ) AS saldo
              FROM servicios s
             WHERE s.estado = 'completado' AND s.papelera IS NULL AND s.monto IS NOT NULL
-         ) WHERE saldo > 0`)
+         ) WHERE saldo > 0`),
+      /* 18 · Top 5 clientes por facturación en el rango. La pregunta que
+             ninguna cifra suelta contesta: "quién sostiene el negocio". */
+      q(`SELECT c.id, c.nombre, c.telefono, COUNT(*) AS trabajos, SUM(s.monto) AS monto
+         FROM servicios s JOIN clientes c ON c.id = s.cliente_id
+         WHERE s.fecha BETWEEN ? AND ? AND s.estado = 'completado' AND s.papelera IS NULL
+           AND c.papelera IS NULL AND s.monto IS NOT NULL
+         GROUP BY c.id ORDER BY monto DESC LIMIT 5`, R),
+      /* 19 · Cobros pendientes (hasta 20). Trabajos completados con
+             saldo > 0, ordenados por más viejo primero (los que más
+             urgen). Es lo que "se ganó pero no ha entrado". */
+      q(`SELECT s.id, s.fecha, s.servicio, s.monto,
+                COALESCE((SELECT SUM(p.monto) FROM pagos p
+                          WHERE p.servicio_id = s.id AND p.papelera IS NULL), 0) AS pagado,
+                c.id AS cliente_id, c.nombre, c.telefono
+         FROM servicios s JOIN clientes c ON c.id = s.cliente_id
+         WHERE s.estado = 'completado' AND s.papelera IS NULL AND c.papelera IS NULL
+           AND s.monto IS NOT NULL AND s.monto > 0
+           AND s.monto > COALESCE((SELECT SUM(p.monto) FROM pagos p
+                                    WHERE p.servicio_id = s.id AND p.papelera IS NULL), 0)
+         ORDER BY s.fecha ASC LIMIT 20`),
+      /* 20 · Cotizaciones sin servicio en los últimos 14 días: posibles
+             ventas dormidas, la razón para llamar a alguien HOY. */
+      q(`SELECT co.id, co.numero, co.nombre, co.telefono, co.servicio,
+                co.monto_min, co.monto_max, datetime(co.creado, '-6 hours') AS creado,
+                CAST((julianday('now') - julianday(co.creado)) * 24 AS INTEGER) AS horas
+         FROM cotizaciones co
+         WHERE co.papelera IS NULL
+           AND ${dia} >= date('now', '-6 hours', '-14 days')
+           AND NOT EXISTS (SELECT 1 FROM servicios s
+                            WHERE s.cotizacion_id = co.id AND s.papelera IS NULL)
+         ORDER BY co.creado DESC LIMIT 10`),
+      /* 21 · Trabajos AGENDADOS para hoy. La lista más importante del
+             día, con la hora y el cliente. */
+      q(`SELECT s.id, s.fecha, s.hora, s.servicio, s.detalle, s.estado,
+                c.id AS cliente_id, c.nombre, c.telefono
+         FROM servicios s JOIN clientes c ON c.id = s.cliente_id
+         WHERE s.fecha = date('now', '-6 hours') AND s.papelera IS NULL AND c.papelera IS NULL
+           AND s.estado IN ('programado', 'en_proceso')
+         ORDER BY s.hora, s.id`),
+      /* 22 · Ticket promedio del rango: facturado ÷ trabajos completados.
+             Un número que dice si el mix está subiendo o bajando. */
+      q(`SELECT COALESCE(AVG(monto), 0) AS avg, COUNT(*) AS n
+         FROM servicios WHERE fecha BETWEEN ? AND ?
+           AND estado = 'completado' AND papelera IS NULL AND monto > 0`, R),
+      /* 23 · Cotizaciones emitidas en el rango (total, sin embudo). Y las
+             que se convirtieron en servicio, para la tasa de conversión. */
+      q(`SELECT
+           (SELECT COUNT(*) FROM cotizaciones
+             WHERE ${enRango} AND papelera IS NULL) AS total,
+           (SELECT COUNT(DISTINCT s.cotizacion_id) FROM servicios s
+             JOIN cotizaciones co ON co.id = s.cotizacion_id
+             WHERE ${dia.replace(/creado/g, 'co.creado')} BETWEEN ? AND ?
+               AND s.papelera IS NULL AND co.papelera IS NULL) AS convertidas`, [...R, ...R])
     ]);
 
     const filas = (i) => (r[i] && r[i].results) || [];
@@ -1038,36 +1091,39 @@ async function resumenPanel(request, env) {
        llevan más de un día esperando" se partía en dos y la tarjeta
        pasaba de cinco renglones a nueve. El número ya está al lado en
        su pastilla, así que el texto sólo tiene que nombrar la cosa. */
-    const atencion = [];
-    if (esperando.cot) atencion.push({
-      grado: "alto", n: esperando.cot,
-      texto: esperando.cot === 1 ? "cotización sin responder" : "cotizaciones sin responder",
-      ir: { vista: "cotizaciones", estado: "nueva" }
-    });
-    if (solViejas) atencion.push({
-      grado: "alto", n: solViejas,
-      texto: solViejas === 1 ? "solicitud de más de un día"
-                             : "solicitudes de más de un día",
-      ir: { vista: "solicitudes", estado: "nueva" }
-    });
-    const vencidos = proximos.filter((p) => p.dias < 0).length;
-    if (vencidos) atencion.push({
-      grado: "alto", n: vencidos,
-      texto: vencidos === 1 ? "mantenimiento pasado de fecha" : "mantenimientos pasados de fecha",
-      ir: { vista: "agenda" }
-    });
-    if (porVencer) atencion.push({
-      grado: "medio", n: porVencer,
-      texto: porVencer === 1 ? "cotización por vencer" : "cotizaciones por vencer",
-      ir: { vista: "cotizaciones", estado: "nueva" }
-    });
-    const estaSemana = proximos.filter((p) => p.dias >= 0 && p.dias <= 7).length;
-    if (estaSemana) atencion.push({
-      grado: "medio", n: estaSemana,
-      texto: estaSemana === 1 ? "mantenimiento esta semana"
-                              : "mantenimientos esta semana",
-      ir: { vista: "agenda" }
-    });
+    // Hoy operativo: cinco bloques, cada uno una lista corta con enlace
+    // directo al registro. Ya no se cuentan "cotizaciones sin responder"
+    // (las cotizaciones dejaron de tener estado).
+    const cobrosPend = filas(19).map((f) => ({
+      id: f.id, clienteId: f.cliente_id, nombre: f.nombre, telefono: f.telefono,
+      servicio: etiqueta(f.servicio, null, "servicio"),
+      fecha: f.fecha, monto: f.monto, pagado: f.pagado, saldo: f.monto - f.pagado,
+      wa: waDe(f.telefono, "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") +
+        ", le escribo de Sanitarios Ticos por el saldo pendiente del " + fechaTexto(f.fecha) + ".")
+    }));
+    const cotizSinServicio = filas(20).map((f) => ({
+      id: f.id, numero: f.numero || ("Cotización " + f.id),
+      nombre: f.nombre, telefono: f.telefono,
+      servicio: etiqueta(f.servicio, null, "servicio"),
+      monto: montoTexto(f.monto_min, f.monto_max),
+      creado: f.creado, horas: f.horas,
+      wa: waDe(f.telefono, "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") +
+        ", ¿quedó bien la cotización " + (f.numero || "") + " que le pasamos? ¿La coordinamos?")
+    }));
+    const trabajosHoy = filas(21).map((f) => ({
+      id: f.id, clienteId: f.cliente_id, nombre: f.nombre, telefono: f.telefono,
+      servicio: etiqueta(f.servicio, null, "servicio"),
+      fecha: f.fecha, hora: f.hora, detalle: f.detalle, estado: f.estado,
+      wa: waDe(f.telefono, "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") +
+        ", le confirmo de Sanitarios Ticos la visita" +
+        (f.hora ? " a las " + f.hora : " de hoy") + ".")
+    }));
+    const solicitudesNuevas = filas(5).slice(0, 6).map((f) => ({
+      id: f.id, nombre: f.nombre, telefono: f.telefono,
+      servicio: f.servicio, zona: f.zona, horas: f.horas
+    }));
+    const mantVencidos = proximos.filter((p) => p.dias < 0);
+    const mantSemana = proximos.filter((p) => p.dias >= 0 && p.dias <= 7);
 
     return json({
       ok: true,
@@ -1089,25 +1145,30 @@ async function resumenPanel(request, env) {
         sol: variacion(suma(estSol), antes.sol || 0),
         ing: variacion(cobrado.s || 0, antes.ing || 0)
       },
-      atencion,
+      // ---- Hoy: cinco listas operativas ----
+      hoy: {
+        trabajos: trabajosHoy,
+        cobrosPend, cotizSinServicio, solicitudes: solicitudesNuevas,
+        mantenimientos: { vencidos: mantVencidos, semana: mantSemana }
+      },
+      // ---- Resumen: KPIs y desglose estratégico ----
+      cotEmit: (uno(23).total) || 0,
+      convertidas: (uno(23).convertidas) || 0,
+      // Tasa de conversión: qué % de las cotizaciones acabó en servicio.
+      conversion: (uno(23).total) > 0
+        ? Math.round(((uno(23).convertidas || 0) / uno(23).total) * 100) : null,
+      ticket: Math.round(uno(22).avg || 0),
+      topClientes: filas(18).map((f) => ({
+        id: f.id, nombre: f.nombre, telefono: f.telefono, trabajos: f.trabajos, monto: f.monto || 0
+      })),
+      porVencer,
       proximos,
-      enviadas,
-      cerradas,
-      // Porcentaje sobre lo enviado, no sobre lo resuelto: es lo que
-      // pidió el propietario y es la lectura que no se infla sola.
-      cierre: enviadas ? Math.round((cerradas / enviadas) * 100) : null,
-      // Estado de hoy, no del rango
-      esperando: { cot: esperando.cot || 0, sol: esperando.sol || 0,
-                   total: (esperando.cot || 0) + (esperando.sol || 0) },
-      esperaMax: pendientes.length ? pendientes[0].horas : 0,
-      pendientes,
-      abierto: { min: abierto.smin || 0, max: abierto.smax || 0 },
-      embudo: { cotizaciones: estCot, solicitudes: estSol },
       servicios:  filas(6).map((f) => ({
         id: f.k, k: etiqueta(f.k, null, "servicio"), n: f.n, monto: f.m || 0
       })),
       provincias: filas(7).map((f) => ({ id: f.k, k: f.k, n: f.n })),
       origenes:   filas(8).map((f) => ({ k: ORIGENES[f.k] || f.k, n: f.n })),
+      abierto: { min: abierto.smin || 0, max: abierto.smax || 0 },
       estados: ESTADOS
     });
   } catch (e) {
