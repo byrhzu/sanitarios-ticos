@@ -1341,10 +1341,6 @@
   .cal-leyenda .lg-hecho { background: var(--est-ok-tx); border-radius: 999px; }
   .cal-leyenda .lg-toca { background: var(--est-espera-bg); }
   .cal-leyenda .lg-venc { background: var(--est-mal-bg); }
-  /* El calendario ya ocupa toda la columna: sin la lista lateral se
-     libera el espacio y el mes se lee más grande. */
-  .agenda-cal .cal button { min-height: 3.6rem; font-size: 1.05rem; }
-  .agenda-cal { max-width: 900px; margin: 0 auto; }
   /* Encabezado del panel del día. */
   .dia-cab { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; margin-bottom: 1rem; }
   .dia-cab h2 { flex: 1 1 auto; margin: 0; }
@@ -2414,36 +2410,36 @@
         </button>
       </div>
 
-      <div class="tarj agenda-cal">
-        <div class="tarj-h">
-          <!-- El mes y el año se tocan. Con sólo las flechas, ir de
-               setiembre de 2026 a marzo de 2028 son diecisiete toques. -->
-          <h2 class="cal-tit">
-            <button type="button" id="cal-mes" aria-haspopup="true" aria-expanded="false"></button>
-            <button type="button" id="cal-anio" aria-haspopup="true" aria-expanded="false"></button>
-          </h2>
-          <div class="cal-pop" id="cal-pop" hidden role="listbox" aria-label="Escoger mes o año"></div>
-          <span class="meta siempre mes-riel">
-            <button type="button" class="mes-nav" id="mes-antes" aria-label="Mes anterior">&larr;</button>
-            <button type="button" class="mes-nav" id="mes-hoy">Hoy</button>
-            <button type="button" class="mes-nav" id="mes-despues" aria-label="Mes siguiente">&rarr;</button>
-          </span>
+      <div class="rejilla dos">
+        <div class="tarj">
+          <div class="tarj-h">
+            <h2 class="cal-tit">
+              <button type="button" id="cal-mes" aria-haspopup="true" aria-expanded="false"></button>
+              <button type="button" id="cal-anio" aria-haspopup="true" aria-expanded="false"></button>
+            </h2>
+            <div class="cal-pop" id="cal-pop" hidden role="listbox" aria-label="Escoger mes o año"></div>
+            <span class="meta siempre mes-riel">
+              <button type="button" class="mes-nav" id="mes-antes" aria-label="Mes anterior">&larr;</button>
+              <button type="button" class="mes-nav" id="mes-hoy">Hoy</button>
+              <button type="button" class="mes-nav" id="mes-despues" aria-label="Mes siguiente">&rarr;</button>
+            </span>
+          </div>
+          <div class="cal" id="cal"></div>
+          <div class="cal-leyenda">
+            <span><i class="lg-cita"></i>Agendado</span>
+            <span><i class="lg-hecho"></i>Hecho</span>
+            <span><i class="lg-toca"></i>Le toca</span>
+            <span><i class="lg-venc"></i>Vencido</span>
+          </div>
         </div>
-        <div class="cal" id="cal"></div>
-        <!-- Qué significa cada marca del calendario. -->
-        <div class="cal-leyenda">
-          <span><i class="lg-cita"></i>Agendado</span>
-          <span><i class="lg-hecho"></i>Hecho</span>
-          <span><i class="lg-toca"></i>Le toca</span>
-          <span><i class="lg-venc"></i>Vencido</span>
+
+        <div class="tarj">
+          <div class="tarj-h"><h2 id="agenda-titulo">Trabajos agendados</h2><span class="meta" id="agenda-n"></span></div>
+          <div id="agenda-lista" class="escalona"></div>
         </div>
       </div>
-      <!-- Lista invisible: el estado de la agenda vive acá para que
-           marcarCitaHecha y compañía puedan seguir llamando a
-           pintarAgendaLista (que sólo repinta este nodo oculto). -->
-      <div id="agenda-lista" hidden></div>
-      <span id="agenda-titulo" hidden></span><span id="agenda-n" hidden></span>
-      <div id="agenda-cifras" hidden></div>
+
+      <div class="rejilla cifras escalona" id="agenda-cifras"></div>
     </div>
 
     <!-- Al tocar un día del calendario se abre este panel con TODO lo
@@ -6304,13 +6300,19 @@
   function cargarAgenda() {
     $("estado-agenda").textContent = "";
     $("estado-agenda").classList.remove("is-error");
+    if (!agendaCargada) {
+      $("agenda-cifras").innerHTML = esqCifras();
+      $("agenda-lista").innerHTML = esqFilas(3);
+    }
     pedir("/api/panel/agenda")
       .then(function (d) {
         AGENDA = d;
         agendaCargada = true;
         $("estado-agenda").textContent = "";
         if (!calMes) { var h = new Date(); calMes = new Date(h.getFullYear(), h.getMonth(), 1); }
+        pintarAgendaCifras(d);
         pintarCalendario();
+        pintarAgendaLista();
         marcar("pend-agenda", d.resumen.vencidos);
         sellar();
       })
@@ -6432,6 +6434,11 @@
   $("cal").addEventListener("click", function (e) {
     var b = e.target.closest("button[data-dia]");
     if (!b) return;
+    // Volver a tocar el mismo día lo deselecciona en la lista lateral.
+    agendaFiltro = (agendaFiltro.tipo === "dia" && agendaFiltro.valor === b.dataset.dia)
+      ? { tipo: "citas" } : { tipo: "dia", valor: b.dataset.dia };
+    pintarCalendario();
+    pintarAgendaLista();
     abrirDia(b.dataset.dia);
   });
 
@@ -6623,10 +6630,49 @@
     "</div>";
   }
 
-  // La lista lateral fue reemplazada por el modal del día. Se conserva
-  // esta función porque otros lugares (marcarCitaHecha, cancelarCita…)
-  // la llaman tras cambiar un servicio.
-  function pintarAgendaLista() { /* noop; el calendario ya se pinta aparte */ }
+  function pintarAgendaLista() {
+    var f = agendaFiltro;
+    var citas = AGENDA.citas || [];
+
+    if (f.tipo === "citas") {
+      $("agenda-titulo").textContent = TITULO_AGENDA.citas;
+      $("agenda-n").textContent = citas.length ? String(citas.length) : "";
+      $("agenda-lista").innerHTML = citas.length
+        ? citas.map(filaCita).join("")
+        : '<p class="vacio-ok">No hay nada agendado. Tocá “Agendar servicio”.</p>';
+      return;
+    }
+
+    if (f.tipo === "dia") {
+      var cd = citas.filter(function (c) { return c.fecha === f.valor; });
+      var hd = (AGENDA.completados || []).filter(function (c) { return c.fecha === f.valor; });
+      var td = AGENDA.items.filter(function (i) { return i.recordatorio && i.proximo === f.valor; });
+      $("agenda-titulo").textContent = fechaLarga(f.valor);
+      $("agenda-n").textContent = (cd.length + hd.length + td.length) ? String(cd.length + hd.length + td.length) : "";
+      if (!cd.length && !hd.length && !td.length) {
+        $("agenda-lista").innerHTML =
+          '<p class="vacio-ok" style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">Nada ese día. ' +
+          '<button type="button" class="bt fuerte" data-agendar-dia="' + f.valor + '">Agendar acá</button></p>';
+        return;
+      }
+      $("agenda-lista").innerHTML = cd.map(filaCita).join("") + hd.map(filaHecho).join("") + td.map(filaToca).join("");
+      return;
+    }
+
+    var items = AGENDA.items.filter(function (i) {
+      if (f.tipo === "apagados") return !i.recordatorio;
+      if (!i.recordatorio) return false;
+      if (f.tipo === "vencidos") return i.dias < 0;
+      if (f.tipo === "trimestre") return i.dias >= 0 && i.dias <= 90;
+      return i.dias <= 30;
+    });
+
+    $("agenda-titulo").textContent = TITULO_AGENDA[f.tipo] || "Le toca";
+    $("agenda-n").textContent = items.length ? String(items.length) : "";
+    $("agenda-lista").innerHTML = items.length
+      ? items.map(filaToca).join("")
+      : '<p class="vacio-ok">Nadie por acá.</p>';
+  }
 
   $("agenda-lista").addEventListener("click", function (e) {
     var b = e.target.closest("[data-cliente],[data-reagendar],[data-hecho],[data-cancelar],[data-eliminar-serv],[data-agendar-dia],[data-menu-cita]");
