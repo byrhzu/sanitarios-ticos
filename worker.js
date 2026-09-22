@@ -442,6 +442,10 @@ function construirConsulta(url, sinEstado) {
       if (svista === "realizadas") condiciones.push("estado = 'hecha'");
       else if (svista === "pendientes") condiciones.push("estado <> 'hecha'");
     }
+  } else if (tabla === "cotizaciones") {
+    // Sin esto, una cotización enviada a la papelera seguía apareciendo
+    // en su lista hasta que se la eliminaba definitivamente (bug).
+    condiciones.push("papelera IS NULL");
   }
 
   const donde = condiciones.length ? ` WHERE ` + condiciones.join(" AND ") : "";
@@ -877,9 +881,9 @@ async function resumenPanel(request, env) {
              sería justamente perderla. */
       q(`SELECT id, numero, nombre, telefono, servicio, monto_min, monto_max,
                 provincia, canton, ${dia} AS d, ${espera}
-         FROM cotizaciones WHERE estado = 'nueva' ORDER BY creado ASC LIMIT 15`),
+         FROM cotizaciones WHERE estado = 'nueva' AND papelera IS NULL ORDER BY creado ASC LIMIT 15`),
       q(`SELECT id, nombre, telefono, servicio, zona, ${dia} AS d, ${espera}
-         FROM solicitudes WHERE estado = 'nueva' ORDER BY creado ASC LIMIT 15`),
+         FROM solicitudes WHERE estado = 'nueva' AND papelera IS NULL ORDER BY creado ASC LIMIT 15`),
       /* 6 y 7 · qué se HIZO y DÓNDE se hizo. Salen de los trabajos
              anotados, no de las cotizaciones emitidas. La pregunta de fin
              de mes es "qué hice y para dónde fui", y una cotización que
@@ -900,11 +904,11 @@ async function resumenPanel(request, env) {
              plata que todavía se puede cobrar, no importa cuándo se
              cotizó. */
       q(`SELECT SUM(monto_min) AS smin, SUM(monto_max) AS smax FROM cotizaciones
-         WHERE estado NOT IN ('perdida', 'hecha')`),
-      // 10 · cuántas siguen sin atender, en total
+         WHERE estado NOT IN ('perdida', 'hecha') AND papelera IS NULL`),
+      // 10 · cuántas siguen sin atender, en total (excluye papelera)
       q(`SELECT
-           (SELECT COUNT(*) FROM cotizaciones WHERE estado = 'nueva') AS cot,
-           (SELECT COUNT(*) FROM solicitudes  WHERE estado = 'nueva') AS sol`),
+           (SELECT COUNT(*) FROM cotizaciones WHERE estado = 'nueva' AND papelera IS NULL) AS cot,
+           (SELECT COUNT(*) FROM solicitudes  WHERE estado = 'nueva' AND papelera IS NULL) AS sol`),
       /* 11 · lo cobrado en el rango. Sale de los trabajos anotados, que
              es plata real recibida — no del rango de las cotizaciones,
              que es una estimación de algo que puede no pasar. */
@@ -920,11 +924,11 @@ async function resumenPanel(request, env) {
         [previo.desde, previo.hasta]),
       // 13 · solicitudes que llevan más de un día sin que nadie las toque
       q(`SELECT COUNT(*) AS n FROM solicitudes
-         WHERE estado = 'nueva' AND creado < datetime('now', '-24 hours')`),
+         WHERE estado = 'nueva' AND papelera IS NULL AND creado < datetime('now', '-24 hours')`),
       /* 14 · cotizaciones abiertas que se están venciendo. La vigencia
              son ${TARIFAS.vigenciaDias} días; se avisa cinco antes. */
       q(`SELECT COUNT(*) AS n FROM cotizaciones
-         WHERE estado IN ('nueva', 'contactada')
+         WHERE estado IN ('nueva', 'contactada') AND papelera IS NULL
            AND ${dia} <= date('now', '-6 hours', '-${Math.max(1, TARIFAS.vigenciaDias - 5)} days')`),
       /* 15 · los mantenimientos que vienen. Sólo el último trabajo de
              cada cliente y sólo si tiene el recordatorio prendido. */
