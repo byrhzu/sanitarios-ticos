@@ -2852,7 +2852,7 @@ const EMPRESA = {
   telefonos: ["2440-1110", "2265-4150"],
   whatsapp: "8341-7547",
   correo: "info@sanitariosticos.com",
-  sitio: "sanitariosticos.com",
+  sitio: "sanitariosticoscr.com",
   /* Va bajo el nombre en el documento imprimible. Ya no son sedes: es
      un negocio de área de servicio, va donde el cliente. */
   cobertura: "Cobertura en todo el país"
