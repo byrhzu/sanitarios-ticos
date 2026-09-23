@@ -106,7 +106,7 @@
      naranja resalta por ser el único cálido en un mar azul, en vez de
      teñirlo todo. */
   :root {
-    --p-fondo:   #eef2f9;
+    --p-fondo:   #f4f6fa;
     --p-sup:     #ffffff;
     --p-sup2:    #e6ecf6;
     --p-txt:     #101a30;
@@ -125,7 +125,7 @@
     --p-prim-suave:rgba(35,79,158,.11);
     --p-dato1:   #234f9e;
     --p-dato2:   #ef6511;
-    --p-sombra:  0 1px 2px rgba(16,26,48,.05);
+    --p-sombra:  none;
 
     /* Estados. Cinco significados, un color cada uno, iguales en toda
        la aplicación. Se miden: cada texto pasa 4.5:1 sobre su propia
@@ -173,7 +173,7 @@
     --p-prim-suave:rgba(84,128,216,.18);
     --p-dato1:   #5480d8;
     --p-dato2:   #ff7a2b;
-    --p-sombra:  0 1px 2px rgba(0,0,0,.35);
+    --p-sombra:  none;
 
     /* Los mismos cinco estados, escogidos aparte para el fondo oscuro
        y medidos contra él: todos pasan 5.9:1 o más. */
@@ -222,32 +222,31 @@
        abajo): una azul arriba a la derecha —la base— y un toque naranja
        abajo a la izquierda —el acento asomando—. Es lo que le da el aire
        tech de la inspiración y saca al fondo de "hoja en blanco". */
-    --p-lienzo:
-      radial-gradient(72% 46% at 90% -6%, rgba(35,79,158,.14) 0%, rgba(35,79,158,0) 60%),
-      radial-gradient(58% 40% at 0% 104%, rgba(239,101,17,.07) 0%, rgba(239,101,17,0) 58%),
-      #eef2f9;
+    /* Fondo plano. El degradado y el aura animada se quitaron: eran
+       volumen puro. El interés visual lo cargan el contenido y el
+       naranja, no el papel. */
+    --p-lienzo: #f4f6fa;
     --p-tarj:   #ffffff;
     --p-borde:  rgba(16,26,48,.06);
     /* Dos sombras: una de 1px que apoya la tarjeta en el papel y otra
        larga y muy abierta que la levanta. La segunda es la que da el
        efecto de la referencia; sola se ve sucia, sola la primera se ve
        plana. */
-    --p-alza:   0 1px 2px rgba(27,25,23,.03), 0 10px 26px -14px rgba(27,25,23,.22);
-    --p-alza2:  0 2px 6px rgba(27,25,23,.05), 0 18px 40px -18px rgba(27,25,23,.3);
+    /* Sin elevación: las piezas se separan por un filete, no flotando.
+       --p-alza2 se reserva para lo que de verdad está encima (modales). */
+    --p-alza:   none;
+    --p-alza2:  0 12px 32px -12px rgba(16,26,48,.18);
   }
   :root[data-tema="oscuro"] {
     /* El mismo esquema en oscuro: el resplandor naranja arriba a la
        derecha y un azul frío abajo, que es el que impide que la pantalla
        se lea como un gris muerto. En oscuro se pueden subir un punto:
        la luz sobre fondo negro se ve menos de lo que mide. */
-    --p-lienzo:
-      radial-gradient(74% 46% at 90% -6%, rgba(84,128,216,.18) 0%, rgba(84,128,216,0) 58%),
-      radial-gradient(60% 44% at 0% 104%, rgba(255,122,43,.12) 0%, rgba(255,122,43,0) 56%),
-      linear-gradient(180deg, #0c1428 0%, #0a0f1c 55%, #080d17 100%);
+    --p-lienzo: #0a0f1c;
     --p-tarj:   #121c33;
     --p-borde:  rgba(255,255,255,.08);
-    --p-alza:   0 1px 2px rgba(0,0,0,.28), 0 12px 30px -16px rgba(0,0,0,.7);
-    --p-alza2:  0 3px 8px rgba(0,0,0,.35), 0 20px 44px -20px rgba(0,0,0,.8);
+    --p-alza:   none;
+    --p-alza2:  0 16px 40px -14px rgba(0,0,0,.65);
   }
 
   /* El sitio público define h1 como titular de cartel: condensado al
@@ -270,22 +269,9 @@
      desplazan muy lento detrás de todo. Es el "movimiento" que pide la
      guía, tan suave que no distrae: 26 y 34 segundos por vuelta. Va fijo
      al viewport y detrás del contenido (z-index 0, el panel va sobre él). */
-  body::before {
-    content: ""; position: fixed; inset: -20% -10% -10%; z-index: 0;
-    pointer-events: none;
-    background:
-      radial-gradient(38% 32% at 22% 26%, color-mix(in srgb, var(--p-primario) 34%, transparent) 0%, transparent 70%),
-      radial-gradient(34% 30% at 82% 78%, color-mix(in srgb, var(--p-acento) 26%, transparent) 0%, transparent 70%);
-    filter: blur(60px);
-    opacity: .5;
-    animation: aura 30s ease-in-out infinite alternate;
-  }
-  :root[data-tema="oscuro"] body::before { opacity: .42; }
-  @keyframes aura {
-    0%   { transform: translate3d(0,0,0) scale(1); }
-    50%  { transform: translate3d(3%, -3%, 0) scale(1.08); }
-    100% { transform: translate3d(-3%, 2%, 0) scale(1.03); }
-  }
+  /* El aura animada de fondo se eliminó: dos manchas borrosas en
+     movimiento detrás de todo eran el mayor generador de volumen de la
+     pantalla, y no aportaban información. */
   .panel, .clave-pantalla, .velo, .avisos, .instalar { position: relative; z-index: 1; }
   .panel button, .panel input, .panel select { letter-spacing: inherit; }
 
@@ -559,7 +545,7 @@
   .tarj {
     background: var(--p-tarj); border-radius: var(--radio);
     padding: 1.25rem 1.35rem 1.35rem;
-    border: 1px solid var(--p-borde); box-shadow: var(--p-alza);
+    border: 1px solid var(--p-borde);
   }
   /* El margen sólo entre bloques apilados de la vista. Puesto como
      `.tarj + .tarj` a secas se colaba dentro de las rejillas y le
@@ -697,7 +683,7 @@
      sola en una segunda fila en las pantallas de laptop angostas, y una
      fila de KPIs con un huérfano se lee como si faltara algo. */
   .rejilla.cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  @media (min-width: 1120px) { .rejilla.cifras { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (min-width: 1120px) { .rejilla.cifras { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   .rejilla.cuatro { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
   .rejilla.tres { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
   .rejilla.tres > .tarj { display: flex; flex-direction: column; }
@@ -721,10 +707,10 @@
     position: relative; overflow: hidden;
     background: var(--p-tarj); border-radius: var(--radio);
     padding: 1rem 1.1rem 1.1rem; text-align: left; width: 100%;
-    border: 1px solid var(--p-borde); box-shadow: var(--p-alza);
-    transition: box-shadow .18s var(--ease), transform .18s var(--ease);
+    border: 1px solid var(--p-borde);
+    transition: border-color .18s var(--ease), background .18s var(--ease);
   }
-  button.cifra:hover { transform: translateY(-2px); box-shadow: var(--p-alza2); }
+  button.cifra:hover { border-color: var(--p-tenue); background: var(--p-sup2); }
   button.cifra:active { transform: translateY(0); }
   .cifra-chip {
     display: inline-flex; align-items: center; justify-content: center;
@@ -734,11 +720,8 @@
   /* El filo de color arriba: un detalle de tres píxeles que hace que la
      fila de cifras se lea como cuatro cosas y no como una repetida. */
   .cifra { position: relative; }
-  .cifra[class*="t-"]::after {
-    content: ""; position: absolute; inset: 0 auto auto 0;
-    width: 100%; height: 3px; border-radius: var(--radio) var(--radio) 0 0;
-    background: var(--filo);
-  }
+  /* La barrita de color de arriba se quitó: el color ya vive en el
+     chip del icono, y dos señales del mismo dato es volumen. */
   .cifra.t-dato   { --filo: var(--p-primario); }
   .cifra.t-mal    { --filo: var(--est-mal-tx); }
   .cifra.t-mal    .cifra-chip { background: var(--est-mal-bg); color: var(--est-mal-tx); }
@@ -750,8 +733,8 @@
   .cifra.t-ok     .cifra-chip { background: var(--est-ok-bg);     color: var(--est-ok-tx); }
   .cifra-chip svg { width: 17px; height: 17px; }
   .cifra-n {
-    font-family: var(--display); font-weight: 600; font-size: 1.9rem;
-    line-height: 1.05; letter-spacing: -.028em; font-variant-numeric: tabular-nums;
+    font-family: var(--display); font-weight: 700; font-size: 2.15rem;
+    line-height: 1.02; letter-spacing: -.035em; font-variant-numeric: tabular-nums;
   }
   .cifra-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
   .cifra-t { color: var(--p-tenue); margin-top: .2rem; }
@@ -781,7 +764,7 @@
   /* La tarjeta urgente lleva además un filo a la izquierda, del mismo
      color que el de arriba. Con el naranja de marca eran dos naranjas
      distintos en la misma esquina, que se lee como un error de imprenta. */
-  .cifra.urge { border-left: 3px solid var(--filo, var(--p-acento)); }
+  /* "urge" ya no pinta un filo lateral: el color vive en el chip. */
   /* La línea de tendencia sangra hasta el borde de abajo, como en la
      referencia. Sólo la llevan las tarjetas que tienen una serie de
      verdad: dibujarle una tendencia inventada a un número que no la
@@ -844,7 +827,7 @@
      lo que dicen, y el verde de WhatsApp deja de destacar. */
   .bt {
     display: inline-flex; align-items: center; gap: .4rem;
-    font-weight: 500; padding: .45rem .8rem; border-radius: 11px;
+    font-weight: 600; padding: .48rem .95rem; border-radius: 999px;
     background: transparent; color: var(--p-txt);
     border: 1px solid var(--p-linea); white-space: nowrap;
     transition: background .15s var(--ease), border-color .15s var(--ease), transform .12s var(--ease);
@@ -1006,7 +989,7 @@
      justamente lo que uno vino a tocar. En angosto no hay tabla: cada
      registro es una ficha con lo suyo apilado y los botones a mano. */
   .fichas { display: flex; flex-direction: column; gap: .7rem; }
-  .ficha { background: var(--p-tarj); border-radius: var(--radio); padding: .9rem 1rem 1rem; border: 1px solid var(--p-borde); box-shadow: var(--p-alza); }
+  .ficha { background: var(--p-tarj); border-radius: var(--radio); padding: .9rem 1rem 1rem; border: 1px solid var(--p-borde); }
   .ficha-top { display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem; }
   .ficha-top .num.ref { color: var(--p-primario); background: var(--p-prim-suave); cursor: pointer; transition: background .15s var(--ease); }
   .ficha-top .num.ref:hover { background: color-mix(in srgb, var(--p-primario) 20%, transparent); }
@@ -1269,7 +1252,7 @@
   .ac-lista {
     position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 40;
     background: var(--p-tarj); border: 1px solid var(--p-linea); border-radius: 12px;
-    box-shadow: var(--p-alza); overflow: hidden; max-height: 15rem; overflow-y: auto;
+    box-shadow: var(--p-alza2); overflow: hidden; max-height: 15rem; overflow-y: auto;
   }
   .ac-item {
     display: flex; flex-direction: column; gap: .1rem; width: 100%;
@@ -1282,8 +1265,14 @@
   /* Card de agenda: se abre tocándola; WhatsApp y Hecho del mismo tamaño. */
   .toca-fila.clic { cursor: pointer; }
   .toca-fila.clic:hover { background: var(--p-sup2); border-color: var(--p-linea); }
-  .toca-fila.cita .toca-acc { flex: 1 1 100%; margin-left: 0; flex-wrap: nowrap; }
-  .toca-fila.cita .cita-bt { flex: 1 1 0; justify-content: center; min-width: 0; }
+  /* Las acciones no se estiran: ancho propio y alineadas a la derecha.
+     Cuando la fila no da, el flex-wrap las baja solas. */
+  .toca-fila.cita .toca-acc { flex: 0 1 auto; margin-left: auto; flex-wrap: nowrap; }
+  .toca-fila.cita .cita-bt { flex: 0 0 auto; justify-content: center; min-width: 6.5rem; }
+  @media (max-width: 640px) {
+    .toca-fila.cita .toca-acc { flex: 1 1 100%; margin-left: 0; }
+    .toca-fila.cita .cita-bt { flex: 1 1 0; min-width: 0; }
+  }
   .toca-fila.cita .cita-mas { flex: 0 0 auto; }
 
   /* El calendario. Una rejilla de siete, con un punto en los días que
@@ -1435,15 +1424,24 @@
   .aten-ir svg { width: 16px; height: 16px; }
   .aten:hover .aten-ir { color: var(--p-acento-t); }
 
+  /* Una lista es una lista, no diez tarjetas flotando. Cada fila es un
+     renglón separado por un filete; el contenedor es el que hace de
+     tarjeta. Se gana densidad y se pierde todo el ruido de bordes. */
   .toca-fila {
     display: flex; gap: .8rem; align-items: flex-start; flex-wrap: wrap;
-    padding: 1rem 1.2rem; border-radius: var(--radio);
-    background: var(--p-tarj); border: 1px solid var(--p-borde);
-    box-shadow: var(--p-alza);
+    padding: .85rem 0; background: transparent; border: 0;
+    border-top: 1px solid var(--p-linea);
   }
-  .toca-fila + .toca-fila { margin-top: .6rem; }
+  .toca-fila:first-child { border-top: 0; }
+  /* El contenedor de la lista se vuelve la tarjeta. */
+  .fichas:has(> .toca-fila) {
+    gap: 0; background: var(--p-tarj); border: 1px solid var(--p-borde);
+    border-radius: var(--radio); padding: .2rem 1.15rem;
+  }
+  /* Dentro de una tarjeta que ya existe, la lista no lleva marco. */
+  .tarj .fichas:has(> .toca-fila) { background: none; border: 0; border-radius: 0; padding: 0; }
   .toca-fila[data-ir] { cursor: pointer; }
-  .toca-fila[data-ir]:hover { background: var(--p-sup2); border-color: var(--p-linea); }
+  .toca-fila[data-ir]:hover, .toca-fila.clic:hover { background: var(--p-sup2); border-color: var(--p-linea); }
   .toca-quien { flex: 1 1 11rem; min-width: 0; }
   .toca-quien b { font-weight: 500; }
   .toca-quien small { display: block; color: var(--p-tenue); margin-top: .1rem; }
@@ -1517,7 +1515,7 @@
   .hueso { background: var(--p-sup2); border-radius: 6px; animation: latir 1.4s ease-in-out infinite; }
   @keyframes latir { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
   .hueso-linea { height: .8rem; }
-  .esq-cifra { background: var(--p-tarj); border-radius: var(--radio); padding: 1rem 1.1rem 1.1rem; border: 1px solid var(--p-borde); box-shadow: var(--p-alza); }
+  .esq-cifra { background: var(--p-tarj); border-radius: var(--radio); padding: 1rem 1.1rem 1.1rem; border: 1px solid var(--p-borde); }
   .esq-fila { display: flex; align-items: center; gap: var(--e4); padding: .8rem 0; border-top: 1px solid var(--p-linea); }
   .esq-fila:first-child { border-top: 0; }
 
@@ -1683,7 +1681,7 @@
   .top-quien b { display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .top-quien small { color: var(--p-tenue); font-size: .78rem; }
   .top-barra { height: 8px; border-radius: 999px; background: var(--p-linea); overflow: hidden; }
-  .top-rell { height: 100%; background: linear-gradient(90deg, var(--p-primario), var(--p-acento)); border-radius: 999px; }
+  .top-rell { height: 100%; background: var(--p-acento); border-radius: 999px; }
   .top-monto { color: var(--p-txt); font-weight: 600; white-space: nowrap; }
   @media (max-width: 640px) {
     .top-cli { grid-template-columns: 1.4rem minmax(0, 1fr) auto; }
@@ -1826,8 +1824,8 @@
 
   .btn-fuerte {
     display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
-    background: var(--p-acento); color: #fff; font-weight: 500;
-    padding: .6rem 1.1rem; border-radius: 8px;
+    background: var(--p-acento); color: #fff; font-weight: 600;
+    padding: .62rem 1.3rem; border-radius: 999px;
     transition: background .15s var(--ease), transform .12s var(--ease);
   }
   .btn-fuerte:hover { background: var(--p-acento-t); }
@@ -1835,8 +1833,8 @@
   .btn-fuerte:disabled { opacity: .55; cursor: default; transform: none; }
   .btn-suave {
     display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
-    background: var(--p-sup2); color: var(--p-txt); font-weight: 500;
-    padding: .6rem 1.1rem; border-radius: 8px;
+    background: var(--p-sup2); color: var(--p-txt); font-weight: 600;
+    padding: .62rem 1.3rem; border-radius: 999px;
     transition: background .15s var(--ease);
   }
   .btn-suave:hover { background: var(--p-linea); }
