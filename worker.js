@@ -3277,7 +3277,12 @@ async function verCotizacion(request, env) {
 
 function baseDelCalculo(f) {
   const filas = [];
-  const poner = (campo, valor, porque) => { if (valor) filas.push({ campo, valor, porque }); };
+  // Sin texto explicativo (se pidió quitarlo). "Otro (escribir)" no se
+  // muestra como "__otro": lo escrito a mano ya va en la fila "Detalle".
+  const poner = (campo, valor) => {
+    if (!valor || valor === "__otro" || valor === "otro") return;
+    filas.push({ campo, valor, porque: "" });
+  };
 
   poner("Forma del tanque", f.forma  && etiqueta(f.servicio, f.forma, "forma"),   PORQUE.forma);
   poner("Tamaño",           f.medida && etiqueta(f.servicio, f.medida, "medida"), PORQUE.medida);

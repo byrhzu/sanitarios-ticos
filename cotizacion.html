@@ -776,6 +776,7 @@ body {
     // Cómo se calculó
     var base = $("base");
     d.base.forEach(function (b) {
+      if (b.valor === "__otro" || b.valor === "otro") return;
       var fila = document.createElement("div");
       fila.className = "fila";
       var dt = document.createElement("dt");
@@ -784,11 +785,8 @@ body {
       var val = document.createElement("span");
       val.className = "val";
       val.textContent = b.valor;
-      var por = document.createElement("span");
-      por.className = "porque";
-      por.textContent = b.porque;
+      // Sin el texto gris explicativo (se quitó a pedido).
       dd.appendChild(val);
-      dd.appendChild(por);
       fila.appendChild(dt);
       fila.appendChild(dd);
       base.appendChild(fila);
