@@ -1920,9 +1920,8 @@ async function listaClientes(request, env) {
               c.recordatorio, c.canal, c.meses,
               COUNT(s.id) AS trabajos,
               MAX(s.fecha) AS ultimo,
-              (SELECT s2.proximo FROM servicios s2 WHERE s2.cliente_id = c.id
-                AND s2.estado = 'completado' AND s2.papelera IS NULL
-                ORDER BY s2.fecha DESC, s2.id DESC LIMIT 1) AS proximo,
+              (SELECT MIN(m.fecha) FROM mantenimientos m WHERE m.cliente_id = c.id
+                AND m.estado = 'programado' AND m.papelera IS NULL) AS proximo,
               (SELECT s3.servicio FROM servicios s3 WHERE s3.cliente_id = c.id
                 AND s3.estado = 'completado' AND s3.papelera IS NULL
                 ORDER BY s3.fecha DESC, s3.id DESC LIMIT 1) AS servicio
@@ -2110,7 +2109,8 @@ async function verCliente(request, env) {
 
     const { results } = await env.DB.prepare(
       `SELECT id, fecha, hora, servicio, detalle, monto, cotizacion, cotizacion_id,
-              proximo, nota, estado
+              (SELECT m.fecha FROM mantenimientos m WHERE m.servicio_id = servicios.id
+                 AND m.estado = 'programado' AND m.papelera IS NULL LIMIT 1) AS proximo, nota, estado
        FROM servicios WHERE cliente_id = ? AND papelera IS NULL ORDER BY fecha DESC, id DESC`
     ).bind(id).all();
 
