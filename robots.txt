@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /panel
 
-Sitemap: https://www.sanitariosticos.com/sitemap.xml
+Sitemap: https://sanitariosticoscr.com/sitemap.xml
