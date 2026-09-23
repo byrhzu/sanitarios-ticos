@@ -1667,6 +1667,9 @@ async function guardarMantenimiento(request, env) {
       if (!Number.isFinite(id)) return json({ ok: false, error: "Mantenimiento inválido" }, 400);
       await env.DB.prepare(`UPDATE mantenimientos SET estado = 'cancelado', actualizado = datetime('now') WHERE id = ?`)
         .bind(id).run();
+      // El "próximo" del servicio que lo originó deja de mostrarse.
+      await env.DB.prepare(`UPDATE servicios SET proximo = NULL
+         WHERE id = (SELECT servicio_id FROM mantenimientos WHERE id = ?)`).bind(id).run();
       return json({ ok: true });
     }
     const clienteId = parseInt(b.clienteId, 10);
@@ -1685,6 +1688,10 @@ async function guardarMantenimiento(request, env) {
       await env.DB.prepare(
         `UPDATE mantenimientos SET tipo = ?1, fecha = ?2, meses = ?3, actualizado = datetime('now')
           WHERE id = ?4`).bind(tipo, fecha, meses, destino).run();
+      // Mantener sincronizado el "próximo" del servicio que lo originó
+      // (es lo que muestra el historial del cliente).
+      await env.DB.prepare(`UPDATE servicios SET proximo = ?1
+         WHERE id = (SELECT servicio_id FROM mantenimientos WHERE id = ?2)`).bind(fecha, destino).run();
     } else {
       await env.DB.prepare(
         `INSERT INTO mantenimientos (cliente_id, tipo, fecha, meses, estado)

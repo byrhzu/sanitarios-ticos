@@ -5199,7 +5199,7 @@
         return '<li class="exp-row">' +
           '<span class="exp-a">' + escHtml(x.servicio) + "</span>" +
           '<span class="exp-b">' + escHtml(fechaLarga(x.fecha)) + "</span>" +
-          '<span class="exp-c">' + escHtml(prog ? cada : (et || "")) + "</span>" +
+          '<span class="exp-c">' + escHtml(prog ? "" : (et || "")) + "</span>" +
           (prog ? '<button type="button" class="bt exp-add" data-mant-ed="' + x.id + '">' + ICO.lapiz + "Editar</button>" : "") + "</li>";
       }).join("") + "</ul>" : '<p class="vacio-ok">Sin mantenimiento programado.</p>') +
     "</div>";
