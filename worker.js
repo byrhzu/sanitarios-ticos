@@ -1561,7 +1561,7 @@ async function listaServicios(request, env) {
                 WHERE p.servicio_id = s.id AND p.papelera IS NULL) AS pagado
          FROM servicios s JOIN clientes c ON c.id = s.cliente_id
          ${donde}
-         ORDER BY (s.estado = 'programado') DESC, s.fecha DESC, s.id DESC
+         ORDER BY s.fecha DESC, s.hora DESC, s.id DESC
          LIMIT ? OFFSET ?`
     ).bind(...val, POR, (pagina - 1) * POR).all();
 
@@ -1607,6 +1607,48 @@ async function listaServicios(request, env) {
   } catch (e) {
     console.error("Error al listar servicios:", e);
     return json({ ok: false, error: "No se pudo consultar" }, 500);
+  }
+}
+
+/* Corregir un servicio en cualquier estado (incluido 'completado'):
+   fecha, hora, monto y detalle. Sirve para arreglar un error de captura
+   sin tener que borrar y volver a crear. Si es completado y cambia la
+   fecha, se mueve también su próximo mantenimiento (el que él generó). */
+async function editarServicio(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+  let b;
+  try { b = await request.json(); } catch { return json({ ok: false, error: "Formato inválido" }, 400); }
+  const id = parseInt(b.id, 10);
+  const fecha = soloFecha(b.fecha);
+  if (!Number.isFinite(id) || !fecha) return json({ ok: false, error: "Falta la fecha" }, 400);
+  const hm = String(b.hora || "").match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+  const hora = hm ? (hm[1].padStart(2, "0") + ":" + hm[2]) : null;
+  const monto = (b.monto === "" || b.monto == null) ? null
+              : (Number.isFinite(+b.monto) ? Math.round(+b.monto) : null);
+  try {
+    const s = await env.DB.prepare(
+      `SELECT s.estado, c.meses FROM servicios s JOIN clientes c ON c.id = s.cliente_id
+        WHERE s.id = ? AND s.papelera IS NULL`).bind(id).first();
+    if (!s) return json({ ok: false, error: "No existe ese servicio" }, 404);
+    const comp = s.estado === "completado";
+    await env.DB.prepare(
+      `UPDATE servicios SET fecha = ?1, hora = ?2, monto = ?3, detalle = ?4,
+              proximo = CASE WHEN ?5 = 1 AND proximo IS NOT NULL
+                             THEN date(?1, '+' || ?6 || ' months') ELSE proximo END,
+              actualizado = datetime('now')
+        WHERE id = ?7`
+    ).bind(fecha, hora, monto, texto(b.detalle, 200) || null, comp ? 1 : 0, s.meses || 24, id).run();
+    if (comp) {
+      await env.DB.prepare(
+        `UPDATE mantenimientos SET fecha = date(?1, '+' || COALESCE(meses, ?2) || ' months'),
+                actualizado = datetime('now')
+          WHERE servicio_id = ?3 AND estado = 'programado' AND papelera IS NULL`
+      ).bind(fecha, s.meses || 24, id).run();
+    }
+    return json({ ok: true });
+  } catch (e) {
+    console.error("Error al editar el servicio:", e);
+    return json({ ok: false, error: "No se pudo guardar" }, 500);
   }
 }
 
@@ -3747,6 +3789,9 @@ export default {
     }
     if (url.pathname === "/api/panel/mantenimientos" && request.method === "GET") {
       return listaMantenimientos(request, env);
+    }
+    if (url.pathname === "/api/panel/servicio/editar" && request.method === "POST") {
+      return editarServicio(request, env);
     }
     if (url.pathname === "/api/panel/servicios" && request.method === "GET") {
       return listaServicios(request, env);

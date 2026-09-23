@@ -1691,6 +1691,14 @@
   }
   /* Barras por facturación: el subtítulo con la cantidad de trabajos. */
   .barras .b-n .b-sub { color: var(--p-tenue); font-weight: 400; margin-left: .2rem; }
+  /* Servicios: separador de día (la lista va por fecha). */
+  .sv-dia {
+    margin: 1.1rem 0 .5rem; font-family: var(--display); font-size: .82rem;
+    font-weight: 600; color: var(--p-tenue); text-transform: capitalize;
+    display: flex; align-items: center; gap: .6rem;
+  }
+  .sv-dia::after { content: ""; flex: 1; height: 1px; background: var(--p-linea); }
+  #lista-servicios > .sv-dia:first-child { margin-top: 0; }
   /* Bloque de factura electrónica en el paso Confirmar de una cotización. */
   .fe-bloque { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--p-linea); }
   .fe-bloque .seg { margin-top: .7rem; }
@@ -2877,6 +2885,28 @@
     <div class="accs-lista" id="accs-lista"></div>
     <div class="hoja-pie">
       <button type="button" class="btn-suave" id="accs-cerrar">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Corregir un servicio (también los ya realizados): fecha, hora, monto
+     y detalle. Evita tener que borrarlo y volver a crearlo. -->
+<div class="velo" id="velo-edsv" hidden>
+  <div class="hoja hoja-form" role="dialog" aria-modal="true" aria-labelledby="es-t">
+    <h2 id="es-t">Corregir servicio</h2>
+    <p class="dim" id="es-sub" style="color:var(--p-tenue); margin:.3rem 0 1rem;"></p>
+    <input type="hidden" id="es-id">
+    <div class="nueva-rejilla">
+      <div class="f req"><label for="es-fecha">Fecha</label><input type="date" id="es-fecha"></div>
+      <div class="f"><label for="es-hora">Hora</label><input type="time" id="es-hora"></div>
+      <div class="f"><label for="es-monto">Monto</label><input type="text" id="es-monto" inputmode="numeric" autocomplete="off" placeholder="₡65.000"></div>
+    </div>
+    <div class="f" style="margin-top:.9rem;"><label for="es-detalle">Detalle</label>
+      <input type="text" id="es-detalle" maxlength="200" autocomplete="off"></div>
+    <p class="estado-linea" id="es-aviso" role="status" aria-live="polite"></p>
+    <div class="hoja-pie">
+      <button type="button" class="btn-suave" id="es-cerrar">Cancelar</button>
+      <button type="button" class="btn-fuerte" id="es-guardar">Guardar</button>
     </div>
   </div>
 </div>
@@ -5338,7 +5368,22 @@
     if (!d.servicios.length) {
       $("lista-servicios").innerHTML = '<p class="vacio-ok">No hay servicios con ese filtro.</p>';
     } else {
+      // Ordenado por fecha (el servidor ya lo manda así), con un
+      // separador cada vez que cambia el día.
+      var diaPrevio = null;
       $("lista-servicios").innerHTML = d.servicios.map(function (s) {
+        var sep = "";
+        if (s.fecha !== diaPrevio) {
+          diaPrevio = s.fecha;
+          var hoyIso = hoyISO();
+          var rot = s.fecha === hoyIso ? "Hoy · " : "";
+          sep = '<div class="sv-dia">' + escHtml(rot + fechaLarga(s.fecha)) + "</div>";
+        }
+        return sep + filaServicio(s);
+      }).join("");
+    }
+
+    function filaServicio(s) {
         var es = SV_ESTADO[s.estado] || { t: s.estado, cls: "mudo" };
         var plata = "";
         if (s.estado === "completado" && s.monto) {
@@ -5346,19 +5391,23 @@
             (s.estadoPago === "pagado" ? ' · <span class="pg-ok">pagado</span>'
              : s.saldo > 0 ? ' · <span class="pg-bad">falta ' + escHtml(colones(s.saldo)) + "</span>" : "");
         } else if (s.monto) { plata = escHtml(colones(s.monto)); }
-        return '<div class="toca-fila" data-cliente="' + s.clienteId + '">' +
+        // Principales afuera (WhatsApp + Hecho o Pago), el resto en "⋯".
+        var prog = s.estado === "programado" || s.estado === "en_proceso";
+        var acc = [];
+        if (s.wa) acc.push('<a class="bt wa cita-bt" href="' + escHtml(s.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
+        if (prog) acc.push('<button type="button" class="bt fuerte cita-bt" data-sv-hecho="' + s.id + '">Hecho</button>');
+        else if (s.estado === "completado") acc.push('<button type="button" class="bt cita-bt" data-sv-pago="' + s.id + '">' + ICO.cartera + "Pago</button>");
+        acc.push('<button type="button" class="bt cita-mas" data-svc-menu="' + s.id + '" title="Más acciones" aria-label="Más acciones">' + ICO.puntos + "</button>");
+        return '<div class="toca-fila cita clic" data-cliente="' + s.clienteId + '">' +
           '<div class="toca-quien"><b>' + escHtml(s.cliente) + "</b><small>" +
-            piezas([s.servicio, fechaLarga(s.fecha) + (s.hora ? " " + s.hora : ""), s.lugar]) +
+            piezas([s.servicio, s.hora ? s.hora + " h" : "", s.lugar]) +
           "</small></div>" +
           '<div class="toca-cuando" style="align-items:flex-end;gap:.35rem;">' +
             '<span class="pastilla ' + es.cls + '">' + escHtml(es.t) + "</span>" +
             (plata ? '<span class="num" style="font-size:.85rem;">' + plata + "</span>" : "") +
-            (s.proximo ? '<span class="dim" style="font-size:.75rem;">próximo ' + escHtml(fechaLarga(s.proximo)) + "</span>" : "") +
           "</div>" +
-          '<button type="button" class="fila-menu" data-svc-menu="' + s.id +
-            '" title="Acciones" aria-label="Acciones del servicio">' + ICO.puntos + "</button>" +
+          '<div class="toca-acc">' + acc.join("") + "</div>" +
         "</div>";
-      }).join("");
     }
 
     if (d.paginas > 1) {
@@ -5395,6 +5444,16 @@
     svFiltro.pagina++; cargarServicios(); window.scrollTo({ top: 0 });
   });
   $("lista-servicios").addEventListener("click", function (e) {
+    var bh = e.target.closest("[data-sv-hecho],[data-sv-pago]");
+    if (bh) {
+      e.stopPropagation();
+      var idx = bh.getAttribute("data-sv-hecho") || bh.getAttribute("data-sv-pago");
+      var sx = svServicios.filter(function (x) { return String(x.id) === String(idx); })[0];
+      if (!sx) return;
+      if (bh.hasAttribute("data-sv-hecho")) return marcarCitaHecha(Object.assign({ nombre: sx.cliente }, sx));
+      return pagoDeServicio(sx.clienteId, sx.id);
+    }
+    if (e.target.closest("a")) return;   // WhatsApp abre solo
     var menu = e.target.closest("[data-svc-menu]");
     if (menu) {
       e.stopPropagation();
@@ -5477,7 +5536,7 @@
       id: s.id, clienteId: c.id, nombre: c.nombre, telefono: c.telefono,
       servicioKey: s.servicio, servicio: s.servicioNombre || s.servicio,
       fecha: s.fecha, hora: s.hora, detalle: s.detalle, estado: s.estado,
-      proximo: s.proximo, saldo: s.saldo, estadoPago: s.estadoPago,
+      proximo: s.proximo, saldo: s.saldo, estadoPago: s.estadoPago, monto: s.monto,
       provincia: c.provincia, canton: c.canton,
       lugar: [c.canton, c.provincia].filter(Boolean).join(", ") || null, wa: c.wa
     };
@@ -6351,22 +6410,16 @@
       a.push(botAcc("cancelar", ICO.alerta, "Cancelar", "malo"));
       a.push(botAcc("eliminar", ICO.basura, "Eliminar", "malo"));
     } else {
-      a.push(botAcc("ver", ICO.ojo, "Ver cliente"));
-      if (svc.wa) {
-        a.push('<a class="acc-fila wa" href="' + escHtml(svc.wa) + '" target="_blank" rel="noopener" data-acc="contactar">' +
-          ICO.wa + "<span>Contactar por WhatsApp</span></a>");
-      }
+      // Fuera del menú ya están WhatsApp y la acción principal (Hecho o
+      // Pago), y tocar la fila abre el cliente. Acá solo lo secundario.
       if (prog) {
         a.push(botAcc("reagendar", ICO.dia, svc.fecha ? "Reagendar" : "Agendar servicio"));
-        a.push(botAcc("hecho", ICO.visto, "Marcar realizado", "fuerte"));
         a.push(botAcc("cancelar", ICO.alerta, "Cancelar", "malo"));
       }
       if (comp) {
-        a.push(botAcc("pago", ICO.cartera,
-          (svc.saldo > 0 ? "Registrar pago · falta " + colones(svc.saldo) : "Registrar pago")));
+        a.push(botAcc("editar", ICO.lapiz, "Corregir fecha, monto o detalle"));
+        a.push(botAcc("pago", ICO.cartera, "Ver o registrar pagos"));
       }
-      a.push(botAcc("mant", ICO.dia,
-        svc.proximo ? "Mantenimiento · próximo " + fechaLarga(svc.proximo) : "Mantenimiento"));
       a.push(botAcc("eliminar", ICO.basura, "Eliminar", "malo"));
     }
     $("accs-lista").innerHTML = a.join("");
@@ -6380,6 +6433,40 @@
   function pagoDeServicio(clienteId, servicioId) {
     verCliente(clienteId, function () { abrirPago(servicioId); });
   }
+
+  // Corregir un servicio (sobre todo uno ya realizado con fecha errada).
+  function abrirEditarServicio(s) {
+    $("es-id").value = s.id;
+    $("es-sub").textContent = [s.nombre, s.servicio].filter(Boolean).join(" · ");
+    $("es-fecha").value = s.fecha || hoyISO();
+    $("es-hora").value = s.hora || "";
+    $("es-monto").value = s.monto ? colones(s.monto) : "";
+    $("es-detalle").value = s.detalle || "";
+    $("es-aviso").textContent = "";
+    $("velo-edsv").hidden = false;
+    $("es-fecha").focus();
+  }
+  function cerrarEditarServicio() { $("velo-edsv").hidden = true; }
+  montoLibre($("es-monto"));
+  $("es-cerrar").addEventListener("click", cerrarEditarServicio);
+  $("velo-edsv").addEventListener("click", function (e) { if (e.target === $("velo-edsv")) cerrarEditarServicio(); });
+  $("es-guardar").addEventListener("click", function () {
+    var aviso = $("es-aviso");
+    aviso.classList.remove("is-error"); aviso.textContent = "Guardando…";
+    $("es-guardar").disabled = true;
+    pedir("/api/panel/servicio/editar", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: $("es-id").value, fecha: $("es-fecha").value, hora: $("es-hora").value,
+        monto: soloDigitos($("es-monto").value), detalle: $("es-detalle").value
+      })
+    })
+      .then(function () { cerrarEditarServicio(); avisar("Servicio corregido."); refrescarTrasCambio(); })
+      .catch(function (err) {
+        aviso.textContent = String((err && err.message) || "No se pudo guardar."); aviso.classList.add("is-error");
+      })
+      .then(function () { $("es-guardar").disabled = false; });
+  });
 
   $("accs-cerrar").addEventListener("click", cerrarAccs);
   $("velo-accs").addEventListener("click", function (e) { if (e.target === $("velo-accs")) cerrarAccs(); });
@@ -6395,6 +6482,7 @@
     if (acc === "hecho") return marcarCitaHecha(s);
     if (acc === "cancelar") return cancelarCita(s);
     if (acc === "pago") return pagoDeServicio(s.clienteId, s.id);
+    if (acc === "editar") return abrirEditarServicio(s);
     if (acc === "mant") return verCliente(s.clienteId);   // la ficha muestra el próximo + el expediente
     if (acc === "eliminar") return eliminarServicio(s);
   });
