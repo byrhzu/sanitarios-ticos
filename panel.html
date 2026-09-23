@@ -1691,6 +1691,11 @@
   }
   /* Barras por facturación: el subtítulo con la cantidad de trabajos. */
   .barras .b-n .b-sub { color: var(--p-tenue); font-weight: 400; margin-left: .2rem; }
+  /* Ficha: botón "Programar" y filas de mantenimiento editables. */
+  .exp-tarj .tarj-h { align-items: center; }
+  .exp-add { margin-left: auto; padding: .3rem .7rem; font-size: .8rem; }
+  .exp-row.mant-ed { cursor: pointer; }
+  .exp-row.mant-ed:hover { color: var(--p-primario); }
   /* Servicios: separador de día (la lista va por fecha). */
   .sv-dia {
     margin: 1.1rem 0 .5rem; font-family: var(--display); font-size: .82rem;
@@ -2885,6 +2890,28 @@
     <div class="accs-lista" id="accs-lista"></div>
     <div class="hoja-pie">
       <button type="button" class="btn-suave" id="accs-cerrar">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mantenimiento de un cliente: crear o editar (fecha y cada cuánto se
+     repite). Hay uno programado a la vez; al hacerse, nace el siguiente. -->
+<div class="velo" id="velo-mant-ed" hidden>
+  <div class="hoja hoja-form" role="dialog" aria-modal="true" aria-labelledby="me-t">
+    <h2 id="me-t">Mantenimiento</h2>
+    <p class="dim" id="me-sub" style="color:var(--p-tenue); margin:.3rem 0 1rem;"></p>
+    <input type="hidden" id="me-id">
+    <div class="nueva-rejilla">
+      <div class="f req"><label for="me-tipo">Servicio</label><select id="me-tipo"></select></div>
+      <div class="f req"><label for="me-fecha">Próxima fecha</label><input type="date" id="me-fecha"></div>
+      <div class="f req"><label for="me-meses">Se repite cada</label><select id="me-meses"></select></div>
+    </div>
+    <p class="ayuda">Solo se agenda el próximo. Cuando se marca como hecho, se programa el siguiente con la misma frecuencia.</p>
+    <p class="estado-linea" id="me-aviso" role="status" aria-live="polite"></p>
+    <div class="hoja-pie">
+      <button type="button" class="btn-suave malo" id="me-quitar" hidden>Quitar mantenimiento</button>
+      <button type="button" class="btn-suave" id="me-cerrar">Cancelar</button>
+      <button type="button" class="btn-fuerte" id="me-guardar">Guardar</button>
     </div>
   </div>
 </div>
@@ -5159,12 +5186,24 @@
       return expFila({ vista: "solicitudes", buscar: c.telefono || "" }, x.servicio,
         fechaLarga(String(x.fecha || "").slice(0, 10)), x.estadoTxt);
     });
-    var expMant = expBloque("Mantenimientos", d.mantenimientos, function (x) {
-      var et = { programado: "Programado", hecho: "Hecho", reemplazado: "Reemplazado", cancelado: "Cancelado" }[x.estado] || x.estado;
-      return expFila(x.estado === "programado" ? { vista: "agenda" } : null, x.servicio, fechaLarga(x.fecha), et);
-    });
-    var exp = (expCot || expSol || expMant)
-      ? '<div class="exp-grid">' + expCot + expSol + expMant + "</div>" : "";
+    // Mantenimientos: siempre visible, con "Programar" y cada programado
+    // editable (fecha y cada cuánto se repite).
+    var mants = d.mantenimientos || [];
+    var expMant = '<div class="tarj exp-tarj">' +
+      '<div class="tarj-h"><h3>Mantenimientos' + (mants.length ? ' <span class="exp-n">' + mants.length + "</span>" : "") + "</h3>" +
+        '<button type="button" class="bt fuerte exp-add" data-mant-nuevo>' + ICO.mas + "Programar</button></div>" +
+      (mants.length ? '<ul class="exp-list">' + mants.map(function (x) {
+        var et = { programado: "", hecho: "Hecho", reemplazado: "Reemplazado", cancelado: "Quitado" }[x.estado];
+        var prog = x.estado === "programado";
+        var cada = x.meses ? "cada " + textoPeriodo(x.meses) : "";
+        return '<li class="exp-row' + (prog ? " mant-ed" : "") + '"' + (prog ? ' data-mant-ed="' + x.id + '"' : "") + ">" +
+          '<span class="exp-a">' + escHtml(x.servicio) + "</span>" +
+          '<span class="exp-b">' + escHtml(fechaLarga(x.fecha)) + "</span>" +
+          '<span class="exp-c">' + escHtml(prog ? cada : (et || "")) + "</span>" +
+          (prog ? ICO.lapiz : "") + "</li>";
+      }).join("") + "</ul>" : '<p class="vacio-ok">Sin mantenimiento programado.</p>') +
+    "</div>";
+    var exp = '<div class="exp-grid">' + expCot + expSol + expMant + "</div>";
 
     $("cliente-cuerpo").innerHTML =
       '<div class="tarj">' +
@@ -5740,7 +5779,7 @@
      van de 3 a 48, escribirlo todo en meses obliga a dividir de cabeza. */
   function textoPeriodo(m) {
     if (m % 12 === 0) { var a = m / 12; return a + (a === 1 ? " año" : " años"); }
-    return m + " meses";
+    return m + (m === 1 ? " mes" : " meses");
   }
 
   function campo(id, etq, valor) {
@@ -6468,6 +6507,65 @@
       .then(function () { $("es-guardar").disabled = false; });
   });
 
+  // ---- Mantenimiento de un cliente (crear / editar / quitar) ----
+  var meCliente = null;
+  function abrirMantEd(m) {
+    if (!fichaActual) return;
+    var c = fichaActual.cliente; meCliente = c.id;
+    $("me-id").value = m ? m.id : "";
+    $("me-t").textContent = m ? "Editar mantenimiento" : "Programar mantenimiento";
+    $("me-sub").textContent = c.nombre;
+    $("me-meses").innerHTML = PERIODOS.map(function (n) {
+      return '<option value="' + n + '">' + textoPeriodo(n) + "</option>";
+    }).join("");
+    $("me-meses").value = String((m && m.meses) || c.meses || 12);
+    $("me-fecha").value = m ? m.fecha : hoyISO();
+    $("me-quitar").hidden = !m;
+    $("me-aviso").textContent = "";
+    function tipos() {
+      opciones($("me-tipo"), Object.keys(OPC.servicios).map(function (k) {
+        return { id: k, etiqueta: OPC.servicios[k].nombre };
+      }), "Escoja…", false);
+      var ult = (fichaActual.servicios || [])[0];
+      $("me-tipo").value = m ? m.tipo : (ult ? ult.servicio : "");
+    }
+    if (OPC) tipos(); else pedir("/api/cotizar/opciones").then(function (r) { OPC = r; tipos(); });
+    $("velo-mant-ed").hidden = false;
+  }
+  function cerrarMantEd() { $("velo-mant-ed").hidden = true; }
+  function enviarMant(cuerpo, aviso) {
+    $("me-guardar").disabled = true;
+    return pedir("/api/panel/mantenimiento", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo)
+    })
+      .then(function () { cerrarMantEd(); avisar(aviso); agendaCargada = false; resumenCargado = false; verCliente(meCliente); })
+      .catch(function (err) {
+        $("me-aviso").textContent = String((err && err.message) || "No se pudo guardar.");
+        $("me-aviso").classList.add("is-error");
+      })
+      .then(function () { $("me-guardar").disabled = false; });
+  }
+  $("me-guardar").addEventListener("click", function () {
+    if (!$("me-tipo").value || !$("me-fecha").value) {
+      $("me-aviso").textContent = "Falta el servicio o la fecha."; $("me-aviso").classList.add("is-error"); return;
+    }
+    enviarMant({ id: $("me-id").value || undefined, clienteId: meCliente, tipo: $("me-tipo").value,
+                 fecha: $("me-fecha").value, meses: Number($("me-meses").value) }, "Mantenimiento guardado.");
+  });
+  $("me-quitar").addEventListener("click", function () {
+    if (!confirm("¿Quitar este mantenimiento? Ya no se le recordará al cliente.")) return;
+    enviarMant({ id: $("me-id").value, quitar: true }, "Mantenimiento quitado.");
+  });
+  $("me-cerrar").addEventListener("click", cerrarMantEd);
+  $("velo-mant-ed").addEventListener("click", function (e) { if (e.target === $("velo-mant-ed")) cerrarMantEd(); });
+  $("cliente-cuerpo").addEventListener("click", function (e) {
+    if (e.target.closest("[data-mant-nuevo]")) return abrirMantEd(null);
+    var li = e.target.closest("[data-mant-ed]");
+    if (!li || !fichaActual) return;
+    var m = (fichaActual.mantenimientos || []).filter(function (x) { return String(x.id) === li.getAttribute("data-mant-ed"); })[0];
+    if (m) abrirMantEd(m);
+  });
+
   $("accs-cerrar").addEventListener("click", cerrarAccs);
   $("velo-accs").addEventListener("click", function (e) { if (e.target === $("velo-accs")) cerrarAccs(); });
   $("accs-lista").addEventListener("click", function (e) {
@@ -6937,7 +7035,7 @@
 
   // La lista viene con las opciones del cotizador, que es lo primero
   // que carga el panel; si todavía no llegó, se usa el mínimo seguro.
-  var PERIODOS = [3, 6, 9, 12, 18, 24, 36, 48];
+  var PERIODOS = [1, 2, 3, 6, 9, 12, 18, 24, 36, 48];
 
   // Modo del mantenimiento en la hoja: "si" (con periodicidad o fecha) o "no".
   function ponerMantModo(modo) {
@@ -6952,12 +7050,12 @@
     // el foco queda en el aire y quien navega con teclado se pierde.
     hojaVolverA = document.activeElement;
     // Periodos + la opción de escribir una fecha exacta.
-    $("h-meses").innerHTML = PERIODOS.map(function (m) {
+    $("h-meses").innerHTML = '<option value="">Igual que el anterior</option>' + PERIODOS.map(function (m) {
       return '<option value="' + m + '"' + (m === 24 ? " selected" : "") + ">" + textoPeriodo(m) + "</option>";
     }).join("") + '<option value="fecha">Fecha personalizada…</option>';
     $("h-fecha").value = hoyISO();
     $("h-monto").value = "";
-    $("h-meses").value = "24";
+    $("h-meses").value = "";
     $("h-metodo").value = "efectivo";
     $("h-fecha-mant").value = "";
     $("h-fecha-mant").hidden = true;

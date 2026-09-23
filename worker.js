@@ -1268,7 +1268,7 @@ const CANALES = { whatsapp: "WhatsApp", correo: "Correo", ambos: "WhatsApp y cor
    de grasa de restaurante se limpia trimestral, no cada dos años como
    un tanque séptico de casa. La lista es cerrada: es lo que se acepta
    del panel y lo que se ofrece en los menús, de un solo lugar. */
-const PERIODOS = [3, 6, 9, 12, 18, 24, 36, 48];
+const PERIODOS = [1, 2, 3, 6, 9, 12, 18, 24, 36, 48];
 const MESES_LARGO = ["enero","febrero","marzo","abril","mayo","junio",
                      "julio","agosto","setiembre","octubre","noviembre","diciembre"];
 
@@ -1649,6 +1649,50 @@ async function editarServicio(request, env) {
     return json({ ok: true });
   } catch (e) {
     console.error("Error al editar el servicio:", e);
+    return json({ ok: false, error: "No se pudo guardar" }, 500);
+  }
+}
+
+/* Crear, editar o quitar el mantenimiento de un cliente a mano. Sigue
+   habiendo UNO programado por cliente y tipo: si ya existe, se actualiza
+   ese. Cuando el trabajo se hace, nace el siguiente con la misma
+   periodicidad (repetición sin llenar el calendario). */
+async function guardarMantenimiento(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+  let b;
+  try { b = await request.json(); } catch { return json({ ok: false, error: "Formato inválido" }, 400); }
+  const id = parseInt(b.id, 10);
+  try {
+    if (b.quitar === true) {
+      if (!Number.isFinite(id)) return json({ ok: false, error: "Mantenimiento inválido" }, 400);
+      await env.DB.prepare(`UPDATE mantenimientos SET estado = 'cancelado', actualizado = datetime('now') WHERE id = ?`)
+        .bind(id).run();
+      return json({ ok: true });
+    }
+    const clienteId = parseInt(b.clienteId, 10);
+    const tipo = texto(b.tipo, 40);
+    const fecha = soloFecha(b.fecha);
+    const meses = PERIODOS.indexOf(+b.meses) !== -1 ? +b.meses : 24;
+    if (!Number.isFinite(clienteId) || !tipo || !fecha) return json({ ok: false, error: "Faltan datos" }, 400);
+    let destino = Number.isFinite(id) ? id : null;
+    if (!destino) {
+      const ya = await env.DB.prepare(
+        `SELECT id FROM mantenimientos WHERE cliente_id = ?1 AND tipo = ?2
+            AND estado = 'programado' AND papelera IS NULL LIMIT 1`).bind(clienteId, tipo).first();
+      destino = ya ? ya.id : null;
+    }
+    if (destino) {
+      await env.DB.prepare(
+        `UPDATE mantenimientos SET tipo = ?1, fecha = ?2, meses = ?3, actualizado = datetime('now')
+          WHERE id = ?4`).bind(tipo, fecha, meses, destino).run();
+    } else {
+      await env.DB.prepare(
+        `INSERT INTO mantenimientos (cliente_id, tipo, fecha, meses, estado)
+         VALUES (?1, ?2, ?3, ?4, 'programado')`).bind(clienteId, tipo, fecha, meses).run();
+    }
+    return json({ ok: true });
+  } catch (e) {
+    console.error("Error al guardar el mantenimiento:", e);
     return json({ ok: false, error: "No se pudo guardar" }, 500);
   }
 }
@@ -2087,7 +2131,7 @@ async function verCliente(request, env) {
          ORDER BY creado DESC LIMIT 40`
     ).bind(id, c.telefono || "").all()).results) || [];
     const mant = ((await env.DB.prepare(
-      `SELECT id, tipo, fecha, estado FROM mantenimientos
+      `SELECT id, tipo, fecha, estado, meses FROM mantenimientos
         WHERE cliente_id = ? AND papelera IS NULL
         ORDER BY (estado = 'programado') DESC, fecha DESC LIMIT 40`
     ).bind(id).all()).results) || [];
@@ -2126,7 +2170,7 @@ async function verCliente(request, env) {
         estado: x.estado, estadoTxt: nombreEstado(x.estado), fecha: x.creado
       })),
       mantenimientos: mant.map((x) => ({
-        id: x.id, servicio: etiqueta(x.tipo, null, "servicio"),
+        id: x.id, servicio: etiqueta(x.tipo, null, "servicio"), tipo: x.tipo, meses: x.meses || null,
         fecha: x.fecha, estado: x.estado
       })),
       metodos: METODOS_PAGO.filter((m) => m !== "no-registrado"),
@@ -2459,7 +2503,17 @@ async function estadoCita(request, env) {
     ).bind(id).first();
     if (!s) return json({ ok: false, error: "No existe ese trabajo" }, 404);
 
-    const meses = PERIODOS.indexOf(+cuerpo.meses) !== -1 ? +cuerpo.meses : (s.meses || 24);
+    // Si no se escogió periodicidad, se hereda la del mantenimiento que ya
+    // tenía para este tipo de trabajo (así un "mes a mes" sigue mes a mes).
+    let mesesPrev = null;
+    if (PERIODOS.indexOf(+cuerpo.meses) === -1) {
+      const mp = await env.DB.prepare(
+        `SELECT meses FROM mantenimientos WHERE cliente_id = ?1 AND tipo = ?2
+            AND estado = 'programado' AND papelera IS NULL ORDER BY fecha DESC LIMIT 1`
+      ).bind(s.cliente_id, s.servicio).first();
+      mesesPrev = mp && PERIODOS.indexOf(+mp.meses) !== -1 ? +mp.meses : null;
+    }
+    const meses = PERIODOS.indexOf(+cuerpo.meses) !== -1 ? +cuerpo.meses : (mesesPrev || s.meses || 24);
     const fecha = soloFecha(cuerpo.fecha) || s.fecha ||
                   new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
     const monto = Number.isFinite(+cuerpo.monto) ? Math.round(+cuerpo.monto) : null;
@@ -3778,6 +3832,9 @@ export default {
     }
     if (url.pathname === "/api/panel/cita/estado" && request.method === "POST") {
       return estadoCita(request, env);
+    }
+    if (url.pathname === "/api/panel/mantenimiento" && request.method === "POST") {
+      return guardarMantenimiento(request, env);
     }
     if (url.pathname === "/api/panel/mantenimiento/futuro" && request.method === "GET") {
       return mantenimientoFuturo(request, env);
