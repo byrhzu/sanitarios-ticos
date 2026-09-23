@@ -90,7 +90,7 @@ body {
 /* --- Cabecera -------------------------------------------------- */
 .cabeza {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 8mm;
   padding-top: 4mm;
@@ -104,12 +104,9 @@ body {
 }
 /* Sellos de credencial entre la marca y el folio: discretos, a la altura
    del logo, separados por un filete fino. */
-.sellos { display: flex; align-items: flex-start; gap: 5mm; margin-left: auto; }
+.sellos { display: flex; align-items: center; gap: 5mm; margin-left: auto; }
 .sellos figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 1.2mm; }
-.sellos img { height: 14mm; width: auto; display: block; }
-.sellos figcaption {
-  font-size: 6.2pt; line-height: 1.25; color: var(--gris); text-align: center;
-}
+.sellos img { height: 15mm; width: auto; display: block; }
 /* Folio: franja propia bajo la cabecera (título y número a la izquierda,
    fechas a la derecha), como el título de la cotización de siempre. */
 .folio {
@@ -149,7 +146,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10mm;
-  margin-top: 7mm;
+  margin-top: 6mm;
   padding-top: 4mm;
   border-top: .5pt solid var(--filete);
 }
@@ -170,7 +167,7 @@ body {
 .parte .falta { color: var(--naranja-dk); font-weight: 600; }
 
 /* --- Tabla del servicio ---------------------------------------- */
-.tabla { width: 100%; border-collapse: collapse; margin-top: 7mm; }
+.tabla { width: 100%; border-collapse: collapse; margin-top: 6mm; }
 .tabla th {
   background: var(--tinta);
   color: var(--hoja);
@@ -281,13 +278,13 @@ body {
 .condiciones li { margin-bottom: 1.2mm; font-size: 8.2pt; color: var(--tinta-2); }
 
 /* --- Formas de pago --------------------------------------------- */
-.pago { margin-top: 5mm; }
+.pago { margin-top: 6mm; padding-top: 4mm; border-top: .5pt solid var(--filete); }
 .pago-grid {
-  display: grid; grid-template-columns: 0.8fr 1fr 1fr; gap: 3mm;
+  display: grid; grid-template-columns: 0.62fr 1.7fr; gap: 3mm;
 }
 .pago-caja {
   display: flex; flex-direction: column; justify-content: center;
-  padding: 2.6mm 3.2mm; background: var(--realce);
+  padding: 3mm 3.5mm; background: var(--realce);
   border: .5pt solid var(--filete); border-radius: 2mm;
 }
 .pago-k {
@@ -308,20 +305,31 @@ body {
   line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: .01em;
 }
 .pago-s { font-size: 7.2pt; margin-top: 1mm; opacity: .9; }
-.pago-nota { margin: 2mm 0 0; font-size: 7.4pt; color: var(--gris); }
-/* Titular bien visible, a la par del título. Sin puntos: la cédula va
-   separada por un filete vertical. */
-.pago-cab { display: flex; align-items: flex-end; justify-content: space-between; gap: 6mm; margin-bottom: 2.2mm; }
+.pago-nota { margin: 2.2mm 0 0; font-size: 7.4pt; color: var(--gris); }
+/* Titular a la par del título, en la misma línea base. Sin puntos: la
+   cédula va separada por un filete vertical. */
+.pago-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 6mm; margin-bottom: 2.5mm; }
 .pago-cab .et { margin: 0; }
-.pago-titular {
-  display: flex; align-items: baseline; gap: 2.5mm;
-  padding: 1.4mm 3mm; border-left: 2pt solid var(--naranja); background: var(--realce);
-}
+.pago-titular { margin: 0; display: flex; align-items: baseline; gap: 2.5mm; }
 .pago-tk { font-size: 6.8pt; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--gris); }
 .pago-titular b { font-size: 10pt; font-weight: 800; color: var(--tinta); letter-spacing: .01em; }
 .pago-ced { font-size: 7.4pt; color: var(--tinta-2); padding-left: 2.5mm; border-left: .5pt solid var(--filete); }
-/* Chip del banco en lugar de "BAC · …". */
-.pago-banco { height: 3.4mm; width: auto; margin-right: 1.8mm; vertical-align: -0.8mm; }
+/* BAC: una sola tarjeta, el logo una vez a la izquierda y las dos cuentas
+   en tabla (colones / dólares). */
+.pago-bac { flex-direction: row; align-items: center; gap: 4mm; }
+.pago-banco {
+  flex: 0 0 auto; height: 6mm; width: auto; box-sizing: content-box;
+  padding-right: 4mm; border-right: .5pt solid var(--filete);
+}
+.pago-cuentas { border-collapse: collapse; width: 100%; font-size: 7.8pt; }
+.pago-cuentas th, .pago-cuentas td { padding: 1mm 3mm 1mm 0; text-align: left; white-space: nowrap; }
+.pago-cuentas th {
+  font-size: 6.8pt; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .03em; color: var(--gris);
+}
+.pago-cuentas td { font-weight: 600; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.pago-cuentas td span { font-weight: 400; color: var(--gris); margin-right: 1.6mm; }
+.pago-cuentas tr + tr th, .pago-cuentas tr + tr td { border-top: .5pt solid var(--filete); }
 
 /* --- Pie -------------------------------------------------------- */
 .pie {
@@ -416,6 +424,9 @@ body {
   .folio { flex-direction: column; align-items: flex-start; gap: 3mm; }
   .pago-grid { grid-template-columns: 1fr; }
   .pago-cab { flex-direction: column; align-items: flex-start; }
+  .pago-bac { flex-direction: column; align-items: flex-start; }
+  .pago-banco { padding: 0 0 2mm; border-right: 0; }
+  .pago-cuentas th, .pago-cuentas td { white-space: normal; }
   .pie { flex-direction: column; gap: 1mm; }
   .acciones { width: auto; margin: 0 6mm 10mm; }
 }
@@ -467,11 +478,9 @@ body {
     <div class="sellos">
       <figure>
         <img src="assets/img/sello-pyme.png" alt="PYME Costa Rica" width="173" height="240">
-        <figcaption>Empresa<br>PYME</figcaption>
       </figure>
       <figure>
         <img src="assets/img/sello-minsalud.png" alt="Ministerio de Salud" width="240" height="240">
-        <figcaption>Gestor autorizado<br>Ministerio de Salud</figcaption>
       </figure>
     </div>
   </header>
@@ -560,11 +569,7 @@ body {
   <section class="pago">
     <div class="pago-cab">
       <p class="et">Formas de pago</p>
-      <div class="pago-titular">
-        <span class="pago-tk">Titular de las cuentas</span>
-        <b>Ticos Sanitarios S.A.</b>
-        <span class="pago-ced">Céd. jurídica 3-101-702385</span>
-      </div>
+      <p class="pago-titular"><span class="pago-tk">Titular</span><b>Ticos Sanitarios S.A.</b><span class="pago-ced">Céd. jurídica 3-101-702385</span></p>
     </div>
     <div class="pago-grid">
       <div class="pago-caja pago-sinpe">
@@ -572,19 +577,12 @@ body {
         <span class="pago-n">8341-7547</span>
         <span class="pago-s">Ticos Sanitarios S.A.</span>
       </div>
-      <div class="pago-caja">
-        <span class="pago-k"><img class="pago-banco" src="assets/img/bac.png" alt="BAC Credomatic" width="300" height="97">Cuenta en colones</span>
-        <dl>
-          <dt>Cuenta</dt><dd>955029236</dd>
-          <dt>IBAN</dt><dd>CR76010200009550292361</dd>
-        </dl>
-      </div>
-      <div class="pago-caja">
-        <span class="pago-k"><img class="pago-banco" src="assets/img/bac.png" alt="BAC Credomatic" width="300" height="97">Cuenta en dólares</span>
-        <dl>
-          <dt>Cuenta</dt><dd>955029228</dd>
-          <dt>IBAN</dt><dd>CR37010200009550292287</dd>
-        </dl>
+      <div class="pago-caja pago-bac">
+        <img class="pago-banco" src="assets/img/bac.png" alt="BAC Credomatic" width="300" height="97">
+        <table class="pago-cuentas">
+          <tr><th>Colones</th><td><span>Cuenta</span>955029236</td><td><span>IBAN</span>CR76010200009550292361</td></tr>
+          <tr><th>Dólares</th><td><span>Cuenta</span>955029228</td><td><span>IBAN</span>CR37010200009550292287</td></tr>
+        </table>
       </div>
     </div>
     <p class="pago-nota">También se recibe efectivo al terminar el trabajo.</p>
