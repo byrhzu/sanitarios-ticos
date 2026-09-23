@@ -1694,8 +1694,8 @@
   /* Ficha: botón "Programar" y filas de mantenimiento editables. */
   .exp-tarj .tarj-h { align-items: center; }
   .exp-add { margin-left: auto; padding: .3rem .7rem; font-size: .8rem; }
-  .exp-row.mant-ed { cursor: pointer; }
-  .exp-row.mant-ed:hover { color: var(--p-primario); }
+  .exp-row .exp-add { flex: 0 0 auto; }
+  .exp-row .exp-add svg { width: 14px; height: 14px; opacity: 1; }
   /* Servicios: separador de día (la lista va por fecha). */
   .sv-dia {
     margin: 1.1rem 0 .5rem; font-family: var(--display); font-size: .82rem;
@@ -5196,11 +5196,11 @@
         var et = { programado: "", hecho: "Hecho", reemplazado: "Reemplazado", cancelado: "Quitado" }[x.estado];
         var prog = x.estado === "programado";
         var cada = x.meses ? "cada " + textoPeriodo(x.meses) : "";
-        return '<li class="exp-row' + (prog ? " mant-ed" : "") + '"' + (prog ? ' data-mant-ed="' + x.id + '"' : "") + ">" +
+        return '<li class="exp-row">' +
           '<span class="exp-a">' + escHtml(x.servicio) + "</span>" +
           '<span class="exp-b">' + escHtml(fechaLarga(x.fecha)) + "</span>" +
           '<span class="exp-c">' + escHtml(prog ? cada : (et || "")) + "</span>" +
-          (prog ? ICO.lapiz : "") + "</li>";
+          (prog ? '<button type="button" class="bt exp-add" data-mant-ed="' + x.id + '">' + ICO.lapiz + "Editar</button>" : "") + "</li>";
       }).join("") + "</ul>" : '<p class="vacio-ok">Sin mantenimiento programado.</p>') +
     "</div>";
     var exp = '<div class="exp-grid">' + expCot + expSol + expMant + "</div>";
