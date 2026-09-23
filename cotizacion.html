@@ -92,7 +92,7 @@ body {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12mm;
+  gap: 8mm;
   padding-top: 4mm;
 }
 .marca img { width: 46mm; height: auto; display: block; }
@@ -106,7 +106,7 @@ body {
    del logo, separados por un filete fino. */
 .sellos {
   display: flex; align-items: center; gap: 4mm;
-  margin-left: auto; padding: 0 5mm;
+  margin-left: auto; padding: 0 4mm;
   border-left: .5pt solid var(--filete); border-right: .5pt solid var(--filete);
 }
 .sellos img { height: 17mm; width: auto; display: block; }
@@ -303,6 +303,22 @@ body {
 }
 .pago-s { font-size: 7.2pt; margin-top: 1mm; opacity: .9; }
 .pago-nota { margin: 2mm 0 0; font-size: 7.4pt; color: var(--gris); }
+/* Titular bien visible, a la par del título. Sin puntos: la cédula va
+   separada por un filete vertical. */
+.pago-cab { display: flex; align-items: flex-end; justify-content: space-between; gap: 6mm; margin-bottom: 2.2mm; }
+.pago-cab .et { margin: 0; }
+.pago-titular {
+  display: flex; align-items: baseline; gap: 2.5mm;
+  padding: 1.4mm 3mm; border-left: 2pt solid var(--naranja); background: var(--realce);
+}
+.pago-tk { font-size: 6.8pt; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--gris); }
+.pago-titular b { font-size: 10pt; font-weight: 800; color: var(--tinta); letter-spacing: .01em; }
+.pago-ced { font-size: 7.4pt; color: var(--tinta-2); padding-left: 2.5mm; border-left: .5pt solid var(--filete); }
+/* Chip del banco en lugar de "BAC · …". */
+.pago-banco {
+  font-style: normal; display: inline-block; margin-right: 1.6mm; padding: .2mm 1.4mm;
+  border-radius: 1mm; background: var(--tinta); color: #fff; letter-spacing: .04em;
+}
 
 /* --- Pie -------------------------------------------------------- */
 .pie {
@@ -395,6 +411,7 @@ body {
   .partes, .pie-tabla, .condiciones { grid-template-columns: 1fr; gap: 6mm; }
   .sellos { margin-left: 0; padding: 0; border: 0; }
   .pago-grid { grid-template-columns: 1fr; }
+  .pago-cab { flex-direction: column; align-items: flex-start; }
   .pie { flex-direction: column; gap: 1mm; }
   .acciones { width: auto; margin: 0 6mm 10mm; }
 }
@@ -420,7 +437,7 @@ body {
   }
   /* Sin esto, los navegadores le quitan el fondo a la franja naranja
      y al bloque del rango, que es justo lo que identifica el papel. */
-  .hoja::before, .tabla th, .rango, .provisional, .pago-caja {
+  .hoja::before, .tabla th, .rango, .provisional, .pago-caja, .pago-titular, .pago-banco {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -528,7 +545,14 @@ body {
   <!-- Formas de pago: SINPE destacado en el naranja de la marca y las dos
        cuentas BAC a la par, con número e IBAN listos para copiar. -->
   <section class="pago">
-    <p class="et">Formas de pago</p>
+    <div class="pago-cab">
+      <p class="et">Formas de pago</p>
+      <div class="pago-titular">
+        <span class="pago-tk">Titular de las cuentas</span>
+        <b>Ticos Sanitarios S.A.</b>
+        <span class="pago-ced">Céd. jurídica 3-101-702385</span>
+      </div>
+    </div>
     <div class="pago-grid">
       <div class="pago-caja pago-sinpe">
         <span class="pago-k">SINPE Móvil</span>
@@ -536,21 +560,21 @@ body {
         <span class="pago-s">Ticos Sanitarios S.A.</span>
       </div>
       <div class="pago-caja">
-        <span class="pago-k">BAC · Cuenta en colones</span>
+        <span class="pago-k"><i class="pago-banco">BAC</i>Cuenta en colones</span>
         <dl>
           <dt>Cuenta</dt><dd>955029236</dd>
           <dt>IBAN</dt><dd>CR76010200009550292361</dd>
         </dl>
       </div>
       <div class="pago-caja">
-        <span class="pago-k">BAC · Cuenta en dólares</span>
+        <span class="pago-k"><i class="pago-banco">BAC</i>Cuenta en dólares</span>
         <dl>
           <dt>Cuenta</dt><dd>955029228</dd>
           <dt>IBAN</dt><dd>CR37010200009550292287</dd>
         </dl>
       </div>
     </div>
-    <p class="pago-nota">A nombre de <b>Ticos Sanitarios S.A.</b> · También se recibe efectivo.</p>
+    <p class="pago-nota">También se recibe efectivo al terminar el trabajo.</p>
   </section>
 
   <footer class="pie" id="pie"></footer>
@@ -723,7 +747,7 @@ body {
     // 'iva' = 13% sobre el monto; 'exo' = "Exonerado"; 'no' = como antes.
     function _c(n) { return "₡" + String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
     if (d.factura === "iva") {
-      $("iva").textContent = "13% · " + _c(d.ivaMonto);
+      $("iva").textContent = _c(d.ivaMonto) + " (13%)";
       if (exacto || esDesde) {
         // Con precio cerrado se muestra el total con IVA en la cifra.
         var totalTxt = _c(d.totalConIVA);
@@ -835,12 +859,22 @@ body {
               [".rango .cifra", 0.72, "left top"],
               [".estado h2", 0.86, "center top"]
             ];
+            // El folio apila título y número (si no, al volverse
+            // inline-block quedan uno al lado del otro y se desborda).
+            var folio = doc.querySelector(".folio");
+            if (folio) { folio.style.display = "flex"; folio.style.flexDirection = "column"; folio.style.alignItems = "flex-end"; }
             condensa.forEach(function (r) {
               Array.prototype.forEach.call(doc.querySelectorAll(r[0]), function (e) {
                 e.style.fontStretch = "normal";
                 e.style.display = "inline-block";
+                e.style.whiteSpace = "nowrap";
                 e.style.transform = "scaleX(" + r[1] + ")";
                 e.style.transformOrigin = r[2];
+                // El transform no achica la caja: se descuenta el ancho
+                // sobrante con un margen negativo, así ocupa lo que se ve.
+                var sobra = e.offsetWidth * (1 - r[1]);
+                if (r[2].indexOf("right") === 0) e.style.marginLeft = -sobra + "px";
+                else if (r[2].indexOf("left") === 0) e.style.marginRight = -sobra + "px";
               });
             });
           }
