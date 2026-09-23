@@ -1480,7 +1480,8 @@ async function crearPago(request, env) {
 
   const servicioId = parseInt(b.servicioId, 10);
   if (!Number.isFinite(servicioId)) return json({ ok: false, error: "Servicio inválido" }, 400);
-  const monto = Math.round(+soloDigitos(b.monto));
+  // Solo los dígitos: acepta "40000", "₡40.000" o 40000.
+  const monto = Math.round(+String(b.monto == null ? "" : b.monto).replace(/\D/g, ""));
   if (!Number.isFinite(monto) || monto <= 0) return json({ ok: false, error: "El monto del pago no es válido" }, 400);
 
   try {
