@@ -2867,13 +2867,17 @@
 
     <input type="hidden" id="c-id">
     <div class="nueva-rejilla" style="margin-top:.4rem;">
-      <div class="f req"><label for="c-servicio">Qué se va a hacer</label>
+      <div class="f req"><label for="c-servicio">Servicio</label>
         <select id="c-servicio"></select>
         <input type="text" id="c-servicio-libre" placeholder="Escríbalo" autocomplete="off" hidden style="margin-top:.4rem;"></div>
-      <div class="f req"><label for="c-fecha">Qué día</label>
+      <div class="f req"><label for="c-fecha">Día</label>
         <input type="date" id="c-fecha"></div>
-      <div class="f"><label for="c-hora">A qué hora</label>
-        <input type="time" id="c-hora"></div>
+      <!-- La hora sale de una lista de medias horas, que es como se
+           agenda en la practica. "Otra hora" abre el campo libre, igual
+           que "Otro (escribir)" en el servicio. -->
+      <div class="f"><label for="c-hora-sel">Hora</label>
+        <select id="c-hora-sel"></select>
+        <input type="time" id="c-hora" aria-label="Hora exacta" hidden style="margin-top:.4rem;"></div>
     </div>
 
     <div class="nueva-rejilla" style="margin-top:.9rem;">
@@ -5319,12 +5323,16 @@
       return expFila({ vista: "solicitudes", buscar: c.telefono || "" }, x.servicio,
         fechaLarga(String(x.fecha || "").slice(0, 10)), x.estadoTxt);
     });
-    // Mantenimientos: siempre visible, con "Programar" y cada programado
-    // editable (fecha y cada cuánto se repite).
+    // Mantenimientos: cada programado se edita desde su propia fila.
+    // "Programar" abría exactamente la misma hoja que "Editar", así que al
+    // lado de una fila ya programada eran dos botones para lo mismo. Ahora
+    // sólo sale cuando no hay ninguno programado, que es cuando hace falta
+    // de verdad: sin él no habría por dónde crear el primero.
     var mants = d.mantenimientos || [];
+    var hayProg = mants.some(function (x) { return x.estado === "programado"; });
     var expMant = '<div class="tarj exp-tarj">' +
       '<div class="tarj-h"><h3>Mantenimientos' + (mants.length ? ' <span class="exp-n">' + mants.length + "</span>" : "") + "</h3>" +
-        '<button type="button" class="bt fuerte exp-add" data-mant-nuevo>' + ICO.mas + "Programar</button></div>" +
+        (hayProg ? "" : '<button type="button" class="bt fuerte exp-add" data-mant-nuevo>' + ICO.mas + "Programar</button>") + "</div>" +
       (mants.length ? '<ul class="exp-list">' + mants.map(function (x) {
         var et = { programado: "", hecho: "Hecho", reemplazado: "Reemplazado", cancelado: "Quitado" }[x.estado];
         var prog = x.estado === "programado";
@@ -6289,6 +6297,49 @@
     else pedir("/api/geografia").then(function (r) { GEO = r.geografia; prov(); }).catch(function () {});
   }
 
+  /* ---- La hora, cada media hora ----
+     De 6:00 a 18:30. Es el horario real de campo y cubre casi todo lo
+     que se agenda; para lo que se sale de ahi esta "Otra hora", que
+     abre el reloj libre. El valor que viaja al servidor sigue siendo
+     "HH:MM" de 24 horas — lo unico de 12 horas es la etiqueta, porque
+     es como se dice aca. */
+  var HORA_LIBRE = "__otra";
+  function horaBonita(v) {
+    var p = v.split(":"), h = +p[0];
+    return (h % 12 === 0 ? 12 : h % 12) + ":" + p[1] + (h < 12 ? " a.m." : " p.m.");
+  }
+  function opcionesHora() {
+    var o = ['<option value="">Sin hora</option>'];
+    for (var m = 6 * 60; m <= 18 * 60 + 30; m += 30) {
+      var h = String(Math.floor(m / 60));
+      var v = (h.length < 2 ? "0" + h : h) + ":" + (m % 60 ? "30" : "00");
+      o.push('<option value="' + v + '">' + horaBonita(v) + "</option>");
+    }
+    return o.join("") + '<option value="' + HORA_LIBRE + '">Otra hora…</option>';
+  }
+  /* Una cita vieja puede estar a las 14:15, que no cae en la media hora:
+     en ese caso se abre sola en modo libre con su valor intacto. Nunca
+     se le cambia la hora a un trabajo ya agendado. */
+  function ponerHora(v) {
+    var sel = $("c-hora-sel");
+    if (!sel.options.length) sel.innerHTML = opcionesHora();
+    v = v || "";
+    var enLista = Array.prototype.some.call(sel.options, function (o) { return o.value === v; });
+    if (v && !enLista) {
+      sel.value = HORA_LIBRE; $("c-hora").hidden = false; $("c-hora").value = v;
+    } else {
+      sel.value = v; $("c-hora").hidden = true; $("c-hora").value = "";
+    }
+  }
+  function horaElegida() {
+    return $("c-hora-sel").value === HORA_LIBRE ? $("c-hora").value : $("c-hora-sel").value;
+  }
+  $("c-hora-sel").addEventListener("change", function () {
+    var libre = this.value === HORA_LIBRE;
+    $("c-hora").hidden = !libre;
+    if (libre) $("c-hora").focus(); else $("c-hora").value = "";
+  });
+
   // Al escoger "Otro (escribir)" en el servicio, se muestra un campo
   // para tipearlo. Con cualquier otra opción se oculta y se limpia.
   $("c-servicio").addEventListener("change", function () {
@@ -6326,7 +6377,7 @@
     $("c-titulo").textContent = c ? "Reagendar el trabajo" : "Agendar un trabajo";
     ["c-telefono", "c-nombre", "c-detalle", "c-senas", "c-servicio-libre"].forEach(function (id) { $(id).value = ""; });
     $("c-servicio-libre").hidden = true;
-    $("c-hora").value = c && c.hora ? c.hora : "";
+    ponerHora(c && c.hora);
     $("c-fecha").value = c ? c.fecha : (opts.fecha || hoyISO());
     $("c-aviso").textContent = "";
     $("c-aviso").classList.remove("is-error");
@@ -6471,7 +6522,7 @@
         // Si se escogió "Otro (escribir)", se manda el texto libre como servicio.
         servicio: $("c-servicio").value === LIBRE ? ($("c-servicio-libre").value.trim() || "otro") : $("c-servicio").value,
         fecha: $("c-fecha").value,
-        hora: $("c-hora").value, detalle: $("c-detalle").value
+        hora: horaElegida(), detalle: $("c-detalle").value
       })
     })
       .then(function (d) {
