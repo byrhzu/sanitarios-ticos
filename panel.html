@@ -701,6 +701,66 @@
   #cola { overflow-y: auto; max-height: 22rem; }
   @media (max-width: 1050px) { .rejilla.dos { grid-template-columns: minmax(0, 1fr); } }
 
+  /* ---------- Resumen: bloque de dinero ----------
+     Jerarquía editorial. El cobrado es la respuesta; facturado y saldo
+     la explican; la tira de abajo es contexto. Radios distintos a
+     propósito: el bloque grande 20px, los datos que cuelgan 12px. */
+  .dinero {
+    background: var(--p-tarj); border: 1px solid var(--p-borde);
+    border-radius: var(--radio); padding: 1.4rem 1.5rem 1.15rem;
+  }
+  .dinero-cab { display: flex; align-items: baseline; gap: .6rem; }
+  .dinero-et {
+    margin: 0; font-size: .82rem; font-weight: 600; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--p-txt2);
+  }
+  .dinero-rango { color: var(--p-tenue); font-size: .78rem; }
+  .dinero-cifra {
+    margin: .35rem 0 0; display: flex; align-items: baseline; gap: .75rem; flex-wrap: wrap;
+  }
+  .dinero-cifra .cifra-n {
+    font-family: var(--display); font-weight: 700; font-size: clamp(2.3rem, 5vw, 3.1rem);
+    line-height: 1; letter-spacing: -.04em; font-variant-numeric: tabular-nums;
+  }
+  .dinero-pie { margin: .35rem 0 0; color: var(--p-tenue); font-size: .85rem; }
+  .dinero-sub {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: .3rem; margin-top: 1.15rem; padding-top: .9rem;
+    border-top: 1px solid var(--p-linea);
+  }
+  /* Un dato: etiqueta arriba, número abajo. Es un botón porque lleva a
+     su lista, pero no se disfraza de tarjeta. */
+  .dato {
+    display: flex; flex-direction: column; gap: .15rem; align-items: flex-start;
+    padding: .55rem .7rem; border-radius: 12px; text-align: left;
+    background: transparent; border: 0; width: 100%;
+    transition: background .15s var(--ease);
+  }
+  .dato:hover { background: var(--p-sup2); }
+  .dato-et { font-size: .8rem; color: var(--p-tenue); }
+  .dato .cifra-n {
+    font-family: var(--display); font-weight: 600; font-size: 1.5rem; line-height: 1.1;
+    letter-spacing: -.03em; font-variant-numeric: tabular-nums;
+  }
+  .dato-pie { font-size: .76rem; color: var(--p-tenue); }
+  /* El saldo pendiente es lo único que pide una acción: se marca. */
+  .dato.debe .cifra-n { color: var(--est-mal-tx); }
+  /* Tira de contexto: sin tarjeta, separada por filetes verticales. */
+  .tira {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: .2rem; margin-top: 1rem; padding: .2rem;
+    border: 1px solid var(--p-borde); border-radius: var(--radio-chico);
+    background: var(--p-tarj);
+  }
+  .tira .dato + .dato { box-shadow: -1px 0 0 var(--p-linea); }
+  /* En el teléfono la tira se apila: dos columnas dejaban "Conversión"
+     sola en una segunda fila, con el filete cortado a la mitad. */
+  @media (max-width: 620px) {
+    .tira { grid-template-columns: 1fr; }
+    .tira .dato + .dato { box-shadow: 0 -1px 0 var(--p-linea); }
+    .dinero { padding: 1.15rem 1.15rem 1rem; }
+  }
+
   /* ---------- Cifras ---------- */
   /* Cada una es un botón: tocar el 2 de "sin atender" abre esas dos. */
   button.cifra {
@@ -2253,7 +2313,7 @@
       <!-- Seis KPIs del rango: la lectura estratégica. Cobrado (real) y
            saldo por cobrar de un lado; trabajos y facturación del otro;
            cotizaciones y conversión al final. -->
-      <div class="rejilla cifras escalona" id="cifras"></div>
+      <div id="cifras" class="escalona"></div>
 
       <!-- Top clientes: quién sostiene el negocio en este rango. -->
       <div class="tarj" style="margin-top:1rem;">
@@ -3277,46 +3337,68 @@
     return '<span class="delta ' + tono + '">' + ICO.reloj + "<span>" + escHtml(texto) + "</span></span>";
   }
 
+  /* El Resumen no son seis cifras iguales: es UNA pregunta principal
+     —cuánta plata entró— y datos que la explican. Seis tarjetas con el
+     mismo peso obligan a leerlas todas para encontrar la que importa.
+
+     Decisión: el cobrado va como cifra de display; facturado y saldo
+     cuelgan de él porque lo explican (lo que valió el trabajo y lo que
+     falta por cobrar); trabajos, cotizaciones y conversión van en una
+     tira de apoyo, sin tarjeta, porque son contexto y no la respuesta.
+
+     Sin icon-box y sin chispas: la chispa de "Trabajos" dibujaba la
+     serie de cotizaciones, así que además mentía. */
   function pintarCifras(d) {
-    /* Seis KPIs estratégicos, en dos filas de tres.
-       Primera: la plata (cobrado real, facturado, saldo por cobrar).
-       Segunda: la operación (trabajos, cotizaciones, tasa de conversión). */
-    var cobrado = d.ingresos.cobrado || 0;
+    var cobrado   = d.ingresos.cobrado || 0;
     var facturado = d.ingresos.monto || 0;
-    var saldo = d.ingresos.saldo || 0;
-    var trabajos = d.ingresos.trabajos || 0;
-    var cotiz = d.cotEmit || 0;
-    var conv = d.conversion == null ? "—" : d.conversion + "%";
+    var saldo     = d.ingresos.saldo || 0;
+    var trabajos  = d.ingresos.trabajos || 0;
+    var cotiz     = d.cotEmit || 0;
+    var dias      = d.dias || 30;
 
-    $("cifras").innerHTML = [
-      cifra({ icono: ICO.cartera, n: colones(cobrado), tono: "ok",
-        bruto: cobrado, colones: true, t: "Cobrado",
-        p: trabajos ? delta(d.variacion.ing) : "",
-        pie: "Pagos recibidos", ir: { vista: "clientes" } }),
+    function num(valor, texto, colon) {
+      return '<span class="cifra-n" data-bruto="' + Number(valor) + '"' +
+        (colon ? ' data-colones="1"' : "") + ">" + escHtml(texto) + "</span>";
+    }
+    function dato(ir, etq, valor, texto, pie, cls, colon) {
+      return '<button type="button" class="dato' + (cls ? " " + cls : "") + '" data-ir=\'' +
+        escHtml(JSON.stringify(ir)) + "'>" +
+        '<span class="dato-et">' + escHtml(etq) + "</span>" +
+        num(valor, texto, colon) +
+        (pie ? '<span class="dato-pie">' + escHtml(pie) + "</span>" : "") +
+      "</button>";
+    }
 
-      cifra({ icono: ICO.doc, n: colones(facturado), tono: "marca",
-        bruto: facturado, colones: true, t: "Facturado",
-        pie: d.ticket ? "Ticket " + colones(d.ticket) : "",
-        ir: { vista: "servicios", estado: "completado" } }),
-
-      cifra({ icono: ICO.alerta, n: colones(saldo), tono: "espera",
-        bruto: saldo, colones: true, t: "Saldo por cobrar",
-        urge: saldo > 0, pie: "Trabajos con saldo",
-        ir: { vista: "clientes" } }),
-
-      cifra({ icono: ICO.visto, n: String(trabajos), bruto: trabajos, t: "Trabajos", tono: "ok",
-        chispa: d.serie.map(function (f) { return f.cot; }), color: "var(--est-ok-tx)",
-        ir: { vista: "servicios", estado: "completado" } }),
-
-      cifra({ icono: ICO.cotizacion, n: String(cotiz), bruto: cotiz, t: "Cotizaciones", tono: "marca",
-        p: delta(d.variacion.cot),
-        chispa: d.serie.map(function (f) { return f.cot; }), color: "var(--p-acento)",
-        ir: { vista: "cotizaciones", desde: d.desde, hasta: d.hasta } }),
-
-      cifra({ icono: ICO.sube, n: conv, t: "Conversión", tono: "dato",
-        pie: (d.convertidas || 0) + " de " + cotiz + " se hicieron",
-        ir: { vista: "cotizaciones", desde: d.desde, hasta: d.hasta } })
-    ].join("");
+    $("cifras").innerHTML =
+      '<section class="dinero">' +
+        '<div class="dinero-cab">' +
+          '<p class="dinero-et">Cobrado</p>' +
+          '<span class="dinero-rango">últimos ' + dias + " días</span>" +
+        "</div>" +
+        '<p class="dinero-cifra">' + num(cobrado, colones(cobrado), true) +
+          (trabajos ? delta(d.variacion.ing) : "") + "</p>" +
+        '<p class="dinero-pie">' +
+          (trabajos ? trabajos + (trabajos === 1 ? " trabajo cobrado" : " trabajos cobrados")
+                    : "Sin trabajos en el periodo") + "</p>" +
+        '<div class="dinero-sub">' +
+          dato({ vista: "servicios", estado: "completado" }, "Facturado", facturado,
+               colones(facturado), d.ticket ? "Ticket " + colones(d.ticket) : "", "", true) +
+          dato({ vista: "clientes" }, "Saldo por cobrar", saldo, colones(saldo),
+               saldo > 0 ? "Hay trabajos sin cobrar" : "Todo al día",
+               saldo > 0 ? "debe" : "", true) +
+        "</div>" +
+      "</section>" +
+      '<div class="tira">' +
+        dato({ vista: "servicios", estado: "completado" }, "Trabajos", trabajos, String(trabajos), "") +
+        dato({ vista: "cotizaciones", desde: d.desde, hasta: d.hasta }, "Cotizaciones", cotiz, String(cotiz),
+             d.variacion.cot != null ? (d.variacion.cot > 0 ? "+" : "") + d.variacion.cot + "% vs. periodo anterior" : "") +
+        '<button type="button" class="dato" data-ir=\'' +
+          escHtml(JSON.stringify({ vista: "cotizaciones", desde: d.desde, hasta: d.hasta })) + "'>" +
+          '<span class="dato-et">Conversión</span>' +
+          '<span class="cifra-n">' + escHtml(d.conversion == null ? "—" : d.conversion + "%") + "</span>" +
+          '<span class="dato-pie">' + (d.convertidas || 0) + " de " + cotiz + " se hicieron</span>" +
+        "</button>" +
+      "</div>";
     contarCifras();
   }
 
