@@ -702,13 +702,11 @@
   @media (max-width: 1050px) { .rejilla.dos { grid-template-columns: minmax(0, 1fr); } }
 
   /* ---------- Resumen: bloque de dinero ----------
-     Jerarquía editorial. El cobrado es la respuesta; facturado y saldo
-     la explican; la tira de abajo es contexto. Radios distintos a
-     propósito: el bloque grande 20px, los datos que cuelgan 12px. */
-  .dinero {
-    background: var(--p-tarj); border: 1px solid var(--p-borde);
-    border-radius: var(--radio); padding: 1.4rem 1.5rem 1.15rem;
-  }
+     Sin tarjeta a proposito. El cobrado es la respuesta de la pantalla y
+     encabeza la pagina como un titular; facturado y saldo cuelgan de el
+     bajo un filete porque lo explican; la tira de abajo es contexto. La
+     unica caja del Resumen es la de Top clientes, que si es una entidad. */
+  .dinero { padding: .1rem 0 0; }
   .dinero-cab { display: flex; align-items: baseline; gap: .6rem; }
   .dinero-et {
     margin: 0; font-size: .82rem; font-weight: 600; letter-spacing: .04em;
@@ -716,49 +714,50 @@
   }
   .dinero-rango { color: var(--p-tenue); font-size: .78rem; }
   .dinero-cifra {
-    margin: .35rem 0 0; display: flex; align-items: baseline; gap: .75rem; flex-wrap: wrap;
+    margin: .3rem 0 0; display: flex; align-items: baseline; gap: .75rem; flex-wrap: wrap;
   }
   .dinero-cifra .cifra-n {
-    font-family: var(--display); font-weight: 700; font-size: clamp(2.3rem, 5vw, 3.1rem);
-    line-height: 1; letter-spacing: -.04em; font-variant-numeric: tabular-nums;
+    font-family: var(--display); font-weight: 700; font-size: clamp(2.6rem, 6vw, 3.6rem);
+    line-height: 1; letter-spacing: -.045em; font-variant-numeric: tabular-nums;
   }
-  .dinero-pie { margin: .35rem 0 0; color: var(--p-tenue); font-size: .85rem; }
+  .dinero-pie { margin: .45rem 0 0; color: var(--p-tenue); font-size: .85rem; }
   .dinero-sub {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-    gap: .3rem; margin-top: 1.15rem; padding-top: .9rem;
+    gap: .2rem 2.4rem; margin-top: 1.35rem; padding-top: 1rem;
     border-top: 1px solid var(--p-linea);
   }
-  /* Un dato: etiqueta arriba, número abajo. Es un botón porque lleva a
-     su lista, pero no se disfraza de tarjeta. */
+  /* Un dato: etiqueta arriba, numero abajo. Es un boton porque lleva a su
+     lista, pero no se disfraza de tarjeta: el realce del hover se pinta en
+     un pseudo-elemento que sangra hacia afuera, asi el texto queda alineado
+     con la cifra grande en vez de correrse por el padding. */
   .dato {
-    display: flex; flex-direction: column; gap: .15rem; align-items: flex-start;
-    padding: .55rem .7rem; border-radius: 12px; text-align: left;
+    display: flex; flex-direction: column; gap: .1rem; align-items: flex-start;
+    padding: .55rem 0; text-align: left; position: relative;
     background: transparent; border: 0; width: 100%;
-    transition: background .15s var(--ease);
   }
-  .dato:hover { background: var(--p-sup2); }
+  .dato::before {
+    content: ""; position: absolute; inset: .1rem -.7rem; border-radius: 10px;
+    background: transparent; transition: background .15s var(--ease);
+  }
+  .dato:hover::before { background: var(--p-sup2); }
+  .dato > * { position: relative; }
   .dato-et { font-size: .8rem; color: var(--p-tenue); }
   .dato .cifra-n {
-    font-family: var(--display); font-weight: 600; font-size: 1.5rem; line-height: 1.1;
+    font-family: var(--display); font-weight: 600; font-size: 1.55rem; line-height: 1.1;
     letter-spacing: -.03em; font-variant-numeric: tabular-nums;
   }
   .dato-pie { font-size: .76rem; color: var(--p-tenue); }
-  /* El saldo pendiente es lo único que pide una acción: se marca. */
+  /* El saldo pendiente es lo unico que pide una accion: se marca. */
   .dato.debe .cifra-n { color: var(--est-mal-tx); }
-  /* Tira de contexto: sin tarjeta, separada por filetes verticales. */
+  /* Tira de contexto: tres datos sueltos bajo un filete, sin caja y sin
+     filetes verticales; los separa el aire, no una linea. */
   .tira {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-    gap: .2rem; margin-top: 1rem; padding: .2rem;
-    border: 1px solid var(--p-borde); border-radius: var(--radio-chico);
-    background: var(--p-tarj);
+    gap: .2rem 2.4rem; margin-top: .9rem; padding-top: .9rem;
+    border-top: 1px solid var(--p-linea);
   }
-  .tira .dato + .dato { box-shadow: -1px 0 0 var(--p-linea); }
-  /* En el teléfono la tira se apila: dos columnas dejaban "Conversión"
-     sola en una segunda fila, con el filete cortado a la mitad. */
   @media (max-width: 620px) {
-    .tira { grid-template-columns: 1fr; }
-    .tira .dato + .dato { box-shadow: 0 -1px 0 var(--p-linea); }
-    .dinero { padding: 1.15rem 1.15rem 1rem; }
+    .tira, .dinero-sub { grid-template-columns: 1fr; gap: 0; }
   }
 
   /* ---------- Cifras ---------- */
@@ -895,8 +894,13 @@
   .bt:hover { background: var(--p-sup2); border-color: var(--p-tenue); }
   .bt svg { width: 14px; height: 14px; }
   .bt:active { transform: scale(.97); }
-  .bt.wa { background: #25d366; color: #06371a; border-color: transparent; }
-  .bt.wa:hover { background: #1fbe5b; }
+  /* WhatsApp deja de ser un boton macizo. En cada renglon habia dos
+     botones llenos compitiendo (verde + naranja) y ninguno mandaba: la
+     accion real de la fila es Hecho / Cobrar / Pago. El verde se queda
+     donde de verdad se reconoce, que es el icono. */
+  .bt.wa { background: transparent; color: var(--p-txt); border-color: var(--p-linea); }
+  .bt.wa svg { color: #25d366; }
+  .bt.wa:hover { background: color-mix(in srgb, #25d366 14%, transparent); border-color: #25d366; }
   .bt.fuerte { background: var(--p-acento); color: #fff; border-color: transparent; }
   .bt.malo { color: var(--est-mal-tx); border-color: color-mix(in srgb, var(--est-mal-tx) 35%, transparent); }
   .bt.malo:hover { background: var(--est-mal-bg); border-color: var(--est-mal-tx); }
@@ -1703,30 +1707,35 @@
   /* Hoy operativo: bloques uno debajo del otro, cada uno con su propio
      tono (ok verde, mal rojo, espera ámbar, dato azul). El acento va en
      una barrita a la izquierda para no ensuciar el card. */
-  .hoy-cuerpo { display: flex; flex-direction: column; gap: 1rem; }
-  .hoy-bloque {
-    background: var(--p-tarj); border: 1px solid var(--p-borde);
-    border-radius: var(--radio); padding: 1rem 1.1rem; box-shadow: var(--p-alza);
-    position: relative; overflow: hidden;
+  /* ---------- Hoy ----------
+     La jornada es UN documento, no cinco tarjetas flotando. Secciones
+     abiertas sobre el fondo, separadas por un filete y por aire: se lee
+     de corrido, como una lista de pendientes, que es lo que es.
+     El color ya no distingue bloques (de eso se encargan la posicion y el
+     titulo); queda solo donde significa algo: lo vencido y lo que falta
+     cobrar. El conteo tampoco es una capsula de color, es un numero. */
+  .hoy-cuerpo { display: flex; flex-direction: column; }
+  .hoy-bloque + .hoy-bloque {
+    margin-top: 2.1rem; padding-top: 1.5rem;
+    border-top: 1px solid var(--p-borde);
   }
-  .hoy-bloque::before {
-    content: ""; position: absolute; inset: 0 auto 0 0; width: 3px;
-    background: var(--p-tenue); opacity: .6;
+  .hoy-bh { display: flex; align-items: baseline; gap: .55rem; margin-bottom: .15rem; }
+  .hoy-bh h2 {
+    font-family: var(--display); font-size: 1.14rem; font-weight: 600;
+    margin: 0; letter-spacing: -.015em;
   }
-  .hoy-bloque.t-ok::before { background: var(--est-ok-tx); }
-  .hoy-bloque.t-mal::before { background: var(--est-mal-tx); }
-  .hoy-bloque.t-espera::before { background: var(--est-espera-tx); }
-  .hoy-bloque.t-dato::before { background: var(--p-primario); }
-  .hoy-bh { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .8rem; }
-  .hoy-bh h2 { font-family: var(--display); font-size: 1rem; font-weight: 600; margin: 0; letter-spacing: -.01em; }
   .hoy-badge {
-    display: inline-block; min-width: 1.4rem; padding: 1px .45rem; border-radius: 999px;
-    background: var(--p-sup2); color: var(--p-tenue); font-family: var(--datos);
-    font-size: .74rem; font-weight: 600; text-align: center;
+    font-family: var(--datos); font-size: .84rem; font-weight: 600;
+    color: var(--p-tenue); font-variant-numeric: tabular-nums;
   }
-  .hoy-bloque.t-ok .hoy-badge { background: var(--est-ok-bg); color: var(--est-ok-tx); }
-  .hoy-bloque.t-mal .hoy-badge { background: var(--est-mal-bg); color: var(--est-mal-tx); }
-  .hoy-bloque.t-espera .hoy-badge { background: var(--est-espera-bg); color: var(--est-espera-tx); }
+  /* Solo cuando el numero ES el problema se tine. */
+  .hoy-bloque.t-mal .hoy-badge { color: var(--est-mal-tx); }
+  /* En el telefono los botones de la fila caen a su propio renglon, asi
+     que el aire entre secciones ya viene dado: se recorta. */
+  @media (max-width: 640px) {
+    .hoy-bloque + .hoy-bloque { margin-top: 1.5rem; padding-top: 1.2rem; }
+    .hoy-bh h2 { font-size: 1.08rem; }
+  }
   .hoy-nota { margin: .7rem 0 0; color: var(--p-tenue); font-size: .8rem; }
   /* Top clientes: ranking con posición, nombre, barra y monto. */
   #top-clientes { display: flex; flex-direction: column; gap: .5rem; }
@@ -3521,13 +3530,17 @@
     var sn = h.solicitudes || [];
     if (sn.length) {
       var snHtml = sn.map(function (s) {
-        return '<button type="button" class="aviso urge-' + gradoEspera(s.horas) + '" data-ir=\'' +
+        // Misma fila que el resto de Hoy: eran tarjetas con franja de color
+        // dentro de otra tarjeta. La urgencia ya la dice el reloj.
+        return '<div class="toca-fila clic" data-ir=\'' +
           escHtml(JSON.stringify({ vista: "solicitudes" })) + "'>" +
-          '<div class="aviso-top"><b>' + escHtml(s.nombre || "Sin nombre") + "</b>" +
+          '<div class="toca-quien"><b>' + escHtml(s.nombre || "Sin nombre") + "</b><small>" +
+            piezas([s.servicio, s.zona]) +
+          "</small></div>" +
+          '<span class="toca-cuando">' +
             reloj(espera(s.horas), s.horas >= 24 ? "baja" : "espera") +
-            '<span class="aviso-ir">' + ICO.flecha + "</span></div>" +
-          '<div class="aviso-det">' + piezas([s.servicio, s.zona]) + "</div>" +
-        "</button>";
+          "</span>" +
+        "</div>";
       }).join("");
       out.push(bloque("Solicitudes nuevas", sn.length, snHtml, "espera"));
     }
