@@ -112,8 +112,17 @@
     --p-txt:     #101a30;
     --p-txt2:    #39445c;
     --p-tenue:   #78849c;
-    --p-linea:   rgba(16,26,48,.08);
+    --p-linea:   rgba(16,26,48,.14);
     --p-barra:   #ffffff;
+    /* Controles: el boton de iOS no es un contorno de 1px casi invisible,
+       es una superficie gris clara. En el tono claro un filete al 8% se
+       perdia contra el papel blanco. */
+    --p-ctrl:    #eef1f7;
+    --p-ctrl-bd: rgba(16,26,48,.12);
+    /* Vidrio de la barra de abajo. */
+    --p-vidrio:     rgba(255,255,255,.72);
+    --p-vidrio-bd:  rgba(16,26,48,.10);
+    --p-vidrio-luz: rgba(255,255,255,.9);
     --p-barra-t: #101a30;
     /* Naranja: sólo acento. */
     --p-acento:  #ef6511;
@@ -162,8 +171,13 @@
     --p-txt:     #eaf0fb;
     --p-txt2:    #b9c5dc;
     --p-tenue:   #8493ad;
-    --p-linea:   rgba(255,255,255,.09);
+    --p-linea:   rgba(255,255,255,.12);
     --p-barra:   #14203a;
+    --p-ctrl:    rgba(255,255,255,.07);
+    --p-ctrl-bd: rgba(255,255,255,.14);
+    --p-vidrio:     rgba(20,32,58,.62);
+    --p-vidrio-bd:  rgba(255,255,255,.13);
+    --p-vidrio-luz: rgba(255,255,255,.07);
     --p-barra-t: #eaf0fb;
     --p-acento:  #ff7a2b;
     --p-acento-t:#ff9254;
@@ -227,7 +241,14 @@
        naranja, no el papel. */
     --p-lienzo: #f4f6fa;
     --p-tarj:   #ffffff;
-    --p-borde:  rgba(16,26,48,.06);
+    --p-borde:  rgba(16,26,48,.12);
+    /* Papel de segundo nivel: la fila que vive DENTRO de una tarjeta no
+       puede ser otra tarjeta blanca, o no se ve. Se tine apenas. */
+    --p-tarj2:  #f6f8fc;
+    /* Una sombra de 1px, la justa para apoyar cada registro en el papel.
+       No es elevacion: es el filo que en claro separa una pieza de la
+       siguiente. */
+    --p-alza-fila: 0 1px 2px rgba(16,26,48,.06);
     /* Dos sombras: una de 1px que apoya la tarjeta en el papel y otra
        larga y muy abierta que la levanta. La segunda es la que da el
        efecto de la referencia; sola se ve sucia, sola la primera se ve
@@ -244,7 +265,9 @@
        la luz sobre fondo negro se ve menos de lo que mide. */
     --p-lienzo: #0a0f1c;
     --p-tarj:   #121c33;
-    --p-borde:  rgba(255,255,255,.08);
+    --p-borde:  rgba(255,255,255,.10);
+    --p-tarj2:  rgba(255,255,255,.045);
+    --p-alza-fila: none;
     --p-alza:   none;
     --p-alza2:  0 16px 40px -14px rgba(0,0,0,.65);
   }
@@ -887,18 +910,18 @@
   .bt {
     display: inline-flex; align-items: center; gap: .4rem;
     font-weight: 600; padding: .48rem .95rem; border-radius: 999px;
-    background: transparent; color: var(--p-txt);
-    border: 1px solid var(--p-linea); white-space: nowrap;
+    background: var(--p-ctrl); color: var(--p-txt);
+    border: 1px solid var(--p-ctrl-bd); white-space: nowrap;
     transition: background .15s var(--ease), border-color .15s var(--ease), transform .12s var(--ease);
   }
   .bt:hover { background: var(--p-sup2); border-color: var(--p-tenue); }
+  .bt:disabled { opacity: .5; }
   .bt svg { width: 14px; height: 14px; }
   .bt:active { transform: scale(.97); }
   /* WhatsApp deja de ser un boton macizo. En cada renglon habia dos
      botones llenos compitiendo (verde + naranja) y ninguno mandaba: la
      accion real de la fila es Hecho / Cobrar / Pago. El verde se queda
      donde de verdad se reconoce, que es el icono. */
-  .bt.wa { background: transparent; color: var(--p-txt); border-color: var(--p-linea); }
   .bt.wa svg { color: #25d366; }
   .bt.wa:hover { background: color-mix(in srgb, #25d366 14%, transparent); border-color: #25d366; }
   .bt.fuerte { background: var(--p-acento); color: #fff; border-color: transparent; }
@@ -986,7 +1009,8 @@
     flex: 0 0 auto; white-space: nowrap;
     padding: .55rem 1.05rem; border-radius: 999px; font-weight: 500;
     background: var(--p-sup); color: var(--p-txt2);
-    transition: background .15s var(--ease), color .15s var(--ease);
+    border: 1px solid var(--p-ctrl-bd);
+    transition: background .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease);
   }
   .pest-est button:hover { background: var(--p-sup2); }
   .pest-est button[aria-selected="true"] {
@@ -1233,9 +1257,14 @@
     .perfil-cab .acc-cab .bt { justify-content: center; }
   }
 
-  .hist { list-style: none; margin: 0; padding: 0; }
-  .hist li { display: flex; gap: 1rem; align-items: baseline; flex-wrap: wrap; padding: .7rem 0; border-top: 1px solid var(--p-linea); }
-  .hist li:first-child { border-top: 0; }
+  /* Mismo criterio que en la lista de Servicios: cada trabajo del
+     historial es una pieza con su propio papel, no un renglon mas. */
+  .hist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .4rem; }
+  .hist li {
+    display: flex; gap: 1rem; align-items: baseline; flex-wrap: wrap;
+    padding: .7rem .85rem; border: 1px solid var(--p-borde);
+    border-radius: var(--radio-chico); background: var(--p-tarj2);
+  }
   .hist .f-fecha { font-weight: 500; min-width: 6.5rem; font-variant-numeric: tabular-nums; }
   .hist .f-que { flex: 1 1 12rem; color: var(--p-txt2); }
   .hist .f-monto { font-variant-numeric: tabular-nums; font-weight: 500; }
@@ -1243,7 +1272,7 @@
   .hist .f-menu { margin-left: auto; align-self: center; }
   /* ---------- Pagos (F3) ---------- */
   .hist .f-pago { white-space: nowrap; font-weight: 600; font-size: .82rem; }
-  .hist li[data-pagos] { cursor: pointer; border-radius: 10px; }
+  .hist li[data-pagos] { cursor: pointer; }
   .hist li[data-pagos]:hover { background: var(--p-sup2); }
   .pg-ok  { color: var(--est-ok-tx); }
   .pg-mid { color: var(--est-espera-tx); }
@@ -1261,11 +1290,14 @@
   .exp-n { display: inline-block; min-width: 1.3rem; padding: 0 .35rem; margin-left: .1rem;
     border-radius: 999px; background: var(--p-sup2); color: var(--p-tenue);
     font-family: var(--datos); font-size: .78rem; text-align: center; }
-  .exp-list { list-style: none; margin: 0; padding: 0; }
-  .exp-row { display: flex; align-items: center; gap: .5rem; padding: .5rem 0; border-top: 1px solid var(--p-linea); font-size: .86rem; }
-  .exp-row:first-child { border-top: 0; }
+  .exp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .35rem; }
+  .exp-row {
+    display: flex; align-items: center; gap: .5rem; font-size: .86rem;
+    padding: .5rem .7rem; border: 1px solid var(--p-borde);
+    border-radius: var(--radio-chico); background: var(--p-tarj2);
+  }
   .exp-row[data-ir] { cursor: pointer; }
-  .exp-row[data-ir]:hover { color: var(--p-primario); }
+  .exp-row[data-ir]:hover { color: var(--p-primario); background: var(--p-sup2); }
   .exp-row .exp-a { font-weight: 600; white-space: nowrap; }
   .exp-row .exp-b { color: var(--p-tenue); flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .exp-row .exp-c { color: var(--p-tenue); white-space: nowrap; font-size: .78rem; }
@@ -1488,24 +1520,29 @@
   .aten-ir svg { width: 16px; height: 16px; }
   .aten:hover .aten-ir { color: var(--p-acento-t); }
 
-  /* Una lista es una lista, no diez tarjetas flotando. Cada fila es un
-     renglón separado por un filete; el contenedor es el que hace de
-     tarjeta. Se gana densidad y se pierde todo el ruido de bordes. */
+  /* Cada registro —un servicio, un cliente— es una pieza con su propio
+     papel: fondo, radio y aire entre una y otra. Antes eran renglones
+     dentro de una sola tarjeta, separados por un filete; en el tono
+     claro ese filete casi no se veia y la lista se leia como un bloque.
+     Es la lista agrupada de iOS: se pierde algo de densidad y se gana
+     saber de un vistazo donde termina un trabajo y empieza el siguiente. */
   .toca-fila {
     display: flex; gap: .8rem; align-items: flex-start; flex-wrap: wrap;
-    padding: .85rem 0; background: transparent; border: 0;
-    border-top: 1px solid var(--p-linea);
+    padding: .85rem 1rem; border: 1px solid var(--p-borde);
+    border-radius: var(--radio-chico);
+    background: var(--p-tarj); box-shadow: var(--p-alza-fila);
   }
-  .toca-fila:first-child { border-top: 0; }
-  /* El contenedor de la lista se vuelve la tarjeta. */
+  /* El contenedor deja de ser la tarjeta: ahora solo reparte el aire. */
   .fichas:has(> .toca-fila) {
-    gap: 0; background: var(--p-tarj); border: 1px solid var(--p-borde);
-    border-radius: var(--radio); padding: .2rem 1.15rem;
+    gap: .5rem; background: none; border: 0; border-radius: 0; padding: 0;
   }
-  /* Dentro de una tarjeta que ya existe, la lista no lleva marco. */
-  .tarj .fichas:has(> .toca-fila) { background: none; border: 0; border-radius: 0; padding: 0; }
+  /* Una fila DENTRO de una tarjeta no puede ser otra tarjeta del mismo
+     blanco: se tine un punto y pierde la sombra. */
+  .tarj .toca-fila { background: var(--p-tarj2); box-shadow: none; }
   .toca-fila[data-ir] { cursor: pointer; }
-  .toca-fila[data-ir]:hover, .toca-fila.clic:hover { background: var(--p-sup2); border-color: var(--p-linea); }
+  .toca-fila[data-ir]:hover, .toca-fila.clic:hover {
+    background: var(--p-sup2); border-color: var(--p-ctrl-bd);
+  }
   .toca-quien { flex: 1 1 11rem; min-width: 0; }
   .toca-quien b { font-weight: 500; }
   .toca-quien small { display: block; color: var(--p-tenue); margin-top: .1rem; }
@@ -1715,6 +1752,7 @@
      titulo); queda solo donde significa algo: lo vencido y lo que falta
      cobrar. El conteo tampoco es una capsula de color, es un numero. */
   .hoy-cuerpo { display: flex; flex-direction: column; }
+  .hoy-bloque { display: flex; flex-direction: column; gap: .5rem; }
   .hoy-bloque + .hoy-bloque {
     margin-top: 2.1rem; padding-top: 1.5rem;
     border-top: 1px solid var(--p-borde);
@@ -1921,8 +1959,31 @@
       width: auto; height: auto;
       flex-direction: row; z-index: 30; padding: 0;
       border-radius: 999px;
-      border: 1px solid var(--p-borde);
-      box-shadow: 0 14px 34px -14px rgba(23,22,26,.3), 0 2px 8px rgba(23,22,26,.06);
+      /* Vidrio. La barra deja de ser una pastilla opaca tapando la
+         pantalla: se vuelve traslucida y el contenido se ve pasar por
+         debajo al desplazar. El `saturate` es lo que evita que el
+         desenfoque deje el color de abajo lavado, y el filete interior
+         de arriba es el brillo del canto — sin el, el vidrio se lee
+         como un plastico mate. */
+      background: var(--p-vidrio);
+      -webkit-backdrop-filter: blur(22px) saturate(180%);
+      backdrop-filter: blur(22px) saturate(180%);
+      border: 1px solid var(--p-vidrio-bd);
+      box-shadow: 0 14px 34px -14px rgba(16,26,48,.3),
+                  0 2px 8px rgba(16,26,48,.06),
+                  inset 0 1px 0 var(--p-vidrio-luz);
+      transition: box-shadow .3s var(--ease), background .3s var(--ease);
+    }
+    /* Sin soporte de desenfoque el vidrio seria un velo ilegible: se
+       vuelve opaca. */
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .barra { background: var(--p-barra); }
+    }
+    /* Arriba del todo no hay nada que pase por debajo, asi que la barra
+       se posa: baja la sombra y deja de flotar sobre nada. */
+    .barra.posada {
+      box-shadow: 0 4px 14px -8px rgba(16,26,48,.22),
+                  inset 0 1px 0 var(--p-vidrio-luz);
     }
     .barra-logo, .barra-pie { display: none; }
     /* El inset de abajo ya lo lleva la barra en su `bottom`; repetirlo
@@ -7750,6 +7811,26 @@
   });
   $("instalar-no").addEventListener("click", noPreguntarMas);
   window.addEventListener("appinstalled", noPreguntarMas);
+})();
+
+/* Barra de abajo: el vidrio responde al desplazamiento. Arriba del todo
+   se posa (sombra baja); apenas el contenido empieza a pasarle por
+   debajo, se levanta. Es la unica diferencia que hace que el vidrio se
+   lea como vidrio y no como un color traslucido cualquiera. */
+(function () {
+  var barra = document.querySelector(".panel > .barra");
+  if (!barra) return;
+  var pedido = false;
+  function marcar() {
+    pedido = false;
+    barra.classList.toggle("posada", (window.scrollY || window.pageYOffset || 0) < 8);
+  }
+  window.addEventListener("scroll", function () {
+    if (pedido) return;
+    pedido = true;
+    requestAnimationFrame(marcar);
+  }, { passive: true });
+  marcar();
 })();
 </script>
 
