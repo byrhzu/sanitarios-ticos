@@ -567,7 +567,7 @@
   /* ---------- Tarjetas ---------- */
   .tarj {
     background: var(--p-tarj); border-radius: var(--radio);
-    padding: 1.25rem 1.35rem 1.35rem;
+    padding: 1.3rem 1.35rem;
     border: 1px solid var(--p-borde);
   }
   /* El margen sólo entre bloques apilados de la vista. Puesto como
@@ -705,8 +705,6 @@
   /* Dos o cuatro, nunca tres. Con `auto-fit` la cuarta tarjeta caía
      sola en una segunda fila en las pantallas de laptop angostas, y una
      fila de KPIs con un huérfano se lee como si faltara algo. */
-  .rejilla.cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  @media (min-width: 1120px) { .rejilla.cifras { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   .rejilla.cuatro { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
   .rejilla.tres { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
   .rejilla.tres > .tarj { display: flex; flex-direction: column; }
@@ -783,37 +781,12 @@
     .tira, .dinero-sub { grid-template-columns: 1fr; gap: 0; }
   }
 
-  /* ---------- Cifras ---------- */
-  /* Cada una es un botón: tocar el 2 de "sin atender" abre esas dos. */
-  button.cifra {
-    position: relative; overflow: hidden;
-    background: var(--p-tarj); border-radius: var(--radio);
-    padding: 1rem 1.1rem 1.1rem; text-align: left; width: 100%;
-    border: 1px solid var(--p-borde);
-    transition: border-color .18s var(--ease), background .18s var(--ease);
-  }
-  button.cifra:hover { border-color: var(--p-tenue); background: var(--p-sup2); }
-  button.cifra:active { transform: translateY(0); }
-  .cifra-chip {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 34px; height: 34px; border-radius: 11px; margin-bottom: .75rem;
-    background: var(--p-suave); color: var(--p-acento-t);
-  }
-  /* El filo de color arriba: un detalle de tres píxeles que hace que la
-     fila de cifras se lea como cuatro cosas y no como una repetida. */
-  .cifra { position: relative; }
-  /* La barrita de color de arriba se quitó: el color ya vive en el
-     chip del icono, y dos señales del mismo dato es volumen. */
-  .cifra.t-dato   { --filo: var(--p-primario); }
-  .cifra.t-mal    { --filo: var(--est-mal-tx); }
-  .cifra.t-mal    .cifra-chip { background: var(--est-mal-bg); color: var(--est-mal-tx); }
-  .cifra.t-marca  { --filo: var(--p-acento); }
-  .cifra.t-espera { --filo: var(--est-espera-tx); }
-  .cifra.t-ok     { --filo: var(--est-ok-tx); }
-  .cifra.t-dato   .cifra-chip { background: var(--p-prim-suave);  color: var(--p-primario); }
-  .cifra.t-espera .cifra-chip { background: var(--est-espera-bg); color: var(--est-espera-tx); }
-  .cifra.t-ok     .cifra-chip { background: var(--est-ok-bg);     color: var(--est-ok-tx); }
-  .cifra-chip svg { width: 17px; height: 17px; }
+  /* ---------- Cifras ----------
+     Aca vivian las tarjetas de metrica: icono en cuadrito de color,
+     numero grande, etiqueta. El Resumen dejo de usarlas cuando paso a
+     composicion editorial, y la Agenda las cambio por filtros, que es lo
+     que de verdad eran. Queda solo la tipografia del numero, que si se
+     reutiliza. */
   .cifra-n {
     font-family: var(--display); font-weight: 700; font-size: 2.15rem;
     line-height: 1.02; letter-spacing: -.035em; font-variant-numeric: tabular-nums;
@@ -851,7 +824,32 @@
      referencia. Sólo la llevan las tarjetas que tienen una serie de
      verdad: dibujarle una tendencia inventada a un número que no la
      tiene es peor que dejarlo solo. */
-  .cifra-chispa { display: block; width: calc(100% + 2.2rem); margin: .55rem -1.1rem -1.1rem; height: 40px; }
+
+  /* ---------- Filtros de la Agenda ----------
+     Eran cuatro tarjetas con icono en cuadrito y un numero de 2.15rem:
+     tarjeta tras tarjeta tras tarjeta, con cuatro colores decorativos, y
+     encima repetian lo que ya dicen el calendario y la lista de al lado.
+     Pero no eran cifras: eran FILTROS —cada una filtraba el calendario—
+     y nada en su forma lo decia. Ahora se visten como los filtros que la
+     aplicacion ya tiene en Servicios: etiqueta y conteo en una pastilla,
+     con estado seleccionado visible. */
+  .ag-filtros { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: 1.3rem; }
+  .ag-f {
+    display: inline-flex; align-items: center; gap: .45rem;
+    height: 2.25rem; padding: 0 .9rem; border-radius: 999px;
+    background: var(--p-sup); color: var(--p-txt2); font-weight: 500;
+    border: 1px solid var(--p-ctrl-bd); white-space: nowrap; line-height: 1;
+    transition: background .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease);
+  }
+  .ag-f:hover { background: var(--p-sup2); }
+  .ag-n { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--p-tenue); }
+  .ag-f[aria-pressed="true"] {
+    background: var(--p-prim-suave); border-color: transparent; color: var(--p-primario);
+  }
+  .ag-f[aria-pressed="true"] .ag-n { color: var(--p-primario); }
+  /* El unico que se tine es "Vencidos" cuando hay alguno: ahi el numero
+     ES el problema. Los otros tres son neutros. */
+  .ag-f.t-mal .ag-n { color: var(--est-mal-tx); }
 
   /* ---------- Aro de cierre ---------- */
   .aro-caja { flex: 1; display: flex; align-items: center; justify-content: center; padding: .4rem 0 1rem; }
@@ -909,13 +907,21 @@
      lo que dicen, y el verde de WhatsApp deja de destacar. */
   .bt {
     display: inline-flex; align-items: center; gap: .4rem;
-    font-weight: 600; padding: .48rem .95rem; border-radius: 999px;
+    /* Altura fija, ancho segun el texto. Antes cada boton media distinto
+       segun donde estuviera (39 / 37 / 34 px en una misma pantalla) y se
+       notaba en cuanto habia dos juntos. */
+    font-weight: 600; height: 2.25rem; padding: 0 .95rem; border-radius: 999px;
+    justify-content: center; line-height: 1;
     background: var(--p-ctrl); color: var(--p-txt);
     border: 1px solid var(--p-ctrl-bd); white-space: nowrap;
     transition: background .15s var(--ease), border-color .15s var(--ease), transform .12s var(--ease);
   }
   .bt:hover { background: var(--p-sup2); border-color: var(--p-tenue); }
   .bt:disabled { opacity: .5; }
+  /* Version corta, para una accion que vive dentro de un renglon y no
+     debe pesar como la accion de la seccion. */
+  .bt.chico { height: 1.95rem; padding: 0 .75rem; font-size: .82rem; }
+  .bt.chico svg { width: 13px; height: 13px; }
   .bt svg { width: 14px; height: 14px; }
   .bt:active { transform: scale(.97); }
   /* WhatsApp deja de ser un boton macizo. En cada renglon habia dos
@@ -1257,14 +1263,14 @@
     .perfil-cab .acc-cab .bt { justify-content: center; }
   }
 
-  /* Mismo criterio que en la lista de Servicios: cada trabajo del
-     historial es una pieza con su propio papel, no un renglon mas. */
-  .hist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .4rem; }
+  /* Vive dentro de la tarjeta "Historial": renglon con filete, no
+     tarjeta. Ver la REGLA DE SUPERFICIES mas arriba. */
+  .hist { list-style: none; margin: 0; padding: 0; }
   .hist li {
-    display: flex; gap: 1rem; align-items: baseline; flex-wrap: wrap;
-    padding: .7rem .85rem; border: 1px solid var(--p-borde);
-    border-radius: var(--radio-chico); background: var(--p-tarj2);
+    display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
+    padding: .7rem 0; border-top: 1px solid var(--p-linea);
   }
+  .hist li:first-child { border-top: 0; }
   .hist .f-fecha { font-weight: 500; min-width: 6.5rem; font-variant-numeric: tabular-nums; }
   .hist .f-que { flex: 1 1 12rem; color: var(--p-txt2); }
   .hist .f-monto { font-variant-numeric: tabular-nums; font-weight: 500; }
@@ -1283,21 +1289,28 @@
   /* Expediente 360°: las otras cosas del cliente (cotizaciones,
      solicitudes, mantenimientos). Tres columnas en pantalla ancha,
      apiladas en el teléfono. Cada fila lleva a su lista. */
-  .exp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; margin-top: 1rem; }
+  /* Mismo aire que entre tarjetas apiladas (1.4rem), para que la ficha
+     tenga un solo ritmo de arriba a abajo. */
+  .exp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1.4rem; margin-top: 1.4rem; }
   .exp-tarj { margin: 0; }
-  .exp-tarj .tarj-h { margin-bottom: .7rem; }
+  /* `min-height` de la altura de un boton: asi la cabecera mide igual
+     lleve boton o no, y dos tarjetas lado a lado arrancan su contenido
+     a la misma altura en vez de quedar corridas una de la otra. */
+  .exp-tarj .tarj-h { margin-bottom: .8rem; min-height: 2.25rem; }
   .exp-tarj h3 { font-family: var(--display); font-size: 1rem; font-weight: 600; margin: 0; letter-spacing: -.01em; }
   .exp-n { display: inline-block; min-width: 1.3rem; padding: 0 .35rem; margin-left: .1rem;
     border-radius: 999px; background: var(--p-sup2); color: var(--p-tenue);
     font-family: var(--datos); font-size: .78rem; text-align: center; }
-  .exp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .35rem; }
+  .exp-list { list-style: none; margin: 0; padding: 0; }
   .exp-row {
     display: flex; align-items: center; gap: .5rem; font-size: .86rem;
-    padding: .5rem .7rem; border: 1px solid var(--p-borde);
-    border-radius: var(--radio-chico); background: var(--p-tarj2);
+    padding: .5rem 0; border-top: 1px solid var(--p-linea);
   }
+  .exp-row:first-child { border-top: 0; }
   .exp-row[data-ir] { cursor: pointer; }
-  .exp-row[data-ir]:hover { color: var(--p-primario); background: var(--p-sup2); }
+  .exp-row[data-ir]:hover { color: var(--p-primario); }
+  /* La accion de la fila se va al canto derecho. */
+  .exp-row > .bt { margin-left: auto; flex: 0 0 auto; }
   .exp-row .exp-a { font-weight: 600; white-space: nowrap; }
   .exp-row .exp-b { color: var(--p-tenue); flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .exp-row .exp-c { color: var(--p-tenue); white-space: nowrap; font-size: .78rem; }
@@ -1536,9 +1549,31 @@
   .fichas:has(> .toca-fila) {
     gap: .5rem; background: none; border: 0; border-radius: 0; padding: 0;
   }
-  /* Una fila DENTRO de una tarjeta no puede ser otra tarjeta del mismo
-     blanco: se tine un punto y pierde la sombra. */
-  .tarj .toca-fila { background: var(--p-tarj2); box-shadow: none; }
+  /* ---- REGLA DE SUPERFICIES. No la cambie sin leer esto. ----
+       Nivel 0  el fondo de la pagina.
+       Nivel 1  contenido suelto sobre el fondo. Un registro que NO tiene
+                contenedor necesita papel propio, o no se distingue del
+                de al lado. Aca si va tarjeta.
+       Nivel 2  .tarj — agrupa. DENTRO de una .tarj un registro NO lleva
+                papel: la tarjeta ya hizo el trabajo de agrupar, y meterle
+                otra caja adentro es caja sobre caja sobre caja.
+       Nivel 4  modal / hoja.
+     Por eso la misma .toca-fila es tarjeta cuando cuelga de la pagina y
+     vuelve a ser renglon con filete cuando vive dentro de una .tarj. */
+  .tarj .toca-fila {
+    background: none; border: 0; border-radius: 0; box-shadow: none;
+    border-top: 1px solid var(--p-linea); padding: .8rem 0; position: relative;
+  }
+  .tarj .toca-fila:first-child { border-top: 0; }
+  .tarj .fichas:has(> .toca-fila) { gap: 0; }
+  /* El realce del hover se pinta detras y sangra hacia afuera, para no
+     tener que meterle padding a la fila y descuadrar la columna. */
+  .tarj .toca-fila[data-ir]:hover, .tarj .toca-fila.clic:hover { background: none; }
+  .tarj .toca-fila[data-ir]:hover::after, .tarj .toca-fila.clic:hover::after {
+    content: ""; position: absolute; inset: .12rem -.6rem; border-radius: 10px;
+    background: var(--p-sup2); z-index: 0;
+  }
+  .tarj .toca-fila > * { position: relative; z-index: 1; }
   .toca-fila[data-ir] { cursor: pointer; }
   .toca-fila[data-ir]:hover, .toca-fila.clic:hover {
     background: var(--p-sup2); border-color: var(--p-ctrl-bd);
@@ -1556,7 +1591,7 @@
      la fila que abre la ficha. */
   .fila-elim, .fila-menu {
     flex: 0 0 auto; align-self: center; display: inline-flex;
-    align-items: center; justify-content: center; width: 34px; height: 34px;
+    align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem;
     padding: 0; border-radius: 10px; border: 1px solid transparent;
     background: transparent; color: var(--p-tenue); cursor: pointer;
     opacity: .55; transition: opacity .15s, color .15s, background .15s, border-color .15s;
@@ -1616,7 +1651,6 @@
   .hueso { background: var(--p-sup2); border-radius: 6px; animation: latir 1.4s ease-in-out infinite; }
   @keyframes latir { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
   .hueso-linea { height: .8rem; }
-  .esq-cifra { background: var(--p-tarj); border-radius: var(--radio); padding: 1rem 1.1rem 1.1rem; border: 1px solid var(--p-borde); }
   .esq-fila { display: flex; align-items: center; gap: var(--e4); padding: .8rem 0; border-top: 1px solid var(--p-linea); }
   .esq-fila:first-child { border-top: 0; }
 
@@ -1798,13 +1832,11 @@
   .barras .b-n .b-sub { color: var(--p-tenue); font-weight: 400; margin-left: .2rem; }
   /* Ficha: botón "Programar" y filas de mantenimiento editables. */
   .exp-tarj .tarj-h { align-items: center; }
-  /* "Programar" y "Editar": exactamente el mismo tamaño. */
-  .bt.exp-add {
-    margin-left: auto; flex: 0 0 auto; box-sizing: border-box;
-    display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
-    min-width: 7.6rem; height: 2.3rem; padding: 0 .9rem;
-    font-size: .82rem; line-height: 1;
-  }
+  /* La accion de la cabecera de la tarjeta. Llevaba un min-width de
+     7.6rem heredado de cuando tenia que medir igual que el "Editar" de
+     la fila; en su sitio nuevo ese ancho solo dejaba un boton inflado.
+     Ahora mide lo que dice, como todos los demas. */
+  .bt.exp-add { margin-left: auto; flex: 0 0 auto; gap: .35rem; }
   .bt.exp-add svg { width: 15px; height: 15px; opacity: 1; flex: 0 0 auto; }
   /* Servicios: separador de día (la lista va por fecha). */
   .sv-dia {
@@ -2031,7 +2063,6 @@
     .lienzo { padding: 1rem .85rem 7rem; }
     .tarj-h .meta { display: none; }
     .tarj-h .meta.siempre { display: inline; }
-    .rejilla.cifras { gap: .7rem; }
     /* En dos columnas de 375px, "₡1.340.000" a 1.9rem se sale de la
        tarjeta. Bajan todas por igual: si sólo bajara la del monto, las
        cuatro cifras dejarían de compararse entre sí de un vistazo. */
@@ -2614,7 +2645,7 @@
         </div>
       </div>
 
-      <div class="rejilla cifras escalona" id="agenda-cifras"></div>
+      <div class="ag-filtros" id="agenda-cifras" role="group" aria-label="Filtrar la agenda"></div>
     </div>
 
     <!-- Al tocar un día del calendario se abre este panel con TODO lo
@@ -3228,11 +3259,13 @@
     return '<span class="hueso hueso-linea" style="display:block;width:' + ancho +
            (alto ? ";height:" + alto : "") + '"></span>';
   }
-  function esqCifras() {
-    var una = '<div class="esq-cifra">' + hueso("32px", "32px") +
-      '<div style="height:.7rem"></div>' + hueso("55%", "1.6rem") +
-      '<div style="height:.5rem"></div>' + hueso("70%") + "</div>";
-    return una + una + una + una;
+  /* El esqueleto imita la composicion real del Resumen: el titular y los
+     datos que cuelgan. Antes dibujaba cuatro tarjetas, que era lo que
+     habia entonces — y al cargar la pantalla daba un salto. */
+  function esqResumen() {
+    return '<div style="padding:.1rem 0">' + hueso("6rem", ".8rem") +
+      '<div style="height:.6rem"></div>' + hueso("14rem", "3rem") +
+      '<div style="height:1.4rem"></div>' + hueso("100%", "3.4rem") + "</div>";
   }
   function esqFilas(n) {
     var una = '<div class="esq-fila"><span style="flex:1">' + hueso("45%") +
@@ -3319,66 +3352,7 @@
      Resumen
      ========================================================= */
 
-  /* Una tarjeta de cifra. `ir` es a dónde lleva tocarla: toda cifra del
-     tablero abre su propia lista. `chispa` es la serie que va sangrada
-     hasta el borde de abajo, y sólo la llevan las dos tarjetas que
-     cuentan entradas en el tiempo — a un estado y a una suma no se les
-     dibuja una tendencia que no tienen. */
-  /* La pastilla de variación va arriba a la derecha, en la misma línea
-     del icono. Abajo estorbaba: empujaba la gráfica, dejaba las cuatro
-     tarjetas de distinto alto y hacía que el ojo tuviera que bajar hasta
-     el pie para saber si la cifra venía subiendo. */
-  function cifra(o) {
-    /* `tono` le pone color propio al icono y al filo de arriba. Las
-        cuatro cifras con el mismo naranja se leían como una sola cosa
-        repetida; con color se distinguen antes de leer la etiqueta. */
-    return '<button type="button" class="cifra' + (o.urge ? " urge" : "") +
-      (o.tono ? " t-" + o.tono : "") + '"' +
-      (o.ir ? " data-ir='" + escHtml(JSON.stringify(o.ir)) + "'" : "") + ">" +
-      '<div class="cifra-top"><span class="cifra-chip">' + o.icono + "</span>" +
-        (o.p || "") + "</div>" +
-      '<div class="cifra-n"' +
-        (o.bruto != null ? ' data-bruto="' + Number(o.bruto) + '"' +
-                           (o.colones ? ' data-colones="1"' : "") : "") +
-        ">" + escHtml(o.n) + "</div>" +
-      '<div class="cifra-t">' + escHtml(o.t) + "</div>" +
-      (o.pie ? '<div class="cifra-p">' + escHtml(o.pie) + "</div>" : "") +
-      (o.chispa ? chispa(o.chispa, o.color) : "") +
-      "</button>";
-  }
 
-  function chispa(vals, color) {
-    if (!vals || vals.length < 2) return "";
-    var tope = Math.max.apply(null, vals);
-    // Sin nada que mostrar no se dibuja: una línea plana pegada al
-    // borde de abajo parece un dato, y no lo es.
-    if (!tope) return "";
-    var W = 100, H = 30, paso = W / (vals.length - 1);
-    var pts = vals.map(function (v, i) {
-      return (i * paso).toFixed(2) + "," + (H - (v / tope) * (H - 4) - 2).toFixed(2);
-    });
-    /* Curva, no quebrada. Con treinta días de entradas diarias la
-       polilínea sale como un serrucho y no se lee una tendencia; suavizar
-       con un Catmull-Rom simplificado deja ver la forma, que es lo único
-       que una chispa de 30px de alto puede decir. */
-    var xy = pts.map(function (t) { var q = t.split(","); return [parseFloat(q[0]), parseFloat(q[1])]; });
-    var d = "M" + xy[0][0] + "," + xy[0][1];
-    for (var i = 0; i < xy.length - 1; i++) {
-      var p0 = xy[i === 0 ? 0 : i - 1], p1 = xy[i], p2 = xy[i + 1];
-      var p3 = xy[i + 2 < xy.length ? i + 2 : xy.length - 1];
-      var T = 6;   // cuánto se redondea: más alto, más suave
-      var c1x = p1[0] + (p2[0] - p0[0]) / T, c1y = p1[1] + (p2[1] - p0[1]) / T;
-      var c2x = p2[0] - (p3[0] - p1[0]) / T, c2y = p2[1] - (p3[1] - p1[1]) / T;
-      d += "C" + c1x.toFixed(2) + "," + c1y.toFixed(2) +
-           " " + c2x.toFixed(2) + "," + c2y.toFixed(2) +
-           " " + p2[0].toFixed(2) + "," + p2[1].toFixed(2);
-    }
-    var c = color || "var(--p-dato1)";
-    return '<svg class="cifra-chispa" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" aria-hidden="true">' +
-      '<path d="' + d + "L" + W + "," + H + "L0," + H + 'Z" fill="' + c + '" opacity=".11"/>' +
-      '<path d="' + d + '" fill="none" stroke="' + c + '" stroke-width="1.7" ' +
-      'stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>';
-  }
 
   /* Dos de las cuatro cifras miran el rango escogido y dos miran el
      estado de hoy. "Sin atender" y "Cotizado sin cerrar" no se filtran
@@ -3808,7 +3782,7 @@
       $(id).classList.remove("is-error");
     });
     if (!resumenCargado) {
-      $("cifras").innerHTML = esqCifras();
+      $("cifras").innerHTML = esqResumen();
       $("hoy-cuerpo").innerHTML = esqFilas(3);
     }
     var p = new URLSearchParams();
@@ -5359,7 +5333,7 @@
           '<span class="exp-a">' + escHtml(x.servicio) + "</span>" +
           '<span class="exp-b">' + escHtml(fechaLarga(x.fecha)) + "</span>" +
           '<span class="exp-c">' + escHtml(prog ? "" : (et || "")) + "</span>" +
-          (prog ? '<button type="button" class="bt exp-add" data-mant-ed="' + x.id + '">' + ICO.lapiz + "Editar</button>" : "") + "</li>";
+          (prog ? '<button type="button" class="bt chico" data-mant-ed="' + x.id + '">' + ICO.lapiz + "Editar</button>" : "") + "</li>";
       }).join("") + "</ul>" : '<p class="vacio-ok">Sin mantenimiento programado.</p>') +
     "</div>";
     var exp = '<div class="exp-grid">' + expCot + expSol + expMant + "</div>";
@@ -6772,7 +6746,7 @@
     $("estado-agenda").textContent = "";
     $("estado-agenda").classList.remove("is-error");
     if (!agendaCargada) {
-      $("agenda-cifras").innerHTML = esqCifras();
+      $("agenda-cifras").innerHTML = "";
       $("agenda-lista").innerHTML = esqFilas(3);
     }
     pedir("/api/panel/agenda")
@@ -6795,31 +6769,27 @@
 
   function pintarAgendaCifras(d) {
     var r = d.resumen;
-    // Los mismos cuatro colores que en el Resumen: la fila se lee como
-    // cuatro cosas distintas y no como una repetida cuatro veces.
-    function t(icono, n, etq, pie, urge, filtro, tono) {
-      return '<button type="button" class="cifra' + (urge ? " urge" : "") +
-        (tono ? " t-" + tono : "") +
-        '" data-agenda="' + filtro + '">' +
-        '<span class="cifra-chip">' + icono + "</span>" +
-        '<div class="cifra-n">' + n + "</div>" +
-        '<div class="cifra-t">' + escHtml(etq) + "</div>" +
-        (pie ? '<div class="cifra-p">' + escHtml(pie) + "</div>" : "") + "</button>";
+    function f(etq, n, filtro, tono) {
+      var act = agendaFiltro && agendaFiltro.tipo === filtro;
+      return '<button type="button" class="ag-f' + (tono ? " t-" + tono : "") +
+        '" aria-pressed="' + (act ? "true" : "false") +
+        '" data-agenda="' + filtro + '">' + escHtml(etq) +
+        '<span class="ag-n">' + n + "</span></button>";
     }
     $("agenda-cifras").innerHTML =
-      /* La primera es la agenda de verdad: los trabajos ya programados.
-         Las otras cuatro son los recordatorios (a quién le toca), que se
-         consultan de vez en cuando, no todos los días. */
-      t(ICO.dia, r.citas || 0, "Agendados", "", false, "citas", "marca") +
-      t(ICO.alerta, r.vencidos, "Vencidos", "", r.vencidos > 0, "vencidos", "mal") +
-      t(ICO.sube, r.mes, "Le toca este mes", "", false, "pronto", "espera") +
-      t(ICO.silencio, r.apagados, "Sin recordatorio", "", false, "apagados");
+      f("Agendados", r.citas || 0, "citas") +
+      f("Vencidos", r.vencidos, "vencidos", r.vencidos > 0 ? "mal" : "") +
+      f("Le toca este mes", r.mes, "pronto") +
+      f("Sin recordatorio", r.apagados, "apagados");
   }
 
   $("agenda-cifras").addEventListener("click", function (e) {
     var b = e.target.closest("[data-agenda]");
     if (!b) return;
     agendaFiltro = { tipo: b.dataset.agenda };
+    Array.prototype.forEach.call(this.children, function (x) {
+      x.setAttribute("aria-pressed", x === b ? "true" : "false");
+    });
     pintarCalendario();
     pintarAgendaLista();
   });
