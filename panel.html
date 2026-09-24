@@ -3093,7 +3093,9 @@
     <input type="hidden" id="es-id">
     <div class="nueva-rejilla">
       <div class="f req"><label for="es-fecha">Fecha</label><input type="date" id="es-fecha"></div>
-      <div class="f"><label for="es-hora">Hora</label><input type="time" id="es-hora"></div>
+      <div class="f"><label for="es-hora-sel">Hora</label>
+        <select id="es-hora-sel"></select>
+        <input type="time" id="es-hora" aria-label="Hora exacta" hidden style="margin-top:.4rem;"></div>
       <div class="f"><label for="es-monto">Monto</label><input type="text" id="es-monto" inputmode="numeric" autocomplete="off" placeholder="₡65.000"></div>
     </div>
     <div class="f" style="margin-top:.9rem;"><label for="es-detalle">Detalle</label>
@@ -6320,24 +6322,30 @@
   /* Una cita vieja puede estar a las 14:15, que no cae en la media hora:
      en ese caso se abre sola en modo libre con su valor intacto. Nunca
      se le cambia la hora a un trabajo ya agendado. */
-  function ponerHora(v) {
-    var sel = $("c-hora-sel");
+  /* Los dos formularios que piden hora —agendar un trabajo y corregir uno
+     ya anotado— usan el mismo par de campos: `<pre>-hora-sel` con las
+     medias horas y `<pre>-hora` con el reloj libre. */
+  function ponerHora(pre, v) {
+    var sel = $(pre + "-hora-sel"), libre = $(pre + "-hora");
     if (!sel.options.length) sel.innerHTML = opcionesHora();
     v = v || "";
     var enLista = Array.prototype.some.call(sel.options, function (o) { return o.value === v; });
     if (v && !enLista) {
-      sel.value = HORA_LIBRE; $("c-hora").hidden = false; $("c-hora").value = v;
+      sel.value = HORA_LIBRE; libre.hidden = false; libre.value = v;
     } else {
-      sel.value = v; $("c-hora").hidden = true; $("c-hora").value = "";
+      sel.value = v; libre.hidden = true; libre.value = "";
     }
   }
-  function horaElegida() {
-    return $("c-hora-sel").value === HORA_LIBRE ? $("c-hora").value : $("c-hora-sel").value;
+  function horaElegida(pre) {
+    var sel = $(pre + "-hora-sel");
+    return sel.value === HORA_LIBRE ? $(pre + "-hora").value : sel.value;
   }
-  $("c-hora-sel").addEventListener("change", function () {
-    var libre = this.value === HORA_LIBRE;
-    $("c-hora").hidden = !libre;
-    if (libre) $("c-hora").focus(); else $("c-hora").value = "";
+  ["c", "es"].forEach(function (pre) {
+    $(pre + "-hora-sel").addEventListener("change", function () {
+      var esLibre = this.value === HORA_LIBRE;
+      $(pre + "-hora").hidden = !esLibre;
+      if (esLibre) $(pre + "-hora").focus(); else $(pre + "-hora").value = "";
+    });
   });
 
   // Al escoger "Otro (escribir)" en el servicio, se muestra un campo
@@ -6377,7 +6385,7 @@
     $("c-titulo").textContent = c ? "Reagendar el trabajo" : "Agendar un trabajo";
     ["c-telefono", "c-nombre", "c-detalle", "c-senas", "c-servicio-libre"].forEach(function (id) { $(id).value = ""; });
     $("c-servicio-libre").hidden = true;
-    ponerHora(c && c.hora);
+    ponerHora("c", c && c.hora);
     $("c-fecha").value = c ? c.fecha : (opts.fecha || hoyISO());
     $("c-aviso").textContent = "";
     $("c-aviso").classList.remove("is-error");
@@ -6522,7 +6530,7 @@
         // Si se escogió "Otro (escribir)", se manda el texto libre como servicio.
         servicio: $("c-servicio").value === LIBRE ? ($("c-servicio-libre").value.trim() || "otro") : $("c-servicio").value,
         fecha: $("c-fecha").value,
-        hora: horaElegida(), detalle: $("c-detalle").value
+        hora: horaElegida("c"), detalle: $("c-detalle").value
       })
     })
       .then(function (d) {
@@ -6662,7 +6670,7 @@
     $("es-id").value = s.id;
     $("es-sub").textContent = [s.nombre, s.servicio].filter(Boolean).join(" · ");
     $("es-fecha").value = s.fecha || hoyISO();
-    $("es-hora").value = s.hora || "";
+    ponerHora("es", s.hora);
     $("es-monto").value = s.monto ? colones(s.monto) : "";
     $("es-detalle").value = s.detalle || "";
     $("es-aviso").textContent = "";
@@ -6680,7 +6688,7 @@
     pedir("/api/panel/servicio/editar", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        id: $("es-id").value, fecha: $("es-fecha").value, hora: $("es-hora").value,
+        id: $("es-id").value, fecha: $("es-fecha").value, hora: horaElegida("es"),
         monto: soloDigitos($("es-monto").value), detalle: $("es-detalle").value
       })
     })
