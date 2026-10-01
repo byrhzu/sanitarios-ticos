@@ -301,6 +301,38 @@
   /* ---------- Estructura ---------- */
   .panel { display: flex; min-height: 100vh; }
 
+  /* ---------- Octubre ----------
+     Decoracion de temporada. Vive SOLO en el papel de la pagina: una
+     telarana en el filo de arriba a la derecha y un resplandor calido.
+     Nunca encima de una tarjeta, una fila, un dato ni un control — ahi
+     es donde el adorno estorba. Es la misma regla de superficies de mas
+     arriba: el nivel 0 admite decoracion, el 1 y el 2 no.
+
+     Va detras de todo por el z-index: `.panel` y compania ya estan en la
+     capa 1, asi que un `fixed` en la 0 nunca se le pone encima a nada.
+     No se mueve y no recibe el dedo. Fuera de octubre el elemento ni
+     siquiera existe en el DOM — ver el bloque de JS al final. */
+  .deco-oct {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: radial-gradient(760px 460px at 94% -8%, rgba(239,101,17,.13), transparent 70%);
+  }
+  :root[data-tema="oscuro"] .deco-oct {
+    background: radial-gradient(760px 460px at 94% -8%, rgba(255,138,61,.20), transparent 70%);
+  }
+  .deco-oct svg {
+    position: absolute; top: 0; right: 0; display: block;
+    /* En el telefono la esquina de arriba a la derecha la ocupan los
+       botones y el buscador: la tela se achica para quedarse en el filo
+       y no meterse debajo de lo que se usa. */
+    width: clamp(125px, 24vw, 300px); height: clamp(125px, 24vw, 300px);
+  }
+  .deco-oct path, .deco-oct line {
+    stroke: var(--p-txt); fill: none; stroke-width: 1;
+    stroke-linecap: round; opacity: .15;
+  }
+  :root[data-tema="oscuro"] .deco-oct path,
+  :root[data-tema="oscuro"] .deco-oct line { opacity: .19; }
+
   .barra {
     width: var(--barra); flex: 0 0 var(--barra);
     background: var(--p-barra); color: var(--p-barra-t);
@@ -7840,6 +7872,24 @@
   });
   $("instalar-no").addEventListener("click", noPreguntarMas);
   window.addEventListener("appinstalled", noPreguntarMas);
+})();
+
+/* Octubre: decoracion de temporada.
+
+   Se apaga sola. `getMonth()` lee la hora del aparato, que en la calle
+   es la de Costa Rica, asi que el 1 de noviembre el panel vuelve solo a
+   como estaba y no hay nada que acordarse de quitar.
+
+   Vuelve cada octubre. Si algun ano no se quiere, se borra este bloque
+   entero y el CSS de `.deco-oct`: no hay nada mas que tocar. */
+var TELARANA = '<line x1="200" y1="0" x2="-5.0" y2="0.0"/><line x1="200" y1="0" x2="0.1" y2="45.6"/><line x1="200" y1="0" x2="15.3" y2="88.9"/><line x1="200" y1="0" x2="39.7" y2="127.8"/><line x1="200" y1="0" x2="72.2" y2="160.3"/><line x1="200" y1="0" x2="111.1" y2="184.7"/><line x1="200" y1="0" x2="154.4" y2="199.9"/><line x1="200" y1="0" x2="200.0" y2="205.0"/><path d="M167.9 0.0 Q172.2 3.1 168.7 7.1 Q173.6 9.2 171.1 13.9 Q176.3 14.9 174.9 20.0 Q180.2 19.8 180.0 25.1 Q185.1 23.7 186.1 28.9 Q190.8 26.4 192.9 31.3 Q196.9 27.8 200.0 32.1"/><path d="M135.8 0.0 Q144.5 6.3 137.4 14.3 Q147.3 18.5 142.1 27.9 Q152.7 29.7 149.8 40.0 Q160.5 39.5 160.0 50.2 Q170.3 47.3 172.1 57.9 Q181.5 52.7 185.7 62.6 Q193.7 55.5 200.0 64.2"/><path d="M103.7 0.0 Q116.7 9.4 106.1 21.4 Q120.9 27.7 113.2 41.8 Q129.0 44.6 124.7 60.1 Q140.7 59.3 139.9 75.3 Q155.4 71.0 158.2 86.8 Q172.3 79.1 178.6 93.9 Q190.6 83.3 200.0 96.3"/><path d="M71.5 0.0 Q88.9 12.5 74.8 28.6 Q94.5 36.9 84.3 55.7 Q105.4 59.5 99.6 80.1 Q121.0 79.0 119.9 100.4 Q140.5 94.6 144.3 115.7 Q163.1 105.5 171.4 125.2 Q187.5 111.1 200.0 128.5"/><path d="M39.4 0.0 Q61.2 15.6 43.4 35.7 Q68.1 46.1 55.3 69.7 Q81.7 74.3 74.5 100.1 Q101.2 98.8 99.9 125.5 Q125.7 118.3 130.3 144.7 Q153.9 131.9 164.3 156.6 Q184.4 138.8 200.0 160.6"/><path d="M7.3 0.0 Q33.4 18.8 12.1 42.9 Q41.8 55.4 26.4 83.6 Q58.0 89.2 49.3 120.1 Q81.5 118.5 79.9 150.7 Q110.8 142.0 116.4 173.6 Q144.6 158.2 157.1 187.9 Q181.2 166.6 200.0 192.7"/>';
+(function () {
+  if (new Date().getMonth() !== 9) return;   // 9 = octubre
+  var d = document.createElement("div");
+  d.className = "deco-oct";
+  d.setAttribute("aria-hidden", "true");
+  d.innerHTML = '<svg viewBox="0 0 200 200" aria-hidden="true">' + TELARANA + "</svg>";
+  document.body.appendChild(d);
 })();
 
 /* Barra de abajo: el vidrio responde al desplazamiento. Arriba del todo
