@@ -971,6 +971,7 @@
     font-weight: 600; letter-spacing: -.02em; text-transform: capitalize; margin: 0;
   }
   .ag2-cuenta { font-family: var(--datos); font-size: .78rem; font-weight: 600; color: var(--p-acento-t); }
+  .ag2-hcab .bt { margin-left: auto; align-self: center; }
   :root[data-tema="oscuro"] .ag2-cuenta { color: var(--p-acento); }
 
   /* ---- El riel de horas ----
@@ -1649,11 +1650,6 @@
   .toca-fila.hecho { opacity: .78; }
   .toca-fila.hecho .est-completado { background: var(--est-ok-bg); color: var(--est-ok-tx); }
 
-  .agenda-cab {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: .8rem 1rem; margin: 0 0 1rem; flex-wrap: wrap;
-  }
-  #btn-cita { display: inline-flex; align-items: center; gap: .4rem; margin-left: auto; }
 
   /* La cita en la lista: hora y la etiqueta "Agendado" al frente. */
   .toca-cuando.es-cita { color: var(--p-acento); font-weight: 600; }
@@ -2036,21 +2032,31 @@
     background: var(--p-ctrl); border: 1px solid var(--p-ctrl-bd);
     transition: background .18s var(--ease), color .18s var(--ease), border-color .18s var(--ease);
   }
+  /* El número va A LA PAR, no dentro de una cápsula. Una pastilla con un
+     número adentro es el adorno por defecto de cualquier panel; en tipo,
+     con el color del tipo de pendiente, dice lo mismo y no pesa. */
   .pend-f .n {
-    font-family: var(--datos); font-size: .68rem; font-weight: 700; line-height: 1;
-    padding: .2rem .34rem; border-radius: 999px; min-width: 1.1rem; text-align: center;
-    background: var(--tono, var(--p-tenue)); color: var(--p-sup);
+    font-family: var(--datos); font-size: .86rem; font-weight: 700;
+    font-variant-numeric: tabular-nums; color: var(--tono, var(--p-tenue));
   }
   .pend-f[aria-pressed="true"] { background: var(--p-primario); border-color: transparent; color: #fff; }
-  .pend-f[aria-pressed="true"] .n { background: rgba(255,255,255,.26); color: #fff; }
+  .pend-f[aria-pressed="true"] .n { color: rgba(255,255,255,.85); }
 
   .pend-sec + .pend-sec { margin-top: 1.8rem; }
-  .pend-h { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .6rem; }
+  /* En la cabecera de sección el número SÍ manda: es la cifra de cuánto
+     hay por resolver, así que se trata como cifra —grande, tabular, del
+     color del tipo— y no como una etiqueta más al lado del título. */
+  .pend-h { display: flex; align-items: baseline; gap: .6rem; margin-bottom: .6rem; }
   .pend-h h2 {
+    flex: 1; min-width: 0;
     font-family: var(--display); font-size: 1.04rem; font-weight: 600;
     letter-spacing: -.015em; margin: 0;
   }
-  .pend-h .n { font-family: var(--datos); font-size: .8rem; font-weight: 600; color: var(--tono); }
+  .pend-h .n {
+    font-family: var(--display); font-size: 1.5rem; font-weight: 700;
+    line-height: 1; letter-spacing: -.04em; font-variant-numeric: tabular-nums;
+    color: var(--tono);
+  }
 
   /* El filo de color de la izquierda dice de qué tipo es el pendiente. No
      es decorativo y no inventa tonos: sale de los colores de estado que el
@@ -2916,13 +2922,6 @@
            Los filtros de recordatorio que había acá (vencidos, le toca,
            sin recordatorio) se quitaron: repetían exactamente lo que ya
            muestra la pantalla de Mantenimientos del menú del avatar. -->
-      <div class="agenda-cab">
-        <button type="button" class="btn-fuerte" id="btn-cita">
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-          Agendar servicio
-        </button>
-      </div>
-
       <div class="ag2">
         <header class="ag2-cab">
           <div class="ag2-top">
@@ -5320,8 +5319,10 @@
         if (d.periodos) { PERIODOS_SRV = d.periodos; PERIODOS = d.periodos; }
         pintarFiltrosCliente(d.filtros);
         contarSw(d);
-        $("estado-clientes").textContent = d.total
-          ? (d.total === 1 ? "1 cliente." : d.total + " clientes.")
+        /* El total ya lo dice el sub-switch de arriba ("Clientes 2"), así
+           que acá sólo queda el renglón para cuando NO hay nada que
+           mostrar. Decirlo dos veces era repetir. */
+        $("estado-clientes").textContent = d.total ? ""
           : (cliBusca ? "Nadie con ese dato." : "Todavía no hay clientes. El primero aparece al marcar una cotización como hecha.");
 
         $("lista-clientes").innerHTML = d.clientes.map(function (c) {
@@ -6769,11 +6770,6 @@
   }
 
   function cerrarCita() { $("velo-cita").hidden = true; }
-  $("btn-cita").addEventListener("click", function () {
-    // Hereda el día que esté escogido en la Agenda: misma acción, mejor
-    // punto de partida.
-    abrirCita(ag2.dia ? { fecha: ag2.dia } : {});
-  });
   $("c-cerrar").addEventListener("click", cerrarCita);
   $("velo-cita").addEventListener("click", function (e) { if (e.target === $("velo-cita")) cerrarCita(); });
 
@@ -7286,6 +7282,16 @@
       '<span class="pts">' + pts + "</span></button>";
   }
 
+  /* El botón de agendar vivía en una fila suya, grande, encima de todo:
+     un renglón entero para una acción que el "+" ya ofrece. Ahora es
+     chico y va en la cabecera del día —que ya existía— así que no cuesta
+     altura, y agenda PARA EL DÍA QUE SE ESTÁ VIENDO, que es mejor que el
+     botón general. */
+  function btnAgendarDia() {
+    return '<button type="button" class="bt chico" data-agendar-dia="' + ag2.dia + '">' +
+      ICO.mas + "Agendar</button>";
+  }
+
   function pintarAg2Hoja() {
     if (ag2.vista === "lista") { $("ag2-hoja").innerHTML = listaAg2(); return; }
 
@@ -7296,7 +7302,7 @@
 
     if (!total) {
       $("ag2-hoja").innerHTML =
-        '<div class="ag2-hcab"><h2>' + escHtml(titulo) + "</h2></div>" +
+        '<div class="ag2-hcab"><h2>' + escHtml(titulo) + "</h2>" + btnAgendarDia() + "</div>" +
         '<div class="ag2-vacio"><b>Nada agendado este día</b>' +
         "Lo que programe para esta fecha aparece acá." +
         '<div><button type="button" class="bt fuerte" data-agendar-dia="' + ag2.dia + '">Agendar acá</button></div></div>';
@@ -7316,7 +7322,8 @@
 
     $("ag2-hoja").innerHTML =
       '<div class="ag2-hcab"><h2>' + escHtml(titulo) + "</h2>" +
-        '<span class="ag2-cuenta">' + total + (total === 1 ? " trabajo" : " trabajos") + "</span></div>" +
+        '<span class="ag2-cuenta">' + total + (total === 1 ? " trabajo" : " trabajos") + "</span>" +
+        btnAgendarDia() + "</div>" +
       '<ol class="riel">' + grupos.map(function (gr) {
         return '<li class="hora"><span class="hora-et">' +
           (gr.hora ? horaBonita(gr.hora) + "<small>" + ampmDe(gr.hora) + "</small>"
