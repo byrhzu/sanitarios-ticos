@@ -970,9 +970,10 @@
     flex: 1; min-width: 0; font-family: var(--display); font-size: 1.12rem;
     font-weight: 600; letter-spacing: -.02em; text-transform: capitalize; margin: 0;
   }
-  .ag2-cuenta { font-family: var(--datos); font-size: .78rem; font-weight: 600; color: var(--p-acento-t); }
   .ag2-hcab .bt { margin-left: auto; align-self: center; }
-  :root[data-tema="oscuro"] .ag2-cuenta { color: var(--p-acento); }
+  .ag2-hoyet { color: var(--p-acento-t); }
+  :root[data-tema="oscuro"] .ag2-hoyet { color: var(--p-acento); }
+  .ag2-barra { color: var(--p-linea); font-weight: 400; margin: 0 .3rem; }
 
   /* ---- El riel de horas ----
      Sólo se pintan las horas que tienen algo: con tres trabajos al día,
@@ -2043,19 +2044,14 @@
   .pend-f[aria-pressed="true"] .n { color: rgba(255,255,255,.85); }
 
   .pend-sec + .pend-sec { margin-top: 1.8rem; }
-  /* En la cabecera de sección el número SÍ manda: es la cifra de cuánto
-     hay por resolver, así que se trata como cifra —grande, tabular, del
-     color del tipo— y no como una etiqueta más al lado del título. */
+  /* La cabecera de sección va sin número: el conteo ya está arriba en su
+     filtro, y repetirlo era poner una cifra grande diciendo "2" encima de
+     dos tarjetas que se cuentan de un vistazo. */
   .pend-h { display: flex; align-items: baseline; gap: .6rem; margin-bottom: .6rem; }
   .pend-h h2 {
     flex: 1; min-width: 0;
     font-family: var(--display); font-size: 1.04rem; font-weight: 600;
     letter-spacing: -.015em; margin: 0;
-  }
-  .pend-h .n {
-    font-family: var(--display); font-size: 1.5rem; font-weight: 700;
-    line-height: 1; letter-spacing: -.04em; font-variant-numeric: tabular-nums;
-    color: var(--tono);
   }
 
   /* El filo de color de la izquierda dice de qué tipo es el pendiente. No
@@ -3843,8 +3839,7 @@
       return PEND[g.id].length && (pendFiltro === "todo" || pendFiltro === g.id);
     }).map(function (g) {
       return '<section class="pend-sec" style="--tono:' + g.tono + '">' +
-        '<div class="pend-h"><h2>' + escHtml(g.titulo) + '</h2><span class="n">' +
-        PEND[g.id].length + "</span></div>" +
+        '<div class="pend-h"><h2>' + escHtml(g.titulo) + "</h2></div>" +
         PEND[g.id].map(function (x, i) { return tarjetaPend(g, x, i); }).join("") + "</section>";
     }).join("");
 
@@ -7298,11 +7293,16 @@
     var g = deDiaAg(ag2.dia);
     var total = g.citas.length + g.hechos.length + g.toca.length;
     var d = new Date(ag2.dia + "T12:00:00");
-    var titulo = (ag2.dia === hoyISO() ? "Hoy · " : "") + DIAS_N_AG[d.getDay()] + " " + d.getDate();
+    /* El día de hoy se nombra, y una barra lo separa de la fecha. Es la
+       pieza que dice "está parado en el día de trabajo". */
+    var fecha = DIAS_N_AG[d.getDay()] + " " + d.getDate();
+    var titulo = (ag2.dia === hoyISO())
+      ? '<span class="ag2-hoyet">Hoy</span><span class="ag2-barra">|</span>' + escHtml(fecha)
+      : escHtml(fecha);
 
     if (!total) {
       $("ag2-hoja").innerHTML =
-        '<div class="ag2-hcab"><h2>' + escHtml(titulo) + "</h2>" + btnAgendarDia() + "</div>" +
+        '<div class="ag2-hcab"><h2>' + titulo + "</h2>" + btnAgendarDia() + "</div>" +
         '<div class="ag2-vacio"><b>Nada agendado este día</b>' +
         "Lo que programe para esta fecha aparece acá." +
         '<div><button type="button" class="bt fuerte" data-agendar-dia="' + ag2.dia + '">Agendar acá</button></div></div>';
@@ -7321,9 +7321,7 @@
     });
 
     $("ag2-hoja").innerHTML =
-      '<div class="ag2-hcab"><h2>' + escHtml(titulo) + "</h2>" +
-        '<span class="ag2-cuenta">' + total + (total === 1 ? " trabajo" : " trabajos") + "</span>" +
-        btnAgendarDia() + "</div>" +
+      '<div class="ag2-hcab"><h2>' + titulo + "</h2>" + btnAgendarDia() + "</div>" +
       '<ol class="riel">' + grupos.map(function (gr) {
         return '<li class="hora"><span class="hora-et">' +
           (gr.hora ? horaBonita(gr.hora) + "<small>" + ampmDe(gr.hora) + "</small>"
