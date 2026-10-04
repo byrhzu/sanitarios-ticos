@@ -2093,9 +2093,48 @@
   .pcab[aria-expanded="true"] + .det { grid-template-rows: 1fr; }
   .pcard .det-caja { padding: 0 .8rem .35rem 1.05rem; }
 
-  .pend-vacio { text-align: center; color: var(--p-tenue); padding: 3.5rem 1rem; }
-  .pend-vacio b { display: block; color: var(--p-txt); font-size: 1rem; margin-bottom: .35rem; }
-  .pend-vacio svg { width: 34px; height: 34px; color: var(--est-ok-tx); margin-bottom: .7rem; }
+  /* ---- Cuando no hay nada pendiente ----
+     Es la única pantalla del panel que uno quiere ver. Se gana llegando
+     ahí, así que vale la pena que se sienta como un premio y no como un
+     error: el aro se dibuja, el visto se dibuja detrás, y nada más.
+
+     El visto se DIBUJA en vez de aparecer. Es la diferencia entre "no hay
+     datos" y "ya quedó": lo primero es un estado, lo segundo es el final
+     de algo que uno hizo. */
+  .vacio-listo {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 4rem 1rem 4.5rem; gap: 1.2rem;
+  }
+  .vacio-listo svg { width: 104px; height: 104px; display: block; overflow: visible; }
+  .vl-disco { fill: var(--p-suave); }
+  .vl-aro {
+    fill: none; stroke: var(--p-acento); stroke-width: 2.5; opacity: .35;
+    stroke-dasharray: 289; stroke-dashoffset: 289;
+    transform: rotate(-90deg); transform-origin: 60px 60px;
+    animation: vl-dibuja .65s var(--ease) .1s forwards;
+  }
+  .vl-check {
+    fill: none; stroke: var(--p-acento); stroke-width: 6;
+    stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 60; stroke-dashoffset: 60;
+    animation: vl-dibuja .42s cubic-bezier(.22,1,.36,1) .5s forwards;
+  }
+  /* Un halo que sale una vez, cuando el visto termina de cerrarse. */
+  .vl-halo {
+    fill: none; stroke: var(--p-acento); stroke-width: 2;
+    opacity: 0; transform-origin: 60px 60px;
+    animation: vl-halo .7s var(--ease) .85s forwards;
+  }
+  @keyframes vl-dibuja { to { stroke-dashoffset: 0; } }
+  @keyframes vl-halo {
+    0%   { opacity: .4; transform: scale(1); }
+    100% { opacity: 0;  transform: scale(1.35); }
+  }
+  .vacio-listo b {
+    display: block; font-family: var(--display); font-size: 1.45rem; font-weight: 600;
+    letter-spacing: -.03em; color: var(--p-txt);
+  }
+  .vacio-listo span { display: block; color: var(--p-tenue); font-size: .88rem; margin-top: .25rem; }
   .hoy-nota { margin: .7rem 0 0; color: var(--p-tenue); font-size: .8rem; }
   /* Top clientes: ranking con posición, nombre, barra y monto. */
   #top-clientes { display: flex; flex-direction: column; gap: .5rem; }
@@ -3819,9 +3858,15 @@
 
     if (!total) {
       $("pend-cuerpo").innerHTML =
-        '<div class="pend-vacio">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' +
-        "<b>Nada pendiente</b>Todo lo que estaba esperando ya tiene fecha o ya se cobró.</div>";
+        '<div class="vacio-listo">' +
+          '<svg viewBox="0 0 120 120" aria-hidden="true">' +
+            '<circle class="vl-disco" cx="60" cy="60" r="46"/>' +
+            '<circle class="vl-halo" cx="60" cy="60" r="46"/>' +
+            '<circle class="vl-aro" cx="60" cy="60" r="46"/>' +
+            '<path class="vl-check" d="M40 61.5 54 75 81 46"/>' +
+          "</svg>" +
+          '<p><b>Todo listo</b><span>No hay nada esperando respuesta.</span></p>' +
+        "</div>";
       return;
     }
 
