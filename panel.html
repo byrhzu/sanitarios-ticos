@@ -148,6 +148,15 @@
        la empresa estaría gritando alarma en cada pantalla. El naranja
        queda para las acciones; la espera usa ámbar, a 26° de tono de
        distancia para que no se confundan. */
+    /* Un color por tipo de servicio. El ícono es el que identifica; el
+       color sólo acompaña. Salen todos del mismo arco que ya vive en el
+       panel —del azul primario al barro cálido del naranja— y bajados de
+       saturación: con cinco tonos puros la agenda se lee como una bolsa
+       de confites. Ninguno es el naranja de marca ni un color de estado,
+       que ya significan otra cosa. */
+    --sv-tanque: #2c5f9e; --sv-destaqueo: #1f6b70; --sv-grasa: #9a5a2c;
+    --sv-obra:   #4a5568; --sv-alquiler:  #55538f;
+
     --est-ok-bg:     #e7f3ea;  --est-ok-tx:     #136c3a;
     --est-curso-bg:  #e8eefb;  --est-curso-tx:  #1f56a3;
     --est-espera-bg: #f8f0d0;  --est-espera-tx: #736213;
@@ -191,6 +200,9 @@
 
     /* Los mismos cinco estados, escogidos aparte para el fondo oscuro
        y medidos contra él: todos pasan 5.9:1 o más. */
+    --sv-tanque: #6f9ddd; --sv-destaqueo: #52b4b8; --sv-grasa: #d49a6a;
+    --sv-obra:   #9aa7bd; --sv-alquiler:  #9a97cf;
+
     --est-ok-bg:     rgba(52,199,123,.16);  --est-ok-tx:     #63d69b;
     --est-curso-bg:  rgba(90,150,230,.18);  --est-curso-tx:  #8ab8ef;
     --est-espera-bg: rgba(226,172,90,.18);  --est-espera-tx: #e2ac5a;
@@ -857,6 +869,184 @@
      verdad: dibujarle una tendencia inventada a un número que no la
      tiene es peor que dejarlo solo. */
 
+  /* =====================================================================
+     AGENDA
+     Un solo sitio para el trabajo: el calendario y la lista son dos vistas
+     de los mismos registros, no dos pantallas. En el teléfono la tira de
+     días va arriba y el día escogido debajo; en escritorio se parten en
+     dos columnas, porque ahí sí hay ancho para ver el mes entero y el día
+     al mismo tiempo.
+     ===================================================================== */
+  .ag2 { display: grid; gap: 1.2rem; }
+  @media (min-width: 1050px) {
+    .ag2 { grid-template-columns: minmax(0, 23rem) minmax(0, 1fr); align-items: start; }
+  }
+  .ag2-cab {
+    position: relative; background: var(--p-tarj); border: 1px solid var(--p-borde);
+    border-radius: var(--radio); padding: 1.1rem 1.1rem .9rem; overflow: hidden;
+  }
+  /* El velo: la referencia lo hace con lila; acá con el naranja de la
+     marca, tan bajo que no se nombra. Es el único adorno de la pantalla. */
+  .ag2-cab::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 70%;
+    background: linear-gradient(170deg, var(--p-suave), transparent 70%);
+    pointer-events: none;
+  }
+  .ag2-cab > * { position: relative; }
+  .ag2-top { display: flex; align-items: center; gap: .4rem; margin-bottom: .9rem; }
+  .ag2-mes {
+    flex: 1 1 auto; min-width: 0; white-space: nowrap;
+    font-family: var(--display); font-size: 1.3rem; font-weight: 600;
+    letter-spacing: -.03em; text-transform: capitalize; margin: 0;
+  }
+  .ag2-mes span { color: var(--p-tenue); font-weight: 500; }
+  .ag2-flechas { display: flex; gap: .15rem; }
+  .ag2-flechas button, .ag2-hoy {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 2rem; border-radius: 10px; color: var(--p-txt2); box-sizing: border-box;
+  }
+  .ag2-flechas button { width: 2rem; }
+  .ag2-flechas button:hover { background: var(--p-ctrl); }
+  .ag2-flechas svg { width: 17px; height: 17px; }
+  .ag2-hoy { padding: 0 .7rem; font-size: .78rem; font-weight: 600; color: var(--p-primario); }
+
+  .ag2-conm { display: flex; gap: .5rem; align-items: center; }
+  .conm {
+    display: inline-flex; padding: 3px; border-radius: 999px; gap: 2px;
+    background: var(--p-ctrl); border: 1px solid var(--p-ctrl-bd);
+  }
+  .conm button {
+    display: inline-flex; align-items: center; justify-content: center; gap: .3rem;
+    height: 1.85rem; padding: 0 .8rem; border-radius: 999px;
+    font-size: .76rem; font-weight: 600; color: var(--p-tenue);
+    transition: background .18s var(--ease), color .18s var(--ease);
+  }
+  .conm button svg { width: 15px; height: 15px; }
+  .conm button[aria-pressed="true"] {
+    background: var(--p-sup); color: var(--p-txt); box-shadow: 0 1px 3px rgba(16,26,48,.12);
+  }
+  :root[data-tema="oscuro"] .conm button[aria-pressed="true"] {
+    background: var(--p-sup2); box-shadow: none;
+  }
+  .conm.iconos button { padding: 0 .6rem; }
+
+  /* ---- La tira de días ---- */
+  .ag2-dias, .ag2-rej { display: grid; grid-template-columns: repeat(7, 1fr); gap: .15rem; }
+  .ag2-dias { margin-top: .9rem; }
+  .ag2-rej { margin-top: .3rem; }
+  .ag2-rej .enc {
+    text-align: center; font-size: .66rem; font-weight: 600; color: var(--p-tenue);
+    text-transform: uppercase; padding-bottom: .2rem;
+  }
+  .ag2-d {
+    display: flex; flex-direction: column; align-items: center; gap: .2rem;
+    padding: .4rem 0 .5rem; border-radius: 14px;
+  }
+  .ag2-d .l { font-size: .68rem; font-weight: 600; color: var(--p-tenue); text-transform: uppercase; }
+  .ag2-d .n {
+    width: 2.1rem; height: 2.1rem; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--datos); font-size: .92rem; font-weight: 600;
+    transition: background .22s var(--ease), color .22s var(--ease), box-shadow .22s var(--ease);
+  }
+  .ag2-d.fuera .l, .ag2-d.fuera .n { opacity: .35; }
+  .ag2-d.hoy .n { color: var(--p-acento-t); }
+  :root[data-tema="oscuro"] .ag2-d.hoy .n { color: var(--p-acento); }
+  .ag2-d[aria-pressed="true"] .n {
+    background: var(--p-sup); color: var(--p-txt); box-shadow: 0 3px 10px -2px rgba(16,26,48,.22);
+  }
+  :root[data-tema="oscuro"] .ag2-d[aria-pressed="true"] .n { background: var(--p-sup2); box-shadow: none; }
+  /* Un punto por trabajo, hasta tres: dice cuánto hay sin poner un número. */
+  .ag2-d .pts { display: flex; gap: 2px; height: 4px; align-items: center; color: var(--p-acento); }
+  .ag2-d .pts i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; display: block; }
+
+  /* ---- La hoja del día ---- */
+  .ag2-hoja {
+    background: var(--p-tarj); border: 1px solid var(--p-borde);
+    border-radius: var(--radio); padding: 1.1rem 1.1rem 1.3rem; min-height: 18rem;
+  }
+  .ag2-hcab { display: flex; align-items: baseline; gap: .6rem; margin-bottom: 1rem; }
+  .ag2-hcab h2 {
+    flex: 1; min-width: 0; font-family: var(--display); font-size: 1.12rem;
+    font-weight: 600; letter-spacing: -.02em; text-transform: capitalize; margin: 0;
+  }
+  .ag2-cuenta { font-family: var(--datos); font-size: .78rem; font-weight: 600; color: var(--p-acento-t); }
+  :root[data-tema="oscuro"] .ag2-cuenta { color: var(--p-acento); }
+
+  /* ---- El riel de horas ----
+     Sólo se pintan las horas que tienen algo: con tres trabajos al día,
+     dibujar de 6:00 a 18:30 serían veinticinco renglones vacíos. */
+  .riel { list-style: none; margin: 0; padding: 0; }
+  .hora { display: grid; grid-template-columns: 3.3rem minmax(0, 1fr); gap: .6rem; }
+  @media (max-width: 420px) {
+    /* El riel cede ancho: con 3.3rem más el relleno de la hoja, el nombre
+       del cliente se cortaba a la mitad en una pantalla de 375. */
+    .hora { grid-template-columns: 2.6rem minmax(0, 1fr); gap: .4rem; }
+    .ag2-hoja { padding-left: .85rem; padding-right: .85rem; }
+    .pild { padding: .6rem .6rem; gap: .5rem; }
+  }
+  .hora + .hora { margin-top: .2rem; }
+  .hora-et {
+    font-family: var(--datos); font-size: .82rem; font-weight: 600;
+    color: var(--p-txt2); padding-top: .55rem; line-height: 1.1;
+  }
+  .hora-et small { display: block; font-size: .62rem; font-weight: 600; color: var(--p-tenue); letter-spacing: .04em; }
+  .hora-caja { min-width: 0; border-top: 1px solid var(--p-linea); padding: .45rem 0 .5rem; }
+  .hora:first-child .hora-caja { border-top: 0; padding-top: .1rem; }
+
+  /* ---- La píldora del trabajo ---- */
+  .trab + .trab { margin-top: .4rem; }
+  .pild {
+    width: 100%; display: flex; align-items: center; gap: .65rem; text-align: left;
+    padding: .6rem .75rem; border-radius: 16px; background: var(--tinte);
+    transition: transform .14s var(--ease);
+  }
+  .pild:active { transform: scale(.985); }
+  .pild.hecho { opacity: .72; }
+  /* `ag2-` y no `chip` a secas: el panel ya tenía una `.chip` —la
+     pastilla de estado con su puntito— y pisaba a ésta. */
+  .ag2-chip {
+    flex: 0 0 2.4rem; width: 2.4rem; height: 2.4rem; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--p-sup); color: var(--sv); box-shadow: 0 1px 3px rgba(16,26,48,.12);
+  }
+  :root[data-tema="oscuro"] .ag2-chip { background: rgba(255,255,255,.08); box-shadow: none; }
+  .ag2-chip svg { width: 19px; height: 19px; }
+  .pild-t { flex: 1; min-width: 0; }
+  .pild-t b {
+    display: block; font-size: .92rem; font-weight: 600; letter-spacing: -.015em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pild-t small {
+    display: flex; align-items: center; gap: .4rem; flex-wrap: wrap;
+    color: var(--p-txt2); font-size: .76rem; margin-top: .12rem;
+  }
+  .pild-fl { flex: 0 0 auto; color: var(--p-tenue); display: inline-flex; transition: transform .28s var(--ease); }
+  .pild-fl svg { width: 17px; height: 17px; }
+  .pild[aria-expanded="true"] .pild-fl { transform: rotate(180deg); }
+
+  /* ---- El detalle, que se abre EN SU LUGAR ----
+     `grid-template-rows: 0fr -> 1fr` es lo que permite animar hasta la
+     altura real sin conocerla de antemano; con `height: auto` no se anima. */
+  .det { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .32s var(--ease); }
+  .pild[aria-expanded="true"] + .det { grid-template-rows: 1fr; }
+  .det > div { overflow: hidden; }
+  .det-caja { padding: .7rem .75rem .2rem; }
+  .det-l { display: flex; gap: .5rem; align-items: flex-start; padding: .3rem 0; font-size: .82rem; }
+  .det-l svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--p-tenue); margin-top: .15rem; }
+  .det-l span { color: var(--p-txt2); min-width: 0; }
+  .det-acc { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .7rem; }
+
+  .ag2-vacio { text-align: center; color: var(--p-tenue); padding: 2.6rem 1rem; }
+  .ag2-vacio b { display: block; color: var(--p-txt); font-size: .95rem; margin-bottom: .3rem; }
+  .ag2-vacio .bt { margin-top: .9rem; }
+  .ag2-dia-lista {
+    margin: 1.3rem 0 .5rem; font-size: .8rem; font-weight: 600; color: var(--p-tenue);
+    text-transform: capitalize; display: flex; align-items: center; gap: .6rem;
+  }
+  .ag2-dia-lista:first-child { margin-top: 0; }
+  .ag2-dia-lista::after { content: ""; flex: 1; height: 1px; background: var(--p-linea); }
+
   /* ---------- Filtros de la Agenda ----------
      Eran cuatro tarjetas con icono en cuadrito y un numero de 2.15rem:
      tarjeta tras tarjeta tras tarjeta, con cuatro colores decorativos, y
@@ -865,20 +1055,6 @@
      y nada en su forma lo decia. Ahora se visten como los filtros que la
      aplicacion ya tiene en Servicios: etiqueta y conteo en una pastilla,
      con estado seleccionado visible. */
-  .ag-filtros { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: 1.3rem; }
-  .ag-f {
-    display: inline-flex; align-items: center; gap: .45rem;
-    height: 2.25rem; padding: 0 .9rem; border-radius: 999px;
-    background: var(--p-sup); color: var(--p-txt2); font-weight: 500;
-    border: 1px solid var(--p-ctrl-bd); white-space: nowrap; line-height: 1;
-    transition: background .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease);
-  }
-  .ag-f:hover { background: var(--p-sup2); }
-  .ag-n { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--p-tenue); }
-  .ag-f[aria-pressed="true"] {
-    background: var(--p-prim-suave); border-color: transparent; color: var(--p-primario);
-  }
-  .ag-f[aria-pressed="true"] .ag-n { color: var(--p-primario); }
   /* El unico que se tine es "Vencidos" cuando hay alguno: ahi el numero
      ES el problema. Los otros tres son neutros. */
   .ag-f.t-mal .ag-n { color: var(--est-mal-tx); }
@@ -1434,22 +1610,15 @@
 
   /* El calendario. Una rejilla de siete, con un punto en los días que
      tienen algo. El día se toca y filtra la lista de al lado. */
-  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
   .cal .dow {
     text-align: center; color: var(--p-tenue); font-size: .72rem;
     font-weight: 500; padding-bottom: .3rem;
-  }
-  .cal button {
-    aspect-ratio: 1 / 1; border-radius: 9px; display: flex;
-    flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-    font-variant-numeric: tabular-nums; color: var(--p-txt2);
   }
   .cal span.fuera {
     aspect-ratio: 1 / 1; border-radius: 9px; display: flex;
     align-items: center; justify-content: center;
     font-variant-numeric: tabular-nums; color: var(--p-tenue); opacity: .4;
   }
-  .cal button:hover { background: var(--p-sup2); }
   /* Hoy va relleno de naranja, no con un aro tenue: es el único día que
      uno busca de verdad al abrir la agenda, y un borde de 1,5px se
      perdía entre los días que sí tienen color de estado. */
@@ -1461,8 +1630,6 @@
   .cal button.hoy.con, .cal button.hoy.vencido { background: var(--p-primario); color: #fff; }
   .cal button.con { background: var(--est-espera-bg); color: var(--est-espera-tx); font-weight: 600; }
   .cal button.vencido { background: var(--est-mal-bg); color: var(--est-mal-tx); font-weight: 600; }
-  .cal button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--p-primario); }
-  .cal i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
   /* Los puntos van en fila bajo el número: uno por tipo de marca. */
   .cal .puntos { display: flex; gap: 2px; height: 5px; align-items: center; }
   /* Una cita (trabajo agendado) se marca con un aro naranja y un punto
@@ -1477,19 +1644,7 @@
   .cal i.pt-hecho { width: 5px; height: 5px; background: var(--est-ok-tx); border-radius: 999px; }
   .cal button.hoy i.pt-hecho { background: #fff; }
 
-  .cal-leyenda {
-    display: flex; flex-wrap: wrap; gap: .3rem 1rem; margin-top: .8rem;
-    font-size: .74rem; color: var(--p-tenue);
-  }
-  .cal-leyenda span { display: inline-flex; align-items: center; gap: .35rem; }
-  .cal-leyenda i { width: 9px; height: 9px; border-radius: 3px; }
-  .cal-leyenda .lg-cita { background: transparent; box-shadow: inset 0 0 0 1.5px var(--p-acento); }
-  .cal-leyenda .lg-hecho { background: var(--est-ok-tx); border-radius: 999px; }
-  .cal-leyenda .lg-toca { background: var(--est-espera-bg); }
-  .cal-leyenda .lg-venc { background: var(--est-mal-bg); }
   /* Encabezado del panel del día. */
-  .dia-cab { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; margin-bottom: 1rem; }
-  .dia-cab h2 { flex: 1 1 auto; margin: 0; }
   /* Fila de trabajo hecho: más apagada, para diferenciarla del agendado. */
   .toca-fila.hecho { opacity: .78; }
   .toca-fila.hecho .est-completado { background: var(--est-ok-bg); color: var(--est-ok-tx); }
@@ -1498,7 +1653,6 @@
     display: flex; align-items: center; justify-content: space-between;
     gap: .8rem 1rem; margin: 0 0 1rem; flex-wrap: wrap;
   }
-  .agenda-pista { margin: 0; color: var(--p-tenue); font-size: .88rem; }
   #btn-cita { display: inline-flex; align-items: center; gap: .4rem; margin-left: auto; }
 
   /* La cita en la lista: hora y la etiqueta "Agendado" al frente. */
@@ -1507,51 +1661,16 @@
   /* El mes y el año, tocables. Se ven como el título porque lo son; el
      subrayado punteado es lo único que avisa que además se pueden
      apretar, sin convertirlos en dos botones que compitan con el riel. */
-  .cal-tit { display: flex; align-items: baseline; gap: .45rem; }
-  .cal-tit button {
-    font: inherit; color: inherit; letter-spacing: inherit;
-    padding: .1rem .3rem; margin: -.1rem -.3rem; border-radius: 8px;
-    border-bottom: 1.5px dotted var(--p-linea);
-    transition: background .15s var(--ease), color .15s var(--ease);
-  }
-  .cal-tit button:hover { background: var(--p-prim-suave); color: var(--p-primario); }
-  .cal-tit button[aria-expanded="true"] { background: var(--p-prim-suave); color: var(--p-primario); }
 
-  .cal-pop {
-    position: absolute; z-index: 50; top: calc(100% + .4rem); left: 0;
-    background: var(--p-sup); border: 1px solid var(--p-borde);
-    border-radius: var(--radio-chico); padding: .4rem;
-    box-shadow: 0 14px 36px rgba(0,0,0,.22);
-    display: grid; gap: 2px;
-    animation: entra-menu .15s var(--ease) both; transform-origin: top left;
-  }
   .cal-pop.de-mes  { grid-template-columns: repeat(3, minmax(3.6rem, 1fr)); }
   .cal-pop.de-anio { grid-template-columns: repeat(2, minmax(3.6rem, 1fr)); }
-  .cal-pop button {
-    padding: .5rem .4rem; border-radius: 9px; font-weight: 500;
-    color: var(--p-txt2); text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
-  .cal-pop button:hover { background: var(--p-sup2); color: var(--p-txt); }
   /* El de hoy se nombra sin rellenarse; el escogido sí va relleno. */
   .cal-pop button.es-hoy { color: var(--p-primario); }
-  .cal-pop button[aria-selected="true"] { background: var(--p-primario); color: #fff; }
   @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .cal-pop {
-      background: color-mix(in srgb, var(--p-sup) 82%, transparent);
-      -webkit-backdrop-filter: blur(16px) saturate(160%);
-      backdrop-filter: blur(16px) saturate(160%);
-    }
   }
 
   /* Los tres controles del mes en un solo riel: se leen como un control
      y no como tres botones que casualmente quedaron juntos. */
-  .mes-riel { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--p-sup); }
-  .mes-nav {
-    min-width: 1.9rem; color: var(--p-tenue); padding: .28rem .55rem;
-    border-radius: 999px; font-weight: 500; text-align: center;
-  }
-  .mes-nav:hover { background: var(--p-sup2); color: var(--p-txt); }
 
   /* Requiere atención. La cifra a la izquierda, la frase en medio y la
      flecha a la derecha: se lee "3 cotizaciones sin responder →" de un
@@ -2651,66 +2770,47 @@
     <div class="vista" id="vista-agenda" hidden>
       <p class="estado-linea" id="estado-agenda" role="status" aria-live="polite">Cargando…</p>
 
-      <!-- La agenda de primero: el calendario y lo que viene. Las cifras
-           de recordatorios bajan, que son para consultar, no el día a día.
-           El título de la pantalla ya dice "Agenda" arriba; acá va sólo el
-           gesto para agendar, con una pista de que el calendario también
-           es un atajo. -->
+      <!-- Calendario y lista son dos vistas de lo mismo, no dos
+           pantallas: el conmutador de arriba a la derecha las cambia.
+           Los filtros de recordatorio que había acá (vencidos, le toca,
+           sin recordatorio) se quitaron: repetían exactamente lo que ya
+           muestra la pantalla de Mantenimientos del menú del avatar. -->
       <div class="agenda-cab">
-        <p class="agenda-pista">Tocá un día para agendar en esa fecha.</p>
         <button type="button" class="btn-fuerte" id="btn-cita">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
           Agendar servicio
         </button>
       </div>
 
-      <div class="rejilla dos">
-        <div class="tarj">
-          <div class="tarj-h">
-            <h2 class="cal-tit">
-              <button type="button" id="cal-mes" aria-haspopup="true" aria-expanded="false"></button>
-              <button type="button" id="cal-anio" aria-haspopup="true" aria-expanded="false"></button>
-            </h2>
-            <div class="cal-pop" id="cal-pop" hidden role="listbox" aria-label="Escoger mes o año"></div>
-            <span class="meta siempre mes-riel">
-              <button type="button" class="mes-nav" id="mes-antes" aria-label="Mes anterior">&larr;</button>
-              <button type="button" class="mes-nav" id="mes-hoy">Hoy</button>
-              <button type="button" class="mes-nav" id="mes-despues" aria-label="Mes siguiente">&rarr;</button>
-            </span>
+      <div class="ag2">
+        <header class="ag2-cab">
+          <div class="ag2-top">
+            <h2 class="ag2-mes" id="ag2-mes"></h2>
+            <button type="button" class="ag2-hoy" id="ag2-hoy">Hoy</button>
+            <div class="ag2-flechas">
+              <button type="button" id="ag2-antes" aria-label="Anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+              <button type="button" id="ag2-despues" aria-label="Siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            </div>
           </div>
-          <div class="cal" id="cal"></div>
-          <div class="cal-leyenda">
-            <span><i class="lg-cita"></i>Agendado</span>
-            <span><i class="lg-hecho"></i>Hecho</span>
-            <span><i class="lg-toca"></i>Le toca</span>
-            <span><i class="lg-venc"></i>Vencido</span>
+          <div class="ag2-conm">
+            <div class="conm" id="ag2-rango" role="group" aria-label="Semana o mes">
+              <button type="button" data-v="semana" aria-pressed="true">Semana</button>
+              <button type="button" data-v="mes" aria-pressed="false">Mes</button>
+            </div>
+            <div style="flex:1"></div>
+            <div class="conm iconos" id="ag2-vista" role="group" aria-label="Calendario o lista">
+              <button type="button" data-v="cal" aria-pressed="true" aria-label="Calendario">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/></svg>
+              </button>
+              <button type="button" data-v="lista" aria-pressed="false" aria-label="Lista">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>
+              </button>
+            </div>
           </div>
-        </div>
+          <div id="ag2-tira"></div>
+        </header>
 
-        <div class="tarj">
-          <div class="tarj-h"><h2 id="agenda-titulo">Trabajos agendados</h2><span class="meta" id="agenda-n"></span></div>
-          <div id="agenda-lista" class="escalona"></div>
-        </div>
-      </div>
-
-      <div class="ag-filtros" id="agenda-cifras" role="group" aria-label="Filtrar la agenda"></div>
-    </div>
-
-    <!-- Al tocar un día del calendario se abre este panel con TODO lo
-         de ese día (agendado, hecho, le toca) y sus acciones. -->
-    <div class="velo" id="velo-dia" hidden>
-      <div class="hoja hoja-ancha" role="dialog" aria-modal="true" aria-labelledby="dia-t">
-        <div class="dia-cab">
-          <h2 id="dia-t">Día</h2>
-          <button type="button" class="btn-fuerte" id="dia-agendar">
-            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-            Agendar acá
-          </button>
-        </div>
-        <div id="dia-cuerpo"></div>
-        <div class="hoja-pie">
-          <button type="button" class="btn-suave" id="dia-cerrar">Cerrar</button>
-        </div>
+        <section class="ag2-hoja" id="ag2-hoja"></section>
       </div>
     </div>
 
@@ -5996,8 +6096,11 @@
      ========================================================= */
 
   var AGENDA = null, agendaCargada = false;
-  var calMes = null;                       // primer día del mes mostrado
-  var agendaFiltro = { tipo: "citas" };     // citas | pronto | vencidos | trimestre | apagados | dia
+  /* El estado de la Agenda. `ancla` es la fecha sobre la que se calcula la
+     semana o el mes que se está mirando; `dia` es el que está escogido y
+     cuyo detalle se pinta abajo. Son dos cosas distintas: uno puede estar
+     viendo noviembre con el 3 de octubre todavía escogido. */
+  var ag2 = { rango: "semana", vista: "cal", dia: null, ancla: null, abierto: null };
 
   /* =========================================================
      Anotar un trabajo a mano
@@ -6483,8 +6586,9 @@
 
   function cerrarCita() { $("velo-cita").hidden = true; }
   $("btn-cita").addEventListener("click", function () {
-    // Si hay un día escogido en el calendario, se agenda para ese día.
-    abrirCita(agendaFiltro.tipo === "dia" ? { fecha: agendaFiltro.valor } : {});
+    // Hereda el día que esté escogido en la Agenda: misma acción, mejor
+    // punto de partida.
+    abrirCita(ag2.dia ? { fecha: ag2.dia } : {});
   });
   $("c-cerrar").addEventListener("click", cerrarCita);
   $("velo-cita").addEventListener("click", function (e) { if (e.target === $("velo-cita")) cerrarCita(); });
@@ -6599,7 +6703,9 @@
         // registro). Desde la Agenda, se salta al día de la cita para verla.
         if (vista === "servicios") { cargarServicios(); return; }
         if (vista === "cliente" && fichaActual && fichaActual.cliente) { verCliente(fichaActual.cliente.id); return; }
-        agendaFiltro = { tipo: "dia", valor: $("c-fecha").value };
+        ag2.dia = $("c-fecha").value;
+        ag2.ancla = new Date(ag2.dia + "T12:00:00");
+        ag2.abierto = null;
         cargarAgenda();
       })
       .catch(function (err) {
@@ -6859,22 +6965,78 @@
     return cargarAgenda();
   }
 
+  /* =====================================================================
+     AGENDA
+     Calendario y lista son dos vistas de los MISMOS registros, no dos
+     pantallas. El día escogido se abre debajo (en escritorio, al lado), y
+     cada trabajo se despliega en su lugar: nada de pantalla tras pantalla.
+
+     Los filtros de recordatorio que vivían acá (vencidos, le toca, sin
+     recordatorio) se quitaron: repetían lo que ya muestra Mantenimientos.
+     ===================================================================== */
+
+  /* Un ícono y un color por tipo de servicio. El ícono identifica; el
+     color sólo acompaña. Se dibujan en tres o cuatro trazos porque a
+     19 px no sobrevive el detalle. La clave viene del servidor en
+     `servicioKey`, que es la cruda — la etiqueta ya traducida va aparte. */
+  var SV_AG = {
+    tanque: { c: "var(--sv-tanque)",
+      i: '<ellipse cx="12" cy="6.3" rx="7.5" ry="2.6"/>' +
+         '<path d="M4.5 6.3v11.4c0 1.45 3.36 2.6 7.5 2.6s7.5-1.15 7.5-2.6V6.3"/>' +
+         '<path d="M5.6 13.4c1.6 0 1.6 1.25 3.2 1.25s1.6-1.25 3.2-1.25 1.6 1.25 3.2 1.25 1.6-1.25 3.2-1.25"/>' },
+    destaqueo: { c: "var(--sv-destaqueo)",
+      i: '<path d="M2.6 4.3v7.4M21.4 21.4h-7.4"/>' +
+         '<path d="M4.2 5.6h5.4a9 9 0 0 1 9 9v5.4"/>' +
+         '<path d="M4.2 10.4h5.4a4.2 4.2 0 0 1 4.2 4.2v5.4"/>' },
+    grasa: { c: "var(--sv-grasa)",
+      i: '<path d="M3.2 4.6h17.6l-6.4 7.8v6.6a1.7 1.7 0 0 1-2.45 1.5l-1.9-1a1.7 1.7 0 0 1-.9-1.5v-5.6Z"/>' +
+         '<path d="M5.9 7.4c1.35 0 1.35 1.05 2.7 1.05s1.35-1.05 2.7-1.05 1.35 1.05 2.7 1.05 1.35-1.05 2.7-1.05"/>' },
+    obra: { c: "var(--sv-obra)",
+      i: '<rect x="3" y="5" width="18" height="14" rx="1.8"/>' +
+         '<path d="M3 9.7h18M3 14.3h18M9.4 5v4.7M14.6 9.7v4.6M9.4 14.3V19"/>' },
+    alquiler: { c: "var(--sv-alquiler)",
+      i: '<path d="M6.4 4.2h9.2v13.6a2.2 2.2 0 0 1-2.2 2.2H8.6a2.2 2.2 0 0 1-2.2-2.2Z"/>' +
+         '<path d="M5.4 4.2h11.2M7.2 8.6h7.6M7.2 12.8h7.6"/>' +
+         '<path d="M15.6 14.2h3.6v3"/>' }
+  };
+  /* Si el servicio se escribió a mano ("Otro"), no hay clave: cae en un
+     ícono neutro y un gris. Mejor eso que inventarle una categoría. */
+  var SV_OTRO = { c: "var(--p-tenue)",
+    i: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.8v4.6l3 1.8"/>' };
+  function svAg(k) { return SV_AG[k] || SV_OTRO; }
+  function icoAg(k) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + svAg(k).i + "</svg>";
+  }
+  function tinteAg(k) { return "color-mix(in srgb, " + svAg(k).c + " 7%, transparent)"; }
+
+  var DOW_AG = ["D", "L", "K", "M", "J", "V", "S"];
+  var ORDEN_AG = ["L", "K", "M", "J", "V", "S", "D"];
+  var DIAS_N_AG = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+  function isoDe(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") +
+           "-" + String(d.getDate()).padStart(2, "0");
+  }
+  /* La semana arranca en lunes, como el calendario que el panel ya tenía. */
+  function lunesDe(d) { var x = new Date(d); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+  function horaBonita(h) {
+    var p = String(h).split(":"), n = +p[0];
+    return (n % 12 === 0 ? 12 : n % 12) + ":" + p[1];
+  }
+  function ampmDe(h) { return +String(h).split(":")[0] < 12 ? "AM" : "PM"; }
+
   function cargarAgenda() {
     $("estado-agenda").textContent = "";
     $("estado-agenda").classList.remove("is-error");
-    if (!agendaCargada) {
-      $("agenda-cifras").innerHTML = "";
-      $("agenda-lista").innerHTML = esqFilas(3);
-    }
+    if (!agendaCargada) $("ag2-hoja").innerHTML = esqFilas(3);
     pedir("/api/panel/agenda")
       .then(function (d) {
         AGENDA = d;
         agendaCargada = true;
         $("estado-agenda").textContent = "";
-        if (!calMes) { var h = new Date(); calMes = new Date(h.getFullYear(), h.getMonth(), 1); }
-        pintarAgendaCifras(d);
-        pintarCalendario();
-        pintarAgendaLista();
+        if (!ag2.dia) { ag2.dia = hoyISO(); ag2.ancla = new Date(ag2.dia + "T12:00:00"); }
+        pintarAg2();
         marcar("pend-agenda", d.resumen.vencidos);
         sellar();
       })
@@ -6884,385 +7046,264 @@
       });
   }
 
-  function pintarAgendaCifras(d) {
-    var r = d.resumen;
-    function f(etq, n, filtro, tono) {
-      var act = agendaFiltro && agendaFiltro.tipo === filtro;
-      return '<button type="button" class="ag-f' + (tono ? " t-" + tono : "") +
-        '" aria-pressed="' + (act ? "true" : "false") +
-        '" data-agenda="' + filtro + '">' + escHtml(etq) +
-        '<span class="ag-n">' + n + "</span></button>";
-    }
-    $("agenda-cifras").innerHTML =
-      f("Agendados", r.citas || 0, "citas") +
-      f("Vencidos", r.vencidos, "vencidos", r.vencidos > 0 ? "mal" : "") +
-      f("Le toca este mes", r.mes, "pronto") +
-      f("Sin recordatorio", r.apagados, "apagados");
+  /* Lo de un día: lo agendado, lo ya hecho y a quién le toca. Son tres
+     cosas distintas y se pintan distinto, pero viven en el mismo día. */
+  function deDiaAg(iso) {
+    var orden = function (a, b) { return (a.hora || "99").localeCompare(b.hora || "99"); };
+    return {
+      citas: (AGENDA.citas || []).filter(function (c) { return c.fecha === iso; }).sort(orden),
+      hechos: (AGENDA.completados || []).filter(function (c) { return c.fecha === iso; }).sort(orden),
+      toca: (AGENDA.items || []).filter(function (i) { return i.recordatorio && i.proximo === iso; })
+    };
+  }
+  function cuantosAg(iso) {
+    var g = deDiaAg(iso);
+    return g.citas.length + g.hechos.length + g.toca.length;
   }
 
-  $("agenda-cifras").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-agenda]");
-    if (!b) return;
-    agendaFiltro = { tipo: b.dataset.agenda };
-    Array.prototype.forEach.call(this.children, function (x) {
-      x.setAttribute("aria-pressed", x === b ? "true" : "false");
-    });
-    pintarCalendario();
-    pintarAgendaLista();
-  });
+  function pintarAg2() { pintarAg2Tira(); pintarAg2Hoja(); }
 
-  var DOW = ["L", "K", "M", "J", "V", "S", "D"];
-
-  function pintarCalendario() {
-    var y = calMes.getFullYear(), m = calMes.getMonth();
-    $("cal-mes").textContent = MES_LARGO[m];
-    $("cal-anio").textContent = y;
-
-    // Cuántos recordatorios caen cada día de este mes…
-    var porDia = {};
-    AGENDA.items.forEach(function (i) {
-      if (!i.recordatorio) return;
-      var p = i.proximo.split("-");
-      if (Number(p[0]) === y && Number(p[1]) === m + 1) {
-        porDia[Number(p[2])] = (porDia[Number(p[2])] || 0) + 1;
+  function pintarAg2Tira() {
+    var hoy = hoyISO(), cont;
+    if (ag2.rango === "semana") {
+      var ini = lunesDe(ag2.ancla);
+      cont = '<div class="ag2-dias">';
+      for (var i = 0; i < 7; i++) {
+        var d = new Date(ini); d.setDate(ini.getDate() + i);
+        cont += celdaAg2(d, hoy, false, false);
       }
-    });
-    // …cuántas citas (trabajos agendados)…
-    var citaDia = {};
-    (AGENDA.citas || []).forEach(function (c) {
-      var p = c.fecha.split("-");
-      if (Number(p[0]) === y && Number(p[1]) === m + 1) {
-        citaDia[Number(p[2])] = (citaDia[Number(p[2])] || 0) + 1;
-      }
-    });
-    // …y cuántos trabajos ya HECHOS.
-    var hechoDia = {};
-    (AGENDA.completados || []).forEach(function (c) {
-      var p = c.fecha.split("-");
-      if (Number(p[0]) === y && Number(p[1]) === m + 1) {
-        hechoDia[Number(p[2])] = (hechoDia[Number(p[2])] || 0) + 1;
-      }
-    });
-
-    // La semana arranca el lunes, como el calendario de acá.
-    var primero = new Date(y, m, 1);
-    var corrimiento = (primero.getDay() + 6) % 7;
-    var ultimo = new Date(y, m + 1, 0).getDate();
-    var hoy = new Date(), esMesDeHoy = hoy.getFullYear() === y && hoy.getMonth() === m;
-
-    var celdas = DOW.map(function (d) { return '<span class="dow">' + d + "</span>"; });
-
-    /* Los días del mes vecino se dibujan en gris en vez de dejar celdas
-       en blanco. Con huecos, la primera fila parece rota; con los
-       números apagados se ve que la semana sigue, que es lo que hace
-       cualquier calendario de papel. */
-    var finAnterior = new Date(y, m, 0).getDate();
-    for (var i = corrimiento; i > 0; i--) {
-      celdas.push('<span class="fuera">' + (finAnterior - i + 1) + "</span>");
-    }
-
-    for (var dia = 1; dia <= ultimo; dia++) {
-      var n = porDia[dia] || 0;
-      var nc = citaDia[dia] || 0;
-      var nh = hechoDia[dia] || 0;
-      var iso = y + "-" + String(m + 1).padStart(2, "0") + "-" + String(dia).padStart(2, "0");
-      var vencido = n > 0 && iso < hoyISO();
-      var cls = ["", n ? (vencido ? "vencido" : "con") : "",
-                 nc ? "tiene-cita" : "",
-                 nh ? "tiene-hecho" : "",
-                 esMesDeHoy && dia === hoy.getDate() ? "hoy" : ""].join(" ").replace(/\s+/g, " ").trim();
-      var puntos = (n ? "<i></i>" : "") + (nc ? '<i class="pt-cita"></i>' : "") +
-                   (nh ? '<i class="pt-hecho"></i>' : "");
-      var titulo = [];
-      if (nc) titulo.push(nc + (nc === 1 ? " agendado" : " agendados"));
-      if (nh) titulo.push(nh + (nh === 1 ? " hecho" : " hechos"));
-      if (n) titulo.push(n + (n === 1 ? " le toca" : " le tocan"));
-      celdas.push('<button type="button" class="' + cls + '" data-dia="' + iso + '"' +
-        (titulo.length ? ' title="' + titulo.join(" · ") + '"' : "") + ">" +
-        dia + (puntos ? '<span class="puntos">' + puntos + "</span>" : "") + "</button>");
-    }
-
-    // Y se completa la última fila con los primeros del mes que viene.
-    var sobran = (7 - (celdas.length - DOW.length) % 7) % 7;
-    for (var j = 1; j <= sobran; j++) celdas.push('<span class="fuera">' + j + "</span>");
-
-    $("cal").innerHTML = celdas.join("");
-  }
-
-  $("cal").addEventListener("click", function (e) {
-    var b = e.target.closest("button[data-dia]");
-    if (!b) return;
-    // Volver a tocar el mismo día lo deselecciona en la lista lateral.
-    agendaFiltro = (agendaFiltro.tipo === "dia" && agendaFiltro.valor === b.dataset.dia)
-      ? { tipo: "citas" } : { tipo: "dia", valor: b.dataset.dia };
-    pintarCalendario();
-    pintarAgendaLista();
-    abrirDia(b.dataset.dia);
-  });
-
-  /* Panel del día: se abre al tocar un día del calendario. Junta las
-     citas, los completados y los mantenimientos ("le toca") de esa
-     fecha, y cada fila trae su menú "⋯" con las mismas acciones que en
-     Servicios y la ficha del cliente. */
-  var diaSel = null;
-  function abrirDia(iso) {
-    diaSel = iso;
-    $("dia-t").textContent = fechaLarga(iso);
-    var citas = (AGENDA.citas || []).filter(function (c) { return c.fecha === iso; });
-    var hechos = (AGENDA.completados || []).filter(function (c) { return c.fecha === iso; });
-    var toca = AGENDA.items.filter(function (i) { return i.recordatorio && i.proximo === iso; });
-    var html = "";
-    if (citas.length) html += '<div class="pap-grupo"><h3>Agendados (' + citas.length + ')</h3><div class="fichas">' +
-      citas.map(filaCita).join("") + "</div></div>";
-    if (hechos.length) html += '<div class="pap-grupo"><h3>Hechos (' + hechos.length + ')</h3><div class="fichas">' +
-      hechos.map(filaHecho).join("") + "</div></div>";
-    if (toca.length) html += '<div class="pap-grupo"><h3>Le toca (' + toca.length + ')</h3><div class="fichas">' +
-      toca.map(filaToca).join("") + "</div></div>";
-    $("dia-cuerpo").innerHTML = html || '<p class="vacio-ok">Nada ese día. Tocá “Agendar acá”.</p>';
-    $("velo-dia").hidden = false;
-  }
-  function cerrarDia() { $("velo-dia").hidden = true; }
-
-  $("dia-cerrar").addEventListener("click", cerrarDia);
-  $("velo-dia").addEventListener("click", function (e) { if (e.target === $("velo-dia")) cerrarDia(); });
-  $("dia-agendar").addEventListener("click", function () { cerrarDia(); abrirCita({ fecha: diaSel }); });
-
-  // El cuerpo del día usa los mismos data-attrs que la lista original,
-  // así aprovecha el mismo handler de acciones.
-  $("dia-cuerpo").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-cliente],[data-reagendar],[data-hecho],[data-cancelar],[data-eliminar-serv],[data-menu-cita],[data-menu-hecho],[data-ver-cliente]");
-    if (!b) return;
-    if (b.dataset.cliente != null) { cerrarDia(); return verCliente(b.dataset.cliente); }
-    if (b.dataset.verCliente != null && !e.target.closest("a,button")) { cerrarDia(); return verCliente(b.dataset.verCliente); }
-    var id = b.dataset.reagendar || b.dataset.hecho || b.dataset.cancelar || b.dataset.eliminarServ || b.dataset.menuCita || b.dataset.menuHecho;
-    var cita = (AGENDA.citas || []).filter(function (c) { return String(c.id) === id; })[0];
-    var hecho = (AGENDA.completados || []).filter(function (c) { return String(c.id) === id; })[0];
-    var svc = cita || hecho; if (!svc) return;
-    cerrarDia();
-    if (b.dataset.menuCita != null) return abrirAccionesServicio(Object.assign({ estado: "programado" }, svc), true);
-    if (b.dataset.menuHecho != null) return abrirAccionesServicio(svc, false);
-    if (b.dataset.reagendar != null) return abrirCita({ cita: svc });
-    if (b.dataset.hecho != null) return marcarCitaHecha(svc);
-    if (b.dataset.cancelar != null) return cancelarCita(svc);
-    if (b.dataset.eliminarServ != null) return eliminarServicio(svc);
-  });
-
-  function moverMes(n) {
-    calMes = new Date(calMes.getFullYear(), calMes.getMonth() + n, 1);
-    pintarCalendario();
-    cerrarPop();
-  }
-
-  /* ---------- Escoger mes y año ----------
-     Los doce meses caben en una cuadrícula de tres por cuatro y se ven
-     todos de una. Los años van en una lista corta alrededor del actual:
-     una agenda de mantenimientos no se consulta a diez años, y una lista
-     larga obliga a rodar para llegar al que casi siempre se quiere. */
-  var ANIOS_ATRAS = 3, ANIOS_ADELANTE = 4;
-
-  function cerrarPop() {
-    $("cal-pop").hidden = true;
-    $("cal-mes").setAttribute("aria-expanded", "false");
-    $("cal-anio").setAttribute("aria-expanded", "false");
-  }
-
-  function abrirPop(tipo) {
-    var y = calMes.getFullYear(), m = calMes.getMonth();
-    var hoy = new Date();
-    var caja = $("cal-pop");
-    var piezas;
-
-    if (tipo === "mes") {
-      piezas = MES_LARGO.map(function (nombre, i) {
-        return '<button type="button" data-mes="' + i + '"' +
-          (i === m ? ' aria-selected="true"' : "") +
-          (i === hoy.getMonth() && y === hoy.getFullYear() ? ' class="es-hoy"' : "") +
-          ">" + escHtml(nombre.slice(0, 3)) + "</button>";
-      }).join("");
+      cont += "</div>";
     } else {
-      piezas = [];
-      for (var a = hoy.getFullYear() - ANIOS_ATRAS; a <= hoy.getFullYear() + ANIOS_ADELANTE; a++) {
-        piezas.push('<button type="button" data-anio="' + a + '"' +
-          (a === y ? ' aria-selected="true"' : "") +
-          (a === hoy.getFullYear() ? ' class="es-hoy"' : "") + ">" + a + "</button>");
+      var pri = new Date(ag2.ancla.getFullYear(), ag2.ancla.getMonth(), 1);
+      var arr = lunesDe(pri);
+      cont = '<div class="ag2-rej">' +
+        ORDEN_AG.map(function (l) { return '<div class="enc">' + l + "</div>"; }).join("") +
+        '</div><div class="ag2-rej">';
+      for (var k = 0; k < 42; k++) {
+        var d2 = new Date(arr); d2.setDate(arr.getDate() + k);
+        if (k >= 35 && d2.getMonth() !== ag2.ancla.getMonth()) break;
+        cont += celdaAg2(d2, hoy, d2.getMonth() !== ag2.ancla.getMonth(), true);
       }
-      piezas = piezas.join("");
+      cont += "</div>";
     }
-
-    caja.className = "cal-pop " + (tipo === "mes" ? "de-mes" : "de-anio");
-    caja.innerHTML = piezas;
-    caja.hidden = false;
-    $("cal-mes").setAttribute("aria-expanded", String(tipo === "mes"));
-    $("cal-anio").setAttribute("aria-expanded", String(tipo === "anio"));
+    $("ag2-tira").innerHTML = cont;
+    $("ag2-mes").innerHTML = escHtml(MES_LARGO[ag2.ancla.getMonth()]) +
+      ' <span>' + ag2.ancla.getFullYear() + "</span>";
   }
 
-  function alternarPop(tipo) {
-    var abierto = !$("cal-pop").hidden &&
-                  $(tipo === "mes" ? "cal-mes" : "cal-anio").getAttribute("aria-expanded") === "true";
-    if (abierto) cerrarPop(); else abrirPop(tipo);
+  function celdaAg2(d, hoy, fuera, soloNum) {
+    var f = isoDe(d), n = cuantosAg(f), pts = "";
+    for (var i = 0; i < Math.min(n, 3); i++) pts += "<i></i>";
+    return '<button type="button" class="ag2-d' + (fuera ? " fuera" : "") +
+      (f === hoy ? " hoy" : "") + '" data-dia-ag="' + f + '"' +
+      ' aria-pressed="' + (f === ag2.dia) + '">' +
+      (soloNum ? "" : '<span class="l">' + DOW_AG[d.getDay()] + "</span>") +
+      '<span class="n">' + d.getDate() + "</span>" +
+      '<span class="pts">' + pts + "</span></button>";
   }
 
-  $("cal-mes").addEventListener("click", function (e) { e.stopPropagation(); alternarPop("mes"); });
-  $("cal-anio").addEventListener("click", function (e) { e.stopPropagation(); alternarPop("anio"); });
+  function pintarAg2Hoja() {
+    if (ag2.vista === "lista") { $("ag2-hoja").innerHTML = listaAg2(); return; }
 
-  $("cal-pop").addEventListener("click", function (e) {
-    var b = e.target.closest("button");
-    if (!b) return;
-    if (b.dataset.mes != null) calMes = new Date(calMes.getFullYear(), Number(b.dataset.mes), 1);
-    else calMes = new Date(Number(b.dataset.anio), calMes.getMonth(), 1);
-    pintarCalendario();
-    cerrarPop();
-  });
+    var g = deDiaAg(ag2.dia);
+    var total = g.citas.length + g.hechos.length + g.toca.length;
+    var d = new Date(ag2.dia + "T12:00:00");
+    var titulo = (ag2.dia === hoyISO() ? "Hoy · " : "") + DIAS_N_AG[d.getDay()] + " " + d.getDate();
 
-  document.addEventListener("click", function (e) {
-    if (!$("cal-pop").hidden && !e.target.closest("#cal-pop")) cerrarPop();
-  });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape") cerrarPop(); });
-  $("mes-antes").addEventListener("click", function () { moverMes(-1); });
-  $("mes-despues").addEventListener("click", function () { moverMes(1); });
-  $("mes-hoy").addEventListener("click", function () {
-    var h = new Date();
-    calMes = new Date(h.getFullYear(), h.getMonth(), 1);
-    pintarCalendario();
-    cerrarPop();
-  });
-
-  var TITULO_AGENDA = {
-    citas: "Trabajos agendados", pronto: "Le toca ahora", vencidos: "Ya se pasó la fecha",
-    trimestre: "Próximos 90 días", apagados: "Sin recordatorio", dia: "Ese día"
-  };
-
-  // Una cita en la lista, con sus acciones. Vale para la vista de citas y
-  // para el día escogido en el calendario.
-  function filaCita(c) {
-    // Card más limpia: se abre el cliente tocándola (como en Clientes).
-    // Solo quedan WhatsApp, Hecho y "⋯" (el resto de acciones va ahí).
-    var acc = [];
-    if (c.wa) acc.push('<a class="bt wa cita-bt" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
-    acc.push('<button type="button" class="bt fuerte cita-bt" data-hecho="' + c.id + '">Hecho</button>');
-    acc.push('<button type="button" class="bt cita-mas" data-menu-cita="' + c.id + '" title="Más acciones" aria-label="Más acciones">' + ICO.puntos + "</button>");
-
-    var atrasada = c.dias < 0;
-    return '<div class="toca-fila cita clic' + (atrasada ? " vencido" : "") + '" data-ver-cliente="' + c.clienteId + '" role="button" tabindex="0">' +
-      '<div class="toca-quien"><b>' + escHtml(c.nombre) + "</b><small>" +
-        piezas([c.servicio, c.lugar, c.hora ? c.hora + " h" : "", c.detalle]) +
-      "</small></div>" +
-      '<span class="toca-cuando es-cita">' + escHtml(atrasada ? "atrasado" : cuando(c.dias)) + "</span>" +
-      '<div class="toca-acc">' + acc.join("") + "</div>" +
-    "</div>";
-  }
-
-  function filaToca(i) {
-    var acc = [];
-    if (i.wa && i.canal !== "correo") {
-      acc.push('<a class="bt wa" href="' + escHtml(i.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Recordar</a>");
-    }
-    if (i.correoEnlace && i.canal !== "whatsapp") {
-      acc.push('<a class="bt" href="' + escHtml(i.correoEnlace) + '">Correo</a>');
-    }
-    acc.push('<button type="button" class="bt" data-cliente="' + i.clienteId + '">Ver</button>');
-
-    return '<div class="toca-fila' + (i.dias < 0 ? " vencido" : "") + '">' +
-      '<div class="toca-quien"><b>' + escHtml(i.nombre) + "</b><small>" +
-        piezas([i.servicio, i.lugar, "último " + fechaLarga(i.fecha)]) +
-      "</small></div>" +
-      '<span class="toca-cuando">' + escHtml(cuando(i.dias)) + "</span>" +
-      '<div class="toca-acc">' + acc.join("") + "</div>" +
-    "</div>";
-  }
-
-  // Fila para un trabajo YA hecho: se muestra tenue, con monto si tiene,
-  // y su menú "⋯" abre las acciones completas (Ver cliente, pago, etc.).
-  function filaHecho(c) {
-    var acc = [];
-    if (c.wa) acc.push('<a class="bt wa cita-bt" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
-    acc.push('<button type="button" class="bt cita-mas" data-menu-hecho="' + c.id + '" title="Más acciones" aria-label="Más acciones">' + ICO.puntos + "</button>");
-    return '<div class="toca-fila cita clic hecho" data-ver-cliente="' + c.clienteId + '" role="button" tabindex="0">' +
-      '<div class="toca-quien"><b>' + escHtml(c.nombre) + "</b><small>" +
-        piezas([c.servicio, c.lugar, c.hora ? c.hora + " h" : "", c.detalle]) +
-      "</small></div>" +
-      '<span class="toca-cuando"><span class="pastilla est-completado">Hecho</span>' +
-        (c.monto ? '<small class="num" style="margin-top:.15rem;">' + escHtml(colones(c.monto)) + '</small>' : '') +
-      '</span>' +
-      '<div class="toca-acc">' + acc.join("") + "</div>" +
-    "</div>";
-  }
-
-  function pintarAgendaLista() {
-    var f = agendaFiltro;
-    var citas = AGENDA.citas || [];
-
-    if (f.tipo === "citas") {
-      $("agenda-titulo").textContent = TITULO_AGENDA.citas;
-      $("agenda-n").textContent = citas.length ? String(citas.length) : "";
-      $("agenda-lista").innerHTML = citas.length
-        ? citas.map(filaCita).join("")
-        : '<p class="vacio-ok">No hay nada agendado. Tocá “Agendar servicio”.</p>';
+    if (!total) {
+      $("ag2-hoja").innerHTML =
+        '<div class="ag2-hcab"><h2>' + escHtml(titulo) + "</h2></div>" +
+        '<div class="ag2-vacio"><b>Nada agendado este día</b>' +
+        "Lo que programe para esta fecha aparece acá." +
+        '<div><button type="button" class="bt fuerte" data-agendar-dia="' + ag2.dia + '">Agendar acá</button></div></div>';
       return;
     }
 
-    if (f.tipo === "dia") {
-      var cd = citas.filter(function (c) { return c.fecha === f.valor; });
-      var hd = (AGENDA.completados || []).filter(function (c) { return c.fecha === f.valor; });
-      var td = AGENDA.items.filter(function (i) { return i.recordatorio && i.proximo === f.valor; });
-      $("agenda-titulo").textContent = fechaLarga(f.valor);
-      $("agenda-n").textContent = (cd.length + hd.length + td.length) ? String(cd.length + hd.length + td.length) : "";
-      if (!cd.length && !hd.length && !td.length) {
-        $("agenda-lista").innerHTML =
-          '<p class="vacio-ok" style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">Nada ese día. ' +
-          '<button type="button" class="bt fuerte" data-agendar-dia="' + f.valor + '">Agendar acá</button></p>';
-        return;
-      }
-      $("agenda-lista").innerHTML = cd.map(filaCita).join("") + hd.map(filaHecho).join("") + td.map(filaToca).join("");
-      return;
-    }
-
-    var items = AGENDA.items.filter(function (i) {
-      if (f.tipo === "apagados") return !i.recordatorio;
-      if (!i.recordatorio) return false;
-      if (f.tipo === "vencidos") return i.dias < 0;
-      if (f.tipo === "trimestre") return i.dias >= 0 && i.dias <= 90;
-      return i.dias <= 30;
+    /* Sólo las horas que tienen algo: con tres trabajos al día, pintar de
+       6:00 a 18:30 serían veinticinco renglones vacíos. Lo que no tiene
+       hora se agrupa aparte y no se pierde. */
+    var filas = g.citas.concat(g.hechos);
+    var grupos = [], ix = {};
+    filas.forEach(function (t) {
+      var k = t.hora || "";
+      if (ix[k] == null) { ix[k] = grupos.length; grupos.push({ hora: k, lista: [] }); }
+      grupos[ix[k]].lista.push(t);
     });
 
-    $("agenda-titulo").textContent = TITULO_AGENDA[f.tipo] || "Le toca";
-    $("agenda-n").textContent = items.length ? String(items.length) : "";
-    $("agenda-lista").innerHTML = items.length
-      ? items.map(filaToca).join("")
-      : '<p class="vacio-ok">Nadie por acá.</p>';
+    $("ag2-hoja").innerHTML =
+      '<div class="ag2-hcab"><h2>' + escHtml(titulo) + "</h2>" +
+        '<span class="ag2-cuenta">' + total + (total === 1 ? " trabajo" : " trabajos") + "</span></div>" +
+      '<ol class="riel">' + grupos.map(function (gr) {
+        return '<li class="hora"><span class="hora-et">' +
+          (gr.hora ? horaBonita(gr.hora) + "<small>" + ampmDe(gr.hora) + "</small>"
+                   : "<small>SIN&nbsp;HORA</small>") +
+          '</span><div class="hora-caja">' + gr.lista.map(function (t) {
+            return pildoraAg2(t, t.estado === "completado" ? "hecho" : "cita", false);
+          }).join("") + "</div></li>";
+      }).join("") + "</ol>" +
+      (g.toca.length
+        ? '<ol class="riel" style="margin-top:.6rem"><li class="hora">' +
+          '<span class="hora-et"><small>LE&nbsp;TOCA</small></span>' +
+          '<div class="hora-caja">' + g.toca.map(function (t) { return pildoraAg2(t, "toca", false); }).join("") +
+          "</div></li></ol>"
+        : "");
   }
 
-  $("agenda-lista").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-cliente],[data-reagendar],[data-hecho],[data-cancelar],[data-eliminar-serv],[data-agendar-dia],[data-menu-cita]");
-    if (!b) {
-      // Clic en el cuerpo de la card (no en un botón/enlace) → ver cliente.
-      var card = e.target.closest("[data-ver-cliente]");
-      if (card && !e.target.closest("a,button")) return verCliente(card.getAttribute("data-ver-cliente"));
+  /* Una píldora. `tipo` decide el color del chip y qué acciones trae:
+       cita  → lo agendado, con Hecho y el menú completo
+       hecho → lo ya realizado, tenue
+       toca  → un recordatorio: todavía NO es un trabajo, así que lo único
+               que ofrece es agendarlo. */
+  function pildoraAg2(c, tipo, conHora) {
+    var key = tipo === "toca" ? null : c.servicioKey;
+    var sv = svAg(key);
+    var abierto = ag2.abierto === tipo + ":" + c.id;
+    var marca = tipo === "hecho"
+      ? '<span class="pastilla ok">Hecho</span>'
+      : (tipo === "toca" ? '<span class="pastilla ' + (c.dias < 0 ? "mal" : "espera") + '">' +
+          escHtml(c.dias < 0 ? "Vencido" : "Le toca") + "</span>" : "");
+    return '<div class="trab">' +
+      '<button type="button" class="pild' + (tipo === "hecho" ? " hecho" : "") +
+        '" data-abrir-ag="' + tipo + ":" + c.id + '" aria-expanded="' + abierto + '"' +
+        ' style="--sv:' + sv.c + ";--tinte:" + tinteAg(key) + '">' +
+        '<span class="ag2-chip">' + icoAg(key) + "</span>" +
+        '<span class="pild-t"><b>' + escHtml(c.nombre) + "</b>" +
+          '<small><span>' + escHtml(c.servicio || "") +
+          (conHora && c.hora ? " · " + escHtml(horaBonita(c.hora)) + " " + ampmDe(c.hora) : "") +
+          "</span>" + marca + "</small></span>" +
+        '<span class="pild-fl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>' +
+      "</button>" +
+      '<div class="det"><div><div class="det-caja">' + detalleAg2(c, tipo) + "</div></div></div>" +
+    "</div>";
+  }
+
+  var I_NOTA_AG = '<path d="M5 4.5h14v15H5z"/><path d="M8 9h8M8 13h8M8 17h4"/>';
+  var I_PIN_AG = '<path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/>';
+  var I_PLATA_AG = '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M9.5 10h5M9.5 14h5"/>';
+  function filaDet(icono, txt) {
+    if (!txt) return "";
+    return '<div class="det-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + icono +
+      "</svg><span>" + escHtml(txt) + "</span></div>";
+  }
+
+  function detalleAg2(c, tipo) {
+    var acc = [];
+    if (tipo === "toca") {
+      if (c.wa && c.canal !== "correo") {
+        acc.push('<a class="bt wa" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Recordar</a>");
+      }
+      acc.push('<button type="button" class="bt fuerte" data-agendar-dia="' + escHtml(c.proximo) + '">Agendar</button>');
+      acc.push('<button type="button" class="bt" data-cliente="' + c.clienteId + '">Ver cliente</button>');
+      return filaDet(I_NOTA_AG, c.detalle) +
+        filaDet(I_PIN_AG, c.lugar) +
+        filaDet(I_NOTA_AG, c.fecha ? "Último trabajo: " + fechaLarga(c.fecha) : "") +
+        '<div class="det-acc">' + acc.join("") + "</div>";
+    }
+
+    if (c.wa) acc.push('<a class="bt wa" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
+    if (tipo === "cita") acc.push('<button type="button" class="bt fuerte" data-hecho="' + c.id + '">Hecho</button>');
+    acc.push('<button type="button" class="bt" data-cliente="' + c.clienteId + '">Ver cliente</button>');
+    acc.push('<button type="button" class="bt" data-menu-cita="' + c.id + '" title="Más acciones" aria-label="Más acciones">' + ICO.puntos + "</button>");
+
+    return filaDet(I_NOTA_AG, c.detalle) +
+      filaDet(I_PIN_AG, [c.lugar, c.senas].filter(Boolean).join(" · ")) +
+      filaDet(I_NOTA_AG, c.nota) +
+      (c.monto ? filaDet(I_PLATA_AG, colones(c.monto)) : "") +
+      '<div class="det-acc">' + acc.join("") + "</div>";
+  }
+
+  /* Modo lista: los mismos registros, pero corridos por fecha. Es lo que
+     antes era la pantalla de Servicios. */
+  function listaAg2() {
+    var todo = (AGENDA.citas || []).map(function (c) { return { t: "cita", c: c }; })
+      .concat((AGENDA.completados || []).map(function (c) { return { t: "hecho", c: c }; }));
+    if (!todo.length) {
+      return '<div class="ag2-vacio"><b>No hay trabajos</b>' +
+        "Lo que agende o marque como hecho aparece acá." +
+        '<div><button type="button" class="bt fuerte" data-agendar-dia="' + hoyISO() + '">Agendar servicio</button></div></div>';
+    }
+    todo.sort(function (a, b) {
+      return (b.c.fecha + (b.c.hora || "00")).localeCompare(a.c.fecha + (a.c.hora || "00"));
+    });
+    var dias = [], ix = {};
+    todo.forEach(function (x) {
+      if (ix[x.c.fecha] == null) { ix[x.c.fecha] = dias.length; dias.push({ f: x.c.fecha, lista: [] }); }
+      dias[ix[x.c.fecha]].lista.push(x);
+    });
+    return dias.map(function (g) {
+      var d = new Date(g.f + "T12:00:00");
+      var et = (g.f === hoyISO() ? "Hoy · " : "") + DIAS_N_AG[d.getDay()] + " " +
+               d.getDate() + " " + MES_LARGO[d.getMonth()];
+      return '<div class="ag2-dia-lista">' + escHtml(et) + "</div>" +
+        g.lista.map(function (x) { return pildoraAg2(x.c, x.t, true); }).join("");
+    }).join("");
+  }
+
+  /* ---- Gestos ---- */
+  $("ag2-tira").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-dia-ag]");
+    if (!b) return;
+    ag2.dia = b.dataset.diaAg;
+    ag2.ancla = new Date(ag2.dia + "T12:00:00");
+    ag2.abierto = null;
+    pintarAg2();
+  });
+
+  function conmAg(id, fn) {
+    $(id).addEventListener("click", function (e) {
+      var b = e.target.closest("button[data-v]"); if (!b) return;
+      Array.prototype.forEach.call(this.children, function (x) {
+        x.setAttribute("aria-pressed", String(x === b));
+      });
+      fn(b.dataset.v);
+    });
+  }
+  conmAg("ag2-rango", function (v) { ag2.rango = v; pintarAg2(); });
+  conmAg("ag2-vista", function (v) { ag2.vista = v; ag2.abierto = null; pintarAg2Hoja(); });
+
+  function moverAg(n) {
+    var a = new Date(ag2.ancla);
+    if (ag2.rango === "semana") a.setDate(a.getDate() + 7 * n);
+    else a.setMonth(a.getMonth() + n, 1);
+    ag2.ancla = a; ag2.abierto = null;
+    pintarAg2();
+  }
+  $("ag2-antes").addEventListener("click", function () { moverAg(-1); });
+  $("ag2-despues").addEventListener("click", function () { moverAg(1); });
+  $("ag2-hoy").addEventListener("click", function () {
+    ag2.dia = hoyISO(); ag2.ancla = new Date(ag2.dia + "T12:00:00"); ag2.abierto = null;
+    pintarAg2();
+  });
+
+  $("ag2-hoja").addEventListener("click", function (e) {
+    /* Abrir el detalle en su lugar: sólo cambia el aria-expanded y el CSS
+       hace crecer la caja hasta su altura real. */
+    var a = e.target.closest("[data-abrir-ag]");
+    if (a && !e.target.closest(".det")) {
+      ag2.abierto = (ag2.abierto === a.dataset.abrirAg) ? null : a.dataset.abrirAg;
+      $("ag2-hoja").querySelectorAll("[data-abrir-ag]").forEach(function (x) {
+        x.setAttribute("aria-expanded", String(x.dataset.abrirAg === ag2.abierto));
+      });
       return;
     }
+
+    var b = e.target.closest("[data-cliente],[data-hecho],[data-menu-cita],[data-agendar-dia]");
+    if (!b) return;
     if (b.dataset.cliente != null) return verCliente(b.dataset.cliente);
     if (b.dataset.agendarDia != null) return abrirCita({ fecha: b.dataset.agendarDia });
-    var buscar = b.dataset.reagendar || b.dataset.hecho || b.dataset.cancelar || b.dataset.eliminarServ || b.dataset.menuCita;
-    var cita = (AGENDA.citas || []).filter(function (c) { return String(c.id) === buscar; })[0];
-    if (!cita) return;
-    // El menú "⋯" abre las MISMAS acciones que Servicios y la ficha.
-    // Una cita de la agenda es un servicio 'programado'.
-    if (b.dataset.menuCita != null) return abrirAccionesServicio(Object.assign({ estado: "programado" }, cita), true);
-    if (b.dataset.reagendar != null) return abrirCita({ cita: cita });
-    if (b.dataset.hecho != null) return marcarCitaHecha(cita);
-    if (b.dataset.cancelar != null) return cancelarCita(cita);
-    if (b.dataset.eliminarServ != null) return eliminarServicio(cita);
+    var id = b.dataset.hecho || b.dataset.menuCita;
+    var svc = (AGENDA.citas || []).filter(function (c) { return String(c.id) === id; })[0] ||
+              (AGENDA.completados || []).filter(function (c) { return String(c.id) === id; })[0];
+    if (!svc) return;
+    // El menú "⋯" abre las MISMAS acciones que Servicios y la ficha: una
+    // cita de la agenda es un servicio, no otra cosa.
+    if (b.dataset.menuCita != null) {
+      return abrirAccionesServicio(Object.assign({ estado: svc.estado || "programado" }, svc), true);
+    }
+    if (b.dataset.hecho != null) return marcarCitaHecha(svc);
   });
 
-  // Enter/Espacio sobre una card de la agenda abre el cliente.
-  $("agenda-lista").addEventListener("keydown", function (e) {
-    if (e.key !== "Enter" && e.key !== " ") return;
-    var card = e.target.closest("[data-ver-cliente]");
-    if (card && e.target === card) { e.preventDefault(); verCliente(card.getAttribute("data-ver-cliente")); }
-  });
-
-  // Eliminar un trabajo programado creado por error → a la papelera
-  // (distinto de Cancelar, que lo deja como 'cancelado'). §22.
   function eliminarServicio(c) {
     if (!confirm("¿Eliminar este trabajo de " + c.nombre + "?\n\nVa a la papelera; se puede restaurar.")) return;
     pedir("/api/panel/borrar", {
