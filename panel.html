@@ -1315,9 +1315,25 @@
   .pg-ok  { color: var(--est-ok-tx); }
   .pg-mid { color: var(--est-espera-tx); }
   .pg-bad { color: var(--est-mal-tx); }
-  .cli-fin { display: flex; gap: 1rem 1.4rem; flex-wrap: wrap; margin-top: .5rem; font-size: .9rem; color: var(--p-tenue); }
-  .cli-fin b { color: var(--p-txt); font-weight: 600; }
-  .cli-fin .cli-debe b { color: var(--est-mal-tx); }
+  /* Los datos del cliente, etiquetados. Antes iban todos seguidos en una
+     sola línea separados por puntos, y encima mezclados con la plata: no
+     se podía buscar un dato concreto y lo personal se confundía con lo
+     del trabajo. Acá sólo va quién es y cómo se le llega; lo que debe
+     vive con su historial, que es donde se puede hacer algo al respecto. */
+  .cli-datos {
+    /* Dos columnas como mucho: con tres, la etiqueta se come el ancho y
+       la dirección sale partida en tres renglones. */
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+    gap: 0 2rem; margin-top: 1rem; padding-top: .9rem;
+    border-top: 1px solid var(--p-linea);
+  }
+  .cli-d { display: flex; align-items: baseline; gap: .7rem; padding: .32rem 0; font-size: .88rem; }
+  .cli-d dt { flex: 0 0 5.4rem; color: var(--p-tenue); font-size: .8rem; }
+  .cli-d dd { margin: 0; min-width: 0; }
+  /* Lo que falta cobrar vive en la cabecera del historial. */
+  .cli-debe { font-size: .85rem; color: var(--p-tenue); }
+  .cli-debe b { color: var(--est-mal-tx); font-weight: 600; }
+  .tarj-h .acc-h { margin-left: auto; display: flex; gap: .4rem; flex-wrap: wrap; }
   /* Expediente 360°: las otras cosas del cliente (cotizaciones,
      solicitudes, mantenimientos). Tres columnas en pantalla ancha,
      apiladas en el teléfono. Cada fila lleva a su lista. */
@@ -2828,9 +2844,6 @@
 <div class="velo" id="velo-trabajo" hidden>
   <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="t-titulo">
     <h2 id="t-titulo">Anotar un trabajo</h2>
-    <p class="dim" style="color:var(--p-tenue); margin:.3rem 0 1.1rem;">
-      Para el que llamó y se le hizo el trabajo, sin cotización de por medio.
-    </p>
 
     <div class="nueva-rejilla">
       <div class="f"><label for="t-telefono">Teléfono</label>
@@ -2983,9 +2996,6 @@
 <div class="velo" id="velo-mantenimientos" hidden>
   <div class="hoja hoja-ancha" role="dialog" aria-modal="true" aria-labelledby="mant-t">
     <h2 id="mant-t">Mantenimientos</h2>
-    <p class="dim" style="color:var(--p-tenue); margin:.3rem 0 1.1rem;">
-      A quién le toca y cuándo. Los vencidos van de primero. El historial guarda los ya hechos y los reemplazados.
-    </p>
     <div id="mant-cuerpo"></div>
     <div class="hoja-pie">
       <button type="button" class="btn-suave" id="mant-cerrar">Cerrar</button>
@@ -2996,8 +3006,11 @@
 <div class="velo" id="velo-papelera" hidden>
   <div class="hoja hoja-ancha" role="dialog" aria-modal="true" aria-labelledby="pap-t">
     <h2 id="pap-t">Papelera</h2>
+    <!-- De las dos frases que había, sobrevive la que evita un error.
+         "Lo que se borra queda acá y se puede restaurar" lo dice la
+         pantalla sola; que eliminar desde acá no tenga vuelta, no. -->
     <p class="dim" style="color:var(--p-tenue); margin:.3rem 0 1.1rem;">
-      Lo que se borra no se pierde: queda acá y se puede restaurar. Eliminar desde acá sí es definitivo.
+      Eliminar desde acá es definitivo.
     </p>
     <div id="pap-cuerpo"></div>
     <p class="estado-linea" id="pap-aviso" role="status" aria-live="polite"></p>
@@ -3046,9 +3059,6 @@
 <div class="velo" id="velo" hidden>
   <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="hoja-t">
     <h2 id="hoja-t">Anotar el trabajo</h2>
-    <p class="dim" style="color:var(--p-tenue); margin:.3rem 0 1.1rem;">
-      Con esto queda el cliente registrado y el recordatorio armado.
-    </p>
     <div class="nueva-rejilla">
       <div class="f"><label for="h-fecha">Se hizo el</label><input type="date" id="h-fecha"></div>
       <div class="f"><label for="h-monto">Se cobró</label><input type="text" id="h-monto" inputmode="numeric" autocomplete="off" placeholder="₡65.000"></div>
@@ -5290,10 +5300,12 @@
   function pintarCliente(d) {
     fichaActual = d;               // para el recuadro de pagos (F3)
     var c = d.cliente;
+    /* Las acciones se reparten igual que la información: con la persona
+       van las de contactarla y corregirla; cotizar y agendar son sobre el
+       trabajo y se van con el historial. */
     var acc = [];
     if (c.wa) acc.push('<a class="bt wa" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
     acc.push('<a class="bt" href="tel:+506' + escHtml(String(c.telefono).replace(/\D/g, "")) + '">' + ICO.tel + "Llamar</a>");
-    acc.unshift('<button type="button" class="bt fuerte" id="cf-cotizar">' + ICO.mas + "Nueva cotización</button>");
     acc.push('<button type="button" class="bt" id="cf-editar-btn">' + ICO.lapiz + "Editar cliente</button>");
     acc.push('<button type="button" class="bt malo" id="cf-eliminar">' + ICO.basura + "Eliminar</button>");
 
@@ -5322,15 +5334,19 @@
         }).join("") + "</ul>"
       : '<p class="vacio-ok">Todavía no hay trabajos anotados.</p>';
 
-    // Resumen económico del cliente (F3).
-    var fin = "";
-    if ((d.cliente.cobrado || 0) > 0 || (d.cliente.saldoPendiente || 0) > 0) {
-      fin = '<div class="cli-fin">' +
-        '<span>Cobrado <b class="num">' + escHtml(colones(d.cliente.cobrado || 0)) + "</b></span>" +
-        ((d.cliente.saldoPendiente || 0) > 0
-          ? '<span class="cli-debe">Saldo pendiente <b class="num">' + escHtml(colones(d.cliente.saldoPendiente)) + "</b></span>"
-          : "") +
-      "</div>";
+    /* El "Cobrado" de toda la vida se quitó: era un acumulado que no
+       lleva a ninguna decisión y además repetía lo que ya dice cada
+       trabajo del historial. Lo que sí queda es lo que falta cobrar,
+       porque eso sí pide hacer algo — y por eso vive junto al historial
+       y no junto al teléfono del cliente. */
+    var debe = (d.cliente.saldoPendiente || 0) > 0
+      ? '<span class="cli-debe">Falta cobrar <b class="num">' +
+        escHtml(colones(d.cliente.saldoPendiente)) + "</b></span>"
+      : "";
+
+    function dato(etq, valor) {
+      if (!valor) return "";
+      return '<div class="cli-d"><dt>' + escHtml(etq) + "</dt><dd>" + valor + "</dd></div>";
     }
 
     // Expediente 360° (§21): cotizaciones, solicitudes y mantenimientos
@@ -5383,10 +5399,17 @@
     $("cliente-cuerpo").innerHTML =
       '<div class="tarj">' +
         '<div class="perfil-cab">' +
-          "<div><h2>" + escHtml(c.nombre) + "</h2>" +
-            '<div class="sub">' + piezas([tel(c.telefono), lugar]) + "</div>" + fin + "</div>" +
+          "<div><h2>" + escHtml(c.nombre) + "</h2></div>" +
           '<div class="acc-cab">' + acc.join("") + "</div>" +
         "</div>" +
+        '<dl class="cli-datos">' +
+          dato("Teléfono", escHtml(tel(c.telefono))) +
+          dato("Correo", escHtml(c.correo)) +
+          dato("Cédula", escHtml(c.cedula)) +
+          dato("Dirección", escHtml(lugar)) +
+          dato("Otras señas", escHtml(c.senas)) +
+          dato("Nota", escHtml(c.nota)) +
+        "</dl>" +
         '<div id="cf-editar" hidden>' +
         '<div class="nueva-rejilla">' +
           campo("cf-nombre", "Nombre", c.nombre) +
@@ -5413,8 +5436,11 @@
         "</div>" +   /* cierra #cf-editar */
       "</div>" +
       '<div class="tarj" style="margin-top:1rem;">' +
-        '<div class="tarj-h"><h2>Historial</h2>' +
-          '<button type="button" class="bt fuerte" id="cf-agendar">' + ICO.mas + "Agendar servicio</button>" +
+        '<div class="tarj-h"><h2>Historial</h2>' + debe +
+          '<div class="acc-h">' +
+            '<button type="button" class="bt" id="cf-cotizar">' + ICO.mas + "Cotizar</button>" +
+            '<button type="button" class="bt fuerte" id="cf-agendar">' + ICO.mas + "Agendar servicio</button>" +
+          "</div>" +
         "</div>" + hist +
       "</div>" + exp;
 
