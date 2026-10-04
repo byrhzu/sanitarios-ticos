@@ -1952,29 +1952,86 @@
      El color ya no distingue bloques (de eso se encargan la posicion y el
      titulo); queda solo donde significa algo: lo vencido y lo que falta
      cobrar. El conteo tampoco es una capsula de color, es un numero. */
-  .hoy-cuerpo { display: flex; flex-direction: column; }
-  .hoy-bloque { display: flex; flex-direction: column; gap: .5rem; }
-  .hoy-bloque + .hoy-bloque {
-    margin-top: 2.1rem; padding-top: 1.5rem;
-    border-top: 1px solid var(--p-borde);
+  /* =====================================================================
+     PENDIENTES
+     Lo que pide respuesta y todavía NO tiene fecha. Esa es toda la línea
+     que lo separa de la Agenda, y es la que hace que nada quede en dos
+     sitios: lo que ya tiene fecha vive en el calendario.
+
+     Mismo armado que la Agenda —filtros arriba, piezas que se abren en su
+     lugar— para que la aplicación hable un solo idioma.
+     ===================================================================== */
+  .pend-cuerpo { display: block; }
+  .pend-filtros {
+    display: flex; gap: .45rem; margin-bottom: 1.3rem; overflow-x: auto;
+    scrollbar-width: none; padding-bottom: .15rem;
   }
-  .hoy-bh { display: flex; align-items: baseline; gap: .55rem; margin-bottom: .15rem; }
-  .hoy-bh h2 {
-    font-family: var(--display); font-size: 1.14rem; font-weight: 600;
-    margin: 0; letter-spacing: -.015em;
+  .pend-filtros::-webkit-scrollbar { display: none; }
+  .pend-f {
+    flex: 0 0 auto; display: inline-flex; align-items: center; gap: .45rem;
+    height: 2.1rem; padding: 0 .85rem; border-radius: 999px; white-space: nowrap;
+    font-size: .8rem; font-weight: 600; color: var(--p-txt2);
+    background: var(--p-ctrl); border: 1px solid var(--p-ctrl-bd);
+    transition: background .18s var(--ease), color .18s var(--ease), border-color .18s var(--ease);
   }
-  .hoy-badge {
-    font-family: var(--datos); font-size: .84rem; font-weight: 600;
-    color: var(--p-tenue); font-variant-numeric: tabular-nums;
+  .pend-f .n {
+    font-family: var(--datos); font-size: .68rem; font-weight: 700; line-height: 1;
+    padding: .2rem .34rem; border-radius: 999px; min-width: 1.1rem; text-align: center;
+    background: var(--tono, var(--p-tenue)); color: var(--p-sup);
   }
-  /* Solo cuando el numero ES el problema se tine. */
-  .hoy-bloque.t-mal .hoy-badge { color: var(--est-mal-tx); }
-  /* En el telefono los botones de la fila caen a su propio renglon, asi
-     que el aire entre secciones ya viene dado: se recorta. */
-  @media (max-width: 640px) {
-    .hoy-bloque + .hoy-bloque { margin-top: 1.5rem; padding-top: 1.2rem; }
-    .hoy-bh h2 { font-size: 1.08rem; }
+  .pend-f[aria-pressed="true"] { background: var(--p-primario); border-color: transparent; color: #fff; }
+  .pend-f[aria-pressed="true"] .n { background: rgba(255,255,255,.26); color: #fff; }
+
+  .pend-sec + .pend-sec { margin-top: 1.8rem; }
+  .pend-h { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .6rem; }
+  .pend-h h2 {
+    font-family: var(--display); font-size: 1.04rem; font-weight: 600;
+    letter-spacing: -.015em; margin: 0;
   }
+  .pend-h .n { font-family: var(--datos); font-size: .8rem; font-weight: 600; color: var(--tono); }
+
+  /* El filo de color de la izquierda dice de qué tipo es el pendiente. No
+     es decorativo y no inventa tonos: sale de los colores de estado que el
+     panel ya usa. Rojo = plata sin cobrar. Ámbar = se pasó la fecha.
+     Azul = algo nuevo entró. Gris = se está enfriando. */
+  .pcard {
+    position: relative; overflow: hidden; margin-bottom: .5rem;
+    border: 1px solid var(--p-borde); border-radius: 16px;
+    background: var(--p-tarj); box-shadow: var(--p-alza-fila);
+  }
+  .pcard::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--tono); z-index: 1;
+  }
+  .pcab {
+    width: 100%; display: flex; align-items: flex-start; gap: .6rem; text-align: left;
+    padding: .75rem .8rem .75rem 1.05rem;
+  }
+  .pcab-t { flex: 1; min-width: 0; }
+  .pcab-t b {
+    display: block; font-size: .93rem; font-weight: 600; letter-spacing: -.015em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pcab-t .cuanto {
+    display: block; margin-top: .25rem;
+    font-family: var(--datos); font-size: .82rem; font-weight: 600; color: var(--tono);
+  }
+  .pcab-t small { display: block; color: var(--p-tenue); font-size: .76rem; margin-top: .15rem; }
+  .pcab-der { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; }
+  .pcab-fl { color: var(--p-tenue); display: inline-flex; transition: transform .28s var(--ease); }
+  .pcab-fl svg { width: 17px; height: 17px; }
+  .pcab[aria-expanded="true"] .pcab-fl { transform: rotate(180deg); }
+  .ptag {
+    display: inline-flex; align-items: center; padding: .2rem .55rem; border-radius: 999px;
+    font-size: .7rem; font-weight: 600; white-space: nowrap;
+    background: color-mix(in srgb, var(--tono) 14%, transparent); color: var(--tono);
+  }
+  .pcab[aria-expanded="true"] + .det { grid-template-rows: 1fr; }
+  .pcard .det-caja { padding: 0 .8rem .35rem 1.05rem; }
+
+  .pend-vacio { text-align: center; color: var(--p-tenue); padding: 3.5rem 1rem; }
+  .pend-vacio b { display: block; color: var(--p-txt); font-size: 1rem; margin-bottom: .35rem; }
+  .pend-vacio svg { width: 34px; height: 34px; color: var(--est-ok-tx); margin-bottom: .7rem; }
   .hoy-nota { margin: .7rem 0 0; color: var(--p-tenue); font-size: .8rem; }
   /* Top clientes: ranking con posición, nombre, barra y monto. */
   #top-clientes { display: flex; flex-direction: column; gap: .5rem; }
@@ -2370,7 +2427,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3.5 7.2 5.4 9l3.2-3.4M13 7.2h7.5M3.5 16.8l1.9 1.8 3.2-3.4M13 16.8h7.5"/>
         </svg>
-        Hoy<span class="pendiente" id="pend-hoy" hidden></span>
+        Pendientes<span class="pendiente" id="pend-hoy" hidden></span>
       </button>
       <button type="button" role="tab" data-vista="resumen" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -2544,9 +2601,11 @@
     <div class="vista" id="vista-hoy">
       <p class="estado-linea" id="estado-hoy" role="status" aria-live="polite"></p>
 
-      <!-- Hoy = operativo. Cinco bloques con una lista corta cada uno.
-           Nada que se repita en el Resumen: acá va lo que decide el día. -->
-      <div id="hoy-cuerpo" class="hoy-cuerpo"></div>
+      <!-- Pendientes: lo que pide respuesta y todavía NO tiene fecha. Los
+           trabajos del día se fueron a la Agenda, que abre en hoy.
+           El id sigue siendo `hoy-cuerpo` a propósito: el renombre va con
+           el reacomodo de pestañas, para no tocar el enrutador dos veces. -->
+      <div id="hoy-cuerpo" class="pend-cuerpo"></div>
     </div>
 
     <!-- ================= RESUMEN =================
@@ -3366,7 +3425,7 @@
   var filtro = { desde: "", hasta: "", estado: "", provincia: "", servicio: "", origen: "", buscar: "", svista: "" };
 
   var NOMBRE_VISTA = {
-    hoy: "Hoy", resumen: "Resumen", cotizaciones: "Cotizaciones", solicitudes: "Solicitudes",
+    hoy: "Pendientes", resumen: "Resumen", cotizaciones: "Cotizaciones", solicitudes: "Solicitudes",
     clientes: "Clientes", cliente: "Cliente", servicios: "Servicios", agenda: "Agenda", nueva: "Nueva cotización"
   };
 
@@ -3643,118 +3702,172 @@
 
   /* Hoy = cinco bloques operativos. Cada uno una lista corta con enlace
      directo. Nada se repite con el Resumen. */
+  /* =====================================================================
+     PENDIENTES
+     Lo que pide respuesta y todavía NO tiene fecha. Lo que sí la tiene
+     —los trabajos del día— vive en la Agenda, que abre en hoy. Con esa
+     línea cada cosa tiene UN solo lugar.
+
+     El orden es el del negocio, no el del reloj: primero la plata que ya
+     se ganó, después la que se está por perder.
+
+     NOTA: por dentro esta vista todavía se llama `hoy` (el id, el
+     data-vista y #hoy-cuerpo). El renombre va con el reacomodo de
+     pestañas, para no tocar el enrutador dos veces.
+     ===================================================================== */
+  var GRUPOS_P = [
+    { id: "cobros",       titulo: "Cobros pendientes",         corto: "Cobros",
+      tono: "var(--est-mal-tx)" },
+    { id: "mantenimientos", titulo: "Mantenimientos vencidos",  corto: "Mantenimientos",
+      tono: "var(--est-espera-tx)" },
+    { id: "solicitudes",  titulo: "Solicitudes nuevas",         corto: "Solicitudes",
+      tono: "var(--p-primario)" },
+    { id: "cotizaciones", titulo: "Cotizaciones sin respuesta", corto: "Cotizaciones",
+      tono: "var(--p-tenue)" }
+  ];
+  var pendFiltro = "todo", pendAbierto = null, PEND = null;
+
   function pintarHoy(d) {
     ultimoResumen = d;
     var h = d.hoy || {};
-    var out = [];
+    PEND = {
+      cobros: h.cobrosPend || [],
+      mantenimientos: (h.mantenimientos && h.mantenimientos.vencidos) || [],
+      solicitudes: h.solicitudes || [],
+      cotizaciones: h.cotizSinServicio || []
+    };
+    pendAbierto = null;
+    pintarPendientes();
+  }
 
-    function bloque(titulo, badge, cuerpo, tono) {
-      return '<section class="hoy-bloque' + (tono ? " t-" + tono : "") + '">' +
-        '<div class="hoy-bh"><h2>' + escHtml(titulo) + "</h2>" +
-          (badge != null ? '<span class="hoy-badge">' + badge + "</span>" : "") + "</div>" +
-        cuerpo + "</section>";
-    }
+  function pintarPendientes() {
+    var total = GRUPOS_P.reduce(function (n, g) { return n + PEND[g.id].length; }, 0);
 
-    // 1. Trabajos de hoy — la lista más importante del día.
-    var tr = h.trabajos || [];
-    var trHtml = tr.length ? tr.map(function (t) {
-      return '<div class="toca-fila clic" data-ver-cliente="' + t.clienteId + '" role="button" tabindex="0">' +
-        '<div class="toca-quien"><b>' + escHtml(t.nombre) + "</b><small>" +
-          piezas([t.servicio, t.hora ? t.hora + " h" : "", t.detalle]) +
-        "</small></div>" +
-        '<div class="toca-acc">' +
-          (t.wa ? '<a class="bt wa cita-bt" href="' + escHtml(t.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>" : "") +
-          '<button type="button" class="bt fuerte cita-bt" data-hoy-hecho="' + t.id + '">Hecho</button>' +
-        "</div>" +
-      "</div>";
-    }).join("") : '<p class="vacio-ok">Nada agendado para hoy.</p>';
-    out.push(bloque("Trabajos de hoy", tr.length || null, trHtml, tr.length ? "ok" : ""));
-
-    // 2. Cobros pendientes — plata que ya se ganó y falta cobrar.
-    var cp = h.cobrosPend || [];
-    if (cp.length) {
-      var cpHtml = cp.slice(0, 5).map(function (c) {
-        return '<div class="toca-fila clic" data-ver-cliente="' + c.clienteId + '" role="button" tabindex="0">' +
-          '<div class="toca-quien"><b>' + escHtml(c.nombre) + "</b><small>" +
-            piezas([c.servicio, fechaLarga(c.fecha)]) +
-          "</small></div>" +
-          '<span class="toca-cuando">' +
-            '<span class="num pg-bad">Falta ' + escHtml(colones(c.saldo)) + "</span>" +
-          "</span>" +
-          '<div class="toca-acc">' +
-            (c.wa ? '<a class="bt wa cita-bt" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Cobrar</a>" : "") +
-          "</div>" +
-        "</div>";
-      }).join("");
-      out.push(bloque("Cobros pendientes", cp.length, cpHtml, "mal"));
-    }
-
-    // 3. Mantenimientos vencidos + de esta semana.
-    var mv = (h.mantenimientos && h.mantenimientos.vencidos) || [];
-    var ms = (h.mantenimientos && h.mantenimientos.semana) || [];
-    if (mv.length || ms.length) {
-      var mHtml = mv.concat(ms).slice(0, 6).map(function (p) {
-        var venc = p.dias < 0;
-        return '<div class="toca-fila' + (venc ? " vencido" : "") + ' clic" data-ver-cliente="' + p.clienteId + '" role="button" tabindex="0">' +
-          '<div class="toca-quien"><b>' + escHtml(p.nombre) + "</b><small>" +
-            piezas([p.servicio, p.lugar]) +
-          "</small></div>" +
-          '<span class="toca-cuando">' +
-            reloj(cuando(p.dias), venc ? "baja" : "espera") +
-          "</span>" +
-        "</div>";
-      }).join("");
-      out.push(bloque("Mantenimientos", mv.length + ms.length,
-        mHtml + (mv.length ? '<p class="hoy-nota">' + mv.length + " vencido" + (mv.length === 1 ? "" : "s") + ".</p>" : ""),
-        mv.length ? "mal" : "espera"));
-    }
-
-    // 4. Solicitudes nuevas (24 h).
-    var sn = h.solicitudes || [];
-    if (sn.length) {
-      var snHtml = sn.map(function (s) {
-        // Misma fila que el resto de Hoy: eran tarjetas con franja de color
-        // dentro de otra tarjeta. La urgencia ya la dice el reloj.
-        return '<div class="toca-fila clic" data-ir=\'' +
-          escHtml(JSON.stringify({ vista: "solicitudes" })) + "'>" +
-          '<div class="toca-quien"><b>' + escHtml(s.nombre || "Sin nombre") + "</b><small>" +
-            piezas([s.servicio, s.zona]) +
-          "</small></div>" +
-          '<span class="toca-cuando">' +
-            reloj(espera(s.horas), s.horas >= 24 ? "baja" : "espera") +
-          "</span>" +
-        "</div>";
-      }).join("");
-      out.push(bloque("Solicitudes nuevas", sn.length, snHtml, "espera"));
-    }
-
-    // 5. Cotizaciones sin servicio (14 d) — ventas dormidas.
-    var cs = h.cotizSinServicio || [];
-    if (cs.length) {
-      var csHtml = cs.slice(0, 6).map(function (c) {
-        return '<div class="toca-fila clic" data-ir=\'' +
-          escHtml(JSON.stringify({ vista: "cotizaciones", buscar: c.numero })) + "'>" +
-          '<div class="toca-quien"><b>' + escHtml(c.nombre || "Sin nombre") + "</b><small>" +
-            piezas([c.numero, c.servicio, c.monto]) +
-          "</small></div>" +
-          '<div class="toca-acc">' +
-            (c.wa ? '<a class="bt wa cita-bt" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Consultar</a>" : "") +
-          "</div>" +
-        "</div>";
-      }).join("");
-      out.push(bloque("Cotizaciones sin servicio", cs.length, csHtml, "dato"));
-    }
-
-    if (!out.length) {
-      $("hoy-cuerpo").innerHTML = '<p class="hoy-vacio">Nada urgente. Buen día.</p>';
+    if (!total) {
+      $("hoy-cuerpo").innerHTML =
+        '<div class="pend-vacio">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' +
+        "<b>Nada pendiente</b>Todo lo que estaba esperando ya tiene fecha o ya se cobró.</div>";
       return;
     }
-    $("hoy-cuerpo").innerHTML = out.join("");
+
+    /* Un filtro en cero no filtra nada y sólo ocupa dedo: no sale. */
+    var chips = '<button type="button" class="pend-f" data-pfiltro="todo" aria-pressed="' +
+      (pendFiltro === "todo") + '">Todo<span class="n" style="--tono:var(--p-tenue)">' + total + "</span></button>";
+    GRUPOS_P.forEach(function (g) {
+      var n = PEND[g.id].length; if (!n) return;
+      chips += '<button type="button" class="pend-f" data-pfiltro="' + g.id + '" aria-pressed="' +
+        (pendFiltro === g.id) + '">' + escHtml(g.corto) +
+        '<span class="n" style="--tono:' + g.tono + '">' + n + "</span></button>";
+    });
+
+    var cuerpo = GRUPOS_P.filter(function (g) {
+      return PEND[g.id].length && (pendFiltro === "todo" || pendFiltro === g.id);
+    }).map(function (g) {
+      return '<section class="pend-sec" style="--tono:' + g.tono + '">' +
+        '<div class="pend-h"><h2>' + escHtml(g.titulo) + '</h2><span class="n">' +
+        PEND[g.id].length + "</span></div>" +
+        PEND[g.id].map(function (x, i) { return tarjetaPend(g, x, i); }).join("") + "</section>";
+    }).join("");
+
+    $("hoy-cuerpo").innerHTML =
+      '<div class="pend-filtros" role="group" aria-label="Filtrar pendientes">' + chips + "</div>" + cuerpo;
+
+    var act = $("hoy-cuerpo").querySelector('.pend-f[aria-pressed="true"]');
+    if (act && act.scrollIntoView) act.scrollIntoView({ inline: "center", block: "nearest" });
   }
 
-  function gradoEspera(horas) {
-    return horas >= 24 ? "alto" : horas >= 6 ? "medio" : "bajo";
+  /* Cada tipo trae su dato fuerte, su etiqueta y la acción que lo resuelve.
+     Resolverlo lo saca de acá: agendar un mantenimiento vencido lo manda a
+     la Agenda, porque pasó a tener fecha. Ése es el hilo. */
+  function tarjetaPend(g, x, i) {
+    var clave = g.id + ":" + i;
+    var abierto = pendAbierto === clave;
+    var cuanto = "", etq = "", det = "", acc = [];
+
+    if (g.id === "cobros") {
+      cuanto = colones(x.saldo);
+      etq = fechaLarga(x.fecha);
+      det = filaDet(I_NOTA_AG, x.servicio) +
+            filaDet(I_PLATA_AG, colones(x.monto) + " · pagado " + colones(x.pagado));
+      if (x.wa) acc.push('<a class="bt wa" href="' + escHtml(x.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Cobrar</a>");
+      acc.push('<button type="button" class="bt fuerte" data-pago="' + x.clienteId + ":" + x.id + '">Registrar pago</button>');
+      acc.push('<button type="button" class="bt" data-cliente="' + x.clienteId + '">Ver cliente</button>');
+
+    } else if (g.id === "mantenimientos") {
+      cuanto = cuando(x.dias);
+      etq = "Vencido";
+      det = filaDet(I_NOTA_AG, x.servicio) + filaDet(I_PIN_AG, x.lugar);
+      acc.push('<button type="button" class="bt fuerte" data-pagendar="' + escHtml(x.nombre) +
+        "|" + escHtml(x.telefono || "") + '">Agendar</button>');
+      acc.push('<button type="button" class="bt" data-cliente="' + x.clienteId + '">Ver cliente</button>');
+
+    } else if (g.id === "solicitudes") {
+      cuanto = espera(x.horas);
+      etq = x.horas >= 24 ? "Sin atender" : "Nueva";
+      det = filaDet(I_NOTA_AG, x.servicio) + filaDet(I_PIN_AG, x.zona) +
+            filaDet(I_TEL_AG, x.telefono);
+      acc.push('<button type="button" class="bt fuerte" data-ir=\'' +
+        escHtml(JSON.stringify({ vista: "solicitudes" })) + "'>Ver solicitud</button>");
+
+    } else {
+      cuanto = espera(x.horas);
+      etq = "Sin respuesta";
+      det = filaDet(I_NOTA_AG, piezas2([x.numero, x.servicio, x.monto]));
+      if (x.wa) acc.push('<a class="bt wa" href="' + escHtml(x.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Consultar</a>");
+      acc.push('<button type="button" class="bt" data-ir=\'' +
+        escHtml(JSON.stringify({ vista: "cotizaciones", buscar: x.numero })) + "'>Ver cotización</button>");
+    }
+
+    return '<div class="pcard">' +
+      '<button type="button" class="pcab" data-pabrir="' + clave + '" aria-expanded="' + abierto + '">' +
+        '<span class="pcab-t"><b>' + escHtml(x.nombre || "Sin nombre") + "</b>" +
+          '<span class="cuanto">' + escHtml(cuanto) + "</span>" +
+          (etq && g.id === "cobros" ? "<small>" + escHtml(etq) + "</small>" : "") +
+        "</span>" +
+        '<span class="pcab-der">' +
+          (g.id === "cobros" ? "" : '<span class="ptag">' + escHtml(etq) + "</span>") +
+          '<span class="pcab-fl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>' +
+        "</span>" +
+      "</button>" +
+      '<div class="det"><div><div class="det-caja">' + det +
+        '<div class="det-acc">' + acc.join("") + "</div>" +
+      "</div></div></div></div>";
   }
+
+  var I_TEL_AG = '<path d="M6 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4 5.7 2 2 0 0 1 6 3.5Z"/>';
+  function piezas2(a) { return a.filter(Boolean).join(" · "); }
+
+  $("hoy-cuerpo").addEventListener("click", function (e) {
+    var f = e.target.closest("[data-pfiltro]");
+    if (f) { pendFiltro = f.dataset.pfiltro; pendAbierto = null; pintarPendientes(); return; }
+
+    /* Se abre en su lugar, igual que en la Agenda. */
+    var a = e.target.closest("[data-pabrir]");
+    if (a && !e.target.closest(".det")) {
+      pendAbierto = (pendAbierto === a.dataset.pabrir) ? null : a.dataset.pabrir;
+      $("hoy-cuerpo").querySelectorAll("[data-pabrir]").forEach(function (x) {
+        x.setAttribute("aria-expanded", String(x.dataset.pabrir === pendAbierto));
+      });
+      return;
+    }
+
+    var b = e.target.closest("[data-cliente],[data-pago],[data-pagendar]");
+    if (!b) return;
+    if (b.dataset.cliente != null) return verCliente(b.dataset.cliente);
+    if (b.dataset.pago != null) {
+      var p = b.dataset.pago.split(":");
+      return pagoDeServicio(p[0], p[1]);
+    }
+    if (b.dataset.pagendar != null) {
+      // Agendar un mantenimiento vencido: abre el formulario con el cliente
+      // puesto. Cuando se guarde, el trabajo aparece en la Agenda y el
+      // pendiente desaparece solo en la próxima carga.
+      var q = b.dataset.pagendar.split("|");
+      return abrirCita({ cliente: { nombre: q[0], telefono: q[1] } });
+    }
+  });
+
 
   // Top clientes del rango: ranking por facturación con su cantidad de trabajos.
   function pintarTopClientes(d) {
@@ -3931,7 +4044,7 @@
     });
     if (!resumenCargado) {
       $("cifras").innerHTML = esqResumen();
-      $("hoy-cuerpo").innerHTML = esqFilas(3);
+      $("hoy-cuerpo").innerHTML = esqFilas(3);   // mientras llega Pendientes
     }
     var p = new URLSearchParams();
     if (rango.desde) p.set("desde", rango.desde);
@@ -3972,11 +4085,16 @@
         sellar();
         resumenCargado = true;
       })
-      .catch(function () {
+      .catch(function (e) {
         /* Sin red esto es lo único que se ve, así que dice qué pasó y qué
            hacer. La copia guardada del panel abre la pantalla; los datos
            nunca se guardan, a propósito: mejor decir que no se pudo que
-           mostrar montos de ayer como si fueran de hoy. */
+           mostrar montos de ayer como si fueran de hoy.
+
+           El `console.error` es para quien depura: sin él, un fallo al
+           PINTAR se veía idéntico a un fallo de red y no había por dónde
+           agarrarlo. */
+        console.error("Resumen:", e);
         ["estado-resumen", "estado-hoy"].forEach(function (id) {
           $(id).textContent = "No se pudo traer la información. Revise la señal y vuelva a intentar.";
           $(id).classList.add("is-error");
@@ -7511,7 +7629,10 @@
        repetirlo sería decir tres veces lo mismo en el mismo pantallazo. */
     $("top-donde").textContent = saludo() + ",";
     $("top-quien").textContent = "Leitón";
-    $("titulo-caja").hidden = nueva === "hoy";
+    /* Antes Hoy escondía el titular: la portada ya decía dónde estaba
+       uno. Pendientes no es portada, así que lleva su nombre como las
+       demás. */
+    $("titulo-caja").hidden = false;
     $("titulo-vista").textContent = NOMBRE_VISTA[nueva] || "Panel";
     menuYo(false);
 
