@@ -1953,6 +1953,68 @@
      titulo); queda solo donde significa algo: lo vencido y lo que falta
      cobrar. El conteo tampoco es una capsula de color, es un numero. */
   /* =====================================================================
+     LA HOJA DEL "+"
+     No lleva a otra pantalla: se levanta encima de la que ya está. La
+     barra se queda por encima del velo a propósito — así el mismo "+" que
+     la abrió (ahora una ×) es el que la cierra, y el dedo no tiene que
+     buscar otro sitio.
+     ===================================================================== */
+  .velo-acc {
+    position: fixed; inset: 0; z-index: 50; background: rgba(8,12,22,.45);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    opacity: 0; transition: opacity .24s var(--ease);
+  }
+  .velo-acc.viva { opacity: 1; }
+  .hoja-acc {
+    position: fixed; left: .6rem; right: .6rem; z-index: 55;
+    bottom: calc(5.4rem + env(safe-area-inset-bottom));
+    background: var(--p-sup); border: 1px solid var(--p-borde); border-radius: 24px;
+    padding: .4rem .5rem .6rem;
+    box-shadow: 0 18px 50px -14px rgba(8,12,22,.5);
+    transform: translateY(calc(100% + 6rem));
+    transition: transform .38s cubic-bezier(.22,1,.36,1);
+    touch-action: none;
+  }
+  .hoja-acc.viva { transform: translateY(0); }
+  /* En escritorio la barra es lateral y el "+" vive arriba a la izquierda:
+     la hoja se ancla a él en vez de subir desde el borde de abajo. */
+  @media (min-width: 860px) {
+    .hoja-acc {
+      left: calc(var(--barra) + 1rem); right: auto; width: 20rem;
+      bottom: auto; top: 11.5rem;
+      transform: translateY(-.6rem) scale(.96); opacity: 0;
+      transition: transform .22s var(--ease), opacity .22s var(--ease);
+    }
+    .hoja-acc.viva { transform: none; opacity: 1; }
+  }
+  /* El asa: dice que la hoja se puede arrastrar hacia abajo. */
+  .asa { width: 36px; height: 4px; border-radius: 999px; background: var(--p-linea); margin: .35rem auto .5rem; }
+  @media (min-width: 860px) { .asa { display: none; } }
+  .acc-op {
+    width: 100%; display: flex; align-items: center; gap: .8rem; text-align: left;
+    padding: .7rem; border-radius: 16px; transition: background .15s var(--ease);
+  }
+  .acc-op:hover, .acc-op:active { background: var(--p-ctrl); }
+  .acc-ico {
+    flex: 0 0 2.6rem; width: 2.6rem; height: 2.6rem; border-radius: 14px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--p-ctrl); color: var(--p-txt2);
+  }
+  .acc-ico svg { width: 20px; height: 20px; }
+  .acc-op b { flex: 1; min-width: 0; font-size: .95rem; font-weight: 600; letter-spacing: -.015em; }
+  .acc-fl { color: var(--p-tenue); display: inline-flex; }
+  .acc-fl svg { width: 17px; height: 17px; }
+  /* El "+" gira y se vuelve una ×: la misma pieza abre y cierra. */
+  .fab svg { transition: transform .34s cubic-bezier(.22,1,.36,1); }
+  .fab.abierta svg { transform: rotate(135deg); }
+  @media (max-width: 859px) {
+    .barra { z-index: 60; }
+    /* La hoja se declara modal: mientras esté abierta, lo único vivo de
+       la barra es la × que la cierra. */
+    .barra.bloqueada nav { pointer-events: none; }
+  }
+
+  /* =====================================================================
      PENDIENTES
      Lo que pide respuesta y todavía NO tiene fecha. Esa es toda la línea
      que lo separa de la Agenda, y es la que hace que nada quede en dos
@@ -2418,16 +2480,42 @@
       <b>Sanitarios Ticos</b>
     </div>
 
+    <!-- Cuatro destinos y el "+". Lo que se fue y a dónde:
+           Hoy        → la Agenda, que abre en hoy
+           Servicios  → la Agenda, en modo lista
+           Cotizaciones y Solicitudes → el menú del avatar, y la cotización
+                        se crea desde el "+". La lista no se navega: cuando
+                        hay que buscar una, es desde el cliente.
+         Con cuatro caben las palabras completas: se acabó el "Cotiz.". -->
     <nav role="tablist" aria-label="Secciones del panel">
       <span class="grupo-nav">Principal</span>
-      <!-- Hoy va de primero y es lo que abre la aplicación. El icono es una
-           lista con visto: dice "lo que hay que hacer", que es justo lo que
-           esta pantalla contesta. El calendario ya es de Agenda. -->
-      <button type="button" role="tab" data-vista="hoy" aria-selected="true">
+      <!-- La Agenda abre la aplicación: contesta "qué hay que hacer hoy",
+           que es con lo que uno entra. -->
+      <button type="button" role="tab" data-vista="agenda" aria-selected="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/>
+          <path d="M8.5 14h1M11.5 14h1M14.5 14h1M8.5 17.5h1M11.5 17.5h1"/>
+        </svg>
+        Agenda<span class="pendiente" id="pend-agenda" hidden></span>
+      </button>
+      <!-- Lo que pide respuesta y todavía no tiene fecha. El icono es una
+           lista con visto: dice "lo que falta resolver". -->
+      <button type="button" role="tab" data-vista="pendientes" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3.5 7.2 5.4 9l3.2-3.4M13 7.2h7.5M3.5 16.8l1.9 1.8 3.2-3.4M13 16.8h7.5"/>
         </svg>
-        Pendientes<span class="pendiente" id="pend-hoy" hidden></span>
+        Pendientes<span class="pendiente" id="n-pendientes" hidden></span>
+      </button>
+      <!-- El hueco donde se para el botón redondo: dos destinos de cada
+           lado. En escritorio la barra es lateral y el hueco desaparece. -->
+      <span class="hueco-fab" aria-hidden="true"></span>
+      <span class="grupo-nav">Gestión</span>
+      <button type="button" role="tab" data-vista="clientes" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7.5" r="3.5"/>
+          <path d="M22 20v-1.5a4 4 0 0 0-3-3.9M16.5 4.2a4 4 0 0 1 0 7.1"/>
+        </svg>
+        Clientes
       </button>
       <button type="button" role="tab" data-vista="resumen" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -2436,51 +2524,16 @@
         </svg>
         Resumen
       </button>
-      <span class="grupo-nav">Gestión</span>
-      <!-- Cotizaciones incluye las Solicitudes (se ven en un sub-switch
-           adentro). La solicitud es rara y solo antecede a la cotización,
-           así que no gana un destino propio: avisa con el punto de acá. -->
-      <button type="button" role="tab" data-vista="cotizaciones" aria-selected="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 11.5V5a2 2 0 0 1 2-2h6.5a2 2 0 0 1 1.4.6l7.5 7.5a2 2 0 0 1 0 2.8l-6.6 6.6a2 2 0 0 1-2.8 0L3.6 13a2 2 0 0 1-.6-1.5z"/>
-          <circle cx="7.5" cy="7.5" r="1.4"/>
-        </svg>
-        <span class="largo">Cotizaciones</span><span class="corto">Cotiz.</span><span class="pendiente" id="pend-cot" hidden></span>
-      </button>
-      <!-- El hueco donde se para el botón redondo: justo en el medio,
-           tres destinos de cada lado. En escritorio la barra es lateral,
-           el botón vuelve a tener su nombre y el hueco desaparece. -->
-      <span class="hueco-fab" aria-hidden="true"></span>
-      <button type="button" role="tab" data-vista="clientes" aria-selected="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7.5" r="3.5"/>
-          <path d="M22 20v-1.5a4 4 0 0 0-3-3.9M16.5 4.2a4 4 0 0 1 0 7.1"/>
-        </svg>
-        Clientes
-      </button>
-      <span class="grupo-nav">Operación</span>
-      <button type="button" role="tab" data-vista="servicios" aria-selected="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14.5 5.5a3.6 3.6 0 0 0 4.7 4.7L21 12l-9 9-4-4 9-9zM7 17l-3.5 3.5"/>
-        </svg>
-        <span class="largo">Servicios</span><span class="corto">Servic.</span>
-      </button>
-      <button type="button" role="tab" data-vista="agenda" aria-selected="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/>
-          <path d="M8.5 14h1M11.5 14h1M14.5 14h1M8.5 17.5h1M11.5 17.5h1"/>
-        </svg>
-        Agenda<span class="pendiente" id="pend-agenda" hidden></span>
-      </button>
     </nav>
 
-    <!-- La acción principal, como en la referencia: un botón redondo
-         parado sobre la barra, en el centro. -->
-    <button type="button" class="fab" id="btn-nueva" title="Nueva cotización" aria-label="Nueva cotización">
+    <!-- El "+" ya no hace una sola cosa: despliega las tres que de verdad
+         se usan. No cambia de pantalla, se levanta encima. -->
+    <button type="button" class="fab" id="btn-nueva" title="Crear" aria-label="Crear"
+            aria-expanded="false" aria-controls="hoja-acc">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
         <path d="M12 5v14M5 12h14"/>
       </svg>
-      <span class="largo">Nueva cotización</span>
+      <span class="largo">Crear</span>
     </button>
 
     <div class="barra-pie">
@@ -2488,6 +2541,26 @@
       <span class="quien"><b>Panel interno</b><small id="sello">Al día</small></span>
     </div>
   </aside>
+
+  <div class="velo-acc" id="velo-acc" hidden></div>
+  <div class="hoja-acc" id="hoja-acc" role="dialog" aria-modal="true" aria-label="Crear" hidden>
+    <div class="asa" aria-hidden="true"></div>
+    <button type="button" class="acc-op" data-crear="servicio">
+      <span class="acc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 10h18M12 13.5v5M9.5 16h5"/></svg></span>
+      <b>Agendar un servicio</b>
+      <span class="acc-fl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+    </button>
+    <button type="button" class="acc-op" data-crear="cliente">
+      <span class="acc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="8.2" cy="7.5" r="3.5"/><path d="M19 8.5v5M16.5 11h5"/></svg></span>
+      <b>Nuevo cliente</b>
+      <span class="acc-fl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+    </button>
+    <button type="button" class="acc-op" data-crear="cotizacion">
+      <span class="acc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5V5a2 2 0 0 1 2-2h6.5a2 2 0 0 1 1.4.6l7.5 7.5a2 2 0 0 1 0 2.8l-6.6 6.6a2 2 0 0 1-2.8 0L3.6 13a2 2 0 0 1-.6-1.5z"/><circle cx="7.5" cy="7.5" r="1.4"/></svg></span>
+      <b>Nueva cotización</b>
+      <span class="acc-fl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+    </button>
+  </div>
 
   <main class="lienzo">
     <!-- ================= LA CABECERA =================
@@ -2543,6 +2616,16 @@
               <small class="frescura" id="frescura">Cargando…</small>
             </div>
             <button type="button" id="btn-avisos" hidden></button>
+            <!-- Cotizaciones dejó de ser pestaña: no se navega, se crea
+                 (desde el "+") y se consulta desde el cliente. La lista
+                 completa, con su búsqueda y sus filtros, vive acá. -->
+            <button type="button" id="btn-cotiz">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 11.5V5a2 2 0 0 1 2-2h6.5a2 2 0 0 1 1.4.6l7.5 7.5a2 2 0 0 1 0 2.8l-6.6 6.6a2 2 0 0 1-2.8 0L3.6 13a2 2 0 0 1-.6-1.5z"/>
+                <circle cx="7.5" cy="7.5" r="1.4"/>
+              </svg>
+              Cotizaciones<span class="menu-yo-n" id="pend-cot" hidden></span>
+            </button>
             <button type="button" id="btn-mant">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M8 2v4M16 2v4M3 9.5h18"/><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M12 12.5v4M10 14.5h4"/>
@@ -2598,14 +2681,13 @@
            lo urgente  ·  a quién le debo respuesta  ·  qué viene después.
          Y las tres salen de la misma consulta que ya alimenta el Resumen,
          así que verlas no cuesta una llamada más al servidor. -->
-    <div class="vista" id="vista-hoy">
-      <p class="estado-linea" id="estado-hoy" role="status" aria-live="polite"></p>
+    <div class="vista" id="vista-pendientes" hidden>
+      <p class="estado-linea" id="estado-pendientes" role="status" aria-live="polite"></p>
 
       <!-- Pendientes: lo que pide respuesta y todavía NO tiene fecha. Los
            trabajos del día se fueron a la Agenda, que abre en hoy.
-           El id sigue siendo `hoy-cuerpo` a propósito: el renombre va con
-           el reacomodo de pestañas, para no tocar el enrutador dos veces. -->
-      <div id="hoy-cuerpo" class="pend-cuerpo"></div>
+           Los trabajos del día se fueron a la Agenda, que abre en hoy. -->
+      <div id="pend-cuerpo" class="pend-cuerpo"></div>
     </div>
 
     <!-- ================= RESUMEN =================
@@ -3413,7 +3495,7 @@
   ponerTema(temaGuardado() ||
     (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "oscuro" : "claro"));
 
-  var vista = "hoy";
+  var vista = "agenda";
   var pagina = 1;
   var ESTADOS = null;
   var resumenCargado = false;
@@ -3425,7 +3507,7 @@
   var filtro = { desde: "", hasta: "", estado: "", provincia: "", servicio: "", origen: "", buscar: "", svista: "" };
 
   var NOMBRE_VISTA = {
-    hoy: "Pendientes", resumen: "Resumen", cotizaciones: "Cotizaciones", solicitudes: "Solicitudes",
+    pendientes: "Pendientes", resumen: "Resumen", cotizaciones: "Cotizaciones", solicitudes: "Solicitudes",
     clientes: "Clientes", cliente: "Cliente", servicios: "Servicios", agenda: "Agenda", nueva: "Nueva cotización"
   };
 
@@ -3711,9 +3793,6 @@
      El orden es el del negocio, no el del reloj: primero la plata que ya
      se ganó, después la que se está por perder.
 
-     NOTA: por dentro esta vista todavía se llama `hoy` (el id, el
-     data-vista y #hoy-cuerpo). El renombre va con el reacomodo de
-     pestañas, para no tocar el enrutador dos veces.
      ===================================================================== */
   var GRUPOS_P = [
     { id: "cobros",       titulo: "Cobros pendientes",         corto: "Cobros",
@@ -3744,7 +3823,7 @@
     var total = GRUPOS_P.reduce(function (n, g) { return n + PEND[g.id].length; }, 0);
 
     if (!total) {
-      $("hoy-cuerpo").innerHTML =
+      $("pend-cuerpo").innerHTML =
         '<div class="pend-vacio">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' +
         "<b>Nada pendiente</b>Todo lo que estaba esperando ya tiene fecha o ya se cobró.</div>";
@@ -3770,10 +3849,10 @@
         PEND[g.id].map(function (x, i) { return tarjetaPend(g, x, i); }).join("") + "</section>";
     }).join("");
 
-    $("hoy-cuerpo").innerHTML =
+    $("pend-cuerpo").innerHTML =
       '<div class="pend-filtros" role="group" aria-label="Filtrar pendientes">' + chips + "</div>" + cuerpo;
 
-    var act = $("hoy-cuerpo").querySelector('.pend-f[aria-pressed="true"]');
+    var act = $("pend-cuerpo").querySelector('.pend-f[aria-pressed="true"]');
     if (act && act.scrollIntoView) act.scrollIntoView({ inline: "center", block: "nearest" });
   }
 
@@ -3838,7 +3917,7 @@
   var I_TEL_AG = '<path d="M6 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4 5.7 2 2 0 0 1 6 3.5Z"/>';
   function piezas2(a) { return a.filter(Boolean).join(" · "); }
 
-  $("hoy-cuerpo").addEventListener("click", function (e) {
+  $("pend-cuerpo").addEventListener("click", function (e) {
     var f = e.target.closest("[data-pfiltro]");
     if (f) { pendFiltro = f.dataset.pfiltro; pendAbierto = null; pintarPendientes(); return; }
 
@@ -3846,7 +3925,7 @@
     var a = e.target.closest("[data-pabrir]");
     if (a && !e.target.closest(".det")) {
       pendAbierto = (pendAbierto === a.dataset.pabrir) ? null : a.dataset.pabrir;
-      $("hoy-cuerpo").querySelectorAll("[data-pabrir]").forEach(function (x) {
+      $("pend-cuerpo").querySelectorAll("[data-pabrir]").forEach(function (x) {
         x.setAttribute("aria-expanded", String(x.dataset.pabrir === pendAbierto));
       });
       return;
@@ -4038,13 +4117,13 @@
 
   function cargarResumen() {
     // Las dos pantallas que comen de esta consulta avisan por su cuenta.
-    ["estado-resumen", "estado-hoy"].forEach(function (id) {
+    ["estado-resumen", "estado-pendientes"].forEach(function (id) {
       $(id).textContent = "";
       $(id).classList.remove("is-error");
     });
     if (!resumenCargado) {
       $("cifras").innerHTML = esqResumen();
-      $("hoy-cuerpo").innerHTML = esqFilas(3);   // mientras llega Pendientes
+      $("pend-cuerpo").innerHTML = esqFilas(3);   // mientras llega Pendientes
     }
     var p = new URLSearchParams();
     if (rango.desde) p.set("desde", rango.desde);
@@ -4077,7 +4156,7 @@
         var pendHoy = cotBadge +
                       ((hoyDia.mantenimientos && hoyDia.mantenimientos.vencidos) || []).length +
                       (hoyDia.cobrosPend || []).length;
-        marcar("pend-hoy", pendHoy);
+        marcar("n-pendientes", pendHoy);
         $("punto-campana").hidden = !pendHoy;
         marcar("pend-cot", cotBadge);
         ponerSw("sw-cotiz", 0);
@@ -4095,11 +4174,11 @@
            PINTAR se veía idéntico a un fallo de red y no había por dónde
            agarrarlo. */
         console.error("Resumen:", e);
-        ["estado-resumen", "estado-hoy"].forEach(function (id) {
+        ["estado-resumen", "estado-pendientes"].forEach(function (id) {
           $(id).textContent = "No se pudo traer la información. Revise la señal y vuelva a intentar.";
           $(id).classList.add("is-error");
         });
-        $("hoy-cuerpo").innerHTML = "";
+        $("pend-cuerpo").innerHTML = "";
       });
   }
 
@@ -4156,22 +4235,8 @@
     });
   });
 
-  // Acciones del bloque Hoy: "Hecho" desde un trabajo de hoy abre la
-  // misma hoja de completar. Ver-cliente ya lo maneja el handler global.
-  $("hoy-cuerpo").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-hoy-hecho]");
-    if (!b) return;
-    e.preventDefault(); e.stopPropagation();
-    var id = b.getAttribute("data-hoy-hecho");
-    var t = ((ultimoResumen && ultimoResumen.hoy && ultimoResumen.hoy.trabajos) || [])
-              .filter(function (x) { return String(x.id) === id; })[0];
-    if (t) marcarCitaHecha(Object.assign({ servicioKey: t.servicio, estado: "programado" }, t));
-  });
-  // Card completa abre el cliente (mismo comportamiento de Agenda).
-  $("hoy-cuerpo").addEventListener("click", function (e) {
-    var card = e.target.closest("[data-ver-cliente]");
-    if (card && !e.target.closest("a,button")) verCliente(card.getAttribute("data-ver-cliente"));
-  });
+  /* Los trabajos del día ya no se marcan desde acá: viven en la Agenda,
+     que es donde están sus acciones. */
 
   /* =========================================================
      Tablas
@@ -5503,7 +5568,7 @@
     Array.prototype.forEach.call(document.querySelectorAll(".barra nav button"), function (b) {
       b.setAttribute("aria-selected", String(b.dataset.vista === "clientes"));
     });
-    ["hoy", "resumen", "tabla", "nueva", "clientes", "servicios", "agenda"].forEach(function (v) { $("vista-" + v).hidden = true; });
+    ["pendientes", "resumen", "tabla", "nueva", "clientes", "servicios", "agenda"].forEach(function (v) { $("vista-" + v).hidden = true; });
     $("vista-cliente").hidden = false;
     $("cliente-cuerpo").innerHTML = '<p class="estado-linea">Cargando…</p>';
     window.scrollTo({ top: 0 });
@@ -6184,6 +6249,7 @@
     });
   }
 
+  $("btn-cotiz").addEventListener("click", function () { menuYo(false); irA("cotizaciones", {}); });
   $("btn-mant").addEventListener("click", abrirMantenimientos);
   $("mant-cerrar").addEventListener("click", function () { $("velo-mantenimientos").hidden = true; });
   $("velo-mantenimientos").addEventListener("click", function (e) {
@@ -7575,10 +7641,81 @@
     if (e.key === "Escape") { cerrarHallazgos(); $("buscar").blur(); }
   });
 
-  $("btn-nueva").addEventListener("click", function () {
-    prellenar = null;
-    irA("nueva", {});
-  });
+  /* =====================================================================
+     LA HOJA DEL "+"
+
+     Tres acciones, no una. Lo que la hace sentir parte de la pantalla y
+     no otro destino:
+       · el mismo botón abre y cierra — el "+" gira y queda una ×;
+       · la barra se queda por encima del velo, así el dedo no busca otro
+         sitio para salir;
+       · se arrastra hacia abajo para cerrarla, con el umbral en un tercio
+         de su alto: menos que eso vuelve sola a su lugar;
+       · "Agendar un servicio" hereda el día escogido en la Agenda. Misma
+         acción, mejor punto de partida — por eso el botón dice lo mismo
+         en las cuatro pestañas y lo único que cambia es el valor por
+         defecto: un botón que cambia de significado cuesta aprenderlo.
+     ===================================================================== */
+  (function () {
+    var fab = $("btn-nueva"), hoja = $("hoja-acc"), velo = $("velo-acc");
+    var abierta = false, arr = null;
+
+    function abrir() {
+      hoja.hidden = false; velo.hidden = false;
+      hoja.offsetWidth;                       // fuerza el reflow antes de animar
+      hoja.classList.add("viva"); velo.classList.add("viva");
+      fab.classList.add("abierta"); fab.setAttribute("aria-expanded", "true");
+      document.querySelector(".barra").classList.add("bloqueada");
+      abierta = true;
+      hoja.querySelector(".acc-op").focus({ preventScroll: true });
+    }
+    function cerrar() {
+      hoja.style.transform = "";              // suelta lo que dejó el arrastre
+      hoja.classList.remove("viva"); velo.classList.remove("viva");
+      fab.classList.remove("abierta"); fab.setAttribute("aria-expanded", "false");
+      document.querySelector(".barra").classList.remove("bloqueada");
+      if (hoja.contains(document.activeElement)) fab.focus({ preventScroll: true });
+      abierta = false;
+      setTimeout(function () { if (!abierta) { hoja.hidden = true; velo.hidden = true; } }, 400);
+    }
+
+    fab.addEventListener("click", function () { abierta ? cerrar() : abrir(); });
+    velo.addEventListener("click", cerrar);
+    addEventListener("keydown", function (e) { if (e.key === "Escape" && abierta) cerrar(); });
+
+    /* Arrastrar hacia abajo para cerrar. Sólo hacia abajo: tirar hacia
+       arriba no debería despegarla del borde. */
+    hoja.addEventListener("pointerdown", function (e) {
+      if (e.target.closest(".acc-op")) return;   // tocar una acción no es arrastrar
+      arr = { id: e.pointerId, y0: e.clientY };
+      try { hoja.setPointerCapture(e.pointerId); } catch (_) {}
+      hoja.style.transition = "none";
+    });
+    hoja.addEventListener("pointermove", function (e) {
+      if (!arr || e.pointerId !== arr.id) return;
+      var dy = Math.max(0, e.clientY - arr.y0);
+      hoja.style.transform = "translateY(" + dy + "px)";
+      velo.style.opacity = String(Math.max(0, 1 - dy / (hoja.offsetHeight * 1.4)));
+    });
+    function soltar(e) {
+      if (!arr || e.pointerId !== arr.id) return;
+      var dy = Math.max(0, e.clientY - arr.y0); arr = null;
+      hoja.style.transition = ""; velo.style.opacity = "";
+      if (dy > hoja.offsetHeight / 3) cerrar(); else hoja.style.transform = "";
+    }
+    hoja.addEventListener("pointerup", soltar);
+    hoja.addEventListener("pointercancel", soltar);
+
+    hoja.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-crear]"); if (!b) return;
+      cerrar();
+      var q = b.dataset.crear;
+      if (q === "servicio") return abrirCita(ag2.dia ? { fecha: ag2.dia } : {});
+      if (q === "cliente") return abrirNuevoCliente();
+      prellenar = null;
+      irA("nueva", {});
+    });
+  })();
 
   /* =========================================================
      Navegación y arranque
@@ -7644,7 +7781,7 @@
       });
     }
     $("top-busca").hidden = esTabla || nueva === "clientes" || nueva === "servicios";
-    $("vista-hoy").hidden = nueva !== "hoy";
+    $("vista-pendientes").hidden = nueva !== "pendientes";
     $("vista-resumen").hidden = nueva !== "resumen";
     $("vista-nueva").hidden = nueva !== "nueva";
     $("vista-clientes").hidden = nueva !== "clientes";
@@ -7657,11 +7794,11 @@
     /* Hoy y Resumen se sirven de la misma consulta, así que comparten el
        mismo aviso de "ya está cargado". Pasar de una a otra no vuelve a
        pedir nada. */
-    if (nueva === "hoy" || nueva === "resumen") { if (!resumenCargado) cargarResumen(); }
+    if (nueva === "pendientes" || nueva === "resumen") { if (!resumenCargado) cargarResumen(); }
     else if (nueva === "nueva") { cargarNueva(); }
     else if (nueva === "clientes") { cargarClientes(); }
     else if (nueva === "servicios") { cargarServicios(); }
-    else if (nueva === "agenda") { if (!agendaCargada) cargarAgenda(); else pintarAgendaLista(); }
+    else if (nueva === "agenda") { if (!agendaCargada) cargarAgenda(); else pintarAg2(); }
     else { $("cuerpo-tabla").innerHTML = ""; cargarTabla(); }
   }
 
@@ -7711,7 +7848,7 @@
     b.classList.remove("girando");
     void b.offsetWidth;
     b.classList.add("girando");
-    if (vista === "hoy" || vista === "resumen") { resumenCargado = false; cargarResumen(); }
+    if (vista === "pendientes" || vista === "resumen") { resumenCargado = false; cargarResumen(); }
     else if (vista === "nueva") { cargarNueva(); }
     else if (vista === "clientes") { cargarClientes(); }
     else if (vista === "cliente") { /* la ficha se recarga sola al volver */ }
@@ -7804,7 +7941,10 @@
      lista: cualquier otra cosa cae en Hoy. */
   function destinoDeLaDireccion() {
     var v = new URLSearchParams(location.search).get("ir");
-    return Object.prototype.hasOwnProperty.call(NOMBRE_VISTA, v) ? v : "hoy";
+    // Por defecto abre la Agenda: contesta "qué hay que hacer hoy", que
+    // es con lo que uno entra. Antes abría Hoy, que es justo lo que la
+    // Agenda absorbió.
+    return Object.prototype.hasOwnProperty.call(NOMBRE_VISTA, v) ? v : "agenda";
   }
 
   function mostrarPanel() {
@@ -7814,7 +7954,7 @@
     var v = destinoDeLaDireccion();
     // La dirección se limpia para que al refrescar no vuelva a saltar al
     // mismo lado; el acceso directo sirve una vez, no para siempre.
-    if (v !== "hoy") history.replaceState(null, "", location.pathname);
+    if (v !== "agenda") history.replaceState(null, "", location.pathname);
     irA(v);
   }
 
