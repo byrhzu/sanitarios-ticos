@@ -514,7 +514,11 @@ body {
         <th class="der" id="th-monto">Estimado</th>
       </tr>
     </thead>
-    <tbody>
+    <!-- Una fila por servicio. Casi siempre es una sola; cuando la
+         cotización lleva varios (dos tanques, el tanque y la trampa), el
+         servidor manda `lineas` y acá se dibuja una fila por cada uno con
+         su propio monto. El total sigue abajo, en la escalera. -->
+    <tbody id="filas">
       <tr>
         <td>
           <span class="svc" id="servicio"></span>
@@ -710,6 +714,12 @@ body {
     // Servicio y montos
     $("servicio").textContent = d.servicio;
 
+    // Si la cotización lleva varios servicios, la tabla pasa a tener una
+    // fila por cada uno. Se arma más abajo, cuando ya nadie más va a
+    // escribir en la fila única: dibujarla acá la borraría antes de que
+    // el monto y el IVA terminen de ponerse.
+    var varios = Array.isArray(d.lineas) && d.lineas.length > 1;
+
     /* Hay servicios con rango de verdad —el destaqueo va de 30 a 35
        mil— y otros que sólo tienen piso, como el tanque séptico, donde
        el precio sale del tamaño. Escribir "₡65.000 – ₡65.000" en esos
@@ -773,9 +783,47 @@ body {
         : (d.ivaIncluido ? "Incluido" : "Se suma aparte");
     }
 
-    // Cómo se calculó
+    /* Ahora sí: una fila por servicio, con su nombre, con qué se calculó
+       y su monto. El cliente ve POR QUÉ el total es el que es, que es la
+       razón de cotizar junto en vez de mandar dos documentos. La fila
+       única —con el monto y el IVA ya puestos— se reemplaza entera. */
+    if (varios) {
+      var cuerpo = $("filas");
+      cuerpo.textContent = "";
+      d.lineas.forEach(function (L) {
+        /* Con nodos y textContent, como el resto del documento: lo que
+           entra acá son nombres y detalles escritos por el encargado. */
+        var tr = document.createElement("tr");
+        var tdQue = document.createElement("td");
+        var nom = document.createElement("span");
+        nom.className = "svc";
+        nom.textContent = L.nombre || "";
+        tdQue.appendChild(nom);
+        if (L.detalle) {
+          var det = document.createElement("span");
+          det.className = "incl";
+          det.textContent = L.detalle;
+          tdQue.appendChild(det);
+        }
+        var tdMonto = document.createElement("td");
+        tdMonto.className = "monto";
+        tdMonto.textContent = L.monto || "—";
+        tr.appendChild(tdQue);
+        tr.appendChild(tdMonto);
+        cuerpo.appendChild(tr);
+      });
+      $("th-monto").textContent = "Estimado";
+    }
+
+    /* Cómo se calculó. Con varias líneas esto ya se dijo dentro de cada
+       fila, y repetirlo abajo mezclaría la forma de un tanque con la del
+       otro sin decir cuál es cuál. */
+    if (varios) {
+      $("et-base").textContent = "";
+      $("et-base").hidden = true;
+    }
     var base = $("base");
-    d.base.forEach(function (b) {
+    (varios ? [] : d.base).forEach(function (b) {
       if (b.valor === "__otro" || b.valor === "otro") return;
       var fila = document.createElement("div");
       fila.className = "fila";

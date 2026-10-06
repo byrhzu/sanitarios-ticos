@@ -2427,7 +2427,22 @@ async function guardarCita(request, env) {
 
   const fecha = soloFecha(cuerpo.fecha);
   if (!fecha) return json({ ok: false, error: "Falta la fecha del trabajo" }, 400);
-  if (!texto(cuerpo.servicio, 40)) return json({ ok: false, error: "Falta decir qué trabajo es" }, 400);
+
+  /* Una visita puede traer VARIOS trabajos: dos tanques, el tanque y la
+     trampa. Cada uno es su propia fila en `servicios` —se completa y se
+     cobra por separado— pero comparten cliente, día y hora, que es lo
+     que los hace una sola salida del camión.
+
+     El cuerpo viejo, con el servicio suelto en la raíz, se sigue
+     aceptando como una línea única. */
+  const trabajos = ((Array.isArray(cuerpo.servicios) && cuerpo.servicios.length
+      ? cuerpo.servicios
+      : [{ servicio: cuerpo.servicio, detalle: cuerpo.detalle }])
+    .slice(0, MAX_TRABAJOS_POR_VISITA)
+    .map((t) => ({ servicio: texto(t.servicio, 40), detalle: texto(t.detalle, 200) }))
+    .filter((t) => t.servicio));
+
+  if (!trabajos.length) return json({ ok: false, error: "Falta decir qué trabajo es" }, 400);
 
   const provincia = texto(cuerpo.provincia, 40);
   const canton = texto(cuerpo.canton, 60);
@@ -2449,27 +2464,33 @@ async function guardarCita(request, env) {
 
     const id = parseInt(cuerpo.id, 10);
     if (Number.isFinite(id)) {
-      // Reagendar: solo mueve trabajos que aún no se completaron.
+      /* Reagendar: solo mueve trabajos que aún no se completaron. Edita
+         UNO, siempre: corregir un trabajo no puede crear otros, y por eso
+         el panel esconde el "+ Agregar servicio" cuando se está editando. */
       await env.DB.prepare(
         `UPDATE servicios SET cliente_id=?1, servicio=?2, detalle=?3, fecha=?4, hora=?5,
                               nota=?6, actualizado=datetime('now')
          WHERE id=?7 AND estado IN ('programado','en_proceso') AND papelera IS NULL`
       ).bind(
-        cliente.id, texto(cuerpo.servicio, 40), texto(cuerpo.detalle, 200) || null,
+        cliente.id, trabajos[0].servicio, trabajos[0].detalle || null,
         fecha, hora, texto(cuerpo.nota, 300) || null, id
       ).run();
       return json({ ok: true, id, movida: true });
     }
 
-    // Nuevo trabajo programado: nace en `servicios` con estado 'programado'.
-    const nuevoId = await guardarServicio(env, cliente.id, {
-      estado: "programado", fecha, hora,
-      servicio: texto(cuerpo.servicio, 40),
-      detalle: texto(cuerpo.detalle, 200),
-      nota: texto(cuerpo.nota, 300)
-    }, cliente.meses);
+    // Nuevos trabajos programados: nacen en `servicios` con estado
+    // 'programado', uno por servicio, todos en la misma visita.
+    const ids = [];
+    for (const t of trabajos) {
+      ids.push(await guardarServicio(env, cliente.id, {
+        estado: "programado", fecha, hora,
+        servicio: t.servicio,
+        detalle: t.detalle,
+        nota: texto(cuerpo.nota, 300)
+      }, cliente.meses));
+    }
 
-    return json({ ok: true, id: nuevoId, clienteId: cliente.id });
+    return json({ ok: true, id: ids[0], ids, cuantos: ids.length, clienteId: cliente.id });
   } catch (e) {
     console.error("No se pudo guardar la cita:", e);
     return json({ ok: false, error: "No se pudo agendar" }, 500);
@@ -2768,6 +2789,102 @@ function etiqueta(servicio, codigo, campo) {
   return codigo || "";
 }
 
+/* Un tope. No hay trabajo real de veinte servicios en una visita, y sin
+   límite un cuerpo armado a mano puede hacer veinte cálculos y un JSON
+   enorme por cada cotización. */
+const MAX_LINEAS_COTIZACION = 10;
+
+/* Lo mismo para la agenda: el camión no hace quince trabajos en una
+   parada, y sin tope un cuerpo armado a mano llena la agenda de un día. */
+const MAX_TRABAJOS_POR_VISITA = 10;
+
+/* El total de una cotización de varias líneas. Suma los pisos y los
+   techos; si alguna línea sólo tiene piso, el total también lo es —por
+   encima no hay techo que prometer— y eso es justo lo que significa que
+   el mínimo y el máximo salgan iguales.
+
+   Devuelve null si NINGUNA línea se pudo calcular: ahí no hay nada que
+   sumar y quien llama decide si eso es un error o un precio a mano. */
+function sumarLineas(lineas) {
+  const buenas = lineas.filter((L) => L.calculo);
+  if (!buenas.length) return null;
+
+  let min = 0, max = 0, dias = null, provisional = false, soloPiso = false;
+  for (const L of buenas) {
+    min += L.calculo.min;
+    max += L.calculo.max;
+    if (L.calculo.desde) soloPiso = true;
+    if (L.calculo.provisional) provisional = true;
+    if (L.calculo.dias != null) dias = L.calculo.dias;
+  }
+
+  const una = buenas.length === 1 ? buenas[0].calculo : null;
+  return {
+    servicio: una ? una.servicio : buenas[0].calculo.servicio,
+    servicioNombre: una ? una.servicioNombre : nombresDeLineas(lineas),
+    min: min,
+    max: soloPiso ? min : max,
+    desde: soloPiso,
+    dias: dias,
+    desglose: buenas.reduce((a, L) => a.concat(L.calculo.desglose || []), []),
+    provisional: provisional,
+    ivaIncluido: TARIFAS.iva.incluido,
+    vigenciaDias: TARIFAS.vigenciaDias
+  };
+}
+
+/* "Tanque séptico y 2 más". Es lo que el panel muestra en la tarjeta de
+   la cotización recién creada y en el aviso: el documento sí lleva la
+   lista completa, pero un renglón no aguanta cinco nombres. */
+function nombresDeLineas(lineas) {
+  const n = lineas.map((L) => nombreDeLinea(L)).filter(Boolean);
+  if (!n.length) return "";
+  if (n.length === 1) return n[0];
+  return n[0] + " y " + (n.length - 1) + " más";
+}
+
+function nombreDeLinea(L) {
+  return L.servicioLibre ||
+    (L.calculo && L.calculo.servicioNombre) ||
+    etiqueta(L.entrada.servicio, null, "servicio");
+}
+
+/* El desglose que se guarda en la columna `lineas` y que el documento
+   lee para armar la tabla. Se guarda ya resuelto —con el nombre y el
+   monto, no con los códigos— porque las tarifas cambian y una
+   cotización emitida tiene que seguir diciendo lo que dijo. */
+function lineasParaGuardar(lineas) {
+  return lineas.map((L) => ({
+    servicio: L.entrada.servicio,
+    nombre: nombreDeLinea(L),
+    forma: L.entrada.forma || null,
+    medida: L.entrada.medida || null,
+    ultimo: L.entrada.antiguedad || null,
+    dias: (L.calculo && L.calculo.dias) || null,
+    detalle: L.detalleLibre || null,
+    min: L.calculo ? L.calculo.min : null,
+    max: L.calculo ? L.calculo.max : null,
+    desde: L.calculo ? !!L.calculo.desde : false
+  }));
+}
+
+/* La columna `lineas` llega con una migración que se corre a mano en la
+   consola de D1. Mientras no se haya corrido, el INSERT no puede
+   nombrarla o falla entero y la cotización se pierde. Se consulta una
+   vez por isolate y se recuerda. */
+let _colLineas = null;
+async function hayColumnaLineas(env) {
+  if (_colLineas !== null) return _colLineas;
+  try {
+    const { results } = await env.DB.prepare("PRAGMA table_info(cotizaciones)").all();
+    _colLineas = (results || []).some((c) => c.name === "lineas");
+  } catch (e) {
+    console.error("No se pudo leer la forma de cotizaciones:", e);
+    _colLineas = false;
+  }
+  return _colLineas;
+}
+
 function calcularCotizacion(entrada) {
   const svc = TARIFAS.servicios[entrada.servicio];
   if (!svc) return null;
@@ -3033,28 +3150,55 @@ async function cotizar(request, env, ctx) {
     }
   }
 
-  const entrada = {
-    /* El panel manda "__otro" cuando el encargado escribió el servicio.
-       Se guarda como "otro" a secas: el doble guion bajo es una marca
-       interna del formulario y no tiene por qué aparecer en el CSV ni en
-       los desgloses del resumen. El nombre de verdad va en
-       `servicio_libre`. */
-    servicio: texto(cuerpo.servicio, 40) === "__otro" ? "otro" : texto(cuerpo.servicio, 40),
-    // Tanque séptico
-    forma: texto(cuerpo.forma, 40),
-    medida: texto(cuerpo.medida, 40),
-    antiguedad: texto(cuerpo.antiguedad, 40),
-    // Alquiler
-    dias: cuerpo.dias,
-    /* La zona sale del cantón, que la persona ya dio. NO entra en el
-       precio: el recargo por distancia lo pone el encargado y el cliente
-       no lo ve. Se guarda para poder estudiar después de dónde viene el
-       trabajo y afinar el perímetro. */
-    zona: zonaDeProvincia(provincia)
-  };
+  /* La zona sale del cantón, que la persona ya dio. NO entra en el
+     precio: el recargo por distancia lo pone el encargado y el cliente
+     no lo ve. Se guarda para poder estudiar después de dónde viene el
+     trabajo y afinar el perímetro. */
+  const zona = zonaDeProvincia(provincia);
 
-  const servicioLibre = esPanel ? texto(cuerpo.servicioLibre, 80) : "";
-  const detalleLibre  = esPanel ? texto(cuerpo.detalleLibre, 200) : "";
+  /* UNA cotización puede llevar VARIOS servicios: dos tanques de
+     tamaños distintos, el tanque y la trampa de grasa. Partirlo en dos
+     cotizaciones le manda al cliente dos documentos por un solo
+     trabajo, así que van como líneas de la misma.
+
+     El cuerpo viejo —un servicio suelto en la raíz— se sigue aceptando
+     y se trata como una línea única: el formulario público lo manda así
+     y no tiene por qué cambiar. */
+  const crudas = (Array.isArray(cuerpo.lineas) && cuerpo.lineas.length)
+    ? cuerpo.lineas.slice(0, MAX_LINEAS_COTIZACION)
+    : [cuerpo];
+
+  const lineas = crudas.map((x) => {
+    const e = {
+      /* El panel manda "__otro" cuando el encargado escribió el servicio.
+         Se guarda como "otro" a secas: el doble guion bajo es una marca
+         interna del formulario y no tiene por qué aparecer en el CSV ni en
+         los desgloses del resumen. El nombre de verdad va en
+         `servicio_libre`. */
+      servicio: texto(x.servicio, 40) === "__otro" ? "otro" : texto(x.servicio, 40),
+      // Tanque séptico
+      forma: texto(x.forma, 40),
+      medida: texto(x.medida, 40),
+      antiguedad: texto(x.antiguedad, 40),
+      // Alquiler
+      dias: x.dias,
+      zona
+    };
+    return {
+      entrada: e,
+      calculo: calcularCotizacion(e),
+      servicioLibre: esPanel ? texto(x.servicioLibre, 80) : "",
+      detalleLibre:  esPanel ? texto(x.detalleLibre, 200) : ""
+    };
+  });
+
+  /* Las columnas de siempre guardan la PRIMERA línea. No es un
+     resumen: es que la tabla nació con un servicio por fila y todo lo
+     que la lee —el CSV, el resumen, las estadísticas por tipo— sigue
+     esperando eso. El desglose completo va aparte, en `lineas`. */
+  const entrada = lineas[0].entrada;
+  const servicioLibre = lineas[0].servicioLibre;
+  const detalleLibre  = lineas[0].detalleLibre;
 
   /* El precio a mano. Es el caso de "ya lo vi y vale esto": no es un
      estimado con un piso y un techo, es un monto. Por eso el mínimo y
@@ -3069,7 +3213,10 @@ async function cotizar(request, env, ctx) {
     montoFijo = n;
   }
 
-  let calculo = calcularCotizacion(entrada);
+  /* El total es la SUMA de las líneas. Si alguna sólo tiene piso
+     ("desde"), el total también: por encima de ese piso no hay techo
+     que prometer. */
+  let calculo = sumarLineas(lineas);
 
   /* Sin precio a mano hay que poder calcular. Con precio a mano no hace
      falta: es el caso del trabajo que no está en la tabla, y obligar a
@@ -3105,15 +3252,27 @@ async function cotizar(request, env, ctx) {
   let numero = null;
   let enlace = null;
   const llave = nuevaLlave();
+  /* El desglose sólo se guarda cuando hay más de un servicio: una
+     cotización de uno solo ya está entera en sus columnas, y repetirla
+     en un JSON sería dos fuentes de verdad para el mismo dato. */
+  const desgloseJSON = lineas.length > 1 ? JSON.stringify(lineasParaGuardar(lineas)) : null;
+  const guardaLineas = desgloseJSON !== null && await hayColumnaLineas(env);
+  if (desgloseJSON !== null && !guardaLineas) {
+    console.error("Falta la columna `lineas`: la cotización se guarda con el total " +
+                  "pero sin desglose. Correr tools/agregar-lineas-cotizacion.sql.");
+  }
+
   try {
     const res = await env.DB.prepare(
       `INSERT INTO cotizaciones
          (servicio, forma, medida, ultimo, dias, zona, monto_min, monto_max,
           provisional, origen, nombre, telefono, llave,
           cedula, correo, provincia, canton, distrito,
-          a_mano, servicio_libre, detalle_libre, lugar_libre, factura)
+          a_mano, servicio_libre, detalle_libre, lugar_libre, factura
+          ${guardaLineas ? ", lineas" : ""})
        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13,
-               ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23)`
+               ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23
+               ${guardaLineas ? ", ?24" : ""})`
     ).bind(
       // `ultimo` guarda la antigüedad: es la misma pregunta de siempre
       // —hace cuánto fue el último servicio— con otro nombre en el
@@ -3123,7 +3282,8 @@ async function cotizar(request, env, ctx) {
       calculo.min, calculo.max, calculo.provisional ? 1 : 0, origen, nombre, telefono, llave,
       cedula, correo, provincia, canton, distrito,
       montoFijo !== null ? 1 : 0, servicioLibre || null, detalleLibre || null, lugarLibre || null,
-      factura
+      factura,
+      ...(guardaLineas ? [desgloseJSON] : [])
     ).run();
 
     const id = res.meta && res.meta.last_row_id;
@@ -3201,12 +3361,14 @@ async function verCotizacion(request, env) {
   if (!numero || !llave) return json({ ok: false, error: "Faltan datos" }, 400);
 
   let f;
+  const conLineas = await hayColumnaLineas(env);
   try {
     f = await env.DB.prepare(
       `SELECT numero, datetime(creado, '-6 hours') AS creado, servicio, forma, medida,
               ultimo, dias, perfil, acceso, zona, monto_min, monto_max, provisional,
               nombre, telefono, cedula, correo, provincia, canton, distrito,
               a_mano, servicio_libre, detalle_libre, lugar_libre, factura
+              ${conLineas ? ", lineas" : ""}
          FROM cotizaciones
         WHERE numero = ?1 AND llave = ?2`
     ).bind(numero, llave).first();
@@ -3232,6 +3394,13 @@ async function verCotizacion(request, env) {
     // Lo que se escribió a mano manda: si el encargado puso "Bombeo de
     // pozo", el documento dice eso y no la etiqueta de la lista.
     servicio: f.servicio_libre || etiqueta(f.servicio, null, "servicio"),
+    /* Los servicios de la cotización, cuando lleva más de uno. El
+       documento arma con esto una fila por servicio en vez de una sola.
+       Viene ya resuelto desde que se emitió: nombre y monto, no códigos,
+       para que un cambio de tarifas no reescriba lo que ya se prometió.
+       En una cotización de un solo servicio es null y el documento se
+       comporta como siempre. */
+    lineas: lineasDelDocumento(f),
     /* El "incluye…" del documento sale de acá, no del HTML fijo. Sólo lo
        llevan los servicios de extracción, y NUNCA un servicio escrito a
        mano: poner "incluye la succión…" en un "Bombeo de pozo" que el
@@ -3275,6 +3444,39 @@ async function verCotizacion(request, env) {
        esto — y la zona sólo aparece si se sabe. La distancia nunca se
        menciona: el recargo lo decide el encargado y el cliente no lo ve. */
     base: baseDelCalculo(f)
+  });
+}
+
+/* Las líneas tal como las necesita el documento: el nombre, con qué se
+   calculó cada una en una sola frase, y su monto ya escrito en colones.
+
+   Una cotización vieja —o de un solo servicio— no tiene `lineas` y
+   devuelve null: el documento entonces usa la fila única de siempre. */
+function lineasDelDocumento(f) {
+  if (!f.lineas) return null;
+  let arr;
+  try { arr = JSON.parse(f.lineas); } catch { return null; }
+  if (!Array.isArray(arr) || arr.length < 2) return null;
+
+  return arr.map((L) => {
+    const detalles = [
+      L.forma  && etiqueta(L.servicio, L.forma,  "forma"),
+      L.medida && etiqueta(L.servicio, L.medida, "medida"),
+      L.ultimo && etiqueta(L.servicio, L.ultimo, "ultimo"),
+      L.dias   && (L.dias + " días de alquiler"),
+      L.detalle
+    ].filter(Boolean);
+    return {
+      nombre: L.nombre || etiqueta(L.servicio, null, "servicio"),
+      detalle: detalles.join(" · ") || null,
+      // Un servicio escrito a mano nunca lleva el "incluye…": sería
+      // prometer una succión en un trabajo que no es ese.
+      incluye: L.servicio === "otro" ? null : (INCLUYE_SERVICIO[L.servicio] || null),
+      min: L.min, max: L.max,
+      monto: L.min == null ? null
+           : L.desde || L.min === L.max ? "Desde " + colones(L.min)
+           : colones(L.min) + " – " + colones(L.max)
+    };
   });
 }
 

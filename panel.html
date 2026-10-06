@@ -1922,6 +1922,64 @@
   .grupo { color: var(--p-tenue); font-weight: 500; margin: 1.7rem 0 .85rem; }
   .grupo:first-child { margin-top: 0; }
   .nueva-rejilla { display: grid; gap: .9rem 1.1rem; grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr)); }
+
+  /* ---- Varios servicios en una misma cotización o visita ----
+
+     Un servicio más NO es una tarjeta: ya estamos dentro de una, y
+     apilar cajas fue justamente lo que hubo que desarmar. Lo que separa
+     un bloque del anterior es una raya y aire, que es como se separan
+     las secciones de un formulario de papel. */
+  .sv-bloque.extra { margin-top: 1rem; padding-top: .9rem; border-top: 1px solid var(--p-linea); }
+  .sv-cab { display: flex; align-items: center; justify-content: space-between;
+    gap: .8rem; margin-bottom: .7rem; }
+  .sv-n { font-size: .78rem; font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--p-tenue); }
+
+  /* El renglón de la agenda: servicio, detalle y el botón de quitar en
+     una sola línea mientras quepa. */
+  .sv-fila { display: grid; gap: .6rem .9rem; align-items: end;
+    grid-template-columns: minmax(9rem, 1fr) minmax(9rem, 1.2fr) auto;
+    margin-top: .8rem; padding-top: .8rem; border-top: 1px solid var(--p-linea); }
+  .sv-fila .f { margin: 0; }
+  .sv-fila label { color: var(--p-tenue); }
+  .sv-fila input, .sv-fila select {
+    font-size: 13.5px; border-radius: 8px; padding: .5rem .6rem; width: 100%;
+    background: var(--p-fondo); color: var(--p-txt); border: 1px solid var(--p-linea);
+  }
+  @media (max-width: 30rem) {
+    /* En el teléfono no caben dos selects y un botón en la misma línea:
+       el servicio se lleva el ancho completo y el detalle comparte el
+       renglón de abajo con Quitar. Dos líneas en vez de tres. */
+    .sv-fila { grid-template-columns: 1fr auto; }
+    .sv-fila .f:first-child { grid-column: 1 / -1; }
+  }
+
+  /* Quitar es una acción menor y destructiva: se ve, pero no compite. */
+  .sv-quitar {
+    border: 1px solid transparent; background: none; color: var(--p-tenue);
+    font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer;
+    height: 2rem; padding: 0 .6rem; border-radius: 999px;
+    transition: color .15s var(--ease), background .15s var(--ease), border-color .15s var(--ease);
+  }
+  .sv-quitar:hover { color: var(--est-mal-tx); background: color-mix(in srgb, var(--est-mal-tx) 10%, transparent); }
+  .sv-quitar:focus-visible { outline: 2px solid var(--p-acento); outline-offset: 1px; }
+
+  /* "+ Agregar servicio": una acción secundaria, no la del formulario. */
+  .bt.mas-sv { margin-top: .9rem; font-weight: 600; }
+
+  @media (max-width: 30rem) {
+    /* Con tres servicios en pantalla, cuatro preguntas apiladas por cada
+       uno son doce renglones. El servicio se queda con el ancho completo
+       —su nombre es largo— y las tres preguntas del tanque se reparten en
+       dos columnas: tres renglones por servicio en vez de cuatro. */
+    .sv-bloque .nueva-rejilla { grid-template-columns: 1fr 1fr; }
+    /* El servicio, la antigüedad y los días se llevan el ancho completo:
+       sus opciones son frases ("Más de 5 años") y a media columna se
+       cortan. Forma y medida sí caben en media, que son dos palabras. */
+    .sv-bloque .nueva-rejilla > .f:nth-child(1),
+    .sv-bloque .nueva-rejilla > .f:nth-child(4),
+    .sv-bloque .nueva-rejilla > .f:nth-child(5) { grid-column: 1 / -1; }
+  }
   .nueva-rejilla .f { margin: 0; }
   .nueva-rejilla label, .clave-caja label { color: var(--p-tenue); }
   .nueva-rejilla input, .nueva-rejilla select, .clave-caja input {
@@ -3050,15 +3108,26 @@
             <p class="grupo">¿Qué necesita?</p>
             <!-- Lo que se pregunta depende del servicio: un tanque
                  séptico necesita forma, medida y antigüedad; un alquiler
-                 los días; los demás nada, porque tienen precio de tabla. -->
-            <div class="nueva-rejilla">
-              <div class="f"><label for="n-servicio">Servicio</label><select id="n-servicio" required></select></div>
-              <div class="f" id="campo-forma" hidden><label for="n-forma">Forma del tanque</label><select id="n-forma"></select></div>
-              <div class="f" id="campo-medida" hidden><label for="n-medida">Medida</label><select id="n-medida"></select></div>
-              <div class="f" id="campo-antiguedad" hidden><label for="n-antiguedad">Última limpieza</label><select id="n-antiguedad"></select></div>
-              <div class="f" id="campo-dias" hidden><label for="n-dias">Días de alquiler</label><input type="number" id="n-dias" inputmode="numeric" min="8" value="8"></div>
+                 los días; los demás nada, porque tienen precio de tabla.
+
+                 Y puede necesitar MÁS DE UNO: dos tanques de tamaños
+                 distintos, el tanque y la trampa de grasa. Cada bloque es
+                 un servicio con sus propias preguntas; el total de la
+                 cotización es la suma. Los bloques se separan con una
+                 línea, no con tarjetas: ya estamos dentro de una. -->
+            <div id="n-servicios">
+              <div class="sv-bloque" data-pre="n">
+                <div class="nueva-rejilla">
+                  <div class="f"><label for="n-servicio">Servicio</label><select id="n-servicio" required></select></div>
+                  <div class="f" id="n-campo-forma" hidden><label for="n-forma">Forma del tanque</label><select id="n-forma"></select></div>
+                  <div class="f" id="n-campo-medida" hidden><label for="n-medida">Medida</label><select id="n-medida"></select></div>
+                  <div class="f" id="n-campo-antiguedad" hidden><label for="n-antiguedad">Última limpieza</label><select id="n-antiguedad"></select></div>
+                  <div class="f" id="n-campo-dias" hidden><label for="n-dias">Días de alquiler</label><input type="number" id="n-dias" inputmode="numeric" min="8" value="8"></div>
+                </div>
+                <p class="vacio-ok" id="n-sin-preguntas" hidden>Este servicio tiene precio de tabla: no hay nada más que preguntar acá.</p>
+              </div>
             </div>
-            <p class="vacio-ok" id="sin-preguntas" hidden>Este servicio tiene precio de tabla: no hay nada más que preguntar acá.</p>
+            <button type="button" class="bt mas-sv" id="n-mas-servicio">+ Agregar servicio</button>
           </section>
 
           <section class="paso" data-paso="3" hidden>
@@ -3215,6 +3284,15 @@
         <select id="c-hora-sel"></select>
         <input type="time" id="c-hora" aria-label="Hora exacta" hidden style="margin-top:.4rem;"></div>
     </div>
+
+    <!-- Una misma visita puede traer varios trabajos: dos tanques, el
+         tanque y la trampa. Cada uno es su propio registro —se completa y
+         se cobra por separado— pero comparten cliente, día y hora. Al
+         editar un trabajo ya agendado esto se esconde: corregir uno no
+         puede crear otros. -->
+    <div id="c-extras"></div>
+    <button type="button" class="bt mas-sv" id="c-mas-servicio">+ Agregar servicio</button>
+
 
     <div class="nueva-rejilla" style="margin-top:.9rem;">
       <div class="f req"><label for="c-telefono">Teléfono</label>
@@ -4831,46 +4909,152 @@
     return (sel.value === LIBRE && caja) ? caja.value.trim() : "";
   }
 
-  function refrescarServicio() {
-    var libre = $("n-servicio").value === LIBRE;
-    sincronizarLibre($("n-servicio"), "Qué trabajo es");
+  /* ---------------------------------------------------------------
+     Los servicios de la cotización
 
-    var s = OPC.servicios[$("n-servicio").value];
+     Una cotización puede llevar varios: dos tanques de tamaños
+     distintos, el tanque y la trampa. Cada uno es un BLOQUE con sus
+     propias preguntas, identificado por un prefijo: el primero es "n"
+     (vive en el HTML) y los que se agregan son "n2", "n3"…
+
+     Todo lo que antes miraba "n-servicio" a secas ahora recorre
+     `svPres`, que es la lista de bloques vivos en orden.
+     --------------------------------------------------------------- */
+  var MAX_SV = 6;
+  var svPres = ["n"];
+  var svSeq = 1;
+
+  function refrescarBloque(pre) {
+    var sel = $(pre + "-servicio");
+    if (!sel || !OPC) return;
+    var libre = sel.value === LIBRE;
+    sincronizarLibre(sel, "Qué trabajo es");
+
+    var s = OPC.servicios[sel.value];
     var tipo = s ? s.tipo : null;
 
     /* Con un servicio escrito a mano no hay tabla que preguntar forma ni
        medida: lo que describe el trabajo es el detalle del paso 4, y el
        precio lo pone el encargado. */
-    $("campo-forma").hidden = tipo !== "tanque";
-    $("campo-medida").hidden = tipo !== "tanque";
-    $("campo-antiguedad").hidden = tipo !== "tanque";
-    $("campo-dias").hidden = tipo !== "alquiler";
-    $("sin-preguntas").hidden = tipo !== "fijo" && !libre;
+    $(pre + "-campo-forma").hidden = tipo !== "tanque";
+    $(pre + "-campo-medida").hidden = tipo !== "tanque";
+    $(pre + "-campo-antiguedad").hidden = tipo !== "tanque";
+    $(pre + "-campo-dias").hidden = tipo !== "alquiler";
+    $(pre + "-sin-preguntas").hidden = tipo !== "fijo" && !libre;
 
     if (tipo === "tanque") {
-      opciones($("n-forma"), s.formas.map(function (f) {
+      opciones($(pre + "-forma"), s.formas.map(function (f) {
         return { id: f.id, etiqueta: f.etiqueta };
       }), "Escoja…");
-      opciones($("n-antiguedad"), s.antiguedad, "Escoja…");
-      sincronizarLibre($("n-antiguedad"), "Hace cuánto");
-      refrescarMedida();
+      opciones($(pre + "-antiguedad"), s.antiguedad, "Escoja…");
+      sincronizarLibre($(pre + "-antiguedad"), "Hace cuánto");
+      refrescarMedidaDe(pre);
     }
     if (tipo === "alquiler") {
-      $("n-dias").min = s.diasMinimo;
-      if (!$("n-dias").value || +$("n-dias").value < s.diasMinimo) $("n-dias").value = s.diasMinimo;
+      $(pre + "-dias").min = s.diasMinimo;
+      if (!$(pre + "-dias").value || +$(pre + "-dias").value < s.diasMinimo) {
+        $(pre + "-dias").value = s.diasMinimo;
+      }
     }
   }
 
   // Las medidas viven dentro de la forma que se haya escogido.
-  function refrescarMedida() {
-    var s = OPC.servicios[$("n-servicio").value];
+  function refrescarMedidaDe(pre) {
+    var s = OPC.servicios[$(pre + "-servicio").value];
     var f = s && s.formas && s.formas.filter(function (x) {
-      return x.id === $("n-forma").value;
+      return x.id === $(pre + "-forma").value;
     })[0];
-    opciones($("n-medida"), f ? f.medidas : [], "Escoja…");
-    sincronizarLibre($("n-forma"), "Qué forma tiene");
-    sincronizarLibre($("n-medida"), "Qué medida");
+    opciones($(pre + "-medida"), f ? f.medidas : [], "Escoja…");
+    sincronizarLibre($(pre + "-forma"), "Qué forma tiene");
+    sincronizarLibre($(pre + "-medida"), "Qué medida");
   }
+
+  // Repintar todos los bloques: se usa al cargar las opciones y al reiniciar.
+  function refrescarServicio() { svPres.forEach(refrescarBloque); }
+
+  /* Un bloque nuevo. Es el mismo HTML del primero con otro prefijo, más
+     una cabecera con el número y el botón de quitarlo. No lleva tarjeta:
+     ya estamos dentro de una, y la línea de arriba basta para separarlo. */
+  function bloqueHTML(pre) {
+    return '<div class="sv-bloque extra" data-pre="' + pre + '">' +
+      '<div class="sv-cab"><span class="sv-n"></span>' +
+        '<button type="button" class="sv-quitar" data-quitar-sv="' + pre + '">Quitar</button></div>' +
+      '<div class="nueva-rejilla">' +
+        '<div class="f"><label for="' + pre + '-servicio">Servicio</label>' +
+          '<select id="' + pre + '-servicio"></select></div>' +
+        '<div class="f" id="' + pre + '-campo-forma" hidden>' +
+          '<label for="' + pre + '-forma">Forma del tanque</label>' +
+          '<select id="' + pre + '-forma"></select></div>' +
+        '<div class="f" id="' + pre + '-campo-medida" hidden>' +
+          '<label for="' + pre + '-medida">Medida</label>' +
+          '<select id="' + pre + '-medida"></select></div>' +
+        '<div class="f" id="' + pre + '-campo-antiguedad" hidden>' +
+          '<label for="' + pre + '-antiguedad">Última limpieza</label>' +
+          '<select id="' + pre + '-antiguedad"></select></div>' +
+        '<div class="f" id="' + pre + '-campo-dias" hidden>' +
+          '<label for="' + pre + '-dias">Días de alquiler</label>' +
+          '<input type="number" id="' + pre + '-dias" inputmode="numeric" min="8" value="8"></div>' +
+      "</div>" +
+      '<p class="vacio-ok" id="' + pre + '-sin-preguntas" hidden>Este servicio tiene ' +
+        "precio de tabla: no hay nada más que preguntar acá.</p>" +
+    "</div>";
+  }
+
+  /* El número de cada bloque se pinta acá y no al crearlo: si se quita el
+     segundo de tres, el tercero tiene que pasar a ser el segundo. */
+  function renumerarSv() {
+    svPres.forEach(function (pre, i) {
+      var b = document.querySelector('.sv-bloque[data-pre="' + pre + '"] .sv-n');
+      if (b) b.textContent = "Servicio " + (i + 1);
+    });
+    $("n-mas-servicio").hidden = svPres.length >= MAX_SV;
+  }
+
+  function agregarSv() {
+    // Sin las listas cargadas, el bloque nuevo nacería con un select
+    // vacío que no se puede llenar. Mejor no crearlo.
+    if (!OPC || svPres.length >= MAX_SV) return;
+    svSeq += 1;
+    var pre = "n" + svSeq;
+    $("n-servicios").insertAdjacentHTML("beforeend", bloqueHTML(pre));
+    svPres.push(pre);
+    opciones($(pre + "-servicio"), Object.keys(OPC.servicios).map(function (k) {
+      return { id: k, etiqueta: OPC.servicios[k].nombre };
+    }), "Escoja…");
+    refrescarBloque(pre);
+    renumerarSv();
+    $(pre + "-servicio").focus();
+  }
+
+  function quitarSv(pre) {
+    if (pre === "n") return;           // el primero no se quita: siempre hay uno
+    var b = document.querySelector('.sv-bloque[data-pre="' + pre + '"]');
+    if (b) b.remove();
+    svPres = svPres.filter(function (x) { return x !== pre; });
+    renumerarSv();
+  }
+
+  // Volver a un solo servicio, al reiniciar el formulario.
+  function soloUnSv() {
+    svPres.slice(1).forEach(quitarSv);
+    svPres = ["n"];
+    renumerarSv();
+  }
+
+  $("n-mas-servicio").addEventListener("click", agregarSv);
+  /* Delegado: los bloques nacen y mueren, así que el oyente vive en el
+     contenedor y no en cada select. */
+  $("n-servicios").addEventListener("change", function (e) {
+    var b = e.target.closest(".sv-bloque");
+    if (!b) return;
+    var pre = b.getAttribute("data-pre");
+    if (e.target.id === pre + "-servicio") refrescarBloque(pre);
+    else if (e.target.id === pre + "-forma") refrescarMedidaDe(pre);
+  });
+  $("n-servicios").addEventListener("click", function (e) {
+    var q = e.target.closest("[data-quitar-sv]");
+    if (q) quitarSv(q.getAttribute("data-quitar-sv"));
+  });
 
   /* La dirección normal se escoge de la lista oficial: de ahí sale la
      zona, y "Sn José" a mano no la encuentra. Misma lista que usan el
@@ -4914,6 +5098,9 @@
        de la última creada—. El prellenado sólo pasa cuando se viene de un
        cliente (o de una solicitud), que es cuando `c` trae datos. */
     $("form-nueva").reset();
+    // Volver a un solo servicio: los bloques que se agregaron para la
+    // cotización anterior no son parte de la siguiente.
+    soloUnSv();
     refrescarServicio();
     refrescarCanton();
     $("ya-existe").hidden = true;
@@ -4935,8 +5122,22 @@
     $("ya-existe").hidden = false;
   }
 
+  /* Las listas del formulario. Va aparte porque OPC y GEO los puede
+     haber cargado OTRA pantalla —la hoja de agendar, por ejemplo— y
+     entonces acá no se pedían de nuevo… pero tampoco se llenaban los
+     select, que quedaban vacíos. */
+  function llenarListasNueva() {
+    opciones($("n-servicio"), Object.keys(OPC.servicios).map(function (k) {
+      return { id: k, etiqueta: OPC.servicios[k].nombre };
+    }), "Escoja…");
+    opciones($("n-provincia"), Object.keys(GEO).map(function (k) {
+      return { id: k, etiqueta: k };
+    }), "Escoja…");
+  }
+
   function cargarNueva() {
     if (OPC && GEO) {
+      llenarListasNueva();
       $("form-nueva").hidden = false;
       aplicarPrellenado();
       mostrarPaso(prellenar ? paso : 1);
@@ -4946,12 +5147,7 @@
     Promise.all([pedir("/api/cotizar/opciones"), pedir("/api/geografia")])
       .then(function (r) {
         OPC = r[0]; GEO = r[1].geografia;
-        opciones($("n-servicio"), Object.keys(OPC.servicios).map(function (k) {
-          return { id: k, etiqueta: OPC.servicios[k].nombre };
-        }), "Escoja…");
-        opciones($("n-provincia"), Object.keys(GEO).map(function (k) {
-          return { id: k, etiqueta: k };
-        }), "Escoja…");
+        llenarListasNueva();
         refrescarServicio();
         $("estado-nueva-carga").textContent = "";
         $("form-nueva").hidden = false;
@@ -5008,6 +5204,9 @@
   $("nueva-hecha").addEventListener("click", function (e) {
     if (!e.target.closest("#btn-otra")) return;
     $("form-nueva").reset();
+    // Volver a un solo servicio: los bloques que se agregaron para la
+    // cotización anterior no son parte de la siguiente.
+    soloUnSv();
     refrescarServicio();
     refrescarCanton();
     $("ya-existe").hidden = true;
@@ -5027,17 +5226,29 @@
     return [["n-telefono", "el teléfono"], ["n-nombre", "el nombre"]];
   }
 
-  // Paso 2 (Servicio): pide cosas distintas según el servicio escogido.
+  /* Paso 2 (Servicio): pide cosas distintas según el servicio escogido,
+     y lo hace por cada bloque. Con más de uno, el aviso dice de cuál se
+     trata ("Falta la medida del servicio 2"), porque si no hay que ir
+     campo por campo buscando el hueco. */
   function requiereDelPaso2() {
-    var lista = [["n-servicio", "el servicio"]];
-    if ($("n-servicio").value === LIBRE) return lista.concat([["n-servicio-libre", "qué trabajo es"]]);
-    var s = OPC && OPC.servicios[$("n-servicio").value];
-    if (s && s.tipo === "tanque") {
-      [["n-forma", "la forma del tanque"], ["n-medida", "la medida"],
-       ["n-antiguedad", "cuándo fue la última limpieza"]].forEach(function (par) {
-        lista.push($(par[0]).value === LIBRE ? [par[0] + "-libre", par[1]] : par);
-      });
-    }
+    var lista = [];
+    var varios = svPres.length > 1;
+    svPres.forEach(function (pre, i) {
+      var de = varios ? " del servicio " + (i + 1) : "";
+      lista.push([pre + "-servicio", "el servicio" + (varios ? " " + (i + 1) : "")]);
+      if ($(pre + "-servicio").value === LIBRE) {
+        lista.push([pre + "-servicio-libre", "qué trabajo es" + de]);
+        return;
+      }
+      var s = OPC && OPC.servicios[$(pre + "-servicio").value];
+      if (s && s.tipo === "tanque") {
+        [["-forma", "la forma del tanque"], ["-medida", "la medida"],
+         ["-antiguedad", "cuándo fue la última limpieza"]].forEach(function (par) {
+          var id = pre + par[0];
+          lista.push($(id).value === LIBRE ? [id + "-libre", par[1] + de] : [id, par[1] + de]);
+        });
+      }
+    });
     return lista;
   }
 
@@ -5108,15 +5319,32 @@
       ["Teléfono", $("n-telefono").value || "—"],
       ["Cédula", $("n-cedula").value || "—"],
       ["Correo", $("n-correo").value || "—"],
-      ["Ubicación", lugar || "—"],
-      ["Servicio", textoCampo("n-servicio")]
+      ["Ubicación", lugar || "—"]
     ];
-    if (!$("campo-forma").hidden) {
-      filas.push(["Forma del tanque", textoCampo("n-forma")],
-                 ["Medida", textoCampo("n-medida")],
-                 ["Última limpieza", textoCampo("n-antiguedad")]);
-    }
-    if (!$("campo-dias").hidden) filas.push(["Días de alquiler", $("n-dias").value || "—"]);
+    /* Con un solo servicio el repaso se lee como siempre: "Servicio",
+       "Medida"… Con varios, cada uno se resume en UN renglón —"Tanque
+       séptico · Plástico · 1000 L"— porque cuatro renglones por servicio
+       convierten el repaso en otro formulario. */
+    var varios = svPres.length > 1;
+    svPres.forEach(function (pre, i) {
+      if (!varios) {
+        filas.push(["Servicio", textoCampo(pre + "-servicio")]);
+        if (!$(pre + "-campo-forma").hidden) {
+          filas.push(["Forma del tanque", textoCampo(pre + "-forma")],
+                     ["Medida", textoCampo(pre + "-medida")],
+                     ["Última limpieza", textoCampo(pre + "-antiguedad")]);
+        }
+        if (!$(pre + "-campo-dias").hidden) filas.push(["Días de alquiler", $(pre + "-dias").value || "—"]);
+        return;
+      }
+      var partes = [textoCampo(pre + "-servicio")];
+      if (!$(pre + "-campo-forma").hidden) {
+        partes.push(textoCampo(pre + "-forma"), textoCampo(pre + "-medida"),
+                    textoCampo(pre + "-antiguedad"));
+      }
+      if (!$(pre + "-campo-dias").hidden) partes.push($(pre + "-dias").value + " días");
+      filas.push(["Servicio " + (i + 1), partes.filter(function (x) { return x && x !== "—"; }).join(" · ")]);
+    });
     $("repaso").innerHTML = filas.map(function (f) {
       return "<div><dt>" + escHtml(f[0]) + "</dt><dd>" + escHtml(f[1]) + "</dd></div>";
     }).join("");
@@ -5246,12 +5474,22 @@
   });
   $("n-monto").addEventListener("input", actualizarFE);
 
-  $("n-servicio").addEventListener("change", refrescarServicio);
-  $("n-forma").addEventListener("change", refrescarMedida);
+  /* El servicio y la forma los atiende el oyente delegado de
+     #n-servicios, porque los bloques nacen y mueren. Acá quedan los
+     campos que son únicos del formulario. */
   $("n-provincia").addEventListener("change", refrescarCanton);
   $("n-canton").addEventListener("change", refrescarDistrito);
-  ["n-medida", "n-antiguedad", "n-canton", "n-distrito"].forEach(function (id) {
+  ["n-canton", "n-distrito"].forEach(function (id) {
     $(id).addEventListener("change", function () { sincronizarLibre($(id), "Escríbalo"); });
+  });
+  // La medida y la antigüedad existen por bloque: también van delegadas.
+  $("n-servicios").addEventListener("change", function (e) {
+    var b = e.target.closest(".sv-bloque");
+    if (!b) return;
+    var pre = b.getAttribute("data-pre");
+    if (e.target.id === pre + "-medida" || e.target.id === pre + "-antiguedad") {
+      sincronizarLibre(e.target, "Escríbalo");
+    }
   });
 
   $("form-nueva").addEventListener("submit", function (e) {
@@ -5268,22 +5506,39 @@
        que es medio segundo. */
     var pestana = window.open("", "_blank");
 
-    var libreServicio = valorLibre($("n-servicio"));
     var libreLugar = direccionLibre() ? valorLibre($("n-provincia")) : "";
-    // Forma, medida y antigüedad escritas a mano van todas al mismo
-    // renglón de detalle: en el documento se leen como una sola frase.
-    var detalle = [valorLibre($("n-forma")), valorLibre($("n-medida")),
-                   valorLibre($("n-antiguedad")), $("n-detalle").value.trim()]
-                  .filter(Boolean).join(" · ");
+
+    /* Una línea por bloque. Forma, medida y antigüedad escritas a mano
+       van todas al mismo renglón de detalle: en el documento se leen como
+       una sola frase. El "Detalle para el documento" del paso 3 es de la
+       cotización entera, así que se le pega a la primera línea, que es la
+       que llena las columnas de siempre. */
+    var lineas = svPres.map(function (pre, i) {
+      var det = [valorLibre($(pre + "-forma")), valorLibre($(pre + "-medida")),
+                 valorLibre($(pre + "-antiguedad"))];
+      if (i === 0) det.push($("n-detalle").value.trim());
+      return {
+        servicio: $(pre + "-servicio").value,
+        forma: $(pre + "-forma").value, medida: $(pre + "-medida").value,
+        antiguedad: $(pre + "-antiguedad").value, dias: $(pre + "-dias").value,
+        servicioLibre: valorLibre($(pre + "-servicio")),
+        detalleLibre: det.filter(Boolean).join(" · ")
+      };
+    });
 
     pedir("/api/cotizar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         origen: "panel",
-        servicio: $("n-servicio").value,
-        forma: $("n-forma").value, medida: $("n-medida").value,
-        antiguedad: $("n-antiguedad").value, dias: $("n-dias").value,
+        lineas: lineas,
+        /* Los mismos datos de la primera línea, sueltos en la raíz. Es
+           la forma que el servidor aceptaba antes y la que sigue usando
+           el formulario público: mandarlos no cuesta nada y deja la
+           puerta abierta si alguna versión vieja queda cacheada. */
+        servicio: lineas[0].servicio,
+        forma: lineas[0].forma, medida: lineas[0].medida,
+        antiguedad: lineas[0].antiguedad, dias: lineas[0].dias,
         provincia: libreLugar ? "" : $("n-provincia").value,
         canton: libreLugar ? "" : $("n-canton").value,
         distrito: libreLugar ? "" : $("n-distrito").value,
@@ -5291,8 +5546,8 @@
         cedula: $("n-cedula").value, correo: $("n-correo").value,
         solicitudId: prellenarSolicitud || "",
         montoFijo: soloDigitos($("n-monto").value),
-        servicioLibre: libreServicio,
-        detalleLibre: detalle,
+        servicioLibre: lineas[0].servicioLibre,
+        detalleLibre: lineas[0].detalleLibre,
         lugarLibre: libreLugar,
         // Factura electrónica: 'no' (sin FE), 'iva' (13%) o 'exo' (exonerado).
         factura: feOn() ? feModo : "no"
@@ -6785,6 +7040,11 @@
 
     $("c-id").value = c ? c.id : "";
     $("c-titulo").textContent = c ? "Reagendar el trabajo" : "Agendar un trabajo";
+    /* Al corregir un trabajo que ya existe se edita ESE y nada más:
+       agregar servicios desde acá crearía trabajos nuevos sin que se vea
+       que se están creando. */
+    limpiarCitaSv();
+    $("c-mas-servicio").hidden = !!c;
     ["c-telefono", "c-nombre", "c-detalle", "c-senas", "c-servicio-libre"].forEach(function (id) { $(id).value = ""; });
     $("c-servicio-libre").hidden = true;
     ponerHora("c", c && c.hora);
@@ -6824,6 +7084,82 @@
     $("velo-cita").hidden = false;
     $((c || cli) ? "c-servicio" : "c-telefono").focus();
   }
+
+  /* ---------- Los servicios extra de una visita ----------
+
+     El primero es el select de arriba, que no cambia. Los que se agregan
+     son renglones de una línea: qué servicio y, opcional, cuál de los dos
+     ("el del frente"). Van sin tarjeta, separados por una raya, porque la
+     hoja entera ya es una superficie. */
+  var MAX_CITA_SV = 6;
+  var citaSeq = 0, citaPres = [];
+
+  function citaBloqueHTML(pre) {
+    return '<div class="sv-fila" data-pre="' + pre + '">' +
+      '<div class="f"><label for="' + pre + '-servicio" class="sv-et">Servicio</label>' +
+        '<select id="' + pre + '-servicio"></select>' +
+        '<input type="text" id="' + pre + '-servicio-libre" placeholder="Escríbalo" ' +
+          'autocomplete="off" hidden style="margin-top:.4rem;"></div>' +
+      '<div class="f"><label for="' + pre + '-detalle">Detalle</label>' +
+        '<input type="text" id="' + pre + '-detalle" autocomplete="off" ' +
+          'placeholder="ej. el tanque del frente"></div>' +
+      '<button type="button" class="sv-quitar" data-quitar-cita="' + pre + '" ' +
+        'aria-label="Quitar este servicio">Quitar</button>' +
+    "</div>";
+  }
+
+  function citaOpcionesDe(pre) {
+    if (!OPC) { $(pre + "-servicio").innerHTML = '<option value="">Cargando…</option>'; return; }
+    opciones($(pre + "-servicio"), Object.keys(OPC.servicios).map(function (k) {
+      return { id: k, etiqueta: OPC.servicios[k].nombre };
+    }), "Escoja…");
+  }
+
+  /* El número va acá y no al crear el renglón: si se quita el segundo de
+     tres, el tercero tiene que pasar a ser el segundo. */
+  function renumerarCitaSv() {
+    citaPres.forEach(function (pre, i) {
+      var et = document.querySelector('.sv-fila[data-pre="' + pre + '"] .sv-et');
+      if (et) et.textContent = "Servicio " + (i + 2);
+    });
+    $("c-mas-servicio").hidden = citaPres.length + 1 >= MAX_CITA_SV;
+  }
+
+  function agregarCitaSv() {
+    if (citaPres.length + 1 >= MAX_CITA_SV) return;
+    citaSeq += 1;
+    var pre = "cx" + citaSeq;
+    $("c-extras").insertAdjacentHTML("beforeend", citaBloqueHTML(pre));
+    citaPres.push(pre);
+    citaOpcionesDe(pre);
+    renumerarCitaSv();
+    $(pre + "-servicio").focus();
+  }
+
+  function quitarCitaSv(pre) {
+    var f = document.querySelector('.sv-fila[data-pre="' + pre + '"]');
+    if (f) f.remove();
+    citaPres = citaPres.filter(function (x) { return x !== pre; });
+    renumerarCitaSv();
+  }
+
+  function limpiarCitaSv() {
+    $("c-extras").innerHTML = "";
+    citaPres = [];
+    $("c-mas-servicio").hidden = false;
+  }
+
+  $("c-mas-servicio").addEventListener("click", agregarCitaSv);
+  $("c-extras").addEventListener("click", function (e) {
+    var q = e.target.closest("[data-quitar-cita]");
+    if (q) quitarCitaSv(q.getAttribute("data-quitar-cita"));
+  });
+  $("c-extras").addEventListener("change", function (e) {
+    var f = e.target.closest(".sv-fila");
+    if (f && e.target.id === f.getAttribute("data-pre") + "-servicio") {
+      sincronizarLibre(e.target, "Qué trabajo es");
+    }
+  });
 
   function cerrarCita() { $("velo-cita").hidden = true; }
   $("c-cerrar").addEventListener("click", cerrarCita);
@@ -6912,6 +7248,23 @@
     setTimeout(function () { $("c-ac").hidden = true; }, 150);
   });
 
+  /* Si se escogió "Otro (escribir)", vale el texto libre. */
+  function svDeSelect(pre) {
+    var sel = $(pre + "-servicio");
+    return sel.value === LIBRE
+      ? ($(pre + "-servicio-libre").value.trim() || "otro")
+      : sel.value;
+  }
+
+  function trabajosDeLaCita() {
+    var lista = [{ servicio: svDeSelect("c"), detalle: $("c-detalle").value }];
+    citaPres.forEach(function (pre) {
+      var sv = svDeSelect(pre);
+      if (sv) lista.push({ servicio: sv, detalle: $(pre + "-detalle").value });
+    });
+    return lista;
+  }
+
   function guardarCita() {
     var aviso = $("c-aviso");
     aviso.classList.remove("is-error");
@@ -6925,15 +7278,21 @@
         telefono: $("c-telefono").value, nombre: $("c-nombre").value,
         provincia: $("c-provincia").value, canton: $("c-canton").value,
         distrito: $("c-distrito").value, senas: $("c-senas").value,
-        // Si se escogió "Otro (escribir)", se manda el texto libre como servicio.
-        servicio: $("c-servicio").value === LIBRE ? ($("c-servicio-libre").value.trim() || "otro") : $("c-servicio").value,
+        /* Los trabajos de esta visita. El primero es el select de arriba
+           y se queda con la nota de la visita como detalle, igual que
+           antes; los que se agregaron traen el suyo. */
+        servicios: trabajosDeLaCita(),
+        // El mismo primer servicio suelto, como lo esperaba el cuerpo viejo.
+        servicio: trabajosDeLaCita()[0].servicio,
         fecha: $("c-fecha").value,
         hora: horaElegida("c"), detalle: $("c-detalle").value
       })
     })
       .then(function (d) {
         cerrarCita();
-        avisar(d.movida ? "Cita reagendada." : "Trabajo agendado.");
+        avisar(d.movida ? "Cita reagendada."
+             : d.cuantos > 1 ? d.cuantos + " trabajos agendados."
+             : "Trabajo agendado.");
         agendaCargada = false; resumenCargado = false;
         // En Servicios o en la ficha, se repinta ahí mismo (es el mismo
         // registro). Desde la Agenda, se salta al día de la cita para verla.
