@@ -899,7 +899,52 @@
     font-family: var(--display); font-size: 1.3rem; font-weight: 600;
     letter-spacing: -.03em; text-transform: capitalize; margin: 0;
   }
+  .ag2-mes button {
+    font: inherit; color: inherit; background: none; border: 0; padding: .1rem .4rem;
+    margin-left: -.4rem; border-radius: 10px; cursor: pointer; text-transform: inherit;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    transition: background .15s var(--ease);
+  }
+  .ag2-mes button:hover { background: var(--p-ctrl); }
+  .ag2-mes button:focus-visible { outline: 2px solid var(--p-acento); outline-offset: 1px; }
   .ag2-mes span { color: var(--p-tenue); font-weight: 500; }
+
+  /* El salto de mes y año. Va `fixed` y colocado a mano: el encabezado
+     de la Agenda recorta lo que se le salga (`overflow: hidden`), y un
+     menú que cuelgue de ahí sale cortado por abajo y por la derecha. */
+  .ag2-salto {
+    position: fixed; z-index: 60; width: min(19rem, calc(100vw - 1.6rem));
+    padding: .7rem; border-radius: var(--radio-chico);
+    background: var(--p-sup); border: 1px solid var(--p-borde);
+    box-shadow: 0 14px 34px rgba(16, 26, 48, .18);
+  }
+  :root[data-tema="oscuro"] .ag2-salto { box-shadow: 0 14px 34px rgba(0, 0, 0, .5); }
+  .ag2-salto[hidden] { display: none; }
+  .ag2-salto-ano {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: .55rem; padding-bottom: .5rem; border-bottom: 1px solid var(--p-linea);
+  }
+  .ag2-salto-ano b { font-family: var(--datos); font-size: 1rem; font-variant-numeric: tabular-nums; }
+  .ag2-salto-ano button {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2rem; height: 2rem; border-radius: 10px; color: var(--p-txt2);
+  }
+  .ag2-salto-ano button:hover { background: var(--p-ctrl); }
+  .ag2-salto-ano svg { width: 16px; height: 16px; }
+  /* Tres columnas y no cuatro: con cuatro, "sep" y "dic" quedan en cajas
+     de 55 px y el dedo falla. */
+  .ag2-salto-meses { display: grid; grid-template-columns: repeat(3, 1fr); gap: .3rem; }
+  .ag2-salto-meses button {
+    height: 2.3rem; border-radius: 10px; font-size: .82rem; font-weight: 600;
+    color: var(--p-txt2); text-transform: capitalize;
+    transition: background .15s var(--ease), color .15s var(--ease);
+  }
+  .ag2-salto-meses button:hover { background: var(--p-ctrl); color: var(--p-txt); }
+  /* El mes de hoy se marca con un punto; el que se está mirando, lleno. */
+  .ag2-salto-meses button.ahora { color: var(--p-acento); }
+  .ag2-salto-meses button[aria-pressed="true"] {
+    background: var(--p-primario); color: #fff;
+  }
   .ag2-flechas { display: flex; gap: .15rem; }
   .ag2-flechas button, .ag2-hoy {
     display: inline-flex; align-items: center; justify-content: center;
@@ -1013,6 +1058,13 @@
   }
   .pild:active { transform: scale(.985); }
   .pild.hecho { opacity: .72; }
+  /* Un trabajo que ya pasó y nadie cerró. El tono no reemplaza al del
+     servicio —el ícono tiene que seguir reconociéndose— sino que le pone
+     una barra al canto, que es lo que se ve corriendo la lista. */
+  .pild.vencida {
+    background: color-mix(in srgb, var(--est-curso-tx) 7%, var(--tinte));
+    box-shadow: inset 3px 0 0 var(--est-curso-tx);
+  }
 
   /* El teléfono, bajo el nombre y alineado con él. Se lee como un dato
      más del registro; el glifo verde es toda la señal de que además
@@ -1488,6 +1540,9 @@
     background: var(--p-sup2); color: var(--p-tenue); white-space: nowrap;
   }
   .pastilla.toca { background: var(--est-espera-bg); color: var(--est-espera-tx); }
+  /* La única pastilla de la Agenda con color: es la única que pide una
+     decisión. "Hecho" y "Mantenimiento" informan; "Sin cerrar" reclama. */
+  .pastilla.curso { background: var(--est-curso-bg); color: var(--est-curso-tx); }
   .pastilla.vencio { background: var(--est-mal-bg); color: var(--est-mal-tx); }
   .pastilla.mudo { opacity: .65; }
   /* Estados de un servicio (sección Servicios) */
@@ -3047,7 +3102,7 @@
            qué acaba de hacer. -->
       <div class="rango cli-orden">
         <span class="presets" id="cli-orden" role="group" aria-label="Ordenar">
-          <button type="button" data-orden="pronto" aria-pressed="true">Le toca</button>
+          <button type="button" data-orden="pronto" aria-pressed="true">Mantenimiento</button>
           <button type="button" data-orden="reciente">Reciente</button>
           <button type="button" data-orden="nombre">Nombre</button>
         </span>
@@ -3125,7 +3180,18 @@
       <div class="ag2">
         <header class="ag2-cab">
           <div class="ag2-top">
-            <h2 class="ag2-mes" id="ag2-mes"></h2>
+            <!-- El mes y el año se tocan: abren el salto directo. Pasar de
+                 octubre a marzo con la flecha son cinco toques. -->
+            <h2 class="ag2-mes"><button type="button" id="ag2-mes" aria-expanded="false"
+              aria-haspopup="true" aria-label="Cambiar de mes o de año"></button></h2>
+            <div class="ag2-salto" id="ag2-salto" hidden>
+              <div class="ag2-salto-ano">
+                <button type="button" data-ano="-1" aria-label="Año anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                <b id="ag2-salto-ano"></b>
+                <button type="button" data-ano="1" aria-label="Año siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+              </div>
+              <div class="ag2-salto-meses" id="ag2-salto-meses"></div>
+            </div>
             <button type="button" class="ag2-hoy" id="ag2-hoy">Hoy</button>
             <div class="ag2-flechas">
               <button type="button" id="ag2-antes" aria-label="Anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
@@ -4031,6 +4097,12 @@
 
      ===================================================================== */
   var GRUPOS_P = [
+    /* Va de primero porque es lo único de esta lista donde el camión ya
+       salió —o debía salir— y nadie cerró la vuelta: o se hizo y falta
+       anotarlo, o no se hizo y hay que reagendarlo. Lo demás espera una
+       respuesta; esto espera una decisión. */
+    { id: "trabajos",     titulo: "Trabajos sin cerrar",       corto: "Sin cerrar",
+      tono: "var(--est-curso-tx)" },
     { id: "cobros",       titulo: "Cobros pendientes",         corto: "Cobros",
       tono: "var(--est-mal-tx)" },
     { id: "mantenimientos", titulo: "Mantenimientos vencidos",  corto: "Mantenimientos",
@@ -4046,6 +4118,7 @@
     ultimoResumen = d;
     var h = d.hoy || {};
     PEND = {
+      trabajos: h.trabajosVencidos || [],
       cobros: h.cobrosPend || [],
       mantenimientos: (h.mantenimientos && h.mantenimientos.vencidos) || [],
       solicitudes: h.solicitudes || [],
@@ -4105,7 +4178,20 @@
     var abierto = pendAbierto === clave;
     var cuanto = "", etq = "", det = "", acc = [];
 
-    if (g.id === "cobros") {
+    if (g.id === "trabajos") {
+      cuanto = x.dias === 1 ? "Ayer" : "Hace " + x.dias + " días";
+      etq = "Sin cerrar";
+      // Mismo separador que en la Agenda: esta tarjeta es un trabajo de allá.
+      var barra = function (a) { return a.filter(Boolean).join(" | "); };
+      det = filaDet(I_NOTA_AG, barra([x.servicio, x.hora ? horaBonita(x.hora) + " " + ampmDe(x.hora) : ""])) +
+            filaDet(I_PIN_AG, barra([x.lugar, x.senas])) +
+            filaDet(I_NOTA_AG, x.detalle);
+      if (x.wa) acc.push('<a class="bt wa" href="' + escHtml(x.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Escribir</a>");
+      acc.push('<button type="button" class="bt fuerte" data-phecho="' + x.id + '">Marcar hecha</button>');
+      acc.push('<button type="button" class="bt" data-preagendar="' + x.id + '">Reagendar</button>');
+      acc.push('<button type="button" class="bt" data-cliente="' + x.clienteId + '">Ver cliente</button>');
+
+    } else if (g.id === "cobros") {
       cuanto = colones(x.saldo);
       etq = fechaLarga(x.fecha);
       det = filaDet(I_NOTA_AG, x.servicio) +
@@ -4172,9 +4258,22 @@
       return;
     }
 
-    var b = e.target.closest("[data-cliente],[data-pago],[data-pagendar]");
+    var b = e.target.closest("[data-cliente],[data-pago],[data-pagendar],[data-phecho],[data-preagendar]");
     if (!b) return;
     if (b.dataset.cliente != null) return verCliente(b.dataset.cliente);
+    /* Las dos salidas de un trabajo sin cerrar. Son las MISMAS funciones
+       de la Agenda y reciben el mismo objeto: el servidor lo devuelve con
+       esa forma justamente para no tener dos caminos para lo mismo. */
+    if (b.dataset.phecho != null) {
+      var t = (PEND.trabajos || []).filter(function (y) { return String(y.id) === b.dataset.phecho; })[0];
+      if (t) marcarCitaHecha(t);
+      return;
+    }
+    if (b.dataset.preagendar != null) {
+      var t2 = (PEND.trabajos || []).filter(function (y) { return String(y.id) === b.dataset.preagendar; })[0];
+      if (t2) abrirCita({ cita: t2 });
+      return;
+    }
     if (b.dataset.pago != null) {
       var p = b.dataset.pago.split(":");
       return pagoDeServicio(p[0], p[1]);
@@ -5783,7 +5882,7 @@
 
   var CANALES = null, PERIODOS_SRV = null;
   var cliPagina = 1, cliBusca = "", cliReloj = null;
-  /* "Le toca" de entrada: la primera pregunta al abrir Clientes casi
+  /* "Mantenimiento" de entrada: la primera pregunta al abrir Clientes casi
      siempre es a quién hay que escribirle, no dónde está fulano. */
   var cliOrden = "pronto", cliProv = "", cliServ = "";
   var cliVista = "clientes";   // clientes | posibles
@@ -5972,7 +6071,7 @@
     Array.prototype.forEach.call(document.querySelectorAll(".cli-sw .hoy-sw-b"), function (b) {
       b.setAttribute("aria-selected", String(b.dataset.cli === v));
     });
-    // "Le toca" y "Agregar cliente" son de clientes; en posibles no aplican.
+    // "Mantenimiento" y "Agregar cliente" son de clientes; en posibles no aplican.
     var esPos = v === "posibles";
     $("btn-nuevo-cliente").hidden = esPos;
     var leToca = document.querySelector('#cli-orden [data-orden="pronto"]');
@@ -7904,6 +8003,7 @@
     $("ag2-tira").innerHTML = cont;
     $("ag2-mes").innerHTML = escHtml(MES_LARGO[ag2.ancla.getMonth()]) +
       ' <span>' + ag2.ancla.getFullYear() + "</span>";
+    if (!$("ag2-salto").hidden) pintarSalto();
   }
 
   function celdaAg2(d, hoy, fuera, soloNum) {
@@ -7972,7 +8072,7 @@
       }).join("") + "</ol>" +
       (g.toca.length
         ? '<ol class="riel" style="margin-top:.6rem"><li class="hora">' +
-          '<span class="hora-et"><small>LE&nbsp;TOCA</small></span>' +
+          '<span class="hora-et"><small>MANTEN.</small></span>' +
           '<div class="hora-caja">' + g.toca.map(function (t) { return pildoraAg2(t, "toca", false); }).join("") +
           "</div></li></ol>"
         : "");
@@ -7983,6 +8083,19 @@
        hecho → lo ya realizado, tenue
        toca  → un recordatorio: todavía NO es un trabajo, así que lo único
                que ofrece es agendarlo. */
+  // El separador de la Agenda: una barra fina, no un punto medio.
+  function sepAg() { return '<span class="ag2-barra">|</span>'; }
+
+  /* Un trabajo agendado que ya pasó —más de 24 horas desde su momento— y
+     sigue sin cerrarse. No es historia: alguien tiene que decidir si se
+     hizo o si se reagenda. En la Agenda sólo cambia de tono; la decisión
+     se toma en Pendientes, que es donde vive lo que espera respuesta. */
+  function vencidaAg(c) {
+    if (!c.fecha) return false;
+    var cuando = new Date(c.fecha + "T" + (c.hora || "23:59") + ":00");
+    return isFinite(cuando) && (Date.now() - cuando.getTime()) > 24 * 3600 * 1000;
+  }
+
   function pildoraAg2(c, tipo, conHora) {
     /* Hasta el recordatorio lleva el ícono de SU tipo de servicio: saber
        que lo que vence es una trampa de grasa y no un tanque cambia cómo
@@ -7991,17 +8104,19 @@
     var key = c.servicioKey || null;
     var sv = svAg(key);
     var abierto = ag2.abierto === tipo + ":" + c.id;
+    var vencida = tipo === "cita" && vencidaAg(c);
     var marca = tipo === "hecho"
       ? '<span class="pastilla ok">Hecho</span>'
       : (tipo === "toca" ? '<span class="pastilla ' + (c.dias < 0 ? "mal" : "espera") + '">' +
-          escHtml(c.dias < 0 ? "Vencido" : "Le toca") + "</span>" : "");
+          escHtml(c.dias < 0 ? "Vencido" : "Mantenimiento") + "</span>"
+        : vencida ? '<span class="pastilla curso">Sin cerrar</span>' : "");
     /* El teléfono va DENTRO de la píldora pero FUERA del botón: tiene que
        leerse sin abrir nada —es el dato que se busca para salir— y a la
        vez abrir el WhatsApp del cliente. Un enlace no puede ir dentro de
        un botón, así que la píldora deja de ser el botón y pasa a ser la
        caja que contiene los dos. */
     return '<div class="trab">' +
-      '<div class="pild' + (tipo === "hecho" ? " hecho" : "") + '"' +
+      '<div class="pild' + (tipo === "hecho" ? " hecho" : "") + (vencida ? " vencida" : "") + '"' +
         ' data-abierto="' + abierto + '"' +
         ' style="--sv:' + sv.c + ";--tinte:" + tinteAg(key) + '">' +
         '<button type="button" class="pild-ab"' +
@@ -8009,7 +8124,7 @@
           '<span class="ag2-chip">' + icoAg(key) + "</span>" +
           '<span class="pild-t"><b>' + escHtml(c.nombre) + "</b>" +
             '<small><span>' + escHtml(c.servicio || "") +
-            (conHora && c.hora ? " · " + escHtml(horaBonita(c.hora)) + " " + ampmDe(c.hora) : "") +
+            (conHora && c.hora ? sepAg() + escHtml(horaBonita(c.hora)) + " " + ampmDe(c.hora) : "") +
             "</span>" + marca + "</small></span>" +
           '<span class="pild-fl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>' +
         "</button>" +
@@ -8070,7 +8185,7 @@
     acc.push('<button type="button" class="bt" data-menu-cita="' + c.id + '" title="Más acciones" aria-label="Más acciones">' + ICO.puntos + "</button>");
 
     return filaDet(I_NOTA_AG, c.detalle) +
-      filaDet(I_PIN_AG, [c.lugar, c.senas].filter(Boolean).join(" · ")) +
+      filaDet(I_PIN_AG, [c.lugar, c.senas].filter(Boolean).join(" | ")) +
       filaDet(I_NOTA_AG, c.nota) +
       (c.monto ? filaDet(I_PLATA_AG, colones(c.monto)) : "") +
       '<div class="det-acc">' + acc.join("") + "</div>";
@@ -8184,10 +8299,11 @@
     });
     return dias.map(function (g) {
       var d = new Date(g.f + "T12:00:00");
-      var et = (g.f === hoyISO() ? "Hoy · " : "") + DIAS_N_AG[d.getDay()] + " " +
-               d.getDate() + " " + MES_LARGO[d.getMonth()] +
+      var et = DIAS_N_AG[d.getDay()] + " " + d.getDate() + " " + MES_LARGO[d.getMonth()] +
                (g.f.slice(0, 4) === hoyISO().slice(0, 4) ? "" : " " + g.f.slice(0, 4));
-      return '<div class="ag2-dia-lista">' + escHtml(et) + "</div>" +
+      return '<div class="ag2-dia-lista">' +
+        (g.f === hoyISO() ? '<span class="ag2-hoyet">Hoy</span>' + sepAg() : "") +
+        escHtml(et) + "</div>" +
         g.lista.map(function (c) { return pildoraAg2(c, tipo, true); }).join("");
     }).join("");
   }
@@ -8207,6 +8323,80 @@
       : '<div class="ag2-vacio"><b>Todavía no hay trabajos hechos</b>' +
         "Lo que marque como hecho queda guardado acá." + "</div>";
   }
+
+  /* ---- Salto directo de mes y año ----
+     Ir de octubre a marzo con la flecha son cinco toques; acá es uno. El
+     año se mueve aparte porque cambiar de año es otra intención: uno
+     busca "marzo" mucho más seguido que "marzo del año pasado". */
+  var saltoAno = null;
+
+  function pintarSalto() {
+    if (saltoAno == null) saltoAno = ag2.ancla.getFullYear();
+    var hoy = new Date();
+    $("ag2-salto-ano").textContent = saltoAno;
+    $("ag2-salto-meses").innerHTML = MES_LARGO.map(function (m, i) {
+      var esteMes = saltoAno === ag2.ancla.getFullYear() && i === ag2.ancla.getMonth();
+      var esHoy = saltoAno === hoy.getFullYear() && i === hoy.getMonth();
+      return '<button type="button" data-mes="' + i + '" aria-pressed="' + esteMes + '"' +
+        (esHoy ? ' class="ahora"' : "") + ">" + escHtml(m.slice(0, 3)) + "</button>";
+    }).join("");
+  }
+
+  function abrirSalto(abrir) {
+    saltoAno = ag2.ancla.getFullYear();
+    var caja = $("ag2-salto");
+    caja.hidden = !abrir;
+    $("ag2-mes").setAttribute("aria-expanded", String(abrir));
+    if (!abrir) return;
+    pintarSalto();
+    colocarSalto();
+  }
+
+  /* Se coloca bajo el rótulo del mes, pero sin salirse de la pantalla:
+     en un teléfono angosto el menú es casi tan ancho como la ventana. */
+  function colocarSalto() {
+    var caja = $("ag2-salto"), b = $("ag2-mes").getBoundingClientRect();
+    caja.style.left = "0px"; caja.style.top = "0px";   // medir sin arrastrar la posición anterior
+    var w = caja.offsetWidth, h = caja.offsetHeight, m = 8;
+    var x = Math.max(m, Math.min(b.left, window.innerWidth - w - m));
+    var y = b.bottom + 6;
+    if (y + h > window.innerHeight - m) y = Math.max(m, b.top - h - 6);
+    caja.style.left = Math.round(x) + "px";
+    caja.style.top = Math.round(y) + "px";
+  }
+
+  $("ag2-mes").addEventListener("click", function () {
+    abrirSalto($("ag2-salto").hidden);
+  });
+
+  $("ag2-salto").addEventListener("click", function (e) {
+    var a = e.target.closest("[data-ano]");
+    if (a) { saltoAno += Number(a.dataset.ano); pintarSalto(); return; }
+    var m = e.target.closest("[data-mes]");
+    if (!m) return;
+    var mes = Number(m.dataset.mes);
+    /* Si el mes al que se salta es el de hoy, se cae en el día de hoy y
+       no en el 1: es casi siempre lo que se quería. */
+    var hoy = new Date();
+    var destino = (saltoAno === hoy.getFullYear() && mes === hoy.getMonth())
+      ? new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 12)
+      : new Date(saltoAno, mes, 1, 12);
+    ag2.ancla = destino;
+    ag2.dia = isoDe(destino);
+    ag2.abierto = null;
+    abrirSalto(false);
+    pintarAg2();
+  });
+
+  // Un toque afuera lo cierra, como cualquier menú.
+  document.addEventListener("click", function (e) {
+    if ($("ag2-salto").hidden) return;
+    if (e.target.closest("#ag2-salto") || e.target.closest("#ag2-mes")) return;
+    abrirSalto(false);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !$("ag2-salto").hidden) { abrirSalto(false); $("ag2-mes").focus(); }
+  });
 
   /* ---- Gestos ---- */
   $("ag2-tira").addEventListener("click", function (e) {

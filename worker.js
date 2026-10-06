@@ -1009,7 +1009,23 @@ async function resumenPanel(request, env) {
            (SELECT COUNT(DISTINCT s.cotizacion_id) FROM servicios s
              JOIN cotizaciones co ON co.id = s.cotizacion_id
              WHERE ${dia.replace(/creado/g, 'co.creado')} BETWEEN ? AND ?
-               AND s.papelera IS NULL AND co.papelera IS NULL) AS convertidas`, [...R, ...R])
+               AND s.papelera IS NULL AND co.papelera IS NULL) AS convertidas`, [...R, ...R]),
+      /* 24 · Trabajos agendados que YA PASARON y nadie cerró. Más de 24
+             horas desde su momento —la fecha con su hora, y si no tiene
+             hora, el final de ese día— y siguen en 'programado'. No son
+             historia: son trabajo abierto. O se hizo y falta anotarlo, o
+             no se hizo y hay que reagendarlo; en los dos casos alguien
+             tiene que tocarlo, que es la definición de un pendiente. */
+      q(`SELECT s.id, s.fecha, s.hora, s.servicio, s.detalle, s.nota, s.estado,
+                c.id AS cliente_id, c.nombre, c.telefono,
+                c.provincia, c.canton, c.distrito, c.senas,
+                CAST(julianday(date('now', '-6 hours')) - julianday(s.fecha) AS INTEGER) AS dias
+         FROM servicios s JOIN clientes c ON c.id = s.cliente_id
+         WHERE s.estado IN ('programado', 'en_proceso')
+           AND s.papelera IS NULL AND c.papelera IS NULL
+           AND datetime(s.fecha || ' ' || COALESCE(NULLIF(s.hora, ''), '23:59'))
+               < datetime('now', '-6 hours', '-1 day')
+         ORDER BY s.fecha ASC, s.hora ASC LIMIT 20`)
     ]);
 
     const filas = (i) => (r[i] && r[i].results) || [];
@@ -1118,6 +1134,22 @@ async function resumenPanel(request, env) {
         ", le confirmo de Sanitarios Ticos la visita" +
         (f.hora ? " a las " + f.hora : " de hoy") + ".")
     }));
+    /* Se devuelven con la misma forma que una cita de la agenda, porque
+       las dos acciones que ofrecen —reagendar y marcar como hecha— son
+       las mismas de allá y reciben el mismo objeto. */
+    const trabajosVencidos = filas(24).map((f) => ({
+      id: f.id, clienteId: f.cliente_id, nombre: f.nombre, telefono: f.telefono || null,
+      servicio: etiqueta(f.servicio, null, "servicio"), servicioKey: f.servicio,
+      detalle: f.detalle || null, nota: f.nota || null,
+      provincia: f.provincia || null, canton: f.canton || null,
+      distrito: f.distrito || null, senas: f.senas || null,
+      lugar: [f.canton, f.provincia].filter(Boolean).join(", ") || null,
+      fecha: f.fecha, hora: f.hora || null, estado: f.estado, dias: f.dias,
+      wa: waDe(f.telefono, "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") +
+               ", le escribo de Sanitarios Ticos por la visita que teníamos para " +
+               fechaTexto(f.fecha) + ".")
+    }));
+
     const solicitudesNuevas = filas(5).slice(0, 6).map((f) => ({
       id: f.id, nombre: f.nombre, telefono: f.telefono,
       servicio: f.servicio, zona: f.zona, horas: f.horas
@@ -1148,6 +1180,7 @@ async function resumenPanel(request, env) {
       // ---- Hoy: cinco listas operativas ----
       hoy: {
         trabajos: trabajosHoy,
+        trabajosVencidos,
         cobrosPend, cotizSinServicio, solicitudes: solicitudesNuevas,
         mantenimientos: { vencidos: mantVencidos, semana: mantSemana }
       },
