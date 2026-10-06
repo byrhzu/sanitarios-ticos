@@ -1077,8 +1077,43 @@
     margin: 1.3rem 0 .5rem; font-size: .8rem; font-weight: 600; color: var(--p-tenue);
     text-transform: capitalize; display: flex; align-items: center; gap: .6rem;
   }
-  .ag2-dia-lista:first-child { margin-top: 0; }
+  /* Ya no es el primer hijo: arriba va la cabecera de la lista. */
+  .lis-cab + .ag2-dia-lista { margin-top: .2rem; }
   .ag2-dia-lista::after { content: ""; flex: 1; height: 1px; background: var(--p-linea); }
+
+  /* ---- La cabecera del modo lista ----
+     Dos conmutadores y dos filtros. Sin tarjeta: ya estamos dentro de
+     una, y lo que separa esta barra de la lista es la raya de abajo. */
+  .lis-cab {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: .6rem .8rem; padding-bottom: .85rem; margin-bottom: .3rem;
+    border-bottom: 1px solid var(--p-linea);
+  }
+  /* El conteo a la par del rótulo, no debajo ni en cápsula: dice cuántos
+     hay con los filtros puestos. */
+  .lis-n {
+    margin-left: .4rem; font-family: var(--datos); font-size: .72rem; font-weight: 700;
+    font-variant-numeric: tabular-nums; color: var(--p-tenue);
+  }
+  .conm.lis-que button[aria-pressed="true"] .lis-n { color: var(--p-acento); }
+  .lis-filtros { display: flex; gap: .35rem; flex-wrap: wrap; }
+  .lis-filtros select {
+    font-size: .78rem; font-weight: 600; color: var(--p-txt2);
+    height: 1.95rem; padding: 0 1.35rem 0 .6rem; border-radius: 999px;
+    background: var(--p-ctrl); border: 1px solid var(--p-ctrl-bd);
+    -webkit-appearance: none; appearance: none; box-sizing: border-box;
+    max-width: 12rem; text-overflow: ellipsis;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a93a6' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right .35rem center; background-size: 12px;
+  }
+  .lis-filtros select:focus-visible { outline: 2px solid var(--p-acento); outline-offset: 1px; }
+  @media (max-width: 30rem) {
+    /* En el teléfono los dos filtros se llevan su propio renglón y se
+       reparten el ancho: a media línea el nombre del servicio no cabe. */
+    .lis-cab { gap: .7rem; }
+    .lis-filtros { width: 100%; }
+    .lis-filtros select { flex: 1 1 0; max-width: none; min-width: 0; }
+  }
 
   /* ---------- Filtros de la Agenda ----------
      Eran cuatro tarjetas con icono en cuadrito y un numero de 2.15rem:
@@ -3347,12 +3382,15 @@
     <button type="button" class="bt mas-sv" id="c-mas-servicio">+ Agregar servicio</button>
 
 
+    <!-- El nombre va PRIMERO: es el campo que busca al cliente y trae su
+         ficha entera, teléfono incluido. Pedir el teléfono antes era
+         pedir el dato que el nombre ya iba a traer. -->
     <div class="nueva-rejilla" style="margin-top:.9rem;">
-      <div class="f req"><label for="c-telefono">Teléfono</label>
-        <input id="c-telefono" type="tel" inputmode="tel" autocomplete="off" placeholder="8888-8888"></div>
       <div class="f req nom-caja"><label for="c-nombre">Nombre</label>
         <input id="c-nombre" type="text" autocomplete="off">
         <div class="ac-lista" id="c-ac" hidden></div></div>
+      <div class="f req"><label for="c-telefono">Teléfono</label>
+        <input id="c-telefono" type="tel" inputmode="tel" autocomplete="off" placeholder="8888-8888"></div>
     </div>
     <p class="ayuda" id="c-ya" hidden></p>
     <div class="nueva-rejilla" style="margin-top:.9rem;">
@@ -6740,7 +6778,10 @@
      semana o el mes que se está mirando; `dia` es el que está escogido y
      cuyo detalle se pinta abajo. Son dos cosas distintas: uno puede estar
      viendo noviembre con el 3 de octubre todavía escogido. */
-  var ag2 = { rango: "semana", vista: "cal", dia: null, ancla: null, abierto: null };
+  var ag2 = { rango: "semana", vista: "cal", dia: null, ancla: null, abierto: null,
+    /* El modo lista arranca en lo PROGRAMADO y sin filtros: lo que hay
+       que ir a hacer es lo que se abre a mirar. */
+    lis: { que: "prog", fecha: "todas", sv: "" } };
 
   /* =========================================================
      Anotar un trabajo a mano
@@ -7226,7 +7267,7 @@
     if (OPC && GEO) aplicar(); else setTimeout(aplicar, 400);
 
     $("velo-cita").hidden = false;
-    $((c || cli) ? "c-servicio" : "c-telefono").focus();
+    $((c || cli) ? "c-servicio" : "c-nombre").focus();
   }
 
   /* ---------- Los servicios extra de una visita ----------
@@ -8019,29 +8060,134 @@
 
   /* Modo lista: los mismos registros, pero corridos por fecha. Es lo que
      antes era la pantalla de Servicios. */
-  function listaAg2() {
-    var todo = (AGENDA.citas || []).map(function (c) { return { t: "cita", c: c }; })
-      .concat((AGENDA.completados || []).map(function (c) { return { t: "hecho", c: c }; }));
-    if (!todo.length) {
-      return '<div class="ag2-vacio"><b>No hay trabajos</b>' +
-        "Lo que agende o marque como hecho aparece acá." +
-        '<div><button type="button" class="bt fuerte" data-agendar-dia="' + hoyISO() + '">Agendar servicio</button></div></div>';
+  /* ---------------------------------------------------------------
+     Modo lista
+
+     Lo programado y lo ya hecho son dos cosas distintas y se miran por
+     motivos distintos: lo programado es trabajo que hay que ir a hacer
+     —se lee del más próximo al más lejano, porque lo de mañana importa
+     más que lo de diciembre— y lo realizado es historia, que se lee al
+     revés. Mezclarlos en una sola lista hacía que lo de la semana que
+     viene quedara sepultado entre trabajos de enero.
+     --------------------------------------------------------------- */
+  var RANGOS_LIS = [
+    { id: "todas",  et: "Fecha: todas" },
+    { id: "semana", et: "Esta semana" },
+    { id: "mes",    et: "Este mes" },
+    { id: "ano",    et: "Este año" }
+  ];
+
+  function enRangoLis(iso, r) {
+    if (!iso || r === "todas") return true;
+    var hoy = hoyISO();
+    if (r === "mes") return iso.slice(0, 7) === hoy.slice(0, 7);
+    if (r === "ano") return iso.slice(0, 4) === hoy.slice(0, 4);
+    if (r === "semana") {
+      var ini = lunesDe(new Date(hoy + "T12:00:00"));
+      var fin = new Date(ini); fin.setDate(ini.getDate() + 6);
+      return iso >= isoDe(ini) && iso <= isoDe(fin);
     }
-    todo.sort(function (a, b) {
-      return (b.c.fecha + (b.c.hora || "00")).localeCompare(a.c.fecha + (a.c.hora || "00"));
+    return true;
+  }
+
+  function pasaLis(c) {
+    return enRangoLis(c.fecha, ag2.lis.fecha) &&
+           (!ag2.lis.sv || (c.servicioKey || "") === ag2.lis.sv);
+  }
+
+  function listaAg2() {
+    var prog  = (AGENDA.citas || []).filter(pasaLis);
+    var hecho = (AGENDA.completados || []).filter(pasaLis);
+    var esProg = ag2.lis.que === "prog";
+    var items = esProg ? prog : hecho;
+
+    /* Lo programado, del más próximo al más lejano: lo primero de la
+       lista es lo primero que hay que ir a hacer, y un trabajo con fecha
+       pasada que nadie cerró queda arriba de todo, que es donde debe
+       estar. Lo realizado al revés: lo último que se hizo primero. */
+    items = items.slice().sort(function (a, b) {
+      var A = a.fecha + (a.hora || "00"), B = b.fecha + (b.hora || "00");
+      return esProg ? A.localeCompare(B) : B.localeCompare(A);
     });
+
+    return cabeceraLis(prog.length, hecho.length) + (
+      items.length ? diasLis(items, esProg ? "cita" : "hecho") : vacioLis(esProg)
+    );
+  }
+
+  /* Los dos conmutadores y los dos filtros. Los conteos son los de la
+     lista YA filtrada, en los dos lados: si dicen 3 es porque hay 3 que
+     ver con los filtros puestos, no 3 en total. */
+  function cabeceraLis(nProg, nHecho) {
+    function b(id, et, n) {
+      return '<button type="button" data-lis-que="' + id + '" aria-pressed="' +
+        (ag2.lis.que === id) + '">' + et +
+        '<span class="lis-n">' + n + "</span></button>";
+    }
+    return '<div class="lis-cab">' +
+      '<div class="conm lis-que">' + b("prog", "Programados", nProg) + b("hecho", "Realizados", nHecho) + "</div>" +
+      '<div class="lis-filtros">' +
+        '<label class="sr-only" for="lis-fecha">Fechas</label>' +
+        '<select id="lis-fecha" data-lis-filtro="fecha">' +
+          RANGOS_LIS.map(function (r) {
+            return '<option value="' + r.id + '"' + (ag2.lis.fecha === r.id ? " selected" : "") +
+              ">" + escHtml(r.et) + "</option>";
+          }).join("") +
+        "</select>" +
+        '<label class="sr-only" for="lis-sv">Servicio</label>' +
+        '<select id="lis-sv" data-lis-filtro="sv">' +
+          '<option value="">Servicio: todos</option>' +
+          serviciosDeLaAgenda().map(function (t) {
+            return '<option value="' + escHtml(t.id) + '"' + (ag2.lis.sv === t.id ? " selected" : "") +
+              ">" + escHtml(t.et) + "</option>";
+          }).join("") +
+        "</select>" +
+      "</div></div>";
+  }
+
+  /* Los tipos de servicio que DE VERDAD hay en la agenda. Ofrecer los
+     cinco de la tarifa incluiría filtros que no devuelven nada. */
+  function serviciosDeLaAgenda() {
+    var vistos = {}, fuera = [];
+    (AGENDA.citas || []).concat(AGENDA.completados || []).forEach(function (c) {
+      var k = c.servicioKey || "";
+      if (!k || vistos[k]) return;
+      vistos[k] = 1;
+      fuera.push({ id: k, et: c.servicio || k });
+    });
+    return fuera.sort(function (a, b) { return a.et.localeCompare(b.et); });
+  }
+
+  function diasLis(items, tipo) {
     var dias = [], ix = {};
-    todo.forEach(function (x) {
-      if (ix[x.c.fecha] == null) { ix[x.c.fecha] = dias.length; dias.push({ f: x.c.fecha, lista: [] }); }
-      dias[ix[x.c.fecha]].lista.push(x);
+    items.forEach(function (c) {
+      if (ix[c.fecha] == null) { ix[c.fecha] = dias.length; dias.push({ f: c.fecha, lista: [] }); }
+      dias[ix[c.fecha]].lista.push(c);
     });
     return dias.map(function (g) {
       var d = new Date(g.f + "T12:00:00");
       var et = (g.f === hoyISO() ? "Hoy · " : "") + DIAS_N_AG[d.getDay()] + " " +
-               d.getDate() + " " + MES_LARGO[d.getMonth()];
+               d.getDate() + " " + MES_LARGO[d.getMonth()] +
+               (g.f.slice(0, 4) === hoyISO().slice(0, 4) ? "" : " " + g.f.slice(0, 4));
       return '<div class="ag2-dia-lista">' + escHtml(et) + "</div>" +
-        g.lista.map(function (x) { return pildoraAg2(x.c, x.t, true); }).join("");
+        g.lista.map(function (c) { return pildoraAg2(c, tipo, true); }).join("");
     }).join("");
+  }
+
+  function vacioLis(esProg) {
+    var filtrado = ag2.lis.fecha !== "todas" || ag2.lis.sv;
+    if (filtrado) {
+      return '<div class="ag2-vacio"><b>Nada con esos filtros</b>' +
+        "Pruebe con otra fecha u otro servicio." +
+        '<div><button type="button" class="bt" data-lis-limpiar="1">Quitar los filtros</button></div></div>';
+    }
+    return esProg
+      ? '<div class="ag2-vacio"><b>No hay nada programado</b>' +
+        "Lo que agende aparece acá, del más próximo al más lejano." +
+        '<div><button type="button" class="bt fuerte" data-agendar-dia="' + hoyISO() +
+        '">Agendar servicio</button></div></div>'
+      : '<div class="ag2-vacio"><b>Todavía no hay trabajos hechos</b>' +
+        "Lo que marque como hecho queda guardado acá." + "</div>";
   }
 
   /* ---- Gestos ---- */
@@ -8052,6 +8198,16 @@
     ag2.ancla = new Date(ag2.dia + "T12:00:00");
     ag2.abierto = null;
     pintarAg2();
+  });
+
+  /* Los dos filtros se repintan con la lista, así que el oyente vive en
+     la hoja y no en cada select. */
+  $("ag2-hoja").addEventListener("change", function (e) {
+    var f = e.target.closest("[data-lis-filtro]");
+    if (!f) return;
+    ag2.lis[f.dataset.lisFiltro] = f.value;
+    ag2.abierto = null;
+    pintarAg2Hoja();
   });
 
   function conmAg(id, fn) {
@@ -8091,6 +8247,19 @@
         x.setAttribute("aria-expanded", puesto);
         if (x.parentElement) x.parentElement.setAttribute("data-abierto", puesto);
       });
+      return;
+    }
+
+    var q = e.target.closest("[data-lis-que]");
+    if (q) {
+      ag2.lis.que = q.dataset.lisQue;
+      ag2.abierto = null;
+      pintarAg2Hoja();
+      return;
+    }
+    if (e.target.closest("[data-lis-limpiar]")) {
+      ag2.lis.fecha = "todas"; ag2.lis.sv = "";
+      pintarAg2Hoja();
       return;
     }
 
