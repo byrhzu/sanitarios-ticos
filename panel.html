@@ -1642,10 +1642,18 @@
   .seg-b { border: 0; background: transparent; color: var(--p-tenue); padding: .45rem 1.3rem;
     border-radius: 9px; font: inherit; font-weight: 600; cursor: pointer; }
   .seg-b[aria-pressed="true"] { background: var(--p-primario); color: #fff; }
-  .mant-cuando { margin-top: .8rem; }
+  /* Dos columnas fijas y no `auto-fit`: con un solo campo adentro, la
+     rejilla automática lo estiraría a todo el ancho y dejaría de medir
+     lo mismo que "Se cobró", que es justo lo que se quería. */
+  /* `.hoja .nueva-rejilla` es más específica, así que acá hace falta
+     nombrar las dos clases o el auto-fit de la hoja sigue mandando. */
+  .hoja .nueva-rejilla.mant-cuando {
+    margin-top: .8rem; grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .mant-cuando[hidden] { display: none; }
-  .mant-cuando label { display: block; color: var(--p-tenue); margin-bottom: .3rem; }
-  .mant-cuando select, .mant-cuando input { width: 100%; }
+
+  /* La fecha del trabajo se informa, no se pregunta. */
+  .hoja-cuando { margin: -.2rem 0 .9rem; color: var(--p-txt2); font-size: .84rem; }
   /* Campos obligatorios: un punto de acento en la etiqueta, en vez de
      escribir "opcional" en todos los demás. Los que no lo llevan son
      opcionales. */
@@ -3519,8 +3527,11 @@
 <div class="velo" id="velo" hidden>
   <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="hoja-t">
     <h2 id="hoja-t">Anotar el trabajo</h2>
+    <!-- La fecha ya no se pregunta: es la del día en que quedó agendado.
+         Se dice, para que no quede como un dato silencioso; si de verdad
+         se hizo otro día, se corrige desde "Editar servicio". -->
+    <p class="hoja-cuando" id="h-cuando"></p>
     <div class="nueva-rejilla">
-      <div class="f"><label for="h-fecha">Se hizo el</label><input type="date" id="h-fecha"></div>
       <div class="f"><label for="h-monto">Se cobró</label><input type="text" id="h-monto" inputmode="numeric" autocomplete="off" placeholder="₡65.000"></div>
       <div class="f"><label for="h-metodo">Pagó con</label>
         <select id="h-metodo">
@@ -3538,10 +3549,16 @@
         <button type="button" class="seg-b" data-mant="si" aria-pressed="true">Sí</button>
         <button type="button" class="seg-b" data-mant="no" aria-pressed="false">No</button>
       </div>
-      <div id="h-mant-cuando" class="mant-cuando">
-        <label for="h-meses" class="opc">¿Cada cuánto?</label>
-        <select id="h-meses"></select>
-        <input type="date" id="h-fecha-mant" hidden aria-label="Fecha del próximo mantenimiento">
+      <!-- En la misma rejilla que los campos de arriba: así la caja mide
+           lo mismo y queda alineada con "Se cobró", en vez de ser un
+           select suelto de ancho completo. -->
+      <div id="h-mant-cuando" class="nueva-rejilla mant-cuando">
+        <div class="f">
+          <label for="h-meses">¿Cada cuánto?</label>
+          <select id="h-meses"></select>
+          <input type="date" id="h-fecha-mant" hidden aria-label="Fecha del próximo mantenimiento"
+                 style="margin-top:.4rem;">
+        </div>
       </div>
     </div>
     <div class="hoja-pie">
@@ -4836,7 +4853,8 @@
        que el sistema no puede adivinar —cuándo fue y cuánto se cobró—
        y con eso queda armado el recordatorio de dentro de dos años. */
     if (esEstado && sel.value === "hecha" && vista === "cotizaciones") {
-      abrirHoja().then(function (r) {
+      // Una cotización no tiene día agendado: el trabajo se anota con hoy.
+      abrirHoja(hoyISO()).then(function (r) {
         if (r === null) {
           // Canceló: el estado vuelve a donde estaba y no se guarda nada.
           sel.value = sel.dataset.antes || "nueva";
@@ -7501,7 +7519,7 @@
     // otro, lo cierra con su monto y arranca el mantenimiento. La hoja
     // pregunta cuánto se cobró, qué día y cada cuánto recordar.
     if (!$("velo-cita").hidden) cerrarCita();
-    abrirHoja().then(function (r) {
+    abrirHoja(c.fecha).then(function (r) {
       if (!r) return;                                  // canceló
       var fechaHecho = (r.soloEstado ? hoyISO() : (r.fecha || hoyISO()));
 
@@ -8307,7 +8325,12 @@
     $("h-mant-cuando").hidden = (modo !== "si");
   }
 
-  function abrirHoja() {
+  /* `fecha` es el día del trabajo: el que ya tenía agendado. La hoja no
+     lo vuelve a preguntar —era pedir dos veces el mismo dato— pero sí lo
+     dice, para que quede claro qué se está anotando. */
+  var hojaFecha = null;
+
+  function abrirHoja(fecha) {
     // Se anota dónde estaba el teclado para devolverlo al cerrar: si no,
     // el foco queda en el aire y quien navega con teclado se pierde.
     hojaVolverA = document.activeElement;
@@ -8315,7 +8338,9 @@
     $("h-meses").innerHTML = '<option value="">Igual que el anterior</option>' + PERIODOS.map(function (m) {
       return '<option value="' + m + '"' + (m === 24 ? " selected" : "") + ">" + textoPeriodo(m) + "</option>";
     }).join("") + '<option value="fecha">Fecha personalizada…</option>';
-    $("h-fecha").value = hoyISO();
+    hojaFecha = /^\d{4}-\d{2}-\d{2}$/.test(String(fecha || "")) ? fecha : hoyISO();
+    $("h-cuando").textContent = "Se hizo el " + fechaLarga(hojaFecha) +
+      (hojaFecha === hoyISO() ? " (hoy)" : "") + ".";
     $("h-monto").value = "";
     $("h-meses").value = "";
     $("h-metodo").value = "efectivo";
@@ -8323,7 +8348,7 @@
     $("h-fecha-mant").hidden = true;
     ponerMantModo("si");
     $("velo").hidden = false;
-    $("h-fecha").focus();
+    $("h-monto").focus();
     return new Promise(function (res) { hojaResuelve = res; });
   }
 
@@ -8362,7 +8387,7 @@
     var mantSi = $("h-mant-sw").querySelector('[data-mant="si"]').getAttribute("aria-pressed") === "true";
     var personalizada = mantSi && $("h-meses").value === "fecha";
     cerrarHoja({
-      fecha: $("h-fecha").value || hoyISO(),
+      fecha: hojaFecha || hoyISO(),
       monto: soloDigitos($("h-monto").value),
       // Sí con periodicidad → meses; Sí con fecha exacta → proximoManual;
       // No → sinMantenimiento (no se le programa próximo).
