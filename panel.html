@@ -2799,7 +2799,7 @@
 
     <div class="barra-pie">
       <img src="assets/img/logo-mascota.webp" alt="" width="26" height="26">
-      <span class="quien"><b>Panel interno</b><small id="sello">Al día</small></span>
+      <span class="quien"><b>Panel interno</b><small id="sello">Actualizado</small></span>
     </div>
   </aside>
 
@@ -2850,7 +2850,7 @@
           <small id="top-donde">Buenas</small><b id="top-quien">Leitón</b>
         </span>
         <span class="top-acc">
-          <button type="button" class="rueda" id="btn-refrescar" title="Traer lo último" aria-label="Traer lo último">
+          <button type="button" class="rueda" id="btn-refrescar" title="Actualizar" aria-label="Actualizar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6"/>
             </svg>
@@ -2987,7 +2987,7 @@
 
       <!-- Top clientes: quién sostiene el negocio en este rango. -->
       <div class="tarj" style="margin-top:1rem;">
-        <div class="tarj-h"><h2>Top clientes del periodo</h2></div>
+        <div class="tarj-h"><h2>Clientes que más pagaron</h2></div>
         <div id="top-clientes" class="escalona"></div>
       </div>
 
@@ -3078,12 +3078,12 @@
     <div class="vista" id="vista-clientes" hidden>
       <!-- Dos listas (guía § Clientes): quien ya tuvo un servicio, y los
            cotizados que todavía no. -->
-      <div class="hoy-sw cli-sw" role="tablist" aria-label="Qué ver">
+      <div class="hoy-sw cli-sw" role="tablist" aria-label="Clientes o cotizados">
         <button type="button" role="tab" class="hoy-sw-b" data-cli="clientes" aria-selected="true">
           <span class="hoy-sw-t">Clientes</span><span class="hoy-sw-n" id="sw-cli">0</span>
         </button>
         <button type="button" role="tab" class="hoy-sw-b" data-cli="posibles" aria-selected="false">
-          <span class="hoy-sw-t">Posibles</span><span class="hoy-sw-n" id="sw-pos">0</span>
+          <span class="hoy-sw-t">Cotizados</span><span class="hoy-sw-n" id="sw-pos">0</span>
         </button>
       </div>
       <div class="rango" id="clientes-barra">
@@ -3281,7 +3281,7 @@
                   <div class="f" id="n-campo-antiguedad" hidden><label for="n-antiguedad">Última limpieza</label><select id="n-antiguedad"></select></div>
                   <div class="f" id="n-campo-dias" hidden><label for="n-dias">Días de alquiler</label><input type="number" id="n-dias" inputmode="numeric" min="8" value="8"></div>
                 </div>
-                <p class="vacio-ok" id="n-sin-preguntas" hidden>Este servicio tiene precio de tabla: no hay nada más que preguntar acá.</p>
+                <p class="vacio-ok" id="n-sin-preguntas" hidden>Este servicio tiene precio fijo: no hay nada más que preguntar acá.</p>
               </div>
             </div>
             <button type="button" class="bt mas-sv" id="n-mas-servicio">+ Agregar servicio</button>
@@ -3416,7 +3416,7 @@
       <div class="f"><label for="t-meses">Recordar en</label><select id="t-meses"></select></div>
       <div class="f"><label for="t-canal">Recordar por</label><select id="t-canal"></select></div>
     </div>
-    <label class="marca-check"><input type="checkbox" id="t-recordar" checked> Mandarle recordatorio cuando le toque</label>
+    <label class="marca-check"><input type="checkbox" id="t-recordar" checked> Avisarle cuando llegue el próximo mantenimiento</label>
 
     <p class="estado-linea" id="t-aviso" role="status" aria-live="polite"></p>
     <div class="hoja-pie">
@@ -3628,7 +3628,7 @@
       </div>
     </div>
     <div class="hoja-pie">
-      <button type="button" class="btn-suave" id="h-saltar">Sólo marcar como hecha</button>
+      <button type="button" class="btn-suave" id="h-saltar">Sólo marcar como hecho</button>
       <button type="button" class="btn-fuerte" id="h-guardar">Guardar</button>
     </div>
   </div>
@@ -3659,7 +3659,7 @@
       <div class="f req"><label for="me-fecha">Próxima fecha</label><input type="date" id="me-fecha"></div>
       <div class="f req"><label for="me-meses">Se repite cada</label><select id="me-meses"></select></div>
     </div>
-    <p class="ayuda">Solo se agenda el próximo. Cuando se marca como hecho, se programa el siguiente con la misma frecuencia.</p>
+    <p class="ayuda">Se agenda uno a la vez. Al marcar ese trabajo como hecho, el siguiente queda puesto con la misma frecuencia.</p>
     <p class="estado-linea" id="me-aviso" role="status" aria-live="polite"></p>
     <div class="hoja-pie">
       <button type="button" class="btn-suave malo" id="me-quitar" hidden>Quitar mantenimiento</button>
@@ -4017,9 +4017,9 @@
                     : "Sin trabajos en el periodo") + "</p>" +
         '<div class="dinero-sub">' +
           dato({ vista: "servicios", estado: "completado" }, "Facturado", facturado,
-               colones(facturado), d.ticket ? "Ticket " + colones(d.ticket) : "", "", true) +
+               colones(facturado), d.ticket ? "Promedio " + colones(d.ticket) + " por trabajo" : "", "", true) +
           dato({ vista: "clientes" }, "Saldo por cobrar", saldo, colones(saldo),
-               saldo > 0 ? "Hay trabajos sin cobrar" : "Todo al día",
+               saldo > 0 ? "Hay trabajos sin cobrar" : "Nadie debe nada",
                saldo > 0 ? "debe" : "", true) +
         "</div>" +
       "</section>" +
@@ -4101,7 +4101,7 @@
        salió —o debía salir— y nadie cerró la vuelta: o se hizo y falta
        anotarlo, o no se hizo y hay que reagendarlo. Lo demás espera una
        respuesta; esto espera una decisión. */
-    { id: "trabajos",     titulo: "Trabajos sin cerrar",       corto: "Sin cerrar",
+    { id: "trabajos",     titulo: "Trabajos sin confirmar",    corto: "Sin confirmar",
       tono: "var(--est-curso-tx)" },
     { id: "cobros",       titulo: "Cobros pendientes",         corto: "Cobros",
       tono: "var(--est-mal-tx)" },
@@ -4140,7 +4140,7 @@
             '<circle class="vl-aro" cx="60" cy="60" r="46"/>' +
             '<path class="vl-check" d="M40 61.5 54 75 81 46"/>' +
           "</svg>" +
-          '<p><b>Todo listo</b><span>No hay nada esperando respuesta.</span></p>' +
+          '<p><b>Todo listo</b><span>No hay nada pendiente.</span></p>' +
         "</div>";
       return;
     }
@@ -4180,14 +4180,14 @@
 
     if (g.id === "trabajos") {
       cuanto = x.dias === 1 ? "Ayer" : "Hace " + x.dias + " días";
-      etq = "Sin cerrar";
+      etq = "Sin confirmar";
       // Mismo separador que en la Agenda: esta tarjeta es un trabajo de allá.
       var barra = function (a) { return a.filter(Boolean).join(" | "); };
       det = filaDet(I_NOTA_AG, barra([x.servicio, x.hora ? horaBonita(x.hora) + " " + ampmDe(x.hora) : ""])) +
             filaDet(I_PIN_AG, barra([x.lugar, x.senas])) +
             filaDet(I_NOTA_AG, x.detalle);
       if (x.wa) acc.push('<a class="bt wa" href="' + escHtml(x.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Escribir</a>");
-      acc.push('<button type="button" class="bt fuerte" data-phecho="' + x.id + '">Marcar hecha</button>');
+      acc.push('<button type="button" class="bt fuerte" data-phecho="' + x.id + '">Marcar hecho</button>');
       acc.push('<button type="button" class="bt" data-preagendar="' + x.id + '">Reagendar</button>');
       acc.push('<button type="button" class="bt" data-cliente="' + x.clienteId + '">Ver cliente</button>');
 
@@ -4515,7 +4515,7 @@
            agarrarlo. */
         console.error("Resumen:", e);
         ["estado-resumen", "estado-pendientes"].forEach(function (id) {
-          $(id).textContent = "No se pudo traer la información. Revise la señal y vuelva a intentar.";
+          $(id).textContent = "No se pudo cargar. Revise la señal y vuelva a intentar.";
           $(id).classList.add("is-error");
         });
         $("pend-cuerpo").innerHTML = "";
@@ -4542,7 +4542,7 @@
                String(traidoA.getMinutes()).padStart(2, "0");
     /* En el menú y en el pie va la frase completa, que es donde uno va
        cuando de verdad quiere saber la hora. */
-    var t = min < 1 ? "Al día, " + hora
+    var t = min < 1 ? "Actualizado a las " + hora
           : min < 60 ? "Actualizado hace " + min + " min"
           : "Actualizado a las " + hora;
     $("frescura").textContent = t;
@@ -4785,7 +4785,7 @@
       b.push('<button type="button" class="bt malo sol-acc" data-acc="eliminar" data-id="' + escHtml(String(m.id)) + '">Eliminar</button>');
     } else {
       b.push('<button type="button" class="bt fuerte sol-cotizar" data-id="' + escHtml(String(m.id)) + '">' + ICO.mas + "Cotizar</button>");
-      b.push('<button type="button" class="bt sol-acc" data-acc="papelera" data-id="' + escHtml(String(m.id)) + '" title="Botar a la papelera" aria-label="Botar a la papelera">' + ICO.silencio + "</button>");
+      b.push('<button type="button" class="bt sol-acc" data-acc="papelera" data-id="' + escHtml(String(m.id)) + '" title="Enviar a la papelera" aria-label="Enviar a la papelera">' + ICO.silencio + "</button>");
     }
     return b;
   }
@@ -4964,7 +4964,7 @@
           if (r.soloEstado) { avisar("Marcada como hecha."); return; }
           agendaCargada = false;
           resumenCargado = false;
-          avisar("Trabajo anotado. El cliente y su recordatorio quedaron listos.");
+          avisar("Trabajo anotado. El cliente quedó guardado y el próximo mantenimiento, agendado.");
         });
       });
       return;
@@ -5030,7 +5030,7 @@
       body: JSON.stringify({ tabla: "solicitudes", id: id, accion: accion })
     })
       .then(function () {
-        avisar(accion === "papelera" ? "Solicitud botada a la papelera."
+        avisar(accion === "papelera" ? "Solicitud enviada a la papelera."
              : accion === "restaurar" ? "Solicitud restaurada."
              : "Solicitud eliminada.");
         resumenCargado = false;
@@ -5204,7 +5204,7 @@
           '<input type="number" id="' + pre + '-dias" inputmode="numeric" min="8" value="8"></div>' +
       "</div>" +
       '<p class="vacio-ok" id="' + pre + '-sin-preguntas" hidden>Este servicio tiene ' +
-        "precio de tabla: no hay nada más que preguntar acá.</p>" +
+        "precio fijo: no hay nada más que preguntar acá.</p>" +
     "</div>";
   }
 
@@ -6017,7 +6017,7 @@
         contarSw(d);
         $("estado-clientes").textContent = d.total
           ? (d.total === 1 ? "1 posible." : d.total + " posibles.")
-          : (cliBusca ? "Nadie con ese dato." : "Cuando cotice a alguien, aparece acá hasta que se le haga un trabajo.");
+          : (cliBusca ? "Nadie con ese dato." : "A quien cotice aparece acá hasta que se le haga el trabajo.");
 
         $("lista-clientes").innerHTML = d.posibles.map(function (c) {
           var marcas = [];
@@ -6430,11 +6430,12 @@
           var dep = r.dep || {}, partes = [];
           if (dep.servicios) partes.push(dep.servicios + (dep.servicios === 1 ? " servicio" : " servicios"));
           if (dep.cotizaciones) partes.push(dep.cotizaciones + (dep.cotizaciones === 1 ? " cotización" : " cotizaciones"));
-          if (dep.mantenimientos) partes.push(dep.mantenimientos + " en mantenimiento");
+          if (dep.mantenimientos) partes.push(dep.mantenimientos +
+            (dep.mantenimientos === 1 ? " mantenimiento programado" : " mantenimientos programados"));
           if (dep.pagos) partes.push(dep.pagos + (dep.pagos === 1 ? " pago" : " pagos"));
           var msg = "¿Enviar a la papelera a " + c.nombre + "?";
           if (partes.length) {
-            msg += "\n\nTiene " + partes.join(", ") + ". No se borran: dejan de verse y vuelven si lo restaurás desde la papelera.";
+            msg += "\n\nTiene " + partes.join(", ") + ". No se borran: dejan de verse y vuelven si lo restaura desde la papelera.";
           }
           if (!confirm(msg)) return;
           pedir("/api/panel/borrar", {
@@ -8072,7 +8073,7 @@
       }).join("") + "</ol>" +
       (g.toca.length
         ? '<ol class="riel" style="margin-top:.6rem"><li class="hora">' +
-          '<span class="hora-et"><small>MANTEN.</small></span>' +
+          '<span class="hora-et"><small>MANTENI&shy;MIENTO</small></span>' +
           '<div class="hora-caja">' + g.toca.map(function (t) { return pildoraAg2(t, "toca", false); }).join("") +
           "</div></li></ol>"
         : "");
@@ -8109,7 +8110,7 @@
       ? '<span class="pastilla ok">Hecho</span>'
       : (tipo === "toca" ? '<span class="pastilla ' + (c.dias < 0 ? "mal" : "espera") + '">' +
           escHtml(c.dias < 0 ? "Vencido" : "Mantenimiento") + "</span>"
-        : vencida ? '<span class="pastilla curso">Sin cerrar</span>' : "");
+        : vencida ? '<span class="pastilla curso">Sin confirmar</span>' : "");
     /* El teléfono va DENTRO de la píldora pero FUERA del botón: tiene que
        leerse sin abrir nada —es el dato que se busca para salir— y a la
        vez abrir el WhatsApp del cliente. Un enlace no puede ir dentro de
@@ -9124,7 +9125,7 @@
         });
       })
       .then(function () { pintarAvisos(false); avisar("Avisos apagados."); })
-      .catch(function () { avisar("No se pudieron apagar.", "mal"); });
+      .catch(function () { avisar("No se pudieron apagar los avisos.", "mal"); });
   }
 
   $("btn-avisos").addEventListener("click", function () {
