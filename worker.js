@@ -2314,6 +2314,7 @@ async function agendaPanel(request, env) {
       id: f.id, clienteId: f.cliente_id, nombre: f.nombre, telefono: f.telefono,
       correo: f.correo || null,
       servicio: etiqueta(f.servicio, null, "servicio"),
+      servicioKey: f.servicio,             // la clave cruda: el panel le pone ícono y color
       detalle: f.detalle || null,
       lugar: [f.canton, f.provincia].filter(Boolean).join(", ") || null,
       fecha: f.fecha, proximo: f.proximo, dias: f.dias,
@@ -2747,7 +2748,9 @@ function etiqueta(servicio, codigo, campo) {
     return a ? a.etiqueta : (codigo || "");
   }
   const svc = TARIFAS.servicios[servicio];
-  if (!svc) return codigo || "";
+  /* Si el servicio se escribió a mano no está en la tarifa. Antes salía
+     en blanco; mejor devolver lo que la persona escribió. */
+  if (!svc) return campo === "servicio" ? (servicio || codigo || "") : (codigo || "");
   if (campo === "servicio") return svc.nombre;
 
   if (campo === "forma") {

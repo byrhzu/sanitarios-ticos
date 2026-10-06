@@ -1037,6 +1037,19 @@
   .det-l { display: flex; gap: .5rem; align-items: flex-start; padding: .3rem 0; font-size: .82rem; }
   .det-l svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--p-tenue); margin-top: .15rem; }
   .det-l span { color: var(--p-txt2); min-width: 0; }
+  /* El teléfono: se lee como dato, se toca como botón. Sin subrayado ni
+     color de enlace; el glifo verde del final es toda la pista. */
+  .det-tel { text-decoration: none; color: inherit; align-items: center;
+    margin: 0 -.4rem; padding: .35rem .4rem; border-radius: 10px;
+    -webkit-tap-highlight-color: transparent; transition: background .16s ease; }
+  .det-tel span:not(.sr-only) { font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+  .det-tel .det-tel-wa { margin-left: auto; display: flex; opacity: .72; transition: opacity .16s ease; }
+  .det-tel .det-tel-wa svg { width: 15px; height: 15px; flex: 0 0 15px; margin: 0; color: #25d366; }
+  .det-tel:hover { background: color-mix(in srgb, #25d366 9%, transparent); }
+  .det-tel:hover span:not(.sr-only) { color: var(--p-txt); }
+  .det-tel:hover .det-tel-wa { opacity: 1; }
+  .det-tel:active { background: color-mix(in srgb, #25d366 16%, transparent); }
+  .det-tel:focus-visible { outline: 2px solid var(--p-acento); outline-offset: 1px; }
   .det-acc { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .7rem; }
 
   .ag2-vacio { text-align: center; color: var(--p-tenue); padding: 2.6rem 1rem; }
@@ -1124,6 +1137,9 @@
     justify-content: center; line-height: 1;
     background: var(--p-ctrl); color: var(--p-txt);
     border: 1px solid var(--p-ctrl-bd); white-space: nowrap;
+    /* Varios de estos botones son <a> (WhatsApp, llamar, correo) y salían
+       subrayados: parecían un enlace a medio estilizar dentro de la fila. */
+    text-decoration: none;
     transition: background .15s var(--ease), border-color .15s var(--ease), transform .12s var(--ease);
   }
   .bt:hover { background: var(--p-sup2); border-color: var(--p-tenue); }
@@ -7200,30 +7216,47 @@
      19 px no sobrevive el detalle. La clave viene del servidor en
      `servicioKey`, que es la cruda — la etiqueta ya traducida va aparte. */
   var SV_AG = {
-    tanque: { c: "var(--sv-tanque)",
+    /* Tanque séptico: el cilindro de pie con el líquido ondulado. */
+    "tanques-septicos": { c: "var(--sv-tanque)",
       i: '<ellipse cx="12" cy="6.3" rx="7.5" ry="2.6"/>' +
          '<path d="M4.5 6.3v11.4c0 1.45 3.36 2.6 7.5 2.6s7.5-1.15 7.5-2.6V6.3"/>' +
          '<path d="M5.6 13.4c1.6 0 1.6 1.25 3.2 1.25s1.6-1.25 3.2-1.25 1.6 1.25 3.2 1.25 1.6-1.25 3.2-1.25"/>' },
+    /* Destaqueo: el codo de tubería con la reducción. */
     destaqueo: { c: "var(--sv-destaqueo)",
       i: '<path d="M2.6 4.3v7.4M21.4 21.4h-7.4"/>' +
          '<path d="M4.2 5.6h5.4a9 9 0 0 1 9 9v5.4"/>' +
          '<path d="M4.2 10.4h5.4a4.2 4.2 0 0 1 4.2 4.2v5.4"/>' },
-    grasa: { c: "var(--sv-grasa)",
+    /* Trampa de grasa: el embudo separador. */
+    "trampas-grasa": { c: "var(--sv-grasa)",
       i: '<path d="M3.2 4.6h17.6l-6.4 7.8v6.6a1.7 1.7 0 0 1-2.45 1.5l-1.9-1a1.7 1.7 0 0 1-.9-1.5v-5.6Z"/>' +
          '<path d="M5.9 7.4c1.35 0 1.35 1.05 2.7 1.05s1.35-1.05 2.7-1.05 1.35 1.05 2.7 1.05 1.35-1.05 2.7-1.05"/>' },
-    obra: { c: "var(--sv-obra)",
-      i: '<rect x="3" y="5" width="18" height="14" rx="1.8"/>' +
-         '<path d="M3 9.7h18M3 14.3h18M9.4 5v4.7M14.6 9.7v4.6M9.4 14.3V19"/>' },
-    alquiler: { c: "var(--sv-alquiler)",
+    /* Tanque de grasa: el depósito con la gota adentro. Comparte el color
+       de la trampa porque es la misma familia, pero la silueta es otra —
+       la trampa separa, el tanque guarda — y así no se confunden de un
+       vistazo. La caja con ondas que había antes se leía como el ícono de
+       una imagen rota a 19 px. */
+    "tanques-grasa": { c: "var(--sv-grasa)",
+      i: '<path d="M4.6 4.6h14.8v11.1a4.3 4.3 0 0 1-4.3 4.3H8.9a4.3 4.3 0 0 1-4.3-4.3Z"/>' +
+         '<path d="M12 8.4c1.95 2.1 2.95 3.6 2.95 4.65a2.95 2.95 0 1 1-5.9 0C9.05 12 10.05 10.5 12 8.4Z"/>' },
+    /* Alquiler: el tanque portátil con el asa. */
+    "alquiler-tanques": { c: "var(--sv-alquiler)",
       i: '<path d="M6.4 4.2h9.2v13.6a2.2 2.2 0 0 1-2.2 2.2H8.6a2.2 2.2 0 0 1-2.2-2.2Z"/>' +
          '<path d="M5.4 4.2h11.2M7.2 8.6h7.6M7.2 12.8h7.6"/>' +
-         '<path d="M15.6 14.2h3.6v3"/>' }
+         '<path d="M15.6 14.2h3.6v3"/>' },
+    /* "Otro" y los escritos a mano: no se les inventa una categoría, pero
+       sí tienen color y un ícono propio — el de "algo más" — para que no
+       parezcan un registro a medias. */
+    otro: { c: "var(--sv-obra)",
+      i: '<circle cx="12" cy="12" r="8.5"/>' +
+         '<path d="M8.2 12h.01M12 12h.01M15.8 12h.01" stroke-width="2.2"/>' }
   };
-  /* Si el servicio se escribió a mano ("Otro"), no hay clave: cae en un
-     ícono neutro y un gris. Mejor eso que inventarle una categoría. */
-  var SV_OTRO = { c: "var(--p-tenue)",
-    i: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.8v4.6l3 1.8"/>' };
-  function svAg(k) { return SV_AG[k] || SV_OTRO; }
+  /* Nombres cortos que también se usaron en algún punto. Se dejan como
+     alias para que un registro viejo no caiga en el ícono neutro. */
+  SV_AG.tanque = SV_AG["tanques-septicos"];
+  SV_AG.grasa = SV_AG["trampas-grasa"];
+  SV_AG.alquiler = SV_AG["alquiler-tanques"];
+
+  function svAg(k) { return SV_AG[k] || SV_AG.otro; }
   function icoAg(k) {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" ' +
       'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + svAg(k).i + "</svg>";
@@ -7389,7 +7422,11 @@
        toca  → un recordatorio: todavía NO es un trabajo, así que lo único
                que ofrece es agendarlo. */
   function pildoraAg2(c, tipo, conHora) {
-    var key = tipo === "toca" ? null : c.servicioKey;
+    /* Hasta el recordatorio lleva el ícono de SU tipo de servicio: saber
+       que lo que vence es una trampa de grasa y no un tanque cambia cómo
+       se planea el día. Lo que distingue al recordatorio del trabajo
+       agendado es la pastilla, no el ícono. */
+    var key = c.servicioKey || null;
     var sv = svAg(key);
     var abierto = ag2.abierto === tipo + ":" + c.id;
     var marca = tipo === "hecho"
@@ -7411,6 +7448,33 @@
     "</div>";
   }
 
+  var I_TEL_AG = '<path d="M7 3.5h3l1.5 4-2 1.4a11 11 0 0 0 5.6 5.6l1.4-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 5 5.7 2 2 0 0 1 7 3.5Z"/>';
+
+  /* Si el servidor no armó el enlace (un recordatorio con el aviso
+     apagado), se arma acá con el mismo formato: +506 y ocho dígitos. */
+  function waDeTel(t) {
+    var d = String(t || "").replace(/\D/g, "");
+    return d.length === 8 ? "https://wa.me/506" + d : null;
+  }
+
+  /* El teléfono se lee como un dato más de la ficha — misma tipografía,
+     mismo gris, misma fila que el lugar y la nota — pero toca y abre el
+     WhatsApp del cliente. No se subraya ni se pinta de azul: la única
+     señal es el glifo al final de la línea, que es justo lo que se busca
+     cuando uno quiere escribirle. */
+  function filaTelAg(c) {
+    if (!c.telefono) return "";
+    var destino = c.wa || waDeTel(c.telefono);
+    var num = escHtml(tel(c.telefono));
+    if (!destino) return filaDet(I_TEL_AG, tel(c.telefono));
+    return '<a class="det-l det-tel" href="' + escHtml(destino) + '" target="_blank" rel="noopener">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
+        'stroke-linecap="round" stroke-linejoin="round">' + I_TEL_AG + "</svg>" +
+      "<span>" + num + "</span>" +
+      '<span class="det-tel-wa" aria-hidden="true">' + ICO.wa + "</span>" +
+      '<span class="sr-only">Escribir por WhatsApp</span></a>';
+  }
+
   var I_NOTA_AG = '<path d="M5 4.5h14v15H5z"/><path d="M8 9h8M8 13h8M8 17h4"/>';
   var I_PIN_AG = '<path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/>';
   var I_PLATA_AG = '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M9.5 10h5M9.5 14h5"/>';
@@ -7429,18 +7493,19 @@
       }
       acc.push('<button type="button" class="bt fuerte" data-agendar-dia="' + escHtml(c.proximo) + '">Agendar</button>');
       acc.push('<button type="button" class="bt" data-cliente="' + c.clienteId + '">Ver cliente</button>');
-      return filaDet(I_NOTA_AG, c.detalle) +
+      return filaTelAg(c) +
+        filaDet(I_NOTA_AG, c.detalle) +
         filaDet(I_PIN_AG, c.lugar) +
         filaDet(I_NOTA_AG, c.fecha ? "Último trabajo: " + fechaLarga(c.fecha) : "") +
         '<div class="det-acc">' + acc.join("") + "</div>";
     }
 
-    if (c.wa) acc.push('<a class="bt wa" href="' + escHtml(c.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "WhatsApp</a>");
     if (tipo === "cita") acc.push('<button type="button" class="bt fuerte" data-hecho="' + c.id + '">Hecho</button>');
     acc.push('<button type="button" class="bt" data-cliente="' + c.clienteId + '">Ver cliente</button>');
     acc.push('<button type="button" class="bt" data-menu-cita="' + c.id + '" title="Más acciones" aria-label="Más acciones">' + ICO.puntos + "</button>");
 
-    return filaDet(I_NOTA_AG, c.detalle) +
+    return filaTelAg(c) +
+      filaDet(I_NOTA_AG, c.detalle) +
       filaDet(I_PIN_AG, [c.lugar, c.senas].filter(Boolean).join(" · ")) +
       filaDet(I_NOTA_AG, c.nota) +
       (c.monto ? filaDet(I_PLATA_AG, colones(c.monto)) : "") +
