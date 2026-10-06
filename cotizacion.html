@@ -812,7 +812,9 @@ body {
         tr.appendChild(tdMonto);
         cuerpo.appendChild(tr);
       });
-      $("th-monto").textContent = "Estimado";
+      /* El rótulo de la columna ya lo puso el bloque de arriba: "Precio"
+         cuando todos los montos los puso el encargado, "Estimado" cuando
+         alguno sale de la tabla. Volver a escribirlo acá lo pisaba. */
     }
 
     /* Cómo se calculó. Con varias líneas esto ya se dijo dentro de cada

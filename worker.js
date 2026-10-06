@@ -2794,6 +2794,16 @@ function etiqueta(servicio, codigo, campo) {
    enorme por cada cotización. */
 const MAX_LINEAS_COTIZACION = 10;
 
+/* Un monto en colones venido del formulario. Devuelve el número, `null`
+   si no se escribió nada, o `false` si lo que se escribió no es un monto
+   —que no es lo mismo que no escribir— para que quien llame avise. */
+function montoEnColones(v) {
+  if (v == null || v === "") return null;
+  const n = Math.round(Number(v));
+  if (!isFinite(n) || n <= 0 || n > 99999999) return false;
+  return n;
+}
+
 /* Lo mismo para la agenda: el camión no hace quince trabajos en una
    parada, y sin tope un cuerpo armado a mano llena la agenda de un día. */
 const MAX_TRABAJOS_POR_VISITA = 10;
@@ -2806,31 +2816,43 @@ const MAX_TRABAJOS_POR_VISITA = 10;
    Devuelve null si NINGUNA línea se pudo calcular: ahí no hay nada que
    sumar y quien llama decide si eso es un error o un precio a mano. */
 function sumarLineas(lineas) {
-  const buenas = lineas.filter((L) => L.calculo);
+  const buenas = lineas.filter((L) => montoDeLinea(L));
   if (!buenas.length) return null;
 
   let min = 0, max = 0, dias = null, provisional = false, soloPiso = false;
   for (const L of buenas) {
-    min += L.calculo.min;
-    max += L.calculo.max;
-    if (L.calculo.desde) soloPiso = true;
-    if (L.calculo.provisional) provisional = true;
-    if (L.calculo.dias != null) dias = L.calculo.dias;
+    const m = montoDeLinea(L);
+    min += m.min;
+    max += m.max;
+    if (m.desde) soloPiso = true;
+    // Un precio escrito a mano no es provisional: ya se vio el trabajo.
+    if (L.montoFijo == null && L.calculo && L.calculo.provisional) provisional = true;
+    if (L.calculo && L.calculo.dias != null) dias = L.calculo.dias;
   }
 
-  const una = buenas.length === 1 ? buenas[0].calculo : null;
+  const una = buenas.length === 1 ? buenas[0] : null;
   return {
-    servicio: una ? una.servicio : buenas[0].calculo.servicio,
-    servicioNombre: una ? una.servicioNombre : nombresDeLineas(lineas),
+    servicio: (una || buenas[0]).entrada.servicio,
+    servicioNombre: una ? nombreDeLinea(una) : nombresDeLineas(lineas),
     min: min,
     max: soloPiso ? min : max,
     desde: soloPiso,
     dias: dias,
-    desglose: buenas.reduce((a, L) => a.concat(L.calculo.desglose || []), []),
+    desglose: buenas.reduce((a, L) => a.concat((L.calculo && L.calculo.desglose) || []), []),
     provisional: provisional,
     ivaIncluido: TARIFAS.iva.incluido,
     vigenciaDias: TARIFAS.vigenciaDias
   };
+}
+
+/* El monto de UNA línea. Un precio escrito a mano NO es un estimado con
+   piso y techo: es lo que vale, así que el mínimo y el máximo quedan
+   iguales y sin "desde". Si no hay precio a mano manda el cálculo de la
+   tarifa, y si tampoco se pudo calcular, la línea no tiene monto. */
+function montoDeLinea(L) {
+  if (L.montoFijo != null) return { min: L.montoFijo, max: L.montoFijo, desde: false };
+  if (!L.calculo) return null;
+  return { min: L.calculo.min, max: L.calculo.max, desde: !!L.calculo.desde };
 }
 
 /* "Tanque séptico y 2 más". Es lo que el panel muestra en la tarjeta de
@@ -2854,18 +2876,24 @@ function nombreDeLinea(L) {
    monto, no con los códigos— porque las tarifas cambian y una
    cotización emitida tiene que seguir diciendo lo que dijo. */
 function lineasParaGuardar(lineas) {
-  return lineas.map((L) => ({
-    servicio: L.entrada.servicio,
-    nombre: nombreDeLinea(L),
-    forma: L.entrada.forma || null,
-    medida: L.entrada.medida || null,
-    ultimo: L.entrada.antiguedad || null,
-    dias: (L.calculo && L.calculo.dias) || null,
-    detalle: L.detalleLibre || null,
-    min: L.calculo ? L.calculo.min : null,
-    max: L.calculo ? L.calculo.max : null,
-    desde: L.calculo ? !!L.calculo.desde : false
-  }));
+  return lineas.map((L) => {
+    const m = montoDeLinea(L);
+    return {
+      servicio: L.entrada.servicio,
+      nombre: nombreDeLinea(L),
+      forma: L.entrada.forma || null,
+      medida: L.entrada.medida || null,
+      ultimo: L.entrada.antiguedad || null,
+      dias: (L.calculo && L.calculo.dias) || null,
+      detalle: L.detalleLibre || null,
+      min: m ? m.min : null,
+      max: m ? m.max : null,
+      desde: m ? m.desde : false,
+      // Con precio puesto a mano el documento dice el monto a secas, sin
+      // "Desde": ya se vio el trabajo y vale eso.
+      aMano: L.montoFijo != null
+    };
+  });
 }
 
 /* La columna `lineas` llega con una migración que se corre a mano en la
@@ -3187,10 +3215,18 @@ async function cotizar(request, env, ctx) {
     return {
       entrada: e,
       calculo: calcularCotizacion(e),
+      /* El precio de ESTA línea, puesto a mano. Es el caso de "ya lo vi y
+         vale esto", servicio por servicio: con dos tanques de tamaños
+         distintos cada uno tiene su precio y el documento los suma. */
+      montoFijo: esPanel ? montoEnColones(x.montoFijo) : null,
       servicioLibre: esPanel ? texto(x.servicioLibre, 80) : "",
       detalleLibre:  esPanel ? texto(x.detalleLibre, 200) : ""
     };
   });
+
+  if (lineas.some((L) => L.montoFijo === false)) {
+    return json({ ok: false, error: "El precio tiene que ser un monto en colones" }, 400);
+  }
 
   /* Las columnas de siempre guardan la PRIMERA línea. No es un
      resumen: es que la tabla nació con un servicio por fila y todo lo
@@ -3204,13 +3240,17 @@ async function cotizar(request, env, ctx) {
      estimado con un piso y un techo, es un monto. Por eso el mínimo y
      el máximo quedan iguales y se marca `a_mano`, que es lo que después
      le dice al documento que diga "₡95.000" y no "Desde ₡95.000". */
+  /* El precio a mano de la cotización ENTERA. Es la forma vieja —un solo
+     monto para todo— y sigue valiendo cuando ninguna línea trae el suyo:
+     así un cuerpo de antes, o el formulario público, se comportan igual.
+     Si las líneas sí traen precio, mandan ellas y éste se ignora. */
+  const hayPrecioPorLinea = lineas.some((L) => L.montoFijo != null);
   let montoFijo = null;
-  if (esPanel && cuerpo.montoFijo != null && cuerpo.montoFijo !== "") {
-    const n = Math.round(Number(cuerpo.montoFijo));
-    if (!isFinite(n) || n <= 0 || n > 99999999) {
+  if (esPanel && !hayPrecioPorLinea && cuerpo.montoFijo != null && cuerpo.montoFijo !== "") {
+    montoFijo = montoEnColones(cuerpo.montoFijo);
+    if (montoFijo === false) {
       return json({ ok: false, error: "El precio tiene que ser un monto en colones" }, 400);
     }
-    montoFijo = n;
   }
 
   /* El total es la SUMA de las líneas. Si alguna sólo tiene piso
@@ -3231,6 +3271,25 @@ async function cotizar(request, env, ctx) {
   if (montoFijo !== null) {
     calculo = { min: montoFijo, max: montoFijo, dias: calculo.dias, provisional: false };
   }
+
+  /* Una línea que ni se pudo calcular ni trae precio no vale cero: vale
+     lo que nadie dijo. Sumarla como cero daría un total más bajo que el
+     trabajo, que es la clase de error que se descubre cobrando. Se deja
+     pasar sólo cuando hay un precio único para toda la cotización, que
+     es el caso de "el total es éste y punto". */
+  if (montoFijo === null && lineas.some((L) => !montoDeLinea(L))) {
+    const cual = lineas.findIndex((L) => !montoDeLinea(L)) + 1;
+    return json({ ok: false, error: lineas.length > 1
+      ? "Al servicio " + cual + " le falta el precio: no está en la tabla de tarifas"
+      : "Datos incompletos o no reconocidos" }, 400);
+  }
+
+  /* La cotización es "a mano" cuando el precio NO es un estimado: o se
+     puso uno solo para todo, o se puso el de CADA línea. Con unas a mano
+     y otras calculadas el total sigue siendo un estimado, y decir
+     "Precio" sería cerrar un monto que todavía puede moverse. */
+  const todoAMano = montoFijo !== null ||
+    (lineas.length > 0 && lineas.every((L) => L.montoFijo != null));
 
   const persona = limpiarDatosPersona(cuerpo, ["nombre", "telefono"]);
   if (persona.error) return json({ ok: false, error: persona.error }, 400);
@@ -3281,7 +3340,7 @@ async function cotizar(request, env, ctx) {
       entrada.antiguedad || null, calculo.dias || null, entrada.zona,
       calculo.min, calculo.max, calculo.provisional ? 1 : 0, origen, nombre, telefono, llave,
       cedula, correo, provincia, canton, distrito,
-      montoFijo !== null ? 1 : 0, servicioLibre || null, detalleLibre || null, lugarLibre || null,
+      todoAMano ? 1 : 0, servicioLibre || null, detalleLibre || null, lugarLibre || null,
       factura,
       ...(guardaLineas ? [desgloseJSON] : [])
     ).run();
@@ -3328,7 +3387,7 @@ async function cotizar(request, env, ctx) {
     { ok: true, numero: numero, enlace: enlace, nombre: nombre, telefono: telefono },
     calculo,
     {
-      aMano: montoFijo !== null,
+      aMano: todoAMano,
       servicioNombre: servicioLibre || calculo.servicioNombre ||
                       etiqueta(entrada.servicio, null, "servicio")
     }
@@ -3474,6 +3533,7 @@ function lineasDelDocumento(f) {
       incluye: L.servicio === "otro" ? null : (INCLUYE_SERVICIO[L.servicio] || null),
       min: L.min, max: L.max,
       monto: L.min == null ? null
+           : L.aMano ? colones(L.min)
            : L.desde || L.min === L.max ? "Desde " + colones(L.min)
            : colones(L.min) + " – " + colones(L.max)
     };

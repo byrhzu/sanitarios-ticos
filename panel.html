@@ -985,7 +985,9 @@
        del cliente se cortaba a la mitad en una pantalla de 375. */
     .hora { grid-template-columns: 2.6rem minmax(0, 1fr); gap: .4rem; }
     .ag2-hoja { padding-left: .85rem; padding-right: .85rem; }
-    .pild { padding: .6rem .6rem; gap: .5rem; }
+    .pild { padding: .6rem .6rem; }
+    .pild-ab { gap: .5rem; }
+    .pild-tel { margin-left: 2.9rem; }
   }
   .hora + .hora { margin-top: .2rem; }
   .hora-et {
@@ -998,13 +1000,39 @@
 
   /* ---- La píldora del trabajo ---- */
   .trab + .trab { margin-top: .4rem; }
+  /* La píldora dejó de ser el botón: ahora es la caja que contiene el
+     botón de abrir y el enlace del teléfono. Un enlace no puede vivir
+     dentro de un botón, y el teléfono tiene que verse sin abrir nada. */
   .pild {
+    width: 100%; box-sizing: border-box; padding: .6rem .75rem; border-radius: 16px;
+    background: var(--tinte); transition: transform .14s var(--ease);
+  }
+  .pild-ab {
     width: 100%; display: flex; align-items: center; gap: .65rem; text-align: left;
-    padding: .6rem .75rem; border-radius: 16px; background: var(--tinte);
-    transition: transform .14s var(--ease);
+    background: none; border: 0; padding: 0; font: inherit; color: inherit;
   }
   .pild:active { transform: scale(.985); }
   .pild.hecho { opacity: .72; }
+
+  /* El teléfono, bajo el nombre y alineado con él. Se lee como un dato
+     más del registro; el glifo verde es toda la señal de que además
+     abre el WhatsApp. */
+  .pild-tel {
+    display: inline-flex; align-items: center; gap: .32rem;
+    margin: .3rem 0 0 3.05rem; padding: .18rem .45rem .18rem .3rem;
+    border-radius: 999px; text-decoration: none;
+    font-family: var(--datos); font-size: .76rem; font-weight: 600;
+    font-variant-numeric: tabular-nums; letter-spacing: .01em;
+    color: var(--p-txt2); -webkit-tap-highlight-color: transparent;
+    transition: background .16s var(--ease), color .16s var(--ease);
+  }
+  .pild-tel-wa { display: inline-flex; }
+  .pild-tel-wa svg { width: 14px; height: 14px; color: #25d366; }
+  .pild-tel:hover { background: color-mix(in srgb, #25d366 14%, transparent); color: var(--p-txt); }
+  .pild-tel:active { background: color-mix(in srgb, #25d366 22%, transparent); }
+  .pild-tel:focus-visible { outline: 2px solid var(--p-acento); outline-offset: 1px; }
+  /* Sin enlace posible (un número raro) queda como dato y nada más. */
+  .pild-tel.sola { color: var(--p-tenue); padding-left: .45rem; }
   /* `ag2-` y no `chip` a secas: el panel ya tenía una `.chip` —la
      pastilla de estado con su puntito— y pisaba a ésta. */
   .ag2-chip {
@@ -1025,31 +1053,21 @@
   }
   .pild-fl { flex: 0 0 auto; color: var(--p-tenue); display: inline-flex; transition: transform .28s var(--ease); }
   .pild-fl svg { width: 17px; height: 17px; }
-  .pild[aria-expanded="true"] .pild-fl { transform: rotate(180deg); }
+  /* `data-abierto` y no `aria-expanded`: el estado accesible vive en el
+     botón de adentro, pero quien pinta la flecha y abre el detalle es la
+     caja, que es la hermana de `.det`. */
+  .pild[data-abierto="true"] .pild-fl { transform: rotate(180deg); }
 
   /* ---- El detalle, que se abre EN SU LUGAR ----
      `grid-template-rows: 0fr -> 1fr` es lo que permite animar hasta la
      altura real sin conocerla de antemano; con `height: auto` no se anima. */
   .det { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .32s var(--ease); }
-  .pild[aria-expanded="true"] + .det { grid-template-rows: 1fr; }
+  .pild[data-abierto="true"] + .det { grid-template-rows: 1fr; }
   .det > div { overflow: hidden; }
   .det-caja { padding: .7rem .75rem .2rem; }
   .det-l { display: flex; gap: .5rem; align-items: flex-start; padding: .3rem 0; font-size: .82rem; }
   .det-l svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--p-tenue); margin-top: .15rem; }
   .det-l span { color: var(--p-txt2); min-width: 0; }
-  /* El teléfono: se lee como dato, se toca como botón. Sin subrayado ni
-     color de enlace; el glifo verde del final es toda la pista. */
-  .det-tel { text-decoration: none; color: inherit; align-items: center;
-    margin: 0 -.4rem; padding: .35rem .4rem; border-radius: 10px;
-    -webkit-tap-highlight-color: transparent; transition: background .16s ease; }
-  .det-tel span:not(.sr-only) { font-variant-numeric: tabular-nums; letter-spacing: .01em; }
-  .det-tel .det-tel-wa { margin-left: auto; display: flex; opacity: .72; transition: opacity .16s ease; }
-  .det-tel .det-tel-wa svg { width: 15px; height: 15px; flex: 0 0 15px; margin: 0; color: #25d366; }
-  .det-tel:hover { background: color-mix(in srgb, #25d366 9%, transparent); }
-  .det-tel:hover span:not(.sr-only) { color: var(--p-txt); }
-  .det-tel:hover .det-tel-wa { opacity: 1; }
-  .det-tel:active { background: color-mix(in srgb, #25d366 16%, transparent); }
-  .det-tel:focus-visible { outline: 2px solid var(--p-acento); outline-offset: 1px; }
   .det-acc { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .7rem; }
 
   .ag2-vacio { text-align: center; color: var(--p-tenue); padding: 2.6rem 1rem; }
@@ -1944,6 +1962,7 @@
   .sv-fila label { color: var(--p-tenue); }
   .sv-fila input, .sv-fila select {
     font-size: 13.5px; border-radius: 8px; padding: .5rem .6rem; width: 100%;
+    box-sizing: border-box;
     background: var(--p-fondo); color: var(--p-txt); border: 1px solid var(--p-linea);
   }
   @media (max-width: 30rem) {
@@ -1966,6 +1985,35 @@
 
   /* "+ Agregar servicio": una acción secundaria, no la del formulario. */
   .bt.mas-sv { margin-top: .9rem; font-weight: 600; }
+
+  /* ---- El precio de cada servicio ----
+     Una lista, no una rejilla: lo que se compara acá es una columna de
+     montos, y para eso tienen que quedar alineados uno debajo del otro. */
+  .precios { margin-top: .6rem; display: grid; gap: .55rem; }
+  .precio-f { display: grid; grid-template-columns: 1fr 9.5rem; gap: .5rem 1rem; align-items: center; }
+  .precio-et { color: var(--p-txt2); font-size: .84rem; line-height: 1.3; }
+  .precio-f input {
+    font-size: 13.5px; border-radius: 8px; padding: .5rem .6rem; width: 100%;
+    box-sizing: border-box;
+    background: var(--p-fondo); color: var(--p-txt); border: 1px solid var(--p-linea);
+    font-family: var(--datos); font-variant-numeric: tabular-nums; text-align: right;
+  }
+  /* La suma, separada por una raya: es el resultado de la columna de
+     arriba, no un renglón más de ella. */
+  .precio-suma {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+    margin: .55rem 0 0; padding-top: .55rem; border-top: 1px solid var(--p-linea);
+  }
+  .precio-suma span { color: var(--p-tenue); font-size: .8rem; font-weight: 600;
+    letter-spacing: .04em; text-transform: uppercase; }
+  .precio-suma b { font-family: var(--datos); font-size: 1.05rem; font-weight: 700;
+    font-variant-numeric: tabular-nums; }
+  @media (max-width: 26rem) {
+    /* El nombre del servicio puede ser largo; a media columna se corta.
+       Acá el rótulo se lleva su renglón y el monto el siguiente. */
+    .precio-f { grid-template-columns: 1fr; gap: .2rem; }
+    .precio-f input { text-align: left; }
+  }
 
   @media (max-width: 30rem) {
     /* Con tres servicios en pantalla, cuatro preguntas apiladas por cada
@@ -3134,21 +3182,26 @@
             <p class="grupo">Revise antes de crearla</p>
             <dl class="repaso" id="repaso"></dl>
 
-            <!-- El precio real. Es para cuando ya se fue a ver el trabajo:
-                 ahí no hay estimado que valga, hay un monto. Si se deja
-                 en blanco, manda el cálculo de la tabla. -->
-            <div class="nueva-rejilla" style="margin-top:.6rem;">
-              <div class="f">
-                <label for="n-monto">Precio final</label>
+            <!-- El precio real, SERVICIO POR SERVICIO. Es para cuando ya se
+                 fue a ver el trabajo: ahí no hay estimado que valga, hay un
+                 monto. Con dos tanques de tamaños distintos cada uno tiene
+                 el suyo y el documento los suma. En blanco manda el cálculo
+                 de la tabla. -->
+            <p class="grupo" id="n-precios-tit" hidden>¿Cuánto vale cada uno?</p>
+            <div class="precios" id="n-precios">
+              <div class="precio-f" data-pre="n">
+                <label for="n-monto" class="precio-et">Precio final</label>
                 <input type="text" id="n-monto" inputmode="numeric" autocomplete="off"
                        placeholder="₡65.000">
-                <p class="ayuda" id="n-monto-ayuda">Al escribirlo, el documento dice ese
-                  monto exacto en vez del estimado, y sin la palabra “Desde”.</p>
               </div>
-              <div class="f">
-                <label for="n-detalle">Detalle para el documento</label>
-                <input type="text" id="n-detalle" maxlength="200" autocomplete="off">
-              </div>
+            </div>
+            <p class="precio-suma" id="n-precio-suma" hidden><span>Total</span><b></b></p>
+            <p class="ayuda" id="n-monto-ayuda">Al escribirlo, el documento dice ese
+              monto exacto en vez del estimado, y sin la palabra “Desde”.</p>
+
+            <div class="f" style="margin-top:.9rem;">
+              <label for="n-detalle">Detalle para el documento</label>
+              <input type="text" id="n-detalle" maxlength="200" autocomplete="off">
             </div>
 
             <!-- Factura electrónica: al marcarla se suma el IVA al monto
@@ -5348,9 +5401,92 @@
     $("repaso").innerHTML = filas.map(function (f) {
       return "<div><dt>" + escHtml(f[0]) + "</dt><dd>" + escHtml(f[1]) + "</dd></div>";
     }).join("");
+    pintarPrecios();
     // Al llegar al repaso, se recalcula el desglose de IVA con el monto
     // actual (si el usuario ya lo había escrito).
     actualizarFE();
+  }
+
+  /* ---------- El precio de cada servicio ----------
+
+     Con un servicio es el campo de siempre, "Precio final". Con varios
+     hay uno por servicio y abajo la suma, que es lo que el documento va
+     a decir. El de la primera línea es `n-monto`, que ya existía: así el
+     caso de siempre no cambia ni de id ni de comportamiento. */
+  function precioId(pre) { return pre === "n" ? "n-monto" : pre + "-monto"; }
+
+  function pintarPrecios() {
+    var varios = svPres.length > 1;
+    var cont = $("n-precios");
+
+    // Lo escrito se conserva aunque se vuelva atrás a cambiar un servicio.
+    var guardado = {};
+    svPres.forEach(function (pre) {
+      var c = $(precioId(pre));
+      if (c) guardado[pre] = c.value;
+    });
+
+    svPres.slice(1).forEach(function (pre) {
+      var f = cont.querySelector('.precio-f[data-pre="' + pre + '"]');
+      if (f) f.remove();
+    });
+
+    var et = cont.querySelector('.precio-f[data-pre="n"] .precio-et');
+    et.textContent = varios ? nombreServicio("n") : "Precio final";
+
+    svPres.slice(1).forEach(function (pre) {
+      cont.insertAdjacentHTML("beforeend",
+        '<div class="precio-f" data-pre="' + pre + '">' +
+          '<label class="precio-et" for="' + precioId(pre) + '">' +
+            escHtml(nombreServicio(pre)) + "</label>" +
+          '<input type="text" id="' + precioId(pre) + '" inputmode="numeric" ' +
+            'autocomplete="off" placeholder="₡0">' +
+        "</div>");
+      var c = $(precioId(pre));
+      montoLibre(c);
+      c.addEventListener("input", actualizarFE);
+      if (guardado[pre]) c.value = guardado[pre];
+    });
+
+    /* Con varios servicios la lista necesita su propio rótulo: si no, se
+       lee como dos renglones más del repaso de arriba. */
+    $("n-precios-tit").hidden = !varios;
+    $("n-monto-ayuda").textContent = varios
+      ? "Escriba el precio de cada uno y el documento los suma. Los que deje en blanco salen con el estimado de la tabla."
+      : "Al escribirlo, el documento dice ese monto exacto en vez del estimado, y sin la palabra “Desde”.";
+    sumarPrecios();
+  }
+
+  // El nombre con que se rotula el precio: "Tanque séptico · 1000 litros".
+  function nombreServicio(pre) {
+    var partes = [textoCampo(pre + "-servicio")];
+    if (!$(pre + "-campo-medida").hidden) partes.push(textoCampo(pre + "-medida"));
+    if (!$(pre + "-campo-dias").hidden) partes.push($(pre + "-dias").value + " días");
+    return partes.filter(function (x) { return x && x !== "—"; }).join(" · ");
+  }
+
+  // Lo escrito en todos los campos de precio. 0 si no se escribió nada.
+  function totalPrecios() {
+    return svPres.reduce(function (a, pre) {
+      var c = $(precioId(pre));
+      return a + (Number(soloDigitos(c ? c.value : "")) || 0);
+    }, 0);
+  }
+
+  function hayAlgunPrecio() {
+    return svPres.some(function (pre) {
+      var c = $(precioId(pre));
+      return c && soloDigitos(c.value);
+    });
+  }
+
+  /* La suma sólo se muestra cuando hay varios servicios Y algún precio
+     escrito: con uno solo, el total ES el campo que se está mirando. */
+  function sumarPrecios() {
+    var caja = $("n-precio-suma");
+    if (svPres.length < 2 || !hayAlgunPrecio()) { caja.hidden = true; return; }
+    caja.querySelector("b").textContent = colones(totalPrecios());
+    caja.hidden = false;
   }
 
   /* Si el teléfono ya está registrado, se ofrece traer los datos en vez
@@ -5448,7 +5584,10 @@
     return { subtotal: monto, iva: iva, total: monto + iva, modo: "iva" };
   }
   function actualizarFE() {
-    var monto = Number(soloDigitos($("n-monto").value)) || 0;
+    sumarPrecios();
+    // El IVA sale del total de la cotización, que con varios servicios
+    // es la suma de todos los precios escritos.
+    var monto = totalPrecios();
     $("n-fe-modo").hidden = !feOn();
     var caja = $("n-fe-total");
     if (!feOn() || monto <= 0) { caja.hidden = true; return; }
@@ -5517,10 +5656,12 @@
       var det = [valorLibre($(pre + "-forma")), valorLibre($(pre + "-medida")),
                  valorLibre($(pre + "-antiguedad"))];
       if (i === 0) det.push($("n-detalle").value.trim());
+      var campoPrecio = $(precioId(pre));
       return {
         servicio: $(pre + "-servicio").value,
         forma: $(pre + "-forma").value, medida: $(pre + "-medida").value,
         antiguedad: $(pre + "-antiguedad").value, dias: $(pre + "-dias").value,
+        montoFijo: soloDigitos(campoPrecio ? campoPrecio.value : ""),
         servicioLibre: valorLibre($(pre + "-servicio")),
         detalleLibre: det.filter(Boolean).join(" · ")
       };
@@ -5545,7 +5686,10 @@
         nombre: $("n-nombre").value, telefono: $("n-telefono").value,
         cedula: $("n-cedula").value, correo: $("n-correo").value,
         solicitudId: prellenarSolicitud || "",
-        montoFijo: soloDigitos($("n-monto").value),
+        /* El precio único de toda la cotización. Sólo tiene sentido con UN
+           servicio: con varios, cada línea lleva el suyo y mandar éste
+           diría que el total es el de la primera. */
+        montoFijo: lineas.length === 1 ? lineas[0].montoFijo : "",
         servicioLibre: lineas[0].servicioLibre,
         detalleLibre: lineas[0].detalleLibre,
         lugarLibre: libreLugar,
@@ -7792,22 +7936,29 @@
       ? '<span class="pastilla ok">Hecho</span>'
       : (tipo === "toca" ? '<span class="pastilla ' + (c.dias < 0 ? "mal" : "espera") + '">' +
           escHtml(c.dias < 0 ? "Vencido" : "Le toca") + "</span>" : "");
+    /* El teléfono va DENTRO de la píldora pero FUERA del botón: tiene que
+       leerse sin abrir nada —es el dato que se busca para salir— y a la
+       vez abrir el WhatsApp del cliente. Un enlace no puede ir dentro de
+       un botón, así que la píldora deja de ser el botón y pasa a ser la
+       caja que contiene los dos. */
     return '<div class="trab">' +
-      '<button type="button" class="pild' + (tipo === "hecho" ? " hecho" : "") +
-        '" data-abrir-ag="' + tipo + ":" + c.id + '" aria-expanded="' + abierto + '"' +
+      '<div class="pild' + (tipo === "hecho" ? " hecho" : "") + '"' +
+        ' data-abierto="' + abierto + '"' +
         ' style="--sv:' + sv.c + ";--tinte:" + tinteAg(key) + '">' +
-        '<span class="ag2-chip">' + icoAg(key) + "</span>" +
-        '<span class="pild-t"><b>' + escHtml(c.nombre) + "</b>" +
-          '<small><span>' + escHtml(c.servicio || "") +
-          (conHora && c.hora ? " · " + escHtml(horaBonita(c.hora)) + " " + ampmDe(c.hora) : "") +
-          "</span>" + marca + "</small></span>" +
-        '<span class="pild-fl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>' +
-      "</button>" +
+        '<button type="button" class="pild-ab"' +
+          ' data-abrir-ag="' + tipo + ":" + c.id + '" aria-expanded="' + abierto + '">' +
+          '<span class="ag2-chip">' + icoAg(key) + "</span>" +
+          '<span class="pild-t"><b>' + escHtml(c.nombre) + "</b>" +
+            '<small><span>' + escHtml(c.servicio || "") +
+            (conHora && c.hora ? " · " + escHtml(horaBonita(c.hora)) + " " + ampmDe(c.hora) : "") +
+            "</span>" + marca + "</small></span>" +
+          '<span class="pild-fl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>' +
+        "</button>" +
+        telPildora(c) +
+      "</div>" +
       '<div class="det"><div><div class="det-caja">' + detalleAg2(c, tipo) + "</div></div></div>" +
     "</div>";
   }
-
-  var I_TEL_AG = '<path d="M7 3.5h3l1.5 4-2 1.4a11 11 0 0 0 5.6 5.6l1.4-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 5 5.7 2 2 0 0 1 7 3.5Z"/>';
 
   /* Si el servidor no armó el enlace (un recordatorio con el aviso
      apagado), se arma acá con el mismo formato: +506 y ocho dígitos. */
@@ -7816,25 +7967,22 @@
     return d.length === 8 ? "https://wa.me/506" + d : null;
   }
 
-  /* El teléfono se lee como un dato más de la ficha — misma tipografía,
-     mismo gris, misma fila que el lugar y la nota — pero toca y abre el
-     WhatsApp del cliente. No se subraya ni se pinta de azul: la única
-     señal es el glifo al final de la línea, que es justo lo que se busca
-     cuando uno quiere escribirle. */
-  function filaTelAg(c) {
+  /* El renglón del teléfono de la píldora. Mismo contenido que la fila
+     del detalle, pero alineado bajo el nombre para que se lea como parte
+     del registro y no como un botón pegado. */
+  function telPildora(c) {
     if (!c.telefono) return "";
     var destino = c.wa || waDeTel(c.telefono);
     var num = escHtml(tel(c.telefono));
-    if (!destino) return filaDet(I_TEL_AG, tel(c.telefono));
-    return '<a class="det-l det-tel" href="' + escHtml(destino) + '" target="_blank" rel="noopener">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
-        'stroke-linecap="round" stroke-linejoin="round">' + I_TEL_AG + "</svg>" +
+    if (!destino) return '<span class="pild-tel sola">' + num + "</span>";
+    return '<a class="pild-tel" href="' + escHtml(destino) + '" target="_blank" rel="noopener">' +
+      '<span class="pild-tel-wa" aria-hidden="true">' + ICO.wa + "</span>" +
       "<span>" + num + "</span>" +
-      '<span class="det-tel-wa" aria-hidden="true">' + ICO.wa + "</span>" +
       '<span class="sr-only">Escribir por WhatsApp</span></a>';
   }
 
   var I_NOTA_AG = '<path d="M5 4.5h14v15H5z"/><path d="M8 9h8M8 13h8M8 17h4"/>';
+  var I_TEL_AG = '<path d="M7 3.5h3l1.5 4-2 1.4a11 11 0 0 0 5.6 5.6l1.4-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 5 5.7 2 2 0 0 1 7 3.5Z"/>';
   var I_PIN_AG = '<path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/>';
   var I_PLATA_AG = '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M9.5 10h5M9.5 14h5"/>';
   function filaDet(icono, txt) {
@@ -7852,8 +8000,7 @@
       }
       acc.push('<button type="button" class="bt fuerte" data-agendar-dia="' + escHtml(c.proximo) + '">Agendar</button>');
       acc.push('<button type="button" class="bt" data-cliente="' + c.clienteId + '">Ver cliente</button>');
-      return filaTelAg(c) +
-        filaDet(I_NOTA_AG, c.detalle) +
+      return filaDet(I_NOTA_AG, c.detalle) +
         filaDet(I_PIN_AG, c.lugar) +
         filaDet(I_NOTA_AG, c.fecha ? "Último trabajo: " + fechaLarga(c.fecha) : "") +
         '<div class="det-acc">' + acc.join("") + "</div>";
@@ -7863,8 +8010,7 @@
     acc.push('<button type="button" class="bt" data-cliente="' + c.clienteId + '">Ver cliente</button>');
     acc.push('<button type="button" class="bt" data-menu-cita="' + c.id + '" title="Más acciones" aria-label="Más acciones">' + ICO.puntos + "</button>");
 
-    return filaTelAg(c) +
-      filaDet(I_NOTA_AG, c.detalle) +
+    return filaDet(I_NOTA_AG, c.detalle) +
       filaDet(I_PIN_AG, [c.lugar, c.senas].filter(Boolean).join(" · ")) +
       filaDet(I_NOTA_AG, c.nota) +
       (c.monto ? filaDet(I_PLATA_AG, colones(c.monto)) : "") +
@@ -7941,7 +8087,9 @@
     if (a && !e.target.closest(".det")) {
       ag2.abierto = (ag2.abierto === a.dataset.abrirAg) ? null : a.dataset.abrirAg;
       $("ag2-hoja").querySelectorAll("[data-abrir-ag]").forEach(function (x) {
-        x.setAttribute("aria-expanded", String(x.dataset.abrirAg === ag2.abierto));
+        var puesto = String(x.dataset.abrirAg === ag2.abierto);
+        x.setAttribute("aria-expanded", puesto);
+        if (x.parentElement) x.parentElement.setAttribute("data-abierto", puesto);
       });
       return;
     }
