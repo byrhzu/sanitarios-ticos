@@ -5494,8 +5494,10 @@
     if (principal) acc.push('<button type="button" class="btn-suave" id="btn-otra">Hacer otra</button>');
 
     // Con precio puesto a mano no se dice "Desde": vale eso.
-    var rango = d.aMano ? colones(d.min)
-              : (d.desde || d.min === d.max) ? "Desde " + colones(d.min)
+    /* Un número solo es un número: decir "Desde ₡150.000" cuando el
+       monto es ése y no otro le mete una duda que no tiene. Que es un
+       estimado ya lo dice el documento, con todas sus letras. */
+    var rango = (d.min === d.max) ? colones(d.min)
               : colones(d.min) + " – " + colones(d.max);
     return '<div class="tarj hecha-item">' +
       '<div class="hecha-num">' + escHtml(d.numero || "Cotización creada") + "</div>" +

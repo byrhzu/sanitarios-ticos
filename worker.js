@@ -2826,8 +2826,12 @@ const ZONAS = { valle: "Dentro del GAM y alrededores", resto: "Fuera del GAM" };
    iguales no es un rango de cero de ancho: es un piso, y se dice
    "desde". Vive en un solo lugar para que el panel, el WhatsApp y el
    correo no se contradigan. */
+/* El monto como se escribe en las listas. Un piso sin techo se decía
+   "desde ₡65.000"; ahora se dice el número y ya. La palabra sobraba:
+   quien mira una cotización ya sabe que es un estimado —lo dice el
+   rótulo— y "desde" le metía al monto una duda que no tenía. */
 function montoTexto(min, max) {
-  return min === max ? "desde " + colones(min) : colones(min) + " – " + colones(max);
+  return min === max ? colones(min) : colones(min) + " – " + colones(max);
 }
 
 function detalleTrabajo(f) {
@@ -3639,10 +3643,11 @@ function lineasDelDocumento(f) {
       L.detalle
     ].filter(Boolean);
     const n = L.cantidad || 1;
-    const precio = (min, max, desde) =>
+    // Un solo número cuando hay un solo número; el rango sólo cuando de
+    // verdad hay piso y techo distintos.
+    const precio = (min, max) =>
       min == null ? null
-      : L.aMano ? colones(min)
-      : desde || min === max ? "Desde " + colones(min)
+      : min === max ? colones(min)
       : colones(min) + " – " + colones(max);
     return {
       nombre: L.nombre || etiqueta(L.servicio, null, "servicio"),
@@ -3654,9 +3659,9 @@ function lineasDelDocumento(f) {
       // El unitario de las cotizaciones viejas no se guardó: se deduce
       // del total, que con cantidad 1 es el mismo número.
       unitario: precio(L.unitMin != null ? L.unitMin : L.min,
-                       L.unitMax != null ? L.unitMax : L.max, L.desde),
+                       L.unitMax != null ? L.unitMax : L.max),
       min: L.min, max: L.max,
-      monto: precio(L.min, L.max, L.desde)
+      monto: precio(L.min, L.max)
     };
   });
 }

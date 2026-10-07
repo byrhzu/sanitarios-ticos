@@ -735,36 +735,33 @@ body {
        mil— y otros que sólo tienen piso, como el tanque séptico, donde
        el precio sale del tamaño. Escribir "₡65.000 – ₡65.000" en esos
        sería fingir un rango que no existe. */
-    /* Tres formas de decir el precio, no dos:
-         un rango          — se estimó y hay piso y techo
-         "Desde ₡X"        — se estimó y sólo hay piso
-         "₡X" a secas      — el encargado ya vio el trabajo y vale eso
+    /* Dos formas de decir el precio: un rango cuando de verdad hay piso
+       y techo distintos, y el número a secas cuando hay un solo número.
 
-       El tercero es el que faltaba. Con el mínimo y el máximo iguales,
-       el documento decía "Desde ₡95.000" incluso cuando el precio era
-       cerrado, y eso deja abierta la puerta a un cobro mayor que nadie
-       pensó cobrar. */
-    var exacto = !!d.aMano && d.min === d.max;
-    var esDesde = !exacto && (d.desde || d.min === d.max);
-    var rango = exacto ? d.minTexto
-              : esDesde ? "Desde " + d.minTexto
-              : d.minTexto + " – " + d.maxTexto;
-    /* Un precio puesto por el encargado NO es un estimado, y el documento
-       no puede seguir llamándolo así: sería decirle al cliente que el
-       monto todavía puede cambiar justo cuando ya no puede. Cambian la
-       columna, la escalera, el rótulo del cuadro, la nota y la condición.
+       Antes había una tercera, "Desde ₡X", para el estimado sin techo.
+       Se quitó: un monto exacto con la palabra "desde" adelante se lee
+       como si pudiera subir, y lo que es un estimado ya lo dice el
+       rótulo del cuadro y la nota de abajo, sin ambigüedad. */
+    /* Dos preguntas distintas, que antes compartían una sola variable:
 
-       Es la diferencia entre "esto es lo que calculó una tabla" y "esto
-       es lo que vale", y es el motivo de todo este cambio. */
-    $("rango-et").textContent = exacto ? "Precio" : esDesde ? "Precio estimado" : "Rango estimado";
-    $("th-monto").textContent = exacto ? "Precio" : "Estimado";
-    $("et-min").textContent = exacto ? "Precio del trabajo" : "Estimado mínimo";
-    $("lin-max").hidden = exacto;
-    if (exacto) {
-      // Con precio a mano, las notas de "lo puso el encargado" salían dos
-      // veces (acá y en condiciones) y las dos se sacaron a pedido de
-      // Byron. Con precio cerrado no hace falta explicar que no es un
-      // estimado: el rótulo ya dice "Precio".
+       unNumero  ¿hay UN monto o un rango? Decide cómo se escribe la
+                 cifra. Un solo número se escribe solo: "₡150.000". La
+                 palabra "Desde" se quitó — con un monto exacto adelante
+                 se lee como si pudiera subir.
+       cerrado   ¿lo puso el encargado o lo calculó la tabla? Decide si
+                 el documento dice "Precio" o "Estimado". Un estimado de
+                 un solo número sigue siendo un estimado. */
+    var unNumero = d.min === d.max;
+    var cerrado = !!d.aMano;
+    var rango = unNumero ? d.minTexto : d.minTexto + " – " + d.maxTexto;
+
+    $("rango-et").textContent = cerrado ? "Precio" : unNumero ? "Precio estimado" : "Rango estimado";
+    $("th-monto").textContent = cerrado ? "Precio" : "Estimado";
+    $("et-min").textContent = cerrado ? "Precio del trabajo" : unNumero ? "Estimado" : "Estimado mínimo";
+    $("lin-max").hidden = unNumero;
+    if (cerrado) {
+      // Con precio cerrado no hace falta explicar que no es un estimado:
+      // el rótulo ya dice "Precio".
       $("rango-nota").hidden = true;
       // Con precio a mano no se calculó nada: se describió el trabajo.
       $("et-base").textContent = "Detalle del trabajo";
@@ -773,15 +770,15 @@ body {
     $("monto-fila").textContent = rango;
     $("cifra").textContent = rango;
     $("min").textContent = d.minTexto;
-    $("max").textContent = (esDesde || exacto) ? "—" : d.maxTexto;
+    $("max").textContent = unNumero ? "—" : d.maxTexto;
     // Factura electrónica: si la cotización la lleva, el IVA deja de ser
     // una nota general y pasa a ser una línea concreta del documento.
     // 'iva' = 13% sobre el monto; 'exo' = "Exonerado"; 'no' = como antes.
     function _c(n) { return "₡" + String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
     if (d.factura === "iva") {
       $("iva").textContent = _c(d.ivaMonto) + " (13%)";
-      if (exacto || esDesde) {
-        // Con precio cerrado se muestra el total con IVA en la cifra.
+      if (unNumero) {
+        // Con un solo monto, la cifra grande ya lleva el IVA sumado.
         var totalTxt = _c(d.totalConIVA);
         $("cifra").textContent = totalTxt;
         $("monto-fila").textContent = totalTxt;
@@ -870,7 +867,7 @@ body {
     });
 
     $("cond-vigencia").textContent =
-      (exacto ? "Este precio tiene una vigencia de " : "Este estimado tiene una vigencia de ") +
+      (cerrado ? "Este precio tiene una vigencia de " : "Este estimado tiene una vigencia de ") +
       d.vigenciaDias + " días naturales.";
 
     $("provisional").hidden = !d.provisional;
