@@ -3352,8 +3352,7 @@
               </div>
             </div>
             <p class="precio-suma" id="n-precio-suma" hidden><span>Total</span><b></b></p>
-            <p class="ayuda" id="n-monto-ayuda">Al escribirlo, el documento dice ese
-              monto exacto en vez del estimado, y sin la palabra “Desde”.</p>
+            <p class="ayuda" id="n-monto-ayuda" hidden></p>
 
             <div class="f" style="margin-top:.9rem;">
               <label for="n-detalle">Detalle para el documento</label>
@@ -5741,9 +5740,14 @@
     pintarMultiplos();
 
     $("n-precios-tit").hidden = !varios;
+    /* Con un solo servicio no hay nada que explicar: el campo se llama
+       "Precio final" y eso es todo. La ayuda queda sólo para el caso de
+       varios, donde sí hay una regla que no se adivina: lo que se deja
+       en blanco sale con el estimado de la tabla. */
     $("n-monto-ayuda").textContent = varios
-      ? "Escriba el precio de cada uno y el documento los suma. Los que deje en blanco salen con el estimado de la tabla."
-      : "Al escribirlo, el documento dice ese monto exacto en vez del estimado, y sin la palabra “Desde”.";
+      ? "Lo que deje en blanco sale con el estimado de la tabla."
+      : "";
+    $("n-monto-ayuda").hidden = !varios;
     sumarPrecios();
   }
 
