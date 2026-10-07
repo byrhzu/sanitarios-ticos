@@ -1673,17 +1673,18 @@ async function editarServicio(request, env) {
               : (Number.isFinite(+b.monto) ? Math.round(+b.monto) : null);
   try {
     const s = await env.DB.prepare(
-      `SELECT s.estado, c.meses FROM servicios s JOIN clientes c ON c.id = s.cliente_id
+      `SELECT s.estado, s.nota, c.meses FROM servicios s JOIN clientes c ON c.id = s.cliente_id
         WHERE s.id = ? AND s.papelera IS NULL`).bind(id).first();
     if (!s) return json({ ok: false, error: "No existe ese servicio" }, 404);
     const comp = s.estado === "completado";
     await env.DB.prepare(
-      `UPDATE servicios SET fecha = ?1, hora = ?2, monto = ?3, detalle = ?4,
+      `UPDATE servicios SET fecha = ?1, hora = ?2, monto = ?3, detalle = ?4, nota = ?8,
               proximo = CASE WHEN ?5 = 1 AND proximo IS NOT NULL
                              THEN date(?1, '+' || ?6 || ' months') ELSE proximo END,
               actualizado = datetime('now')
         WHERE id = ?7`
-    ).bind(fecha, hora, monto, texto(b.detalle, 200) || null, comp ? 1 : 0, s.meses || 24, id).run();
+    ).bind(fecha, hora, monto, texto(b.detalle, 200) || null, comp ? 1 : 0, s.meses || 24, id,
+           texto(b.nota, 600) || null).run();
     if (comp) {
       await env.DB.prepare(
         `UPDATE mantenimientos SET fecha = date(?1, '+' || COALESCE(meses, ?2) || ' months'),
@@ -2624,12 +2625,24 @@ async function estadoCita(request, env) {
       : (proxManual ? "date(?3)" : "date(?1, '+' || ?3 || ' months')");
     const proxBind = sinMant ? meses : (proxManual || meses);
 
+    /* El apunte del trabajo: lo que sólo se sabe estando ahí —el tanque
+       era de 1000 litros, la tapa de atrás no abre, la trampa está bajo
+       la cocina—. Vive en el servicio y no en el cliente porque un
+       cliente puede tener dos casas con dos tanques distintos, y una
+       nota pegada al cliente mezclaría las dos.
+
+       Se escribe acá, al cerrar el trabajo, que es el único momento en
+       que la información existe. COALESCE: dejarlo en blanco no borra lo
+       que ya se hubiera escrito al agendar. */
+    const apunte = texto(cuerpo.nota, 600);
+
     await env.DB.prepare(
       `UPDATE servicios
           SET estado='completado', fecha=?1, monto=COALESCE(?2, monto),
+              nota=COALESCE(?5, nota),
               proximo=${proxExpr}, actualizado=datetime('now')
         WHERE id=?4 AND papelera IS NULL`
-    ).bind(fecha, monto, proxBind, id).run();
+    ).bind(fecha, monto, proxBind, id, apunte || null).run();
 
     // El cliente se queda con la periodicidad usada, para el próximo.
     if (!sinMant && !proxManual && meses !== s.meses) {

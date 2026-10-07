@@ -2039,6 +2039,40 @@
   .grupo:first-child { margin-top: 0; }
   .nueva-rejilla { display: grid; gap: .9rem 1.1rem; grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr)); }
 
+  /* ---- Apuntes de visita ----
+     Lo que se descubrió estando en el sitio. No es un campo más del
+     formulario: es lo que se lee antes de salir, así que se muestra
+     como una nota pegada, no como un dato de ficha. */
+  .apuntes {
+    margin-top: .9rem; padding: .7rem .8rem; border-radius: var(--radio-chico);
+    background: color-mix(in srgb, var(--p-acento) 7%, transparent);
+    border: 1px solid color-mix(in srgb, var(--p-acento) 22%, transparent);
+  }
+  .apuntes-t {
+    margin: 0 0 .5rem; font-size: .72rem; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--p-acento-t);
+  }
+  :root[data-tema="oscuro"] .apuntes-t { color: var(--p-acento); }
+  .apunte + .apunte { margin-top: .6rem; padding-top: .6rem; border-top: 1px solid var(--p-linea); }
+  .apunte-de { display: block; font-size: .72rem; color: var(--p-tenue); }
+  .apunte p { margin: .15rem 0 0; font-size: .85rem; color: var(--p-txt); }
+
+  /* El mismo apunte dentro del historial del cliente. */
+  .f-apunte {
+    display: block; margin-top: .25rem; padding-left: .6rem;
+    border-left: 2px solid color-mix(in srgb, var(--p-acento) 45%, transparent);
+    font-size: .8rem; color: var(--p-txt2);
+  }
+
+  /* El campo donde se escribe. */
+  .apunte-f textarea {
+    width: 100%; box-sizing: border-box; resize: vertical; min-height: 3.1rem;
+    font: inherit; font-size: 13.5px; border-radius: 8px; padding: .5rem .6rem;
+    background: var(--p-fondo); color: var(--p-txt); border: 1px solid var(--p-linea);
+  }
+  .apunte-f textarea:focus-visible { outline: 2px solid var(--p-acento); outline-offset: 1px; }
+  .apunte-f label { display: block; color: var(--p-tenue); margin-bottom: .3rem; }
+
   /* ---- Varios servicios en una misma cotización o visita ----
 
      Un servicio más NO es una tarjeta: ya estamos dentro de una, y
@@ -3467,6 +3501,10 @@
         <input id="c-telefono" type="tel" inputmode="tel" autocomplete="off" placeholder="8888-8888"></div>
     </div>
     <p class="ayuda" id="c-ya" hidden></p>
+    <!-- Lo que se anotó en las visitas anteriores de ESTE cliente. Es
+         justo lo que hace falta para saber qué camión mandar y qué
+         cobrar, y estaba enterrado en la ficha. -->
+    <div class="apuntes" id="c-apuntes" hidden></div>
     <div class="nueva-rejilla" style="margin-top:.9rem;">
       <div class="f"><label for="c-provincia">Provincia</label>
         <select id="c-provincia"></select></div>
@@ -3609,6 +3647,17 @@
         </select>
       </div>
     </div>
+    <!-- Lo que sólo se sabe estando ahí: el tamaño del tanque, dónde
+         queda, qué cuesta. Se pregunta al cerrar el trabajo, que es el
+         único momento en que esa información existe, y sale sola la
+         próxima vez que se le agende a este cliente. -->
+    <div class="f apunte-f">
+      <label for="h-nota">Para la próxima visita</label>
+      <textarea id="h-nota" rows="2" maxlength="600"
+        placeholder="ej. tanque plástico de 1000 L, 2 tapas, la de atrás cuesta abrirla"></textarea>
+      <p class="ayuda">Lo que se descubrió en el sitio. Aparece cuando se le vuelva a agendar.</p>
+    </div>
+
     <div class="mant-bloque">
       <span class="mant-lbl">¿Requiere mantenimiento?</span>
       <div class="seg" id="h-mant-sw" role="group" aria-label="¿Requiere mantenimiento?">
@@ -3685,6 +3734,11 @@
     </div>
     <div class="f" style="margin-top:.9rem;"><label for="es-detalle">Detalle</label>
       <input type="text" id="es-detalle" maxlength="200" autocomplete="off"></div>
+    <div class="f apunte-f" style="margin-top:.9rem;">
+      <label for="es-nota">Para la próxima visita</label>
+      <textarea id="es-nota" rows="2" maxlength="600"
+        placeholder="ej. tanque plástico de 1000 L, 2 tapas"></textarea>
+    </div>
     <p class="estado-linea" id="es-aviso" role="status" aria-live="polite"></p>
     <div class="hoja-pie">
       <button type="button" class="btn-suave" id="es-cerrar">Cancelar</button>
@@ -6256,7 +6310,11 @@
           }
           return '<li' + (esComp ? ' data-pagos="' + s.id + '"' : "") + ">" +
             '<span class="f-fecha">' + escHtml(fechaLarga(s.fecha)) + (s.hora ? " " + escHtml(s.hora) : "") + "</span>" +
-            '<span class="f-que">' + piezas([s.servicioNombre, s.detalle]) + (trab ? " " + trab : "") + "</span>" +
+            '<span class="f-que">' + piezas([s.servicioNombre, s.detalle]) + (trab ? " " + trab : "") +
+              /* El apunte va pegado a SU trabajo y no en un recuadro
+                 aparte del cliente: con dos casas, dos tanques y dos
+                 apuntes, lo que los distingue es de qué visita salió. */
+              (s.nota ? '<span class="f-apunte">' + escHtml(s.nota) + "</span>" : "") + "</span>" +
             '<span class="f-monto">' + (s.monto ? escHtml(colones(s.monto)) : "—") + "</span>" +
             '<span class="f-pago">' + pago + "</span>" +
             '<span class="f-prox">' + (s.proximo ? "próximo " + escHtml(fechaLarga(s.proximo)) : "") + "</span>" +
@@ -7396,6 +7454,11 @@
        que se están creando. */
     limpiarCitaSv();
     $("c-mas-servicio").hidden = !!c;
+    /* Si se abre desde la ficha de un cliente, sus apuntes ya están en
+       memoria; si no, llegan cuando se le escoja por nombre o teléfono. */
+    pintarApuntes(opts.servicios ||
+      (fichaActual && cli && fichaActual.cliente && fichaActual.cliente.id === cli.id
+        ? fichaActual.servicios : null));
     ["c-telefono", "c-nombre", "c-detalle", "c-senas", "c-servicio-libre"].forEach(function (id) { $(id).value = ""; });
     $("c-servicio-libre").hidden = true;
     ponerHora("c", c && c.hora);
@@ -7540,8 +7603,32 @@
 
   function traerYllenar(id) {
     pedir("/api/panel/cliente?id=" + encodeURIComponent(id))
-      .then(function (d) { if (d && d.cliente) llenarClienteEnCita(d.cliente); })
+      .then(function (d) {
+        if (d && d.cliente) llenarClienteEnCita(d.cliente);
+        pintarApuntes(d && d.servicios);
+      })
       .catch(function () {});
+  }
+
+  /* Los apuntes de las visitas anteriores. Van en la hoja de agendar
+     porque es ahí donde sirven: antes de mandar el camión uno quiere
+     saber de qué tamaño era el tanque y por dónde se entra.
+
+     Se muestran los tres últimos y cada uno dice de qué trabajo salió:
+     un cliente puede tener dos casas con dos tanques distintos, y sin la
+     fecha y el servicio al lado los dos apuntes se confundirían. */
+  function pintarApuntes(servicios) {
+    var caja = $("c-apuntes");
+    var con = (servicios || []).filter(function (s) { return s.nota; }).slice(0, 3);
+    if (!con.length) { caja.hidden = true; caja.innerHTML = ""; return; }
+    caja.innerHTML = '<p class="apuntes-t">De visitas anteriores</p>' +
+      con.map(function (s) {
+        return '<div class="apunte">' +
+          '<span class="apunte-de">' + escHtml(fechaLarga(s.fecha)) +
+            (s.servicioNombre ? " · " + escHtml(s.servicioNombre) : "") + "</span>" +
+          "<p>" + escHtml(s.nota) + "</p></div>";
+      }).join("");
+    caja.hidden = false;
   }
 
   // Al escribir el nombre, se despliegan los clientes que calzan para
@@ -7690,6 +7777,7 @@
           body: JSON.stringify({
             id: c.id, estado: "hecho",
             monto: r.soloEstado ? "" : r.monto,
+            nota: r.soloEstado ? "" : (r.nota || ""),
             fecha: r.fecha, meses: r.meses, metodo: r.metodo, mantenimiento: decision,
             sinMantenimiento: r.sinMantenimiento === true,
             proximoManual: r.proximoManual || null
@@ -7796,6 +7884,7 @@
     ponerHora("es", s.hora);
     $("es-monto").value = s.monto ? colones(s.monto) : "";
     $("es-detalle").value = s.detalle || "";
+    $("es-nota").value = s.nota || "";
     $("es-aviso").textContent = "";
     $("velo-edsv").hidden = false;
     $("es-fecha").focus();
@@ -7812,7 +7901,8 @@
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         id: $("es-id").value, fecha: $("es-fecha").value, hora: horaElegida("es"),
-        monto: soloDigitos($("es-monto").value), detalle: $("es-detalle").value
+        monto: soloDigitos($("es-monto").value), detalle: $("es-detalle").value,
+        nota: $("es-nota").value.trim()
       })
     })
       .then(function () { cerrarEditarServicio(); avisar("Servicio corregido."); refrescarTrasCambio(); })
@@ -8594,6 +8684,7 @@
     $("h-cuando").textContent = "Se hizo el " + fechaLarga(hojaFecha) +
       (hojaFecha === hoyISO() ? " (hoy)" : "") + ".";
     $("h-monto").value = "";
+    $("h-nota").value = "";
     $("h-meses").value = "";
     $("h-metodo").value = "efectivo";
     $("h-fecha-mant").value = "";
@@ -8641,6 +8732,7 @@
     cerrarHoja({
       fecha: hojaFecha || hoyISO(),
       monto: soloDigitos($("h-monto").value),
+      nota: $("h-nota").value.trim(),
       // Sí con periodicidad → meses; Sí con fecha exacta → proximoManual;
       // No → sinMantenimiento (no se le programa próximo).
       sinMantenimiento: !mantSi,
