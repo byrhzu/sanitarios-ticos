@@ -2132,6 +2132,14 @@
   }
   /* La suma, separada por una raya: es el resultado de la columna de
      arriba, no un renglón más de ella. */
+  /* La cuenta de la línea, bajo su campo: "4 × ₡35.000 = ₡140.000". */
+  .precio-x {
+    grid-column: 2; justify-self: end; margin-top: -.15rem;
+    font-family: var(--datos); font-size: .75rem; color: var(--p-tenue);
+    font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 26rem) { .precio-x { grid-column: 1; justify-self: start; } }
+
   .precio-suma {
     display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
     margin: .55rem 0 0; padding-top: .55rem; border-top: 1px solid var(--p-linea);
@@ -3314,6 +3322,11 @@
                   <div class="f" id="n-campo-medida" hidden><label for="n-medida">Medida</label><select id="n-medida"></select></div>
                   <div class="f" id="n-campo-antiguedad" hidden><label for="n-antiguedad">Última limpieza</label><select id="n-antiguedad"></select></div>
                   <div class="f" id="n-campo-dias" hidden><label for="n-dias">Días de alquiler</label><input type="number" id="n-dias" inputmode="numeric" min="8" value="8"></div>
+                  <!-- Cuántos iguales. Cuatro tanques del mismo tamaño son
+                       UNA línea con cantidad 4, con su precio unitario, que
+                       es como se cotiza y como se factura. -->
+                  <div class="f"><label for="n-cantidad">Cantidad</label>
+                    <input type="number" id="n-cantidad" inputmode="numeric" min="1" max="99" value="1"></div>
                 </div>
                 <p class="vacio-ok" id="n-sin-preguntas" hidden>Este servicio tiene precio fijo: no hay nada más que preguntar acá.</p>
               </div>
@@ -5241,6 +5254,8 @@
     $(pre + "-campo-antiguedad").hidden = tipo !== "tanque";
     $(pre + "-campo-dias").hidden = tipo !== "alquiler";
     $(pre + "-sin-preguntas").hidden = tipo !== "fijo" && !libre;
+    /* La cantidad no depende del tipo de servicio: cuatro destaqueos son
+       cuatro igual que cuatro tanques, así que nunca se esconde. */
 
     if (tipo === "tanque") {
       opciones($(pre + "-forma"), s.formas.map(function (f) {
@@ -5294,6 +5309,8 @@
         '<div class="f" id="' + pre + '-campo-dias" hidden>' +
           '<label for="' + pre + '-dias">Días de alquiler</label>' +
           '<input type="number" id="' + pre + '-dias" inputmode="numeric" min="8" value="8"></div>' +
+        '<div class="f"><label for="' + pre + '-cantidad">Cantidad</label>' +
+          '<input type="number" id="' + pre + '-cantidad" inputmode="numeric" min="1" max="99" value="1"></div>' +
       "</div>" +
       '<p class="vacio-ok" id="' + pre + '-sin-preguntas" hidden>Este servicio tiene ' +
         "precio fijo: no hay nada más que preguntar acá.</p>" +
@@ -5628,7 +5645,8 @@
     var varios = svPres.length > 1;
     svPres.forEach(function (pre, i) {
       if (!varios) {
-        filas.push(["Servicio", textoCampo(pre + "-servicio")]);
+        filas.push(["Servicio", textoCampo(pre + "-servicio") +
+          (cantidadDe(pre) > 1 ? " (" + cantidadDe(pre) + " unidades)" : "")]);
         if (!$(pre + "-campo-forma").hidden) {
           filas.push(["Forma del tanque", textoCampo(pre + "-forma")],
                      ["Medida", textoCampo(pre + "-medida")],
@@ -5643,6 +5661,7 @@
                     textoCampo(pre + "-antiguedad"));
       }
       if (!$(pre + "-campo-dias").hidden) partes.push($(pre + "-dias").value + " días");
+      if (cantidadDe(pre) > 1) partes.push(cantidadDe(pre) + " unidades");
       filas.push(["Servicio " + (i + 1), partes.filter(function (x) { return x && x !== "—"; }).join(" · ")]);
     });
     $("repaso").innerHTML = filas.map(function (f) {
@@ -5662,6 +5681,11 @@
      caso de siempre no cambia ni de id ni de comportamiento. */
   function precioId(pre) { return pre === "n" ? "n-monto" : pre + "-monto"; }
 
+  function cantidadDe(pre) {
+    var n = parseInt(($(pre + "-cantidad") || {}).value, 10);
+    return Number.isFinite(n) && n >= 1 && n <= 99 ? n : 1;
+  }
+
   function pintarPrecios() {
     var varios = svPres.length > 1;
     var cont = $("n-precios");
@@ -5679,7 +5703,8 @@
     });
 
     var et = cont.querySelector('.precio-f[data-pre="n"] .precio-et');
-    et.textContent = varios ? nombreServicio("n") : "Precio final";
+    et.textContent = varios ? nombreServicio("n")
+      : cantidadDe("n") > 1 ? "Precio de cada uno" : "Precio final";
 
     svPres.slice(1).forEach(function (pre) {
       cont.insertAdjacentHTML("beforeend",
@@ -5697,6 +5722,22 @@
 
     /* Con varios servicios la lista necesita su propio rótulo: si no, se
        lee como dos renglones más del repaso de arriba. */
+    /* Con cantidad, la cuenta se muestra: "4 × ₡35.000 = ₡140.000". Sin
+       eso nadie sabe si el número que escribió es el de uno o el de los
+       cuatro, que es exactamente la duda que trae poner cantidades. */
+    svPres.forEach(function (pre) {
+      var f = cont.querySelector('.precio-f[data-pre="' + pre + '"]');
+      if (!f) return;
+      var vieja = f.querySelector(".precio-x");
+      if (vieja) vieja.remove();
+      var n = cantidadDe(pre);
+      if (n <= 1) return;
+      var span = document.createElement("span");
+      span.className = "precio-x";
+      f.appendChild(span);
+    });
+    pintarMultiplos();
+
     $("n-precios-tit").hidden = !varios;
     $("n-monto-ayuda").textContent = varios
       ? "Escriba el precio de cada uno y el documento los suma. Los que deje en blanco salen con el estimado de la tabla."
@@ -5712,11 +5753,13 @@
     return partes.filter(function (x) { return x && x !== "—"; }).join(" · ");
   }
 
-  // Lo escrito en todos los campos de precio. 0 si no se escribió nada.
+  /* El total de todas las líneas. Lo que se escribe es el precio de UNA
+     unidad; el de la línea sale de multiplicarlo por la cantidad, que es
+     como se arma una factura. */
   function totalPrecios() {
     return svPres.reduce(function (a, pre) {
       var c = $(precioId(pre));
-      return a + (Number(soloDigitos(c ? c.value : "")) || 0);
+      return a + (Number(soloDigitos(c ? c.value : "")) || 0) * cantidadDe(pre);
     }, 0);
   }
 
@@ -5729,9 +5772,23 @@
 
   /* La suma sólo se muestra cuando hay varios servicios Y algún precio
      escrito: con uno solo, el total ES el campo que se está mirando. */
+  // "4 × ₡35.000 = ₡140.000" bajo cada línea que lleve cantidad.
+  function pintarMultiplos() {
+    svPres.forEach(function (pre) {
+      var f = document.querySelector('.precio-f[data-pre="' + pre + '"] .precio-x');
+      if (!f) return;
+      var n = cantidadDe(pre);
+      var u = Number(soloDigitos(($(precioId(pre)) || {}).value)) || 0;
+      f.textContent = u ? n + " × " + colones(u) + " = " + colones(u * n)
+                        : n + " unidades";
+    });
+  }
+
   function sumarPrecios() {
+    pintarMultiplos();
     var caja = $("n-precio-suma");
-    if (svPres.length < 2 || !hayAlgunPrecio()) { caja.hidden = true; return; }
+    var conCantidad = svPres.some(function (pre) { return cantidadDe(pre) > 1; });
+    if ((svPres.length < 2 && !conCantidad) || !hayAlgunPrecio()) { caja.hidden = true; return; }
     caja.querySelector("b").textContent = colones(totalPrecios());
     caja.hidden = false;
   }
@@ -5908,6 +5965,7 @@
         servicio: $(pre + "-servicio").value,
         forma: $(pre + "-forma").value, medida: $(pre + "-medida").value,
         antiguedad: $(pre + "-antiguedad").value, dias: $(pre + "-dias").value,
+        cantidad: cantidadDe(pre),
         montoFijo: soloDigitos(campoPrecio ? campoPrecio.value : ""),
         servicioLibre: valorLibre($(pre + "-servicio")),
         detalleLibre: det.filter(Boolean).join(" · ")

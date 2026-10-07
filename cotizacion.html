@@ -179,6 +179,12 @@ body {
   padding: 2.4mm 3.5mm;
 }
 .tabla th.der { text-align: right; }
+.tabla th.cen, .tabla td.cen { text-align: center; }
+.tabla .cant, .tabla .unit {
+  white-space: nowrap; font-size: 9.5pt;
+  font-variant-numeric: tabular-nums; color: var(--tinta-2);
+}
+.tabla .unit { text-align: right; }
 .tabla td {
   padding: 3.4mm 3.5mm;
   border-bottom: .5pt solid var(--filete);
@@ -511,6 +517,11 @@ body {
     <thead>
       <tr>
         <th>Servicio</th>
+        <!-- Cantidad y precio unitario sólo salen cuando la cotización
+             los trae: una de un servicio y una unidad no necesita tres
+             columnas para decir un número. -->
+        <th class="cen col-cant" hidden>Cant.</th>
+        <th class="der col-unit" hidden>Precio unit.</th>
         <th class="der" id="th-monto">Estimado</th>
       </tr>
     </thead>
@@ -790,6 +801,12 @@ body {
     if (varios) {
       var cuerpo = $("filas");
       cuerpo.textContent = "";
+      /* Cantidad y unitario sólo si alguna línea los usa: con todo en
+         uno, dos columnas repitiendo "1" y el mismo monto son ruido. */
+      var conCant = d.lineas.some(function (L) { return (L.cantidad || 1) > 1; });
+      Array.prototype.forEach.call(document.querySelectorAll(".col-cant, .col-unit"), function (e) {
+        e.hidden = !conCant;
+      });
       d.lineas.forEach(function (L) {
         /* Con nodos y textContent, como el resto del documento: lo que
            entra acá son nombres y detalles escritos por el encargado. */
@@ -805,10 +822,20 @@ body {
           det.textContent = L.detalle;
           tdQue.appendChild(det);
         }
+        tr.appendChild(tdQue);
+        if (conCant) {
+          var tdCant = document.createElement("td");
+          tdCant.className = "cant cen";
+          tdCant.textContent = String(L.cantidad || 1);
+          tr.appendChild(tdCant);
+          var tdUnit = document.createElement("td");
+          tdUnit.className = "unit";
+          tdUnit.textContent = L.unitario || "—";
+          tr.appendChild(tdUnit);
+        }
         var tdMonto = document.createElement("td");
         tdMonto.className = "monto";
         tdMonto.textContent = L.monto || "—";
-        tr.appendChild(tdQue);
         tr.appendChild(tdMonto);
         cuerpo.appendChild(tr);
       });

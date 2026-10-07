@@ -2930,9 +2930,25 @@ function sumarLineas(lineas) {
    iguales y sin "desde". Si no hay precio a mano manda el cálculo de la
    tarifa, y si tampoco se pudo calcular, la línea no tiene monto. */
 function montoDeLinea(L) {
+  const u = unitarioDeLinea(L);
+  if (!u) return null;
+  const n = L.cantidad || 1;
+  return { min: u.min * n, max: u.max * n, desde: u.desde };
+}
+
+/* El precio de UNA unidad. Es el que se escribe a mano y el que calcula
+   la tarifa; el total de la línea sale de multiplicarlo. Se separan
+   porque una factura electrónica pide los dos por aparte. */
+function unitarioDeLinea(L) {
   if (L.montoFijo != null) return { min: L.montoFijo, max: L.montoFijo, desde: false };
   if (!L.calculo) return null;
   return { min: L.calculo.min, max: L.calculo.max, desde: !!L.calculo.desde };
+}
+
+/* Un entero de 1 a 99. Sin cantidad, 1: lo normal es un tanque. */
+function cantidadDeLinea(v) {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) && n >= 1 && n <= 99 ? n : 1;
 }
 
 /* "Tanque séptico y 2 más". Es lo que el panel muestra en la tarjeta de
@@ -2958,6 +2974,7 @@ function nombreDeLinea(L) {
 function lineasParaGuardar(lineas) {
   return lineas.map((L) => {
     const m = montoDeLinea(L);
+    const u = unitarioDeLinea(L);
     return {
       servicio: L.entrada.servicio,
       nombre: nombreDeLinea(L),
@@ -2966,6 +2983,11 @@ function lineasParaGuardar(lineas) {
       ultimo: L.entrada.antiguedad || null,
       dias: (L.calculo && L.calculo.dias) || null,
       detalle: L.detalleLibre || null,
+      cantidad: L.cantidad || 1,
+      // El unitario se guarda aparte del total: es lo que pide una
+      // factura, y además deja ver de dónde salió el monto de la línea.
+      unitMin: u ? u.min : null,
+      unitMax: u ? u.max : null,
       min: m ? m.min : null,
       max: m ? m.max : null,
       desde: m ? m.desde : false,
@@ -3294,6 +3316,10 @@ async function cotizar(request, env, ctx) {
     };
     return {
       entrada: e,
+      /* Cuántos iguales. Cuatro tanques del mismo tamaño son una línea
+         con cantidad 4 y no cuatro líneas repetidas: así se cotiza y así
+         se factura, con precio unitario y total de línea. */
+      cantidad: cantidadDeLinea(x.cantidad),
       calculo: calcularCotizacion(e),
       /* El precio de ESTA línea, puesto a mano. Es el caso de "ya lo vi y
          vale esto", servicio por servicio: con dos tanques de tamaños
@@ -3394,7 +3420,12 @@ async function cotizar(request, env, ctx) {
   /* El desglose sólo se guarda cuando hay más de un servicio: una
      cotización de uno solo ya está entera en sus columnas, y repetirla
      en un JSON sería dos fuentes de verdad para el mismo dato. */
-  const desgloseJSON = lineas.length > 1 ? JSON.stringify(lineasParaGuardar(lineas)) : null;
+  /* También cuando hay una sola línea pero con cantidad: "4 tanques a
+     ₡35.000" no cabe en las columnas de siempre, que guardan un servicio
+     y un monto. */
+  const hayCantidad = lineas.some((L) => (L.cantidad || 1) > 1);
+  const desgloseJSON = (lineas.length > 1 || hayCantidad)
+    ? JSON.stringify(lineasParaGuardar(lineas)) : null;
   const guardaLineas = desgloseJSON !== null && await hayColumnaLineas(env);
   if (desgloseJSON !== null && !guardaLineas) {
     console.error("Falta la columna `lineas`: la cotización se guarda con el total " +
@@ -3595,7 +3626,9 @@ function lineasDelDocumento(f) {
   if (!f.lineas) return null;
   let arr;
   try { arr = JSON.parse(f.lineas); } catch { return null; }
-  if (!Array.isArray(arr) || arr.length < 2) return null;
+  if (!Array.isArray(arr) || !arr.length) return null;
+  // Una sola línea de cantidad 1 no necesita tabla: es el caso de siempre.
+  if (arr.length === 1 && (arr[0].cantidad || 1) <= 1) return null;
 
   return arr.map((L) => {
     const detalles = [
@@ -3605,17 +3638,25 @@ function lineasDelDocumento(f) {
       L.dias   && (L.dias + " días de alquiler"),
       L.detalle
     ].filter(Boolean);
+    const n = L.cantidad || 1;
+    const precio = (min, max, desde) =>
+      min == null ? null
+      : L.aMano ? colones(min)
+      : desde || min === max ? "Desde " + colones(min)
+      : colones(min) + " – " + colones(max);
     return {
       nombre: L.nombre || etiqueta(L.servicio, null, "servicio"),
       detalle: detalles.join(" · ") || null,
       // Un servicio escrito a mano nunca lleva el "incluye…": sería
       // prometer una succión en un trabajo que no es ese.
       incluye: L.servicio === "otro" ? null : (INCLUYE_SERVICIO[L.servicio] || null),
+      cantidad: n,
+      // El unitario de las cotizaciones viejas no se guardó: se deduce
+      // del total, que con cantidad 1 es el mismo número.
+      unitario: precio(L.unitMin != null ? L.unitMin : L.min,
+                       L.unitMax != null ? L.unitMax : L.max, L.desde),
       min: L.min, max: L.max,
-      monto: L.min == null ? null
-           : L.aMano ? colones(L.min)
-           : L.desde || L.min === L.max ? "Desde " + colones(L.min)
-           : colones(L.min) + " – " + colones(L.max)
+      monto: precio(L.min, L.max, L.desde)
     };
   });
 }
