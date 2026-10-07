@@ -3328,7 +3328,7 @@
                   <div class="f"><label for="n-cantidad">Cantidad</label>
                     <input type="number" id="n-cantidad" inputmode="numeric" min="1" max="99" value="1"></div>
                 </div>
-                <p class="vacio-ok" id="n-sin-preguntas" hidden>Este servicio tiene precio fijo: no hay nada más que preguntar acá.</p>
+                <p class="vacio-ok" id="n-sin-preguntas" hidden>Precio fijo.</p>
               </div>
             </div>
             <button type="button" class="bt mas-sv" id="n-mas-servicio">+ Agregar servicio</button>
@@ -3667,7 +3667,6 @@
       <label for="h-nota">Para la próxima visita</label>
       <textarea id="h-nota" rows="2" maxlength="600"
         placeholder="ej. tanque plástico de 1000 L, 2 tapas, la de atrás cuesta abrirla"></textarea>
-      <p class="ayuda">Lo que se descubrió en el sitio. Aparece cuando se le vuelva a agendar.</p>
     </div>
 
     <div class="mant-bloque">
@@ -3720,7 +3719,6 @@
       <div class="f req"><label for="me-fecha">Próxima fecha</label><input type="date" id="me-fecha"></div>
       <div class="f req"><label for="me-meses">Se repite cada</label><select id="me-meses"></select></div>
     </div>
-    <p class="ayuda">Se agenda uno a la vez. Al marcar ese trabajo como hecho, el siguiente queda puesto con la misma frecuencia.</p>
     <p class="estado-linea" id="me-aviso" role="status" aria-live="polite"></p>
     <div class="hoja-pie">
       <button type="button" class="btn-suave malo" id="me-quitar" hidden>Quitar mantenimiento</button>
@@ -4206,7 +4204,7 @@
             '<circle class="vl-aro" cx="60" cy="60" r="46"/>' +
             '<path class="vl-check" d="M40 61.5 54 75 81 46"/>' +
           "</svg>" +
-          '<p><b>Todo listo</b><span>No hay nada pendiente.</span></p>' +
+          "<p><b>Todo listo</b></p>" +
         "</div>";
       return;
     }
@@ -5311,8 +5309,7 @@
         '<div class="f"><label for="' + pre + '-cantidad">Cantidad</label>' +
           '<input type="number" id="' + pre + '-cantidad" inputmode="numeric" min="1" max="99" value="1"></div>' +
       "</div>" +
-      '<p class="vacio-ok" id="' + pre + '-sin-preguntas" hidden>Este servicio tiene ' +
-        "precio fijo: no hay nada más que preguntar acá.</p>" +
+      '<p class="vacio-ok" id="' + pre + '-sin-preguntas" hidden>Precio fijo.</p>' +
     "</div>";
   }
 
@@ -8260,7 +8257,6 @@
       $("ag2-hoja").innerHTML =
         '<div class="ag2-hcab"><h2>' + titulo + "</h2>" + btnAgendarDia() + "</div>" +
         '<div class="ag2-vacio"><b>Nada agendado este día</b>' +
-        "Lo que programe para esta fecha aparece acá." +
         '<div><button type="button" class="bt fuerte" data-agendar-dia="' + ag2.dia + '">Agendar acá</button></div></div>';
       return;
     }
@@ -8528,16 +8524,13 @@
     var filtrado = ag2.lis.fecha !== "todas" || ag2.lis.sv;
     if (filtrado) {
       return '<div class="ag2-vacio"><b>Nada con esos filtros</b>' +
-        "Pruebe con otra fecha u otro servicio." +
         '<div><button type="button" class="bt" data-lis-limpiar="1">Quitar los filtros</button></div></div>';
     }
     return esProg
       ? '<div class="ag2-vacio"><b>No hay nada programado</b>' +
-        "Lo que agende aparece acá, del más próximo al más lejano." +
         '<div><button type="button" class="bt fuerte" data-agendar-dia="' + hoyISO() +
         '">Agendar servicio</button></div></div>'
-      : '<div class="ag2-vacio"><b>Todavía no hay trabajos hechos</b>' +
-        "Lo que marque como hecho queda guardado acá." + "</div>";
+      : '<div class="ag2-vacio"><b>Todavía no hay trabajos hechos</b></div>';
   }
 
   /* ---- Salto directo de mes y año ----
