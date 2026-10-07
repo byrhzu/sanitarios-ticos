@@ -983,11 +983,13 @@
 
     function mostrarCotizacion(d) {
       /* Cuando el mínimo y el máximo son iguales no es un rango de cero
-         de ancho: es un piso. Se dice "desde", que es lo que significa. */
-      var esDesde = d.desde || d.min === d.max;
+         de ancho: es un solo monto, y se dice solo. Víctor da un rango
+         cuando hay rango; cuando hay un número, decir "desde" lo hace
+         sonar como si todavía pudiera subir. */
+      var unNumero = d.desde || d.min === d.max;
       var partes = [
-        (esDesde
-          ? "Le sale desde " + colones(d.min)
+        (unNumero
+          ? "Le sale en " + colones(d.min)
           : "Le sale entre " + colones(d.min) + " y " + colones(d.max)) +
         " por el servicio de " + d.servicioNombre.toLowerCase() + "." +
         (d.ivaIncluido === false ? " A ese monto se le suma el IVA." : "")
@@ -1032,8 +1034,8 @@
 
       mensajesMios.push(
         "Cotización " + (d.numero || "") + ": " + d.servicioNombre +
-        (esDesde ? ", desde " + colones(d.min)
-                 : ", entre " + colones(d.min) + " y " + colones(d.max))
+        (unNumero ? ": " + colones(d.min)
+                  : ", entre " + colones(d.min) + " y " + colones(d.max))
       );
       refrescarPase();
       terminar();

@@ -315,17 +315,19 @@
 
   function mostrarResultado(d) {
     /* min igual a max no es un rango de cero de ancho: es un piso. Se
-       dice "desde", que es lo que significa. */
-    var esDesde = d.desde || d.min === d.max;
+       es un solo monto, y se escribe solo. Antes decía "Desde ₡65.000";
+       la palabra sobraba y hacía leer el número como si pudiera subir.
+       Que es un estimado ya lo dice el rótulo de encima. */
+    var unNumero = d.desde || d.min === d.max;
 
     $("[data-cot-servicio-nombre]").textContent = d.servicioNombre;
     var monto = $("[data-cot-monto]");
     monto.textContent = "";
     var et = document.createElement("small");
-    et.textContent = esDesde ? "Precio estimado" : "Rango estimado";
+    et.textContent = unNumero ? "Precio estimado" : "Rango estimado";
     monto.appendChild(et);
     monto.appendChild(document.createTextNode(
-      esDesde ? "Desde " + colones(d.min) : colones(d.min) + " – " + colones(d.max)
+      unNumero ? colones(d.min) : colones(d.min) + " – " + colones(d.max)
     ));
 
     /* El IVA se suma aparte, y son 13%: dejarlo sólo en una fila de la
@@ -378,8 +380,8 @@
       (d.numero ? " Es la número " + d.numero + "." : "") +
       " Es para " + d.servicioNombre.toLowerCase() + " en " +
       selD.value + ", " + selC.value + ", " + selP.value + "." +
-      (esDesde ? " Me salió desde " + colones(d.min) + "."
-               : " Me salió entre " + colones(d.min) + " y " + colones(d.max) + ".") +
+      (unNumero ? " Me salió en " + colones(d.min) + "."
+                : " Me salió entre " + colones(d.min) + " y " + colones(d.max) + ".") +
       (d.enlace ? " Acá está el documento: " + d.enlace : "");
     $("[data-cot-wa]").href = "https://wa.me/" + WA + "?text=" + encodeURIComponent(texto);
 
