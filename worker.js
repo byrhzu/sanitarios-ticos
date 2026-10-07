@@ -977,13 +977,20 @@ async function resumenPanel(request, env) {
            AND s.monto > COALESCE((SELECT SUM(p.monto) FROM pagos p
                                     WHERE p.servicio_id = s.id AND p.papelera IS NULL), 0)
          ORDER BY s.fecha ASC LIMIT 20`),
-      /* 20 · Cotizaciones sin servicio en los últimos 14 días: posibles
-             ventas dormidas, la razón para llamar a alguien HOY. */
+      /* 20 · Cotizaciones a las que hay que darles seguimiento: se pasó
+             el precio y todavía no se sabe en qué quedó. Se caen de la
+             lista cuando alguien dice en qué quedaron —agendada, hecha o
+             no se hizo— o cuando ya existe el trabajo que salió de ellas.
+             Las que nadie toca se van solas a los 14 días: a esa altura
+             ya no es seguimiento, es historia. */
       q(`SELECT co.id, co.numero, co.nombre, co.telefono, co.servicio,
+                co.cedula, co.correo, co.provincia, co.canton, co.distrito,
+                co.cliente_id, co.servicio_libre,
                 co.monto_min, co.monto_max, datetime(co.creado, '-6 hours') AS creado,
                 CAST((julianday('now') - julianday(co.creado)) * 24 AS INTEGER) AS horas
          FROM cotizaciones co
          WHERE co.papelera IS NULL
+           AND co.estado NOT IN ('agendada', 'hecha', 'perdida')
            AND ${dia} >= date('now', '-6 hours', '-14 days')
            AND NOT EXISTS (SELECT 1 FROM servicios s
                             WHERE s.cotizacion_id = co.id AND s.papelera IS NULL)
@@ -1120,7 +1127,12 @@ async function resumenPanel(request, env) {
     const cotizSinServicio = filas(20).map((f) => ({
       id: f.id, numero: f.numero || ("Cotización " + f.id),
       nombre: f.nombre, telefono: f.telefono,
-      servicio: etiqueta(f.servicio, null, "servicio"),
+      servicio: f.servicio_libre || etiqueta(f.servicio, null, "servicio"),
+      /* Lo que hace falta para agendar sin volver a escribir nada: la
+         clave cruda del servicio y la dirección que ya dio al cotizar. */
+      servicioKey: f.servicio, clienteId: f.cliente_id || null,
+      cedula: f.cedula || null, correo: f.correo || null,
+      provincia: f.provincia || null, canton: f.canton || null, distrito: f.distrito || null,
       monto: montoTexto(f.monto_min, f.monto_max),
       creado: f.creado, horas: f.horas,
       wa: waDe(f.telefono, "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") +
@@ -2468,6 +2480,12 @@ async function guardarCita(request, env) {
 
      El cuerpo viejo, con el servicio suelto en la raíz, se sigue
      aceptando como una línea única. */
+  /* La cotización de la que salió este trabajo, cuando se agenda desde
+     Pendientes. Enlazarlos es lo que la saca de la lista de seguimiento
+     —ya se sabe en qué quedó— y lo que deja la conversión bien contada. */
+  const cotizacionId = parseInt(cuerpo.cotizacionId, 10);
+  const deCotizacion = Number.isFinite(cotizacionId) && cotizacionId > 0 ? cotizacionId : null;
+
   const trabajos = ((Array.isArray(cuerpo.servicios) && cuerpo.servicios.length
       ? cuerpo.servicios
       : [{ servicio: cuerpo.servicio, detalle: cuerpo.detalle }])
@@ -2519,8 +2537,24 @@ async function guardarCita(request, env) {
         estado: "programado", fecha, hora,
         servicio: t.servicio,
         detalle: t.detalle,
-        nota: texto(cuerpo.nota, 300)
+        nota: texto(cuerpo.nota, 300),
+        // Sólo el primero se enlaza: la cotización dio origen a la
+        // visita, no a cada uno de los trabajos que se le agreguen acá.
+        cotizacionId: ids.length === 0 ? deCotizacion : null
       }, cliente.meses));
+    }
+
+    /* Y la cotización queda dicha: "agendada". Con eso sale de
+       Pendientes aunque alguien borre después el trabajo, y la lista de
+       Cotizaciones muestra en qué quedó sin tener que abrirla. */
+    if (deCotizacion) {
+      await env.DB.prepare(
+        `UPDATE cotizaciones SET estado = 'agendada', actualizado = datetime('now')
+          WHERE id = ? AND papelera IS NULL`
+      ).bind(deCotizacion).run().catch((e) => console.error("No se marcó la cotización:", e));
+      await env.DB.prepare(
+        `UPDATE cotizaciones SET cliente_id = COALESCE(cliente_id, ?1) WHERE id = ?2`
+      ).bind(cliente.id, deCotizacion).run().catch(() => {});
     }
 
     return json({ ok: true, id: ids[0], ids, cuantos: ids.length, clienteId: cliente.id });

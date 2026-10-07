@@ -4217,10 +4217,17 @@
         escHtml(JSON.stringify({ vista: "solicitudes" })) + "'>Ver solicitud</button>");
 
     } else {
+      /* Una cotización está acá para una sola cosa: acordarse de
+         preguntar en qué quedó. Por eso las acciones son las tres
+         respuestas posibles —se agenda, no se hizo, o todavía nada— y
+         no un menú de lo que se le puede hacer a una cotización. */
       cuanto = espera(x.horas);
       etq = "Sin respuesta";
-      det = filaDet(I_NOTA_AG, piezas2([x.numero, x.servicio, x.monto]));
+      det = filaDet(I_NOTA_AG, piezas2([x.numero, x.servicio, x.monto])) +
+            filaDet(I_PIN_AG, [x.canton, x.provincia].filter(Boolean).join(", "));
       if (x.wa) acc.push('<a class="bt wa" href="' + escHtml(x.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Consultar</a>");
+      acc.push('<button type="button" class="bt fuerte" data-pcotagendar="' + x.id + '">Agendar el servicio</button>');
+      acc.push('<button type="button" class="bt" data-pcotperdida="' + x.id + '">No se hizo</button>');
       acc.push('<button type="button" class="bt" data-ir=\'' +
         escHtml(JSON.stringify({ vista: "cotizaciones", buscar: x.numero })) + "'>Ver cotización</button>");
     }
@@ -4258,7 +4265,7 @@
       return;
     }
 
-    var b = e.target.closest("[data-cliente],[data-pago],[data-pagendar],[data-phecho],[data-preagendar]");
+    var b = e.target.closest("[data-cliente],[data-pago],[data-pagendar],[data-phecho],[data-preagendar],[data-pcotagendar],[data-pcotperdida]");
     if (!b) return;
     if (b.dataset.cliente != null) return verCliente(b.dataset.cliente);
     /* Las dos salidas de un trabajo sin cerrar. Son las MISMAS funciones
@@ -4272,6 +4279,37 @@
     if (b.dataset.preagendar != null) {
       var t2 = (PEND.trabajos || []).filter(function (y) { return String(y.id) === b.dataset.preagendar; })[0];
       if (t2) abrirCita({ cita: t2 });
+      return;
+    }
+    /* Agendar desde la cotización: el formulario abre con todo lo que
+       ella ya sabe —quién, dónde, qué servicio— y sólo falta el día. Al
+       guardar, el trabajo queda enlazado y la cotización sale de acá. */
+    if (b.dataset.pcotagendar != null) {
+      var co = (PEND.cotizaciones || []).filter(function (y) { return String(y.id) === b.dataset.pcotagendar; })[0];
+      if (co) abrirCita({ cotizacion: co });
+      return;
+    }
+    /* "No se hizo" no es un fracaso que haya que esconder: es la
+       respuesta más común a una cotización, y anotarla es lo que deja
+       la conversión bien contada. Por eso se marca, no se borra. */
+    if (b.dataset.pcotperdida != null) {
+      var id = b.dataset.pcotperdida;
+      b.disabled = true;
+      pedir("/api/panel/estado", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tabla: "cotizaciones", id: id, estado: "perdida" })
+      })
+        .then(function () {
+          avisar("Anotado: no se hizo. Queda en Cotizaciones.");
+          PEND.cotizaciones = (PEND.cotizaciones || []).filter(function (y) { return String(y.id) !== String(id); });
+          pendAbierto = null;
+          pintarPendientes();
+          resumenCargado = false;
+        })
+        .catch(function (err) {
+          b.disabled = false;
+          avisar(String((err && err.message) || "No se pudo guardar."), "mal");
+        });
       return;
     }
     if (b.dataset.pago != null) {
@@ -7335,14 +7373,24 @@
   // opts: { fecha? } para una cita nueva en ese día,
   //       { cita }  para reagendar/editar una existente,
   //       { cliente } para agendarle a un cliente ya abierto.
+  /* La cotización de la que viene esta cita, si viene de una. Se guarda
+     acá y no en el formulario porque no es algo que la persona escriba:
+     es de dónde salió el trabajo. */
+  var citaDeCotizacion = null;
+
   function abrirCita(opts) {
     opts = opts || {};
     var c = opts.cita || null;
-    var cli = opts.cliente || null;
+    /* Una cotización trae lo mismo que un cliente —nombre, teléfono,
+       dirección, servicio— así que se usa por el mismo camino. */
+    var cli = opts.cliente || opts.cotizacion || null;
+    citaDeCotizacion = opts.cotizacion ? opts.cotizacion.id : null;
     llenarCitaOpciones();
 
     $("c-id").value = c ? c.id : "";
-    $("c-titulo").textContent = c ? "Reagendar el trabajo" : "Agendar un trabajo";
+    $("c-titulo").textContent = c ? "Reagendar el trabajo"
+      : opts.cotizacion ? "Agendar " + (opts.cotizacion.numero || "la cotización")
+      : "Agendar un trabajo";
     /* Al corregir un trabajo que ya existe se edita ESE y nada más:
        agregar servicios desde acá crearía trabajos nuevos sin que se vea
        que se están creando. */
@@ -7464,7 +7512,7 @@
     }
   });
 
-  function cerrarCita() { $("velo-cita").hidden = true; }
+  function cerrarCita() { $("velo-cita").hidden = true; citaDeCotizacion = null; }
   $("c-cerrar").addEventListener("click", cerrarCita);
   $("velo-cita").addEventListener("click", function (e) { if (e.target === $("velo-cita")) cerrarCita(); });
 
@@ -7585,6 +7633,7 @@
            y se queda con la nota de la visita como detalle, igual que
            antes; los que se agregaron traen el suyo. */
         servicios: trabajosDeLaCita(),
+        cotizacionId: citaDeCotizacion || "",
         // El mismo primer servicio suelto, como lo esperaba el cuerpo viejo.
         servicio: trabajosDeLaCita()[0].servicio,
         fecha: $("c-fecha").value,
@@ -7592,8 +7641,10 @@
       })
     })
       .then(function (d) {
+        var deCot = citaDeCotizacion;
         cerrarCita();
         avisar(d.movida ? "Cita reagendada."
+             : deCot ? "Trabajo agendado. La cotización queda como agendada."
              : d.cuantos > 1 ? d.cuantos + " trabajos agendados."
              : "Trabajo agendado.");
         agendaCargada = false; resumenCargado = false;
@@ -7601,6 +7652,16 @@
         // registro). Desde la Agenda, se salta al día de la cita para verla.
         if (vista === "servicios") { cargarServicios(); return; }
         if (vista === "cliente" && fichaActual && fichaActual.cliente) { verCliente(fichaActual.cliente.id); return; }
+        /* Si se agendó desde Pendientes, se vuelve ahí: la cotización ya
+           no está en la lista y eso es justo lo que hay que ver. */
+        if (vista === "pendientes") {
+          if (deCot) {
+            PEND.cotizaciones = (PEND.cotizaciones || []).filter(function (y) { return String(y.id) !== String(deCot); });
+            pendAbierto = null;
+            pintarPendientes();
+          }
+          return;
+        }
         ag2.dia = $("c-fecha").value;
         ag2.ancla = new Date(ag2.dia + "T12:00:00");
         ag2.abierto = null;
