@@ -910,14 +910,34 @@ body {
             var h = doc.getElementById("hoja");
             h.style.width = "210mm"; h.style.minHeight = "297mm";
             h.style.margin = "0"; h.style.boxShadow = "none";
-            // Condensado por escala, no por font-stretch (ver arriba).
+            /* Condensado por escala, no por font-stretch (ver arriba).
+
+               El `font-stretch` se apaga en TODO el clon y no sólo en los
+               que se listan abajo: al motor de captura no se le escapa
+               uno sin que se le coman los espacios, y entonces el nombre
+               del servicio sale como "Limpiezadetanqueséptico". Fue el
+               caso de las cotizaciones de varios servicios, cuyas filas
+               no tienen id y por eso no entraban en esta lista. */
+            var apaga = doc.createElement("style");
+            apaga.textContent = "*{font-stretch:normal !important}";
+            doc.head.appendChild(apaga);
+
             var condensa = [
               [".folio h1", 0.72, "left top"],
               [".folio .num", 0.86, "left top"],
-              ["#servicio", 0.86, "left top"],
               [".rango .cifra", 0.72, "left top"],
               [".estado h2", 0.86, "center top"]
             ];
+            /* El nombre del servicio se condensa aparte: se queda en
+               bloque. Un nombre escrito a mano puede ser largo —"Servicio
+               de limpieza de 4 tanques sépticos…"— y forzarlo a una sola
+               línea lo saca de la columna. En bloque parte donde tenga
+               que partir y después se angosta. */
+            Array.prototype.forEach.call(doc.querySelectorAll(".tabla .svc"), function (e) {
+              e.style.transform = "scaleX(0.86)";
+              e.style.transformOrigin = "left top";
+            });
+
             // El folio apila título y número (si no, al volverse
             // inline-block quedan uno al lado del otro y se desborda).
             condensa.forEach(function (r) {
