@@ -233,9 +233,37 @@ function base64url(txt) {
   return b;
 }
 
-/* Devuelve el correo de quien entró, o null si el vale no sirve. */
-async function correoDeAccess(request, env) {
-  return (await revisarValeAccess(request, env)).correo;
+/* Quién es cada petición, decidido UNA vez y recordado.
+
+   La firma se revisa al entrar y el resultado se guarda acá; de ahí en
+   adelante cualquier parte del código puede preguntar sin volver a
+   verificar y, sobre todo, sin pedir la contraseña: el navegador no
+   manda la cabecera X-Clave en una navegación directa, y pedírsela a
+   quien ya entró por Access dejaba el panel sin datos. */
+const VALE = new WeakMap();
+
+function traeVale(request) {
+  return !!request.headers.get("Cf-Access-Jwt-Assertion") ||
+         /CF_Authorization=/.test(request.headers.get("Cookie") || "");
+}
+
+async function identificar(request, env) {
+  if (VALE.has(request)) return VALE.get(request);
+  let correo = null;
+  if (env.ACCESS_TEAM && env.ACCESS_AUD && traeVale(request)) {
+    const revisado = await revisarValeAccess(request, env);
+    correo = revisado.correo || null;
+    /* Si el vale no verifica no se cierra todo: se sigue hasta la clave
+       de siempre. El muro de verdad es Access, que corta en el borde
+       antes de que esto corra. Que el segundo muro falle no puede dejar
+       al encargado sin herramienta a media mañana — y pasó. */
+    if (!correo) {
+      console.error("Vale de Access sin verificar (" + revisado.motivo +
+                    ", " + (revisado.deDonde || "sin origen") + "); se sigue con la clave.");
+    }
+  }
+  VALE.set(request, correo);
+  return correo;
 }
 
 /* Lo mismo, pero contando POR QUÉ falló. Adivinarlo a ciegas costó una
@@ -331,24 +359,8 @@ async function limpiarFallos(env, ip) {
 /* La puerta, antes de cualquier ruta del panel. Devuelve una respuesta
    cuando hay que cortar, o null cuando se puede seguir. */
 async function revisarPuerta(request, env, ctx) {
-  /* Con Access configurado, él abre la puerta y la clave no hace falta.
-
-     Pero si el vale NO se puede verificar, no se cierra todo: se sigue
-     hasta la clave de siempre. El muro de verdad es Access, que corta en
-     el borde antes de que esto corra; esta verificación es el segundo
-     muro. Que el segundo falle no puede dejar al encargado sin
-     herramienta a media mañana — y pasó, por esto mismo.
-
-     El motivo queda en el registro para poder arreglarlo sin apagar nada. */
-  if (env.ACCESS_TEAM && env.ACCESS_AUD) {
-    const correo = await correoDeAccess(request, env);
-    if (correo) return null;
-    console.error("Access configurado pero el vale no se pudo verificar; " +
-                  "se sigue con la clave. Cabecera: " +
-                  (request.headers.get("Cf-Access-Jwt-Assertion") ? "sí" : "no") +
-                  ". Galleta: " +
-                  (/CF_Authorization=/.test(request.headers.get("Cookie") || "") ? "sí" : "no"));
-  }
+  // Con Access, él abre la puerta y la clave no hace falta.
+  if (VALE.get(request)) return null;
 
   const ip = ipDe(request);
 
@@ -379,6 +391,11 @@ async function revisarPuerta(request, env, ctx) {
 }
 
 function claveValida(request, env) {
+  /* Quien ya entró por Access no tiene contraseña que mandar. Esto vale
+     para las rutas del panel y también para /api/cotizar, donde "tiene
+     la clave" es lo que distingue una cotización hecha por la empresa
+     de una que se cotizó sola un visitante. */
+  if (VALE.get(request)) return true;
   if (!env.CLAVE_PANEL) return false;
   // Sólo por cabecera. En la URL, una clave queda en el historial del
   // navegador, en el Referer y en los logs de cualquier intermediario.
@@ -4474,6 +4491,12 @@ export default {
       return Response.redirect(url.origin + REDIRECCIONES_WIX[vieja], 301);
     }
 
+    /* Quién viene. Para el visitante del sitio no cuesta nada (no trae
+       vale y se resuelve sin tocar nada); para el panel se revisa la
+       firma una sola vez y de ahí en adelante todas las rutas ya saben
+       quién es. */
+    await identificar(request, env);
+
     if (url.pathname === "/api/solicitud" && request.method === "POST") {
       return guardarSolicitud(request, env, ctx);
     }
@@ -4483,11 +4506,11 @@ export default {
        Cloudflare antes de dejar pasar la página. */
     if (url.pathname === "/api/panel/sesion" && request.method === "GET") {
       const porAccess = !!(env.ACCESS_TEAM && env.ACCESS_AUD);
-      const revisado = porAccess ? await revisarValeAccess(request, env) : { correo: null, motivo: "sin-configurar" };
-      const correo = revisado.correo;
+      const correo = VALE.get(request) || null;
       // ?diag=1 dice por qué no se verificó, sin tener que leer registros.
       if (url.searchParams.get("diag") === "1") {
-        return json({ ok: true, modo: correo ? "access" : "clave", correo, diagnostico: revisado });
+        const revisado = porAccess ? await revisarValeAccess(request, env) : { correo: null, motivo: "sin-configurar" };
+        return json({ ok: true, modo: revisado.correo ? "access" : "clave", correo: revisado.correo, diagnostico: revisado });
       }
       /* Sin vale verificable se contesta "clave": el panel pide la
          contraseña, que es molesto pero funciona. Antes contestaba un
