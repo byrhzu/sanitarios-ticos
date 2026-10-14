@@ -310,13 +310,23 @@ async function limpiarFallos(env, ip) {
 /* La puerta, antes de cualquier ruta del panel. Devuelve una respuesta
    cuando hay que cortar, o null cuando se puede seguir. */
 async function revisarPuerta(request, env, ctx) {
-  /* Con Access configurado, él manda: la clave ya no abre nada. Dejar
-     las dos puertas sería dejar la vieja abierta al lado de la nueva. */
+  /* Con Access configurado, él abre la puerta y la clave no hace falta.
+
+     Pero si el vale NO se puede verificar, no se cierra todo: se sigue
+     hasta la clave de siempre. El muro de verdad es Access, que corta en
+     el borde antes de que esto corra; esta verificación es el segundo
+     muro. Que el segundo falle no puede dejar al encargado sin
+     herramienta a media mañana — y pasó, por esto mismo.
+
+     El motivo queda en el registro para poder arreglarlo sin apagar nada. */
   if (env.ACCESS_TEAM && env.ACCESS_AUD) {
     const correo = await correoDeAccess(request, env);
     if (correo) return null;
-    return json({ ok: false, sinAcceso: true,
-      error: "Su sesión venció. Recargue la página para volver a entrar." }, 401);
+    console.error("Access configurado pero el vale no se pudo verificar; " +
+                  "se sigue con la clave. Cabecera: " +
+                  (request.headers.get("Cf-Access-Jwt-Assertion") ? "sí" : "no") +
+                  ". Galleta: " +
+                  (/CF_Authorization=/.test(request.headers.get("Cookie") || "") ? "sí" : "no"));
   }
 
   const ip = ipDe(request);
@@ -4453,14 +4463,13 @@ export default {
     if (url.pathname === "/api/panel/sesion" && request.method === "GET") {
       const porAccess = !!(env.ACCESS_TEAM && env.ACCESS_AUD);
       const correo = porAccess ? await correoDeAccess(request, env) : null;
-      if (porAccess && !correo) {
-        return json({ ok: false, sinAcceso: true,
-          error: "Su sesión venció. Recargue la página." }, 401);
-      }
-      return json({ ok: true, modo: porAccess ? "access" : "clave", correo: correo || null,
+      /* Sin vale verificable se contesta "clave": el panel pide la
+         contraseña, que es molesto pero funciona. Antes contestaba un
+         error y el panel quedaba abierto sin poder traer un solo dato. */
+      return json({ ok: true, modo: correo ? "access" : "clave", correo: correo || null,
         // Para que "Salir" cierre también la sesión de Access, no sólo la
         // copia local de la clave.
-        salir: porAccess ? `https://${env.ACCESS_TEAM}.cloudflareaccess.com/cdn-cgi/access/logout` : null });
+        salir: correo ? `https://${env.ACCESS_TEAM}.cloudflareaccess.com/cdn-cgi/access/logout` : null });
     }
 
     /* La puerta del panel, antes de cualquiera de sus rutas. Acá y no en
