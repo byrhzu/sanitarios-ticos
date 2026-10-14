@@ -196,6 +196,80 @@ function igualSeguro(a, b) {
    ============================================================================ */
 const TOPE_FALLOS = 3;
 
+/* ============================================================================
+   Cloudflare Access
+
+   Cuando Access está puesto, él es la puerta y la clave del panel sobra:
+   pedir las dos cosas es pedir dos veces lo mismo.
+
+   Pero NO basta con ver que la cabecera venga: el programa también
+   responde en su dirección de workers.dev, que no pasa por Access, y ahí
+   cualquiera podría inventarse la cabecera. Así que el vale se verifica
+   de verdad — firma, destinatario y vencimiento — contra las llaves
+   públicas del equipo.
+
+   Se activa poniendo ACCESS_TEAM y ACCESS_AUD en Cloudflare. Mientras no
+   estén, manda la clave de siempre y nada cambia.
+   ============================================================================ */
+let _llavesAccess = null, _llavesAl = 0;
+
+async function llavesDeAccess(env) {
+  const ahora = Date.now();
+  // Las llaves rotan; una hora de memoria es lo que recomienda Cloudflare.
+  if (_llavesAccess && ahora - _llavesAl < 3600000) return _llavesAccess;
+  const r = await fetch(`https://${env.ACCESS_TEAM}.cloudflareaccess.com/cdn-cgi/access/certs`);
+  if (!r.ok) throw new Error("No se pudieron traer las llaves de Access");
+  const j = await r.json();
+  _llavesAccess = j.keys || [];
+  _llavesAl = ahora;
+  return _llavesAccess;
+}
+
+function base64url(txt) {
+  const s = txt.replace(/-/g, "+").replace(/_/g, "/");
+  const bin = atob(s + "=".repeat((4 - (s.length % 4)) % 4));
+  const b = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+  return b;
+}
+
+/* Devuelve el correo de quien entró, o null si el vale no sirve. */
+async function correoDeAccess(request, env) {
+  if (!env.ACCESS_TEAM || !env.ACCESS_AUD) return null;
+  const vale = request.headers.get("Cf-Access-Jwt-Assertion") ||
+               (request.headers.get("Cookie") || "").match(/CF_Authorization=([^;]+)/)?.[1];
+  if (!vale) return null;
+
+  const partes = vale.split(".");
+  if (partes.length !== 3) return null;
+
+  try {
+    const cabecera = JSON.parse(new TextDecoder().decode(base64url(partes[0])));
+    const cuerpo = JSON.parse(new TextDecoder().decode(base64url(partes[1])));
+
+    // Vencido, o para otra aplicación: no sirve.
+    if (!cuerpo.exp || cuerpo.exp * 1000 < Date.now()) return null;
+    const aud = Array.isArray(cuerpo.aud) ? cuerpo.aud : [cuerpo.aud];
+    if (!aud.includes(env.ACCESS_AUD)) return null;
+    if (cuerpo.iss !== `https://${env.ACCESS_TEAM}.cloudflareaccess.com`) return null;
+
+    const jwk = (await llavesDeAccess(env)).find((k) => k.kid === cabecera.kid);
+    if (!jwk) return null;
+
+    const llave = await crypto.subtle.importKey(
+      "jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+    const firmaOk = await crypto.subtle.verify(
+      "RSASSA-PKCS1-v1_5", llave, base64url(partes[2]),
+      new TextEncoder().encode(partes[0] + "." + partes[1]));
+    if (!firmaOk) return null;
+
+    return cuerpo.email || cuerpo.common_name || "(sin correo)";
+  } catch (e) {
+    console.error("Vale de Access inválido:", e);
+    return null;
+  }
+}
+
 function ipDe(request) {
   return request.headers.get("CF-Connecting-IP") ||
          request.headers.get("X-Forwarded-For") || "desconocida";
@@ -236,6 +310,15 @@ async function limpiarFallos(env, ip) {
 /* La puerta, antes de cualquier ruta del panel. Devuelve una respuesta
    cuando hay que cortar, o null cuando se puede seguir. */
 async function revisarPuerta(request, env, ctx) {
+  /* Con Access configurado, él manda: la clave ya no abre nada. Dejar
+     las dos puertas sería dejar la vieja abierta al lado de la nueva. */
+  if (env.ACCESS_TEAM && env.ACCESS_AUD) {
+    const correo = await correoDeAccess(request, env);
+    if (correo) return null;
+    return json({ ok: false, sinAcceso: true,
+      error: "Su sesión venció. Recargue la página para volver a entrar." }, 401);
+  }
+
   const ip = ipDe(request);
 
   if (await puertaCerrada(env, ip)) {
@@ -4362,6 +4445,19 @@ export default {
 
     if (url.pathname === "/api/solicitud" && request.method === "POST") {
       return guardarSolicitud(request, env, ctx);
+    }
+
+    /* Cómo se entra hoy. El panel lo pregunta al arrancar: si Access
+       está puesto no tiene que pedir contraseña, porque ya la pidió
+       Cloudflare antes de dejar pasar la página. */
+    if (url.pathname === "/api/panel/sesion" && request.method === "GET") {
+      const porAccess = !!(env.ACCESS_TEAM && env.ACCESS_AUD);
+      const correo = porAccess ? await correoDeAccess(request, env) : null;
+      if (porAccess && !correo) {
+        return json({ ok: false, sinAcceso: true,
+          error: "Su sesión venció. Recargue la página." }, 401);
+      }
+      return json({ ok: true, modo: porAccess ? "access" : "clave", correo: correo || null });
     }
 
     /* La puerta del panel, antes de cualquiera de sus rutas. Acá y no en

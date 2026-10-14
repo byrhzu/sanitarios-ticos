@@ -9467,7 +9467,27 @@
     else encenderAvisos();
   });
 
-  if (clave) mostrarPanel();
+  /* Cómo se entra. Si Cloudflare Access está puesto, la contraseña del
+     panel sobra: quien llegó hasta acá ya pasó por su ingreso. Pedirla
+     otra vez es pedir dos veces lo mismo, y era justo lo que molestaba.
+
+     Se le pregunta al servidor en vez de adivinarlo: así el día que
+     Access se apague, el panel vuelve a pedir la clave solo. */
+  fetch("/api/panel/sesion")
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (d && d.modo === "access") {
+        /* Con Access no hace falta clave, pero las llamadas igual mandan
+           la cabecera vacía sin problema: el servidor ya no la mira. */
+        quienEntro = d.correo || "";
+        mostrarPanel();
+        return;
+      }
+      if (clave) mostrarPanel();
+    })
+    .catch(function () { if (clave) mostrarPanel(); });
+
+  var quienEntro = "";
 
   /* =========================================================
      Instalarla en el teléfono
