@@ -319,6 +319,29 @@ async function revisarValeAccess(request, env) {
   }
 }
 
+/* A dónde manda el botón "Salir".
+
+   Hay DOS galletas, no una: la del dominio del panel y la de la sesión
+   de Cloudflare. Cerrando sólo la segunda, la primera seguía sirviendo
+   unos veinte o treinta segundos: el encargado le daba a Salir, volvía
+   al panel y lo veía cargado como si nada; recargando ya sí salía. Así
+   que se pasa por las dos, en este orden:
+
+     1. el dominio del panel  — borra la galleta de acá, de una
+     2. el de Cloudflare      — cierra la sesión, para que Google no lo
+                                vuelva a dejar entrar sin preguntar
+     3. /panel                — sin galletas, es la pantalla de ingreso
+
+   returnTo no está en la documentación de Cloudflare. Está probado
+   contra el servicio real, y si algún día lo quitan esto no se rompe:
+   la salida sigue cerrando la sesión, sólo que termina en la página de
+   Cloudflare en vez de en la de ingreso. */
+function salidaDeAccess(url, env) {
+  const equipo = `https://${env.ACCESS_TEAM}.cloudflareaccess.com/cdn-cgi/access/logout` +
+                 `?returnTo=${encodeURIComponent(url.origin + "/panel")}`;
+  return `${url.origin}/cdn-cgi/access/logout?returnTo=${encodeURIComponent(equipo)}`;
+}
+
 function ipDe(request) {
   return request.headers.get("CF-Connecting-IP") ||
          request.headers.get("X-Forwarded-For") || "desconocida";
@@ -4518,17 +4541,7 @@ export default {
       return json({ ok: true, modo: correo ? "access" : "clave", correo: correo || null,
         // Para que "Salir" cierre también la sesión de Access, no sólo la
         // copia local de la clave.
-        /* Al salir, Cloudflare cierra la sesión y devuelve al panel, que
-           sin sesión es la pantalla de ingreso. Sin el returnTo deja al
-           encargado en una página suya que parece un error.
-
-           returnTo no está en la documentación, así que si algún día deja
-           de funcionar esto no se rompe: se cae en esa misma página de
-           antes, que es lo que había. */
-        salir: correo
-          ? `https://${env.ACCESS_TEAM}.cloudflareaccess.com/cdn-cgi/access/logout` +
-            `?returnTo=${encodeURIComponent(url.origin + "/panel")}`
-          : null });
+        salir: correo ? salidaDeAccess(url, env) : null });
     }
 
     /* La puerta del panel, antes de cualquiera de sus rutas. Acá y no en
