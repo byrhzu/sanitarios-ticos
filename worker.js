@@ -235,38 +235,59 @@ function base64url(txt) {
 
 /* Devuelve el correo de quien entró, o null si el vale no sirve. */
 async function correoDeAccess(request, env) {
-  if (!env.ACCESS_TEAM || !env.ACCESS_AUD) return null;
-  const vale = request.headers.get("Cf-Access-Jwt-Assertion") ||
-               (request.headers.get("Cookie") || "").match(/CF_Authorization=([^;]+)/)?.[1];
-  if (!vale) return null;
+  return (await revisarValeAccess(request, env)).correo;
+}
+
+/* Lo mismo, pero contando POR QUÉ falló. Adivinarlo a ciegas costó una
+   mañana de panel caído; ahora el motivo se puede leer. No dice nada
+   secreto: sólo qué comprobación no pasó. */
+async function revisarValeAccess(request, env) {
+  if (!env.ACCESS_TEAM || !env.ACCESS_AUD) return { correo: null, motivo: "sin-configurar" };
+
+  const cabeceraVale = request.headers.get("Cf-Access-Jwt-Assertion");
+  const galleta = (request.headers.get("Cookie") || "").match(/CF_Authorization=([^;]+)/);
+  const vale = cabeceraVale || (galleta && galleta[1]);
+  if (!vale) return { correo: null, motivo: "no-llego-el-vale" };
+  const deDonde = cabeceraVale ? "cabecera" : "galleta";
 
   const partes = vale.split(".");
-  if (partes.length !== 3) return null;
+  if (partes.length !== 3) return { correo: null, motivo: "vale-mal-formado", deDonde };
 
   try {
     const cabecera = JSON.parse(new TextDecoder().decode(base64url(partes[0])));
     const cuerpo = JSON.parse(new TextDecoder().decode(base64url(partes[1])));
 
-    // Vencido, o para otra aplicación: no sirve.
-    if (!cuerpo.exp || cuerpo.exp * 1000 < Date.now()) return null;
+    if (!cuerpo.exp || cuerpo.exp * 1000 < Date.now()) {
+      return { correo: null, motivo: "vencido", deDonde };
+    }
     const aud = Array.isArray(cuerpo.aud) ? cuerpo.aud : [cuerpo.aud];
-    if (!aud.includes(env.ACCESS_AUD)) return null;
-    if (cuerpo.iss !== `https://${env.ACCESS_TEAM}.cloudflareaccess.com`) return null;
+    if (!aud.includes(env.ACCESS_AUD)) {
+      return { correo: null, motivo: "aud-no-coincide", deDonde,
+               esperaba: env.ACCESS_AUD.slice(0, 12) + "…",
+               traia: String(aud[0] || "").slice(0, 12) + "…" };
+    }
+    if (cuerpo.iss !== `https://${env.ACCESS_TEAM}.cloudflareaccess.com`) {
+      return { correo: null, motivo: "emisor-no-coincide", deDonde, traia: cuerpo.iss };
+    }
 
-    const jwk = (await llavesDeAccess(env)).find((k) => k.kid === cabecera.kid);
-    if (!jwk) return null;
+    let llaves;
+    try { llaves = await llavesDeAccess(env); }
+    catch (e) { return { correo: null, motivo: "no-se-pudieron-traer-las-llaves", deDonde }; }
+
+    const jwk = llaves.find((k) => k.kid === cabecera.kid);
+    if (!jwk) return { correo: null, motivo: "llave-desconocida", deDonde };
 
     const llave = await crypto.subtle.importKey(
-      "jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+      "jwk", { kty: jwk.kty, n: jwk.n, e: jwk.e },
+      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
     const firmaOk = await crypto.subtle.verify(
       "RSASSA-PKCS1-v1_5", llave, base64url(partes[2]),
       new TextEncoder().encode(partes[0] + "." + partes[1]));
-    if (!firmaOk) return null;
+    if (!firmaOk) return { correo: null, motivo: "firma-no-cuadra", deDonde };
 
-    return cuerpo.email || cuerpo.common_name || "(sin correo)";
+    return { correo: cuerpo.email || cuerpo.common_name || "(sin correo)", motivo: "ok", deDonde };
   } catch (e) {
-    console.error("Vale de Access inválido:", e);
-    return null;
+    return { correo: null, motivo: "error: " + String(e && e.message), deDonde };
   }
 }
 
@@ -4462,7 +4483,12 @@ export default {
        Cloudflare antes de dejar pasar la página. */
     if (url.pathname === "/api/panel/sesion" && request.method === "GET") {
       const porAccess = !!(env.ACCESS_TEAM && env.ACCESS_AUD);
-      const correo = porAccess ? await correoDeAccess(request, env) : null;
+      const revisado = porAccess ? await revisarValeAccess(request, env) : { correo: null, motivo: "sin-configurar" };
+      const correo = revisado.correo;
+      // ?diag=1 dice por qué no se verificó, sin tener que leer registros.
+      if (url.searchParams.get("diag") === "1") {
+        return json({ ok: true, modo: correo ? "access" : "clave", correo, diagnostico: revisado });
+      }
       /* Sin vale verificable se contesta "clave": el panel pide la
          contraseña, que es molesto pero funciona. Antes contestaba un
          error y el panel quedaba abierto sin poder traer un solo dato. */
