@@ -182,6 +182,88 @@ function igualSeguro(a, b) {
   return r === 0;
 }
 
+/* ============================================================================
+   El candado del panel
+
+   La clave sola no basta: sin límite de intentos, quien conozca la
+   dirección puede probar claves a máquina hasta dar con la buena. Tres
+   fallos seguidos desde una IP y esa IP no entra más, aunque después
+   acierte, hasta que el encargado del sistema la abra a mano.
+
+   Se cuenta por IP y no por sesión porque la sesión la escoge el que
+   ataca. Y una entrada correcta borra la cuenta: equivocarse tres veces
+   en un mes, escribiendo, no es un ataque.
+   ============================================================================ */
+const TOPE_FALLOS = 3;
+
+function ipDe(request) {
+  return request.headers.get("CF-Connecting-IP") ||
+         request.headers.get("X-Forwarded-For") || "desconocida";
+}
+
+/* ¿Está cerrada la puerta para esta IP? Si la tabla todavía no existe,
+   se contesta que no: un candado que no se instaló no puede dejar a
+   nadie por fuera. */
+async function puertaCerrada(env, ip) {
+  try {
+    const f = await env.DB.prepare(
+      `SELECT bloqueado FROM intentos_panel WHERE ip = ?`).bind(ip).first();
+    return !!(f && f.bloqueado);
+  } catch { return false; }
+}
+
+async function anotarFallo(env, ip) {
+  try {
+    await env.DB.prepare(
+      `INSERT INTO intentos_panel (ip, fallos, bloqueado, ultimo)
+       VALUES (?1, 1, 0, datetime('now'))
+       ON CONFLICT(ip) DO UPDATE SET
+         fallos = fallos + 1,
+         bloqueado = CASE WHEN fallos + 1 >= ${TOPE_FALLOS} THEN 1 ELSE bloqueado END,
+         ultimo = datetime('now')`
+    ).bind(ip).run();
+  } catch (e) {
+    console.error("No se pudo anotar el intento fallido:", e);
+  }
+}
+
+async function limpiarFallos(env, ip) {
+  try {
+    await env.DB.prepare(`DELETE FROM intentos_panel WHERE ip = ?`).bind(ip).run();
+  } catch {}
+}
+
+/* La puerta, antes de cualquier ruta del panel. Devuelve una respuesta
+   cuando hay que cortar, o null cuando se puede seguir. */
+async function revisarPuerta(request, env, ctx) {
+  const ip = ipDe(request);
+
+  if (await puertaCerrada(env, ip)) {
+    return json({ ok: false, bloqueado: true,
+      error: "Esta conexión quedó bloqueada por intentos fallidos. " +
+             "Hable con el encargado del sistema para que la habilite." }, 429);
+  }
+
+  if (claveValida(request, env)) {
+    // Entró bien: se borra la cuenta de fallos sin hacer esperar a nadie.
+    if (ctx && ctx.waitUntil) ctx.waitUntil(limpiarFallos(env, ip));
+    return null;
+  }
+
+  /* Clave mala. Se anota ANTES de contestar —y no en segundo plano— para
+     que no se puedan disparar mil intentos en paralelo y colarse todos
+     antes de que el contador suba. */
+  await anotarFallo(env, ip);
+  const f = await env.DB.prepare(
+    `SELECT fallos FROM intentos_panel WHERE ip = ?`).bind(ip).first().catch(() => null);
+  const quedan = f ? Math.max(0, TOPE_FALLOS - f.fallos) : null;
+  return json({ ok: false,
+    error: quedan === 0
+      ? "Clave incorrecta. Esta conexión quedó bloqueada: hable con el encargado del sistema."
+      : "Clave incorrecta." + (quedan != null ? " Le " + (quedan === 1 ? "queda 1 intento" : "quedan " + quedan + " intentos") + "." : ""),
+    quedan: quedan }, 401);
+}
+
 function claveValida(request, env) {
   if (!env.CLAVE_PANEL) return false;
   // Sólo por cabecera. En la URL, una clave queda en el historial del
@@ -4280,6 +4362,14 @@ export default {
 
     if (url.pathname === "/api/solicitud" && request.method === "POST") {
       return guardarSolicitud(request, env, ctx);
+    }
+
+    /* La puerta del panel, antes de cualquiera de sus rutas. Acá y no en
+       cada endpoint: una ruta nueva que se olvide de pedir la clave
+       queda igual de cerrada que las demás. */
+    if (url.pathname.startsWith("/api/panel/")) {
+      const corte = await revisarPuerta(request, env, ctx);
+      if (corte) return corte;
     }
     if (url.pathname === "/api/panel/solicitudes" && request.method === "GET") {
       return listaPanel(request, env);

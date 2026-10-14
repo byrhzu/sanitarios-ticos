@@ -3808,12 +3808,27 @@
      El botón de Salir sigue estando y borra las dos, que es lo que hay
      que hacer si el teléfono se pierde o se presta. */
   var GUARDA_CLAVE = "clavePanel";
+  var GUARDA_DESDE = "clavePanelDesde";
+  /* La clave guardada caduca. Antes se quedaba para siempre: un teléfono
+     perdido era el panel abierto, sin fecha de vencimiento. Treinta días
+     es el equilibrio — no se la pide todos los días a quien trabaja con
+     esto, pero un aparato que se extravió deja de servir solo. */
+  var DIAS_CLAVE = 30;
+
   function leerClave() {
-    try { return localStorage.getItem(GUARDA_CLAVE) || sessionStorage.getItem(GUARDA_CLAVE) || ""; }
-    catch (e) { return ""; }
+    try {
+      var v = localStorage.getItem(GUARDA_CLAVE) || sessionStorage.getItem(GUARDA_CLAVE) || "";
+      if (!v) return "";
+      var desde = Number(localStorage.getItem(GUARDA_DESDE) || 0);
+      if (desde && (Date.now() - desde) > DIAS_CLAVE * 86400000) { borrarClave(); return ""; }
+      return v;
+    } catch (e) { return ""; }
   }
   function guardarClave(v) {
-    try { localStorage.setItem(GUARDA_CLAVE, v); } catch (e) {}
+    try {
+      localStorage.setItem(GUARDA_CLAVE, v);
+      localStorage.setItem(GUARDA_DESDE, String(Date.now()));
+    } catch (e) {}
     // Y una copia en la caché, que es el único sitio donde el service
     // worker puede leerla: sin esto el aviso del teléfono no puede decir
     // cuántas cosas hay, sólo que hay algo.
@@ -3825,8 +3840,20 @@
   }
   function borrarClave() {
     try { localStorage.removeItem(GUARDA_CLAVE); } catch (e) {}
+    try { localStorage.removeItem(GUARDA_DESDE); } catch (e) {}
     try { sessionStorage.removeItem(GUARDA_CLAVE); } catch (e) {}
     try { caches.delete("panel-clave"); } catch (e) {}
+    /* Y que el service worker bote lo suyo: la copia de la pantalla y su
+       propio buzón de la clave. Sin esto, "Salir" dejaba el panel entero
+       guardado en el aparato y la clave en el buzón de los avisos. */
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ tipo: "salir" });
+      }
+      caches.keys().then(function (ks) {
+        ks.forEach(function (k) { if (k.indexOf("panel-") === 0) caches.delete(k); });
+      }).catch(function () {});
+    } catch (e) {}
   }
   var clave = leerClave();
 
@@ -3969,7 +3996,19 @@
     var o = opciones || {};
     o.headers = Object.assign({ "X-Clave": clave }, o.headers || {});
     return fetch(ruta, o).then(function (r) {
+      /* Si la sesión de Cloudflare Access venció, la respuesta a esta
+         llamada ya no es JSON: es la pantalla de ingreso, o un desvío
+         hacia ella. Recargar es lo correcto —así se ve el ingreso— y
+         evita que el panel se quede mostrando errores raros de JSON. */
+      if (r.redirected || (r.status === 302 || r.status === 403) ||
+          (r.headers.get("Content-Type") || "").indexOf("json") === -1) {
+        if (r.status !== 401 && r.status !== 429) { location.reload(); return new Promise(function () {}); }
+      }
       return r.json().then(function (d) {
+        /* Tres claves malas y la conexión queda cerrada. La clave
+           guardada se bota: seguir intentando con una que ya se sabe
+           mala sólo hunde más el candado. */
+        if (r.status === 429 && d && d.bloqueado) { borrarClave(); }
         if (!r.ok || !d.ok) throw new Error((d && d.error) || ("HTTP " + r.status));
         return d;
       });

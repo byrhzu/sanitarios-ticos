@@ -17,8 +17,21 @@
 # aunque no haya <meta>, y cubre las respuestas que no son HTML.)
 /panel*
   X-Robots-Tag: noindex, nofollow
+  # La marca que el service worker usa para saber que lo que llegó es el
+  # panel de verdad y no la pantalla de ingreso de Cloudflare Access.
+  X-Panel: 1
+  # El panel no se mete en un marco de nadie, ni siquiera del propio
+  # sitio: dentro de un iframe se puede engañar a quien lo usa para que
+  # toque cosas que no ve.
+  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'none'
+  # Que no quede guardado en ningún intermediario: lleva datos de clientes.
+  Cache-Control: no-store
 /cotizacion*
   X-Robots-Tag: noindex, nofollow
+  # El documento lo abre el cliente por un enlace con llave; no debe
+  # quedar en cachés compartidas de operadores ni de proxies.
+  Cache-Control: private, no-store
 
 # Las páginas siempre se revalidan: al publicar un cambio se ve de inmediato.
 /*.html

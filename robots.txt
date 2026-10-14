@@ -1,5 +1,9 @@
 User-agent: *
 Allow: /
 Disallow: /panel
+Disallow: /panel.html
+Disallow: /cotizacion
+Disallow: /cotizacion.html
+Disallow: /api/
 
 Sitemap: https://sanitariosticoscr.com/sitemap.xml
