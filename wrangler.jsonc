@@ -54,7 +54,25 @@
   // configuran en el panel de Cloudflare, en Settings → Variables and Secrets,
   // para que nunca queden escritas en el código.
   "vars": {
-    "CORREO_AVISO": "info@sanitariosticos.com"
+    "CORREO_AVISO": "info@sanitariosticos.com",
+
+    // Cloudflare Access. Con estas dos puestas, el panel deja de pedir
+    // contraseña: quien llegó hasta acá ya pasó por el ingreso de
+    // Cloudflare, y el programa lo verifica contra las llaves públicas
+    // del equipo (firma, destinatario y vencimiento).
+    //
+    // No son secretos: el nombre del equipo se ve en la dirección de la
+    // pantalla de ingreso, y el AUD sólo identifica a la aplicación —
+    // con él solo no se puede falsificar un vale, para eso haría falta
+    // la llave privada de Cloudflare.
+    //
+    // Van acá y no sólo en el panel de Cloudflare porque al publicar,
+    // las de este archivo PISAN las del panel: si faltaran, cada
+    // despliegue las borraría y el panel volvería a pedir la clave.
+    //
+    // Para apagar Access y volver a la clave: borrar estas dos líneas.
+    "ACCESS_TEAM": "yellow-shape-6214",
+    "ACCESS_AUD": "1b79a4f63b897f64113746104fc47044616dae29df2bdaf88395774cbe92e7aa"
   },
 
   // La base de datos donde quedan las solicitudes del formulario.
