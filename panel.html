@@ -3996,13 +3996,15 @@
     var o = opciones || {};
     o.headers = Object.assign({ "X-Clave": clave }, o.headers || {});
     return fetch(ruta, o).then(function (r) {
-      /* Si la sesión de Cloudflare Access venció, la respuesta a esta
-         llamada ya no es JSON: es la pantalla de ingreso, o un desvío
-         hacia ella. Recargar es lo correcto —así se ve el ingreso— y
-         evita que el panel se quede mostrando errores raros de JSON. */
-      if (r.redirected || (r.status === 302 || r.status === 403) ||
-          (r.headers.get("Content-Type") || "").indexOf("json") === -1) {
-        if (r.status !== 401 && r.status !== 429) { location.reload(); return new Promise(function () {}); }
+      /* Si la sesión de Cloudflare Access venció, la respuesta ya no es
+         JSON: es la pantalla de ingreso, o un desvío hacia ella.
+
+         NO se recarga sola. Lo intenté y arma un círculo: recarga, pide
+         ingreso, vuelve, la llamada falla otra vez, recarga. El panel se
+         queda dando vueltas sin que nadie pueda hacer nada. Mejor un
+         mensaje claro y que la persona decida. */
+      if ((r.headers.get("Content-Type") || "").indexOf("json") === -1) {
+        throw new Error("La sesión venció. Recargue la página para volver a entrar.");
       }
       return r.json().then(function (d) {
         /* Tres claves malas y la conexión queda cerrada. La clave
