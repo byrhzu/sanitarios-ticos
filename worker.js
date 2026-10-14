@@ -4457,7 +4457,10 @@ export default {
         return json({ ok: false, sinAcceso: true,
           error: "Su sesión venció. Recargue la página." }, 401);
       }
-      return json({ ok: true, modo: porAccess ? "access" : "clave", correo: correo || null });
+      return json({ ok: true, modo: porAccess ? "access" : "clave", correo: correo || null,
+        // Para que "Salir" cierre también la sesión de Access, no sólo la
+        // copia local de la clave.
+        salir: porAccess ? `https://${env.ACCESS_TEAM}.cloudflareaccess.com/cdn-cgi/access/logout` : null });
     }
 
     /* La puerta del panel, antes de cualquiera de sus rutas. Acá y no en

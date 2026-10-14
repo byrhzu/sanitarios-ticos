@@ -9242,9 +9242,18 @@
     if (resumenCargado) { resumenCargado = false; if (vista === "resumen") cargarResumen(); }
   });
 
-  // Salir borra la clave de este aparato: el panel se abre en teléfonos
-  // que no siempre son de uno solo.
-  function salir() { borrarClave(); location.reload(); }
+  /* Salir borra lo de este aparato: el panel se abre en teléfonos que no
+     siempre son de uno solo.
+
+     Con Access también hay que cerrar SU sesión. Si no, "Salir" borraba
+     la clave, recargaba, y Cloudflare dejaba pasar de nuevo sin pedir
+     nada: un botón de salir que no sacaba a nadie. */
+  function salir() {
+    borrarClave();
+    if (salidaAccess) { location.href = salidaAccess; return; }
+    location.reload();
+  }
+  var salidaAccess = "";
   $("btn-salir").addEventListener("click", salir);
 
   $("btn-csv").addEventListener("click", function () {
@@ -9477,6 +9486,7 @@
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (d) {
       if (d && d.modo === "access") {
+        if (d.salir) salidaAccess = d.salir;
         /* Con Access no hace falta clave, pero las llamadas igual mandan
            la cabecera vacía sin problema: el servidor ya no la mira. */
         quienEntro = d.correo || "";
