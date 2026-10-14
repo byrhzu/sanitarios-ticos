@@ -4518,7 +4518,17 @@ export default {
       return json({ ok: true, modo: correo ? "access" : "clave", correo: correo || null,
         // Para que "Salir" cierre también la sesión de Access, no sólo la
         // copia local de la clave.
-        salir: correo ? `https://${env.ACCESS_TEAM}.cloudflareaccess.com/cdn-cgi/access/logout` : null });
+        /* Al salir, Cloudflare cierra la sesión y devuelve al panel, que
+           sin sesión es la pantalla de ingreso. Sin el returnTo deja al
+           encargado en una página suya que parece un error.
+
+           returnTo no está en la documentación, así que si algún día deja
+           de funcionar esto no se rompe: se cae en esa misma página de
+           antes, que es lo que había. */
+        salir: correo
+          ? `https://${env.ACCESS_TEAM}.cloudflareaccess.com/cdn-cgi/access/logout` +
+            `?returnTo=${encodeURIComponent(url.origin + "/panel")}`
+          : null });
     }
 
     /* La puerta del panel, antes de cualquiera de sus rutas. Acá y no en
