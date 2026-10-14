@@ -863,6 +863,10 @@ async function resumenPanel(request, env) {
 
   const q = (sql, val) => env.DB.prepare(sql).bind(...(val || []));
 
+  /* ¿Ya se corrió la migración de la factura electrónica? De eso depende
+     si el desglose por factura es real o si todo cae en "sin factura". */
+  const conFE = await hayColumna(env, "servicios", "fe");
+
   try {
     const r = await env.DB.batch([
       // 0 · serie diaria de cotizaciones
@@ -1032,7 +1036,20 @@ async function resumenPanel(request, env) {
            AND s.papelera IS NULL AND c.papelera IS NULL
            AND datetime(s.fecha || ' ' || COALESCE(NULLIF(s.hora, ''), '23:59'))
                < datetime('now', '-6 hours', '-1 day')
-         ORDER BY s.fecha ASC, s.hora ASC LIMIT 20`)
+         ORDER BY s.fecha ASC, s.hora ASC LIMIT 20`),
+      /* 25 · Lo facturado del rango, partido entre quien pidió factura
+             electrónica y quien no. De la primera mitad sale el IVA que
+             hay que enterarle a Hacienda; la segunda es sólo informativa.
+             Si la columna todavía no existe, todo cae en "sin factura",
+             que es la verdad hasta que se corra la migración. */
+      q(conFE
+        ? `SELECT fe, COUNT(*) AS n, COALESCE(SUM(monto), 0) AS s
+             FROM servicios
+            WHERE fecha BETWEEN ? AND ? AND estado = 'completado' AND papelera IS NULL
+            GROUP BY fe`
+        : `SELECT 0 AS fe, COUNT(*) AS n, COALESCE(SUM(monto), 0) AS s
+             FROM servicios
+            WHERE fecha BETWEEN ? AND ? AND estado = 'completado' AND papelera IS NULL`, R)
     ]);
 
     const filas = (i) => (r[i] && r[i].results) || [];
@@ -1149,6 +1166,25 @@ async function resumenPanel(request, env) {
     /* Se devuelven con la misma forma que una cita de la agenda, porque
        las dos acciones que ofrecen —reagendar y marcar como hecha— son
        las mismas de allá y reciben el mismo objeto. */
+    /* El IVA se calcula acá y no en el panel: la tasa vive en TARIFAS y
+       el panel no tiene por qué saberla. */
+    let feSi = { n: 0, s: 0 }, feNo = { n: 0, s: 0 };
+    for (const f of filas(25)) {
+      if (+f.fe === 1) feSi = { n: f.n || 0, s: f.s || 0 };
+      else feNo = { n: (feNo.n + (f.n || 0)), s: (feNo.s + (f.s || 0)) };
+    }
+    const factura = {
+      con: feSi.s, conTrabajos: feSi.n,
+      sin: feNo.s, sinTrabajos: feNo.n,
+      total: feSi.s + feNo.s,
+      // Lo que hay que enterar: 13% de lo facturado con factura electrónica.
+      iva: Math.round(feSi.s * TARIFAS.iva.tasa),
+      tasa: TARIFAS.iva.tasa,
+      // Mientras la migración no se corra, todo sale como "sin factura" y
+      // el panel lo dice en vez de mostrar un cero que parece un dato.
+      listo: conFE
+    };
+
     const trabajosVencidos = filas(24).map((f) => ({
       id: f.id, clienteId: f.cliente_id, nombre: f.nombre, telefono: f.telefono || null,
       servicio: etiqueta(f.servicio, null, "servicio"), servicioKey: f.servicio,
@@ -1180,6 +1216,8 @@ async function resumenPanel(request, env) {
       // `saldo` = lo que falta por cobrar a hoy, de todo lo completado.
       ingresos: { monto: cobrado.s || 0, trabajos: cobrado.n || 0,
                   cobrado: (uno(16).s) || 0, saldo: (uno(17).s) || 0 },
+      // Lo facturado partido por factura electrónica, y el IVA que sale.
+      factura,
       previo: {
         desde: previo.desde, hasta: previo.hasta,
         cot: antes.cot || 0, sol: antes.sol || 0, ing: antes.ing || 0
@@ -1602,6 +1640,7 @@ async function listaServicios(request, env) {
     const { results } = await env.DB.prepare(
       `SELECT s.id, s.fecha, s.hora, s.servicio, s.detalle, s.monto, s.estado, s.proximo,
               s.cotizacion, s.cotizacion_id,
+              ${(await hayColumna(env, "servicios", "fe")) ? "s.fe" : "0"} AS fe,
               c.id AS cliente_id, c.nombre, c.telefono, c.provincia, c.canton,
               (SELECT COALESCE(SUM(p.monto), 0) FROM pagos p
                 WHERE p.servicio_id = s.id AND p.papelera IS NULL) AS pagado
@@ -1631,6 +1670,7 @@ async function listaServicios(request, env) {
         return {
           id: s.id, clienteId: s.cliente_id, cliente: s.nombre, telefono: s.telefono || null,
           servicio: etiqueta(s.servicio, null, "servicio"), servicioKey: s.servicio,
+          fe: +s.fe === 1,
           detalle: s.detalle || null,
           provincia: s.provincia || null, canton: s.canton || null,
           lugar: [s.canton, s.provincia].filter(Boolean).join(", ") || null,
@@ -1677,14 +1717,17 @@ async function editarServicio(request, env) {
         WHERE s.id = ? AND s.papelera IS NULL`).bind(id).first();
     if (!s) return json({ ok: false, error: "No existe ese servicio" }, 404);
     const comp = s.estado === "completado";
+    const conFE = await hayColumna(env, "servicios", "fe");
+    const fe = b.fe === true || b.fe === 1 || b.fe === "1" ? 1 : 0;
     await env.DB.prepare(
-      `UPDATE servicios SET fecha = ?1, hora = ?2, monto = ?3, detalle = ?4, nota = ?8,
+      `UPDATE servicios SET fecha = ?1, hora = ?2, monto = ?3, detalle = ?4, nota = ?8
+              ${conFE ? ", fe = ?9" : ""},
               proximo = CASE WHEN ?5 = 1 AND proximo IS NOT NULL
                              THEN date(?1, '+' || ?6 || ' months') ELSE proximo END,
               actualizado = datetime('now')
         WHERE id = ?7`
     ).bind(fecha, hora, monto, texto(b.detalle, 200) || null, comp ? 1 : 0, s.meses || 24, id,
-           texto(b.nota, 600) || null).run();
+           texto(b.nota, 600) || null, ...(conFE ? [fe] : [])).run();
     if (comp) {
       await env.DB.prepare(
         `UPDATE mantenimientos SET fecha = date(?1, '+' || COALESCE(meses, ?2) || ' months'),
@@ -2157,6 +2200,7 @@ async function verCliente(request, env) {
       `SELECT id, fecha, hora, servicio, detalle, monto, cotizacion, cotizacion_id,
               (SELECT m.fecha FROM mantenimientos m WHERE m.servicio_id = servicios.id
                  AND m.estado = 'programado' AND m.papelera IS NULL LIMIT 1) AS proximo, nota, estado
+              ${(await hayColumna(env, "servicios", "fe")) ? ", fe" : ", 0 AS fe"}
        FROM servicios WHERE cliente_id = ? AND papelera IS NULL ORDER BY fecha DESC, id DESC`
     ).bind(id).all();
 
@@ -2200,6 +2244,7 @@ async function verCliente(request, env) {
       saldoPendiente += saldo;
       return Object.assign({}, s, {
         servicioNombre: etiqueta(s.servicio, null, "servicio"),
+        fe: +s.fe === 1,
         pagado, saldo, estadoPago: estadoPago(monto, pagado), pagos: lista
       });
     });
@@ -2636,13 +2681,20 @@ async function estadoCita(request, env) {
        que ya se hubiera escrito al agendar. */
     const apunte = texto(cuerpo.nota, 600);
 
+    /* Si el cliente pidió factura electrónica. Se anota acá, al cerrar
+       el trabajo, porque es cuando se sabe: en la cotización era una
+       intención y al facturar puede haber cambiado. De esto sale el IVA
+       que hay que enterar. */
+    const conFE = await hayColumna(env, "servicios", "fe");
+    const fe = cuerpo.fe === true || cuerpo.fe === 1 || cuerpo.fe === "1" ? 1 : 0;
+
     await env.DB.prepare(
       `UPDATE servicios
           SET estado='completado', fecha=?1, monto=COALESCE(?2, monto),
-              nota=COALESCE(?5, nota),
+              nota=COALESCE(?5, nota)${conFE ? ", fe=?6" : ""},
               proximo=${proxExpr}, actualizado=datetime('now')
         WHERE id=?4 AND papelera IS NULL`
-    ).bind(fecha, monto, proxBind, id, apunte || null).run();
+    ).bind(fecha, monto, proxBind, id, apunte || null, ...(conFE ? [fe] : [])).run();
 
     // El cliente se queda con la periodicidad usada, para el próximo.
     if (!sinMant && !proxManual && meses !== s.meses) {
@@ -3002,21 +3054,28 @@ function lineasParaGuardar(lineas) {
   });
 }
 
-/* La columna `lineas` llega con una migración que se corre a mano en la
-   consola de D1. Mientras no se haya corrido, el INSERT no puede
-   nombrarla o falla entero y la cotización se pierde. Se consulta una
-   vez por isolate y se recuerda. */
-let _colLineas = null;
-async function hayColumnaLineas(env) {
-  if (_colLineas !== null) return _colLineas;
+/* Las columnas nuevas llegan con migraciones que se corren a mano en la
+   consola de D1. Mientras no se hayan corrido, nombrarlas en un INSERT
+   o un SELECT revienta la consulta entera. Se pregunta una vez por
+   tabla y por isolate, y se recuerda. */
+const _cols = new Map();
+async function columnasDe(env, tabla) {
+  if (_cols.has(tabla)) return _cols.get(tabla);
+  let set = new Set();
   try {
-    const { results } = await env.DB.prepare("PRAGMA table_info(cotizaciones)").all();
-    _colLineas = (results || []).some((c) => c.name === "lineas");
+    const { results } = await env.DB.prepare(`PRAGMA table_info(${tabla})`).all();
+    set = new Set((results || []).map((c) => c.name));
   } catch (e) {
-    console.error("No se pudo leer la forma de cotizaciones:", e);
-    _colLineas = false;
+    console.error("No se pudo leer la forma de " + tabla + ":", e);
   }
-  return _colLineas;
+  _cols.set(tabla, set);
+  return set;
+}
+async function hayColumna(env, tabla, col) {
+  return (await columnasDe(env, tabla)).has(col);
+}
+async function hayColumnaLineas(env) {
+  return hayColumna(env, "cotizaciones", "lineas");
 }
 
 function calcularCotizacion(entrada) {
@@ -3207,7 +3266,7 @@ async function avisarCotizacion(datos, env) {
   const filas = [
     ["Número", datos.numero],
     ["Servicio", datos.servicioNombre],
-    ["Estimado", montoTexto(datos.min, datos.max)],
+    ["Monto", montoTexto(datos.min, datos.max)],
     ["Nombre", datos.nombre || "—"],
     ["Teléfono", datos.telefono || "—"],
     ["Zona", ZONAS[datos.zona] || datos.zona],
@@ -3222,13 +3281,39 @@ async function avisarCotizacion(datos, env) {
        <b>Estimado automático.</b> El precio oficial lo pone usted al hablar
        con el cliente${datos.provisional ? " (además, estas tarifas siguen en revisión)" : ""}.</p>`;
 
+  /* De dónde salió la cotización cambia qué hay que hacer con ella. Una
+     del sitio es alguien que entró solo y todavía no ha hablado con
+     nadie: es la que hay que contestar hoy. Una del panel ya la hizo el
+     encargado, con el cliente al teléfono. */
+  const deAfuera = datos.origen !== "panel";
+  const quien = datos.origen === "panel" ? "Se emitió una cotización desde el panel"
+              : datos.origen === "solicitud" ? "Se cotizó una solicitud"
+              : datos.origen === "formulario" ? "Alguien se cotizó en el sitio web"
+              : "Víctor cotizó a alguien";
+
+  /* El WhatsApp ya armado dentro del correo: el objetivo del aviso es
+     escribirle antes de que llame a otro, y buscar el número a mano es
+     justo lo que hace que eso no pase. */
+  const wa = waDe(datos.telefono,
+    "Buenas" + (datos.nombre ? " " + primerNombre(datos.nombre) : "") +
+    ", le escribo de Sanitarios Ticos por la cotización " + (datos.numero || "") +
+    " que acaba de hacer en la página. ¿Se la coordinamos?");
+  const boton = wa && deAfuera
+    ? `<p style="margin:18px 0 0;"><a href="${wa}" style="display:inline-block;background:#25d366;
+         color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 18px;
+         border-radius:8px;">Escribirle por WhatsApp</a></p>`
+    : "";
+
   const cuerpoCorreo = {
     from: "Sanitarios Ticos <avisos@sanitariosticoscr.com>",
     to: [env.CORREO_AVISO],
-    subject: `Cotización ${datos.numero} — ${colones(datos.min)} a ${colones(datos.max)}`,
+    // Un solo monto no se escribe "₡65.000 a ₡65.000".
+    subject: (deAfuera ? "Cotización nueva en el sitio" : "Cotización") +
+             ` ${datos.numero} — ${montoTexto(datos.min, datos.max)}`,
     html: `<div style="font-family:system-ui,sans-serif;color:#1b1917;">
-             <h2 style="margin:0 0 12px;font-size:18px;">Víctor emitió una cotización</h2>
+             <h2 style="margin:0 0 12px;font-size:18px;">${quien}</h2>
              <table style="border-collapse:collapse;font-size:14px;">${filas}</table>
+             ${boton}
              ${aviso}
            </div>`
   };

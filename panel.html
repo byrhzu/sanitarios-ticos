@@ -2058,6 +2058,36 @@
   .apunte p { margin: .15rem 0 0; font-size: .85rem; color: var(--p-txt); }
 
   /* El mismo apunte dentro del historial del cliente. */
+  /* ---- El bloque de factura electrónica del Resumen ----
+     Responde otra pregunta que los números de arriba: no cuánto entró,
+     sino cuánto de eso hay que declarar. Por eso va aparte. */
+  .fe-bloque-r { margin-top: 1.1rem; }
+  .fe-rango { font-size: .8rem; color: var(--p-tenue); font-weight: 600; }
+  .fe-rejilla { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); }
+  /* El IVA por pagar es plata que SALE: se separa con una raya y se
+     marca con el tono de alerta para no confundirlo con lo cobrado. */
+  .fe-iva {
+    display: grid; gap: .1rem; margin-top: .9rem; padding-top: .85rem;
+    border-top: 1px solid var(--p-linea);
+  }
+  .fe-iva-et { font-size: .78rem; font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--est-mal-tx); }
+  .fe-iva-n { font-family: var(--datos); font-size: 1.6rem; font-weight: 700;
+    letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .fe-iva-pie { font-size: .78rem; color: var(--p-tenue); }
+  /* El check de "solicitó factura" se separa del dinero de arriba. */
+  .marca-check.fe-check { margin-top: 1rem; }
+
+  /* La marca de factura electrónica. Dos letras y nada más: va pegada a
+     cada trabajo que la pidió, repetida en listas largas, y cualquier
+     cosa más grande se volvería ruido. */
+  .et-fe {
+    display: inline-flex; align-items: center; height: 1.15rem; padding: 0 .35rem;
+    border-radius: 5px; font-family: var(--datos); font-size: .66rem; font-weight: 700;
+    letter-spacing: .06em; vertical-align: 1px;
+    background: var(--est-curso-bg); color: var(--est-curso-tx);
+  }
+
   .f-apunte {
     display: block; margin-top: .25rem; padding-left: .6rem;
     border-left: 2px solid color-mix(in srgb, var(--p-acento) 45%, transparent);
@@ -3663,6 +3693,11 @@
          queda, qué cuesta. Se pregunta al cerrar el trabajo, que es el
          único momento en que esa información existe, y sale sola la
          próxima vez que se le agende a este cliente. -->
+    <!-- Quién pidió factura. Se pregunta al cerrar el trabajo porque es
+         cuando se sabe: en la cotización era una intención. De acá sale
+         el IVA que hay que enterar. -->
+    <label class="marca-check fe-check"><input type="checkbox" id="h-fe"> Solicitó factura electrónica</label>
+
     <div class="f apunte-f">
       <label for="h-nota">Para la próxima visita</label>
       <textarea id="h-nota" rows="2" maxlength="600"
@@ -3744,6 +3779,7 @@
     </div>
     <div class="f" style="margin-top:.9rem;"><label for="es-detalle">Detalle</label>
       <input type="text" id="es-detalle" maxlength="200" autocomplete="off"></div>
+    <label class="marca-check fe-check" style="margin-top:.9rem;"><input type="checkbox" id="es-fe"> Solicitó factura electrónica</label>
     <div class="f apunte-f" style="margin-top:.9rem;">
       <label for="es-nota">Para la próxima visita</label>
       <textarea id="es-nota" rows="2" maxlength="600"
@@ -4097,8 +4133,44 @@
           '<span class="cifra-n">' + escHtml(d.conversion == null ? "—" : d.conversion + "%") + "</span>" +
           '<span class="dato-pie">' + (d.convertidas || 0) + " de " + cotiz + " se hicieron</span>" +
         "</button>" +
-      "</div>";
+      "</div>" +
+      bloqueFactura(d, dato, num);
     contarCifras();
+  }
+
+  /* ---------- Factura electrónica ----------
+
+     Lo facturado partido en dos, y de la mitad con factura sale el IVA.
+     Va en su propia sección y no mezclado con los otros números porque
+     responde otra pregunta: los de arriba son cuánto entró, éstos son
+     cuánto de eso hay que declarar. */
+  function bloqueFactura(d, dato, num) {
+    var f = d.factura;
+    if (!f) return "";
+    if (!f.listo) {
+      return '<section class="tarj fe-bloque-r"><div class="tarj-h"><h2>Factura electrónica</h2></div>' +
+        '<p class="vacio-ok">Falta correr la migración en la base de datos. Mientras tanto, ' +
+        "todos los trabajos salen como sin factura.</p></section>";
+    }
+    var pct = f.total > 0 ? Math.round((f.con / f.total) * 100) : 0;
+    return '<section class="tarj fe-bloque-r">' +
+      '<div class="tarj-h"><h2>Factura electrónica</h2>' +
+        '<span class="fe-rango">' + pct + "% de lo facturado</span></div>" +
+      '<div class="fe-rejilla">' +
+        dato({ vista: "servicios", estado: "completado" }, "Con factura", f.con, colones(f.con),
+             f.conTrabajos + (f.conTrabajos === 1 ? " trabajo" : " trabajos"), "", true) +
+        dato({ vista: "servicios", estado: "completado" }, "Sin factura", f.sin, colones(f.sin),
+             f.sinTrabajos + (f.sinTrabajos === 1 ? " trabajo" : " trabajos"), "", true) +
+        dato({ vista: "servicios", estado: "completado" }, "Total facturado", f.total, colones(f.total),
+             "Las dos juntas", "", true) +
+      "</div>" +
+      /* El IVA por pagar va aparte y marcado: no es plata que entró, es
+         plata que sale. Confundirlo con los otros montos sería contar
+         dos veces lo mismo. */
+      '<div class="fe-iva"><span class="fe-iva-et">IVA por pagar</span>' +
+        '<span class="fe-iva-n">' + num(f.iva, colones(f.iva), true) + "</span>" +
+        '<span class="fe-iva-pie">13% de lo facturado con factura</span></div>' +
+    "</section>";
   }
 
   function reducido() {
@@ -6372,6 +6444,7 @@
           return '<li' + (esComp ? ' data-pagos="' + s.id + '"' : "") + ">" +
             '<span class="f-fecha">' + escHtml(fechaLarga(s.fecha)) + (s.hora ? " " + escHtml(s.hora) : "") + "</span>" +
             '<span class="f-que">' + piezas([s.servicioNombre, s.detalle]) + (trab ? " " + trab : "") +
+              (s.fe ? ' <span class="et-fe" title="Solicitó factura electrónica">FE</span>' : "") +
               /* El apunte va pegado a SU trabajo y no en un recuadro
                  aparte del cliente: con dos casas, dos tanques y dos
                  apuntes, lo que los distingue es de qué visita salió. */
@@ -6696,7 +6769,9 @@
           "</small></div>" +
           '<div class="toca-cuando" style="align-items:flex-end;gap:.35rem;">' +
             '<span class="pastilla ' + es.cls + '">' + escHtml(es.t) + "</span>" +
-            (plata ? '<span class="num" style="font-size:.85rem;">' + plata + "</span>" : "") +
+            (plata ? '<span class="num" style="font-size:.85rem;">' + plata +
+              (s.fe ? ' <span class="et-fe" title="Solicitó factura electrónica">FE</span>' : "") +
+              "</span>" : "") +
           "</div>" +
           '<div class="toca-acc">' + acc.join("") + "</div>" +
         "</div>";
@@ -7838,6 +7913,7 @@
           body: JSON.stringify({
             id: c.id, estado: "hecho",
             monto: r.soloEstado ? "" : r.monto,
+            fe: r.soloEstado ? false : !!r.fe,
             nota: r.soloEstado ? "" : (r.nota || ""),
             fecha: r.fecha, meses: r.meses, metodo: r.metodo, mantenimiento: decision,
             sinMantenimiento: r.sinMantenimiento === true,
@@ -7946,6 +8022,7 @@
     $("es-monto").value = s.monto ? colones(s.monto) : "";
     $("es-detalle").value = s.detalle || "";
     $("es-nota").value = s.nota || "";
+    $("es-fe").checked = !!s.fe;
     $("es-aviso").textContent = "";
     $("velo-edsv").hidden = false;
     $("es-fecha").focus();
@@ -7963,7 +8040,7 @@
       body: JSON.stringify({
         id: $("es-id").value, fecha: $("es-fecha").value, hora: horaElegida("es"),
         monto: soloDigitos($("es-monto").value), detalle: $("es-detalle").value,
-        nota: $("es-nota").value.trim()
+        nota: $("es-nota").value.trim(), fe: $("es-fe").checked
       })
     })
       .then(function () { cerrarEditarServicio(); avisar("Servicio corregido."); refrescarTrasCambio(); })
@@ -8741,6 +8818,7 @@
     $("h-cuando").textContent = "Se hizo el " + fechaLarga(hojaFecha) +
       (hojaFecha === hoyISO() ? " (hoy)" : "") + ".";
     $("h-monto").value = "";
+    $("h-fe").checked = false;
     $("h-nota").value = "";
     $("h-meses").value = "";
     $("h-metodo").value = "efectivo";
@@ -8789,6 +8867,7 @@
     cerrarHoja({
       fecha: hojaFecha || hoyISO(),
       monto: soloDigitos($("h-monto").value),
+      fe: $("h-fe").checked,
       nota: $("h-nota").value.trim(),
       // Sí con periodicidad → meses; Sí con fecha exacta → proximoManual;
       // No → sinMantenimiento (no se le programa próximo).
