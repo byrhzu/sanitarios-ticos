@@ -2556,6 +2556,12 @@
     animation: clave-entra .5s var(--ease) both;
   }
   @keyframes clave-entra { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+  /* El arranque: el logo y una línea, sin tarjeta ni halo. Dura lo que
+     tarda una pregunta al servidor, así que no se gana más que eso. */
+  .arranque { text-align: center; animation: arranque-entra .4s var(--ease) both; }
+  .arranque p { margin: 0; color: var(--p-tenue); font-size: .9rem; }
+  @keyframes arranque-entra { from { opacity: 0; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .arranque { animation: none; } }
   .clave-caja::before {
     content: ""; position: absolute; inset: -2px; z-index: -1; border-radius: 28px;
     background: linear-gradient(135deg, var(--p-primario), var(--p-acento));
@@ -2784,8 +2790,22 @@
 </head>
 <body>
 
-<!-- Se ve mientras no se haya escrito la clave correcta -->
-<section class="clave-pantalla" id="pantalla-clave">
+<!-- Lo primero que se ve, y casi siempre lo único: mientras se le
+     pregunta al servidor cómo se entra hoy.
+
+     Antes la caja de la clave se veía de arranque, y con Cloudflare
+     Access eso era un parpadeo de contraseña en la cara cada vez que se
+     abría el panel — pidiendo algo que ya no hace falta. -->
+<section class="clave-pantalla" id="pantalla-arranque">
+  <div class="arranque">
+    <div class="clave-logo"><img src="assets/img/logo-mascota.webp" alt="" width="52" height="52"></div>
+    <p>Abriendo el panel…</p>
+  </div>
+</section>
+
+<!-- La caja de la clave ya no se muestra sola. Queda para el día que
+     Access esté apagado: el servidor lo dice y entonces aparece. -->
+<section class="clave-pantalla" id="pantalla-clave" hidden>
   <div class="clave-caja">
     <div class="clave-logo"><img src="assets/img/logo-mascota.webp" alt="" width="52" height="52"></div>
     <h1>Panel interno</h1>
@@ -9295,6 +9315,7 @@
 
   function mostrarPanel() {
     revisarAvisos();
+    $("pantalla-arranque").hidden = true;
     $("pantalla-clave").hidden = true;
     $("panel").hidden = false;
     var v = destinoDeLaDireccion();
@@ -9483,7 +9504,16 @@
      otra vez es pedir dos veces lo mismo, y era justo lo que molestaba.
 
      Se le pregunta al servidor en vez de adivinarlo: así el día que
-     Access se apague, el panel vuelve a pedir la clave solo. */
+     Access se apague, el panel vuelve a pedir la clave solo. Hasta que
+     conteste no se muestra ninguna de las dos pantallas; antes se veía
+     la de la clave y se tenía que esconder, que es el parpadeo. */
+  function pedirClave() {
+    $("pantalla-arranque").hidden = true;
+    $("pantalla-clave").hidden = false;
+    var campo = $("clave");
+    if (campo) campo.focus();
+  }
+
   fetch("/api/panel/sesion")
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (d) {
@@ -9496,8 +9526,12 @@
         return;
       }
       if (clave) mostrarPanel();
+      else pedirClave();
     })
-    .catch(function () { if (clave) mostrarPanel(); });
+    /* Sin respuesta no se sabe cómo se entra. Si hay clave guardada se
+       abre el panel —sus llamadas dirán si sirve o no—; si no la hay, se
+       pide, que es lo único que se puede ofrecer. */
+    .catch(function () { if (clave) mostrarPanel(); else pedirClave(); });
 
   var quienEntro = "";
 
