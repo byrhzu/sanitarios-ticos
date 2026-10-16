@@ -4041,13 +4041,19 @@ async function numeroSiguiente(env, tipo, ano) {
 /* Qué le falta al cliente para poder certificarlo.
 
    Un certificado es un papel que la empresa firma ante el Ministerio:
-   sin el nombre, la cédula y el lugar no identifica a nadie y no sirve
-   de nada. Más vale negarse acá que emitir uno en blanco y que lo
-   devuelvan. El tiquete no pide esto: es un comprobante informal. */
+   sin el nombre y sin el lugar no dice a quién ni dónde se le hizo el
+   trabajo, y no sirve de nada. Más vale negarse acá que emitir uno en
+   blanco y que lo devuelvan.
+
+   La cédula NO se exige. Es un dato que mucha gente no da —y que de un
+   cliente de casa no siempre hay— y por un número que falta no se va a
+   quedar sin su certificado: si está, el documento la pone; si no,
+   simplemente no la menciona.
+
+   El tiquete no pide nada de esto: es un comprobante informal. */
 function faltaParaCertificar(c) {
   const falta = [];
   if (!(c.nombre || "").trim()) falta.push("el nombre");
-  if (!(c.cedula || "").trim()) falta.push("la cédula");
   if (!lugarCorto(c.provincia, c.canton, c.distrito)) falta.push("la dirección");
   return falta;
 }
