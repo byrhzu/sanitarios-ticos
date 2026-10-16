@@ -3709,6 +3709,21 @@
         </select>
       </div>
     </div>
+    <!-- Cuánto se sacó y en qué camión. Va vacío la mayoría de las
+         veces: sólo hace falta si después piden el certificado, y ahí
+         se pregunta de nuevo. Anotarlo acá, recién hecho el trabajo, es
+         más fiable que acordarse en enero de cuántos m³ fueron. -->
+    <div class="nueva-rejilla">
+      <div class="f">
+        <label for="h-volumen">Metros cúbicos <small>(opcional)</small></label>
+        <input type="text" id="h-volumen" inputmode="decimal" autocomplete="off" placeholder="ej. 8">
+      </div>
+      <div class="f">
+        <label for="h-placa">Camión <small>(opcional)</small></label>
+        <input type="text" id="h-placa" autocomplete="off" maxlength="15" placeholder="C146776">
+      </div>
+    </div>
+
     <!-- Lo que sólo se sabe estando ahí: el tamaño del tanque, dónde
          queda, qué cuesta. Se pregunta al cerrar el trabajo, que es el
          único momento en que esa información existe, y sale sola la
@@ -3745,6 +3760,31 @@
     <div class="hoja-pie">
       <button type="button" class="btn-suave" id="h-saltar">Sólo marcar como hecho</button>
       <button type="button" class="btn-fuerte" id="h-guardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lo que falta para el certificado. Sólo aparece si de verdad falta:
+     si los m³ y la placa se anotaron al cerrar el trabajo, el
+     certificado se emite de una sin preguntar nada. -->
+<div class="velo" id="velo-doc" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="doc-t">
+    <h2 id="doc-t">Crear certificado</h2>
+    <p class="hoja-cuando" id="doc-sub"></p>
+    <div class="nueva-rejilla">
+      <div class="f" id="doc-vol-f">
+        <label for="doc-volumen">Metros cúbicos</label>
+        <input type="text" id="doc-volumen" inputmode="decimal" autocomplete="off" placeholder="ej. 8">
+      </div>
+      <div class="f">
+        <label for="doc-placa">Camión</label>
+        <input type="text" id="doc-placa" autocomplete="off" maxlength="15" placeholder="C146776">
+      </div>
+    </div>
+    <p class="estado-linea" id="doc-aviso" role="status" aria-live="polite"></p>
+    <div class="hoja-pie">
+      <button type="button" class="btn-suave" id="doc-cancelar">Cancelar</button>
+      <button type="button" class="btn-fuerte" id="doc-crear">Crear</button>
     </div>
   </div>
 </div>
@@ -7976,6 +8016,8 @@
             monto: r.soloEstado ? "" : r.monto,
             fe: r.soloEstado ? false : !!r.fe,
             nota: r.soloEstado ? "" : (r.nota || ""),
+            volumen: r.soloEstado ? "" : (r.volumen || ""),
+            placa: r.soloEstado ? "" : (r.placa || ""),
             fecha: r.fecha, meses: r.meses, metodo: r.metodo, mantenimiento: decision,
             sinMantenimiento: r.sinMantenimiento === true,
             proximoManual: r.proximoManual || null
@@ -8059,6 +8101,11 @@
       if (comp) {
         a.push(botAcc("editar", ICO.lapiz, "Corregir fecha, monto o detalle"));
         a.push(botAcc("pago", ICO.cartera, "Ver o registrar pagos"));
+        /* Los dos papeles del trabajo hecho. No se piden siempre, así
+           que no se generan solos: viven acá, a un toque, y se emiten
+           cuando alguien los pide. */
+        a.push(botAcc("certificado", ICO.doc, "Crear certificado"));
+        a.push(botAcc("tiquete", ICO.cotizacion, "Crear tiquete de pago"));
       }
       a.push(botAcc("eliminar", ICO.basura, "Eliminar", "malo"));
     }
@@ -8067,6 +8114,104 @@
   }
 
   function cerrarAccs() { $("velo-accs").hidden = true; }
+
+  /* =========================================================
+     Certificado y tiquete de un trabajo hecho
+     =========================================================
+
+     Dos papeles que a veces piden después: el certificado que exige
+     Salud y el comprobante de lo cobrado. Ninguno se pide siempre, así
+     que no se generan solos — se emiten desde acá, y el documento se
+     abre en su propia pestaña con los botones de descargar y enviar.
+
+     El certificado nombra cuántos m³ se sacaron. Si eso se anotó al
+     cerrar el trabajo, sale de una; si no, se pregunta acá y queda
+     guardado para la próxima. */
+
+  // Los servicios que extraen algo: son los únicos cuyo certificado
+  // dice metros cúbicos. En un destaqueo, preguntarlos no tiene sentido.
+  var SACA_VOLUMEN = ["tanques-septicos", "trampas-grasa", "tanques-grasa"];
+
+  var docPendiente = null;
+
+  function crearDocumento(tipo, s) {
+    if (!s || !s.id) return;
+    if (s.estado !== "completado") {
+      return avisar("El certificado y el tiquete son de trabajos ya marcados como hechos.", "mal");
+    }
+    // El tiquete sale de lo que ya está guardado: no falta nada.
+    if (tipo === "tiquete") return emitirDoc(tipo, s, {});
+
+    docPendiente = { tipo: tipo, svc: s };
+    $("doc-t").textContent = "Crear certificado";
+    $("doc-sub").textContent = [s.nombre, s.servicio, s.fecha ? fechaLarga(s.fecha) : ""]
+      .filter(Boolean).join(" · ");
+    /* La clave del servicio llega con dos nombres según de dónde salga
+       el menú: en la lista de Servicios es `servicioKey` (porque ahí
+       `servicio` ya viene traducido), y en la ficha del cliente es
+       `servicio` a secas. Se miran las dos. */
+    var clave = s.servicioKey || s.servicio || "";
+    var pide = SACA_VOLUMEN.indexOf(clave) !== -1;
+    $("doc-vol-f").hidden = !pide;
+    $("doc-volumen").value = s.volumen ? String(s.volumen) : "";
+    $("doc-placa").value = s.placa || placaRecordada() || "";
+    $("doc-aviso").textContent = "";
+    $("doc-aviso").classList.remove("is-error");
+    $("velo-doc").hidden = false;
+    (pide ? $("doc-volumen") : $("doc-placa")).focus();
+  }
+
+  function cerrarDoc() { $("velo-doc").hidden = true; docPendiente = null; }
+
+  $("doc-cancelar").addEventListener("click", cerrarDoc);
+  $("velo-doc").addEventListener("click", function (e) {
+    if (e.target === $("velo-doc")) cerrarDoc();
+  });
+  $("doc-crear").addEventListener("click", function () {
+    if (!docPendiente) return;
+    var placa = $("doc-placa").value.trim().toUpperCase();
+    if (placa) recordarYDevolverPlaca(placa);
+    emitirDoc(docPendiente.tipo, docPendiente.svc, {
+      volumen: $("doc-volumen").value.trim().replace(",", "."),
+      placa: placa
+    }, this);
+  });
+
+  function emitirDoc(tipo, s, extra, boton) {
+    var nombre = tipo === "certificado" ? "certificado" : "tiquete";
+    /* La pestaña se abre ANTES de pedir, no después: si se abre al
+       llegar la respuesta, el navegador la toma por una ventana
+       emergente y la bloquea. Así queda abierta esperando. */
+    var pestana = window.open("", "_blank");
+    if (boton) { boton.disabled = true; boton.textContent = "Creando…"; }
+
+    pedir("/api/panel/documento", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tipo: tipo, servicioId: s.id,
+                             volumen: extra.volumen || "", placa: extra.placa || "" })
+    })
+      .then(function (d) {
+        cerrarDoc();
+        if (pestana) pestana.location = d.url;
+        else location.href = d.url;          // si el navegador la bloqueó
+        avisar(d.reusado
+          ? "Ese " + nombre + " ya estaba hecho (" + d.numero + "): se abrió el mismo."
+          : "Listo: " + nombre + " " + d.numero + ".");
+      })
+      .catch(function (err) {
+        if (pestana) pestana.close();
+        var msg = String((err && err.message) || "No se pudo crear el " + nombre + ".");
+        if (docPendiente) {
+          $("doc-aviso").textContent = msg;
+          $("doc-aviso").classList.add("is-error");
+        } else {
+          avisar(msg, "mal");
+        }
+      })
+      .then(function () {
+        if (boton) { boton.disabled = false; boton.textContent = "Crear"; }
+      });
+  }
 
   // Registrar pago desde cualquier lista: se abre la ficha del cliente
   // (fuente del recuadro de pagos) y ahí mismo el pago de ESE servicio.
@@ -8186,6 +8331,8 @@
     if (acc === "pago") return pagoDeServicio(s.clienteId, s.id);
     if (acc === "editar") return abrirEditarServicio(s);
     if (acc === "mant") return verCliente(s.clienteId);   // la ficha muestra el próximo + el expediente
+    if (acc === "certificado") return crearDocumento("certificado", s);
+    if (acc === "tiquete") return crearDocumento("tiquete", s);
     if (acc === "eliminar") return eliminarServicio(s);
   });
 
@@ -8867,6 +9014,17 @@
      dice, para que quede claro qué se está anotando. */
   var hojaFecha = null;
 
+  /* La placa del último trabajo anotado. Vive en este aparato, no en la
+     base: es una comodidad al escribir, no un dato del negocio. */
+  var GUARDA_PLACA = "st-placa";
+  function placaRecordada() {
+    try { return localStorage.getItem(GUARDA_PLACA) || ""; } catch (e) { return ""; }
+  }
+  function recordarYDevolverPlaca(p) {
+    if (p) { try { localStorage.setItem(GUARDA_PLACA, p); } catch (e) {} }
+    return p;
+  }
+
   function abrirHoja(fecha) {
     // Se anota dónde estaba el teclado para devolverlo al cerrar: si no,
     // el foco queda en el aire y quien navega con teclado se pierde.
@@ -8881,6 +9039,10 @@
     $("h-monto").value = "";
     $("h-fe").checked = false;
     $("h-nota").value = "";
+    $("h-volumen").value = "";
+    // La placa se recuerda del trabajo anterior: casi siempre es el
+    // mismo camión, y volver a escribirla cada vez sería trabajo de más.
+    $("h-placa").value = placaRecordada();
     $("h-meses").value = "";
     $("h-metodo").value = "efectivo";
     $("h-fecha-mant").value = "";
@@ -8930,6 +9092,8 @@
       monto: soloDigitos($("h-monto").value),
       fe: $("h-fe").checked,
       nota: $("h-nota").value.trim(),
+      volumen: $("h-volumen").value.trim().replace(",", "."),
+      placa: recordarYDevolverPlaca($("h-placa").value.trim().toUpperCase()),
       // Sí con periodicidad → meses; Sí con fecha exacta → proximoManual;
       // No → sinMantenimiento (no se le programa próximo).
       sinMantenimiento: !mantSi,

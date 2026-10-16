@@ -27,6 +27,12 @@
   Content-Security-Policy: frame-ancestors 'none'
   # Que no quede guardado en ningún intermediario: lleva datos de clientes.
   Cache-Control: no-store
+/documento*
+  X-Robots-Tag: noindex, nofollow
+  # El certificado y el tiquete llevan el nombre y la cédula del
+  # cliente: no deben quedar en cachés compartidas de nadie.
+  Cache-Control: private, no-store
+
 /cotizacion*
   X-Robots-Tag: noindex, nofollow
   # El documento lo abre el cliente por un enlace con llave; no debe

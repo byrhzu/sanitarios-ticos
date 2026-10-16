@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="es-CR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documento | Sanitarios Ticos</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
+<style>
+/* =============================================================
+   CERTIFICADO Y TIQUETE — documentos imprimibles
+
+   Dos papeles distintos en un solo archivo, porque comparten casi
+   todo: la hoja, la cabecera, el pie y toda la maquinaria del PDF.
+   Lo único propio de cada uno es el cuerpo.
+
+   Hereda la misma tipografía, el mismo naranja y las mismas medidas
+   de cotizacion.html. No es casualidad: quien recibe los tres
+   papeles del mismo negocio tiene que reconocerlos como del mismo
+   negocio.
+   ============================================================= */
+
+:root {
+  --hoja:    #ffffff;
+  --tinta:   #1b1917;
+  --tinta-2: #4a443d;
+  --gris:    #7d766e;
+  --naranja: #ef6511;
+  --naranja-dk: #b34c0d;
+  --filete:  #e0dbd4;
+  --realce:  #f7f4ef;
+
+  --sans: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --cartel:  68%;
+  --titular: 82%;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #e9e5df;
+  color: var(--tinta);
+  font-family: var(--sans);
+  font-size: 9.5pt;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.hoja {
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 8mm auto;
+  padding: 16mm;
+  background: var(--hoja);
+  box-shadow: 0 2px 18px rgba(27,25,23,.18);
+  display: flex;
+  flex-direction: column;
+}
+.hoja::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 6mm;
+  background: var(--naranja);
+}
+
+.et {
+  font-size: 8.6pt;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  color: var(--tinta);
+  margin: 0 0 2mm;
+}
+
+/* --- Cabecera -------------------------------------------------- */
+.cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8mm;
+  padding-top: 4mm;
+}
+.marca img { width: 46mm; height: auto; display: block; }
+.marca p {
+  margin: 2.5mm 0 0;
+  font-size: 7.4pt;
+  color: var(--gris);
+  line-height: 1.45;
+}
+.sellos { display: flex; align-items: center; gap: 5mm; margin-left: auto; }
+.sellos figure { margin: 0; display: flex; flex-direction: column; align-items: center; }
+.sellos img { height: 15mm; width: auto; display: block; }
+
+.folio {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 8mm;
+  margin-top: 5mm; padding-top: 4mm; border-top: 1.5pt solid var(--tinta);
+}
+.folio-tit { display: flex; align-items: baseline; gap: 4mm; }
+.folio h1 {
+  margin: 0;
+  font-size: 25pt;
+  font-weight: 800;
+  font-stretch: var(--cartel);
+  text-transform: uppercase;
+  letter-spacing: .01em;
+  line-height: .9;
+}
+.folio .num {
+  margin: 0;
+  font-size: 11pt;
+  font-weight: 700;
+  font-stretch: var(--titular);
+  color: var(--naranja-dk);
+  font-variant-numeric: tabular-nums;
+}
+.folio dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: .6mm 4mm;
+  font-size: 7.6pt;
+}
+.folio dt { color: var(--gris); text-align: right; }
+.folio dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* --- Bloque de datos del certificado ---------------------------
+   La plantilla de Word los ponía como "Etiqueta: valor" uno bajo
+   otro, sangrados. Se conserva esa forma —es la que el Ministerio
+   ya conoce— pero alineada en rejilla, para que los valores no
+   bailen según el largo de la etiqueta. */
+.datos {
+  margin: 7mm 0 0;
+  display: grid;
+  grid-template-columns: 34mm 1fr;
+  gap: 1.4mm 4mm;
+  font-size: 10pt;
+}
+.datos dt { font-weight: 700; color: var(--tinta); }
+.datos dd { margin: 0; color: var(--tinta-2); }
+
+/* --- Cuerpo del certificado ------------------------------------ */
+.cuerpo { margin-top: 8mm; font-size: 10pt; line-height: 1.62; text-align: justify; }
+.cuerpo p { margin: 0 0 4.5mm; }
+.cuerpo b { font-weight: 700; color: var(--tinta); }
+/* Lo subrayado es lo que el Ministerio verifica: la fecha, el
+   cliente, el lugar y el trabajo. Igual que en la plantilla. */
+.cuerpo u { text-decoration: underline; text-underline-offset: 2px; font-weight: 700; }
+
+/* --- Firma ------------------------------------------------------ */
+.firma {
+  margin: 14mm auto 0;
+  width: 78mm;
+  text-align: center;
+}
+.firma-img {
+  height: 20mm;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.firma-img img { max-height: 20mm; max-width: 100%; display: block; }
+.firma-linea { border-top: .8pt solid var(--tinta); margin-top: 1mm; padding-top: 1.6mm; }
+.firma-linea b { display: block; font-size: 9.5pt; font-weight: 700; text-transform: uppercase; }
+.firma-linea span { display: block; font-size: 8.4pt; color: var(--gris); text-transform: uppercase; }
+
+/* --- Tabla del tiquete ------------------------------------------ */
+.tabla { width: 100%; border-collapse: collapse; margin-top: 6mm; }
+.tabla th {
+  background: var(--tinta);
+  color: var(--hoja);
+  font-size: 6.6pt;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 2.4mm 3.5mm;
+}
+.tabla th.der { text-align: right; }
+.tabla td {
+  padding: 3.4mm 3.5mm;
+  border-bottom: .5pt solid var(--filete);
+  vertical-align: top;
+}
+.tabla .svc { font-size: 12pt; font-weight: 700; font-stretch: var(--titular); display: block; }
+.tabla .sub { display: block; margin-top: 1mm; font-size: 8pt; color: var(--gris); }
+.tabla .monto {
+  text-align: right; white-space: nowrap;
+  font-size: 12pt; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+
+/* --- Partes (cliente / empresa), igual que en la cotización ----- */
+.partes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10mm;
+  margin-top: 6mm;
+  padding-top: 4mm;
+  border-top: .5pt solid var(--filete);
+}
+.parte dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 17mm 1fr;
+  gap: .9mm 3mm;
+  font-size: 8.4pt;
+  line-height: 1.45;
+}
+.parte dt { color: var(--gris); }
+.parte dd { margin: 0; color: var(--tinta-2); }
+.parte dd b { font-weight: 700; color: var(--tinta); }
+
+/* --- Cuentas del tiquete ---------------------------------------- */
+.cuentas {
+  margin-top: 6mm; margin-left: auto;
+  width: 82mm; font-size: 9.5pt;
+}
+.cuentas .lin {
+  display: flex; justify-content: space-between; gap: 6mm;
+  padding: 1.8mm 0; border-bottom: .5pt solid var(--filete);
+  font-variant-numeric: tabular-nums;
+}
+.cuentas .lin span:last-child { font-weight: 600; }
+.cuentas .total {
+  border-bottom: 0; margin-top: 1.5mm; padding: 3mm 4mm;
+  background: var(--realce); border-left: 2.5pt solid var(--naranja);
+  font-size: 12pt; font-weight: 700;
+}
+.cuentas .saldo-vivo span:last-child { color: var(--naranja-dk); }
+
+.nota-legal {
+  margin-top: 7mm; padding-top: 3mm;
+  border-top: .5pt solid var(--filete);
+  font-size: 7.8pt; color: var(--gris); line-height: 1.5;
+}
+
+/* --- Franja de confianza y pie ---------------------------------- */
+.confianza {
+  margin-top: auto;
+  background: var(--tinta); color: var(--hoja);
+  padding: 2.2mm 5mm;
+  font-size: 10pt; font-weight: 700; font-style: italic;
+  font-stretch: var(--titular);
+}
+.pie {
+  padding-top: 3mm;
+  display: flex;
+  justify-content: space-between;
+  gap: 8mm;
+  font-size: 7.4pt;
+  color: var(--gris);
+}
+.pie span { white-space: nowrap; }
+
+/* --- Barra de acciones (nunca se imprime) ----------------------- */
+.acciones {
+  width: 210mm;
+  max-width: 100%;
+  margin: 8mm auto 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2mm;
+}
+.acciones button, .acciones a {
+  font-family: var(--sans);
+  font-size: 9.5pt;
+  font-weight: 600;
+  padding: 2.6mm 5mm;
+  border: 1px solid rgba(27,25,23,.22);
+  background: #fff;
+  color: var(--tinta);
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: 2px;
+}
+.acciones button.primario { background: var(--naranja); border-color: var(--naranja); color: #fff; }
+.acciones button:hover, .acciones a:hover { border-color: var(--naranja); }
+.acciones button:disabled { opacity: .6; cursor: default; }
+.acciones .aviso { font-size: 8pt; color: #5d574f; align-self: center; margin-left: 2mm; }
+
+.estado { padding: 24mm 16mm; text-align: center; }
+.estado h2 { font-stretch: var(--titular); font-weight: 700; margin: 0 0 3mm; }
+.estado p { margin: 0 auto; max-width: 62ch; color: var(--tinta-2); }
+[hidden] { display: none !important; }
+
+/* --- Pantallas angostas ------------------------------------------
+   Con `screen` a propósito: sin eso, al imprimir desde el teléfono el
+   navegador tomaría también estas reglas y apilaría todo en una
+   columna, con lo que la hoja crece y salta a una segunda página. */
+@media screen and (max-width: 230mm) {
+  .hoja { width: 100%; min-height: 0; margin: 0; padding: 9mm 6mm 12mm; box-shadow: none; }
+  body { background: var(--hoja); }
+  .cabeza { flex-direction: column; gap: 6mm; }
+  .sellos { margin-left: 0; }
+  .folio { flex-direction: column; align-items: flex-start; gap: 3mm; }
+  .folio dl { grid-template-columns: auto auto; justify-content: start; }
+  .folio dt { text-align: left; }
+  .datos { grid-template-columns: 1fr; gap: .4mm; }
+  .datos dt { margin-top: 2mm; }
+  .partes { grid-template-columns: 1fr; gap: 6mm; }
+  .cuentas { width: auto; }
+  .cuerpo { text-align: left; }
+  .pie { flex-direction: column; gap: 1mm; }
+  .acciones { width: auto; margin: 0 6mm 10mm; }
+}
+
+/* --- Impresión ---------------------------------------------------- */
+@page { size: A4 portrait; margin: 0; }
+@media print {
+  body { background: #fff; }
+  .acciones { display: none; }
+  .hoja {
+    width: 210mm; height: 297mm; min-height: 0; margin: 0;
+    box-sizing: border-box; padding: 12mm 13mm; overflow: hidden;
+    box-shadow: none;
+    page-break-after: avoid; page-break-inside: avoid;
+  }
+  .hoja::before, .tabla th, .cuentas .total, .confianza {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<article class="hoja" id="hoja" hidden>
+
+  <header class="cabeza">
+    <div class="marca">
+      <img src="assets/img/logo-horizontal.webp" alt="Sanitarios Ticos" width="853" height="150">
+      <p id="empresa-linea"></p>
+    </div>
+    <div class="sellos">
+      <figure><img src="assets/img/sello-pyme.png" alt="PYME Costa Rica" width="173" height="240"></figure>
+      <figure><img src="assets/img/sello-minsalud.png" alt="Ministerio de Salud" width="240" height="240"></figure>
+    </div>
+  </header>
+
+  <div class="folio">
+    <div class="folio-tit">
+      <h1 id="titulo">Certificación</h1>
+      <p class="num" id="numero"></p>
+    </div>
+    <dl>
+      <dt>Emitido</dt><dd id="emitido"></dd>
+      <dt id="dt-fecha">Fecha del servicio</dt><dd id="fecha-sv"></dd>
+    </dl>
+  </div>
+
+  <!-- ====== Certificado ====== -->
+  <div id="bloque-cert" hidden>
+    <dl class="datos" id="cert-datos"></dl>
+    <div class="cuerpo" id="cert-cuerpo"></div>
+    <div class="firma">
+      <!-- La firma escaneada. Si el archivo no está, queda sólo la
+           línea y el documento se firma a mano: no se rompe nada. -->
+      <div class="firma-img"><img id="firma-img" src="assets/img/firma-representante.png" alt="" hidden></div>
+      <div class="firma-linea">
+        <b id="firma-nombre"></b>
+        <span id="firma-cargo"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Tiquete ====== -->
+  <div id="bloque-tiq" hidden>
+    <section class="partes">
+      <div class="parte">
+        <p class="et">Datos del cliente</p>
+        <dl id="tiq-cliente"></dl>
+      </div>
+      <div class="parte">
+        <p class="et">Datos de la empresa</p>
+        <dl id="tiq-empresa"></dl>
+      </div>
+    </section>
+
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Servicio realizado</th>
+          <th class="der">Cobrado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <span class="svc" id="tiq-servicio"></span>
+            <span class="sub" id="tiq-sub"></span>
+          </td>
+          <td class="monto" id="tiq-monto"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="cuentas" id="tiq-cuentas"></div>
+    <p class="nota-legal" id="tiq-nota"></p>
+  </div>
+
+  <p class="confianza">¡Su empresa de confianza!</p>
+  <footer class="pie" id="pie"></footer>
+</article>
+
+<div class="acciones" id="acciones" hidden>
+  <button type="button" class="primario" id="btn-enviar">Enviar al cliente</button>
+  <button type="button" id="btn-descargar">Descargar el PDF</button>
+  <button type="button" id="btn-copiar">Copiar el enlace</button>
+  <span class="aviso" id="aviso-accion"></span>
+</div>
+
+<div class="estado" id="cargando">
+  <p>Abriendo el documento…</p>
+</div>
+
+<div class="estado" id="error" hidden>
+  <h2>No se pudo abrir</h2>
+  <p id="error-txt"></p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function mostrarError(txt) {
+    $("cargando").hidden = true;
+    $("error-txt").textContent = txt;
+    $("error").hidden = false;
+  }
+
+  var MESES = ["enero","febrero","marzo","abril","mayo","junio",
+               "julio","agosto","setiembre","octubre","noviembre","diciembre"];
+
+  function fecha(iso) {
+    var p = String(iso || "").split("-");
+    if (p.length !== 3) return "—";
+    return Number(p[2]) + " " + MESES[Number(p[1]) - 1].slice(0, 3) + " " + p[0];
+  }
+
+  /* Un par etiqueta/valor dentro de una <dl>. Se arma con createElement
+     y textContent: lo que viene de la base NUNCA se concatena en HTML. */
+  function par(caja, etiqueta, valor, fuerte) {
+    if (!valor) return;
+    var dt = document.createElement("dt");
+    dt.textContent = etiqueta;
+    var dd = document.createElement("dd");
+    if (fuerte) {
+      var b = document.createElement("b");
+      b.textContent = valor;
+      dd.appendChild(b);
+    } else {
+      dd.textContent = valor;
+    }
+    caja.appendChild(dt);
+    caja.appendChild(dd);
+  }
+
+  /* Un párrafo con trozos: cadena normal, {b:…} en negrita, {u:…}
+     subrayado. Así el texto legal se arma sin pegar HTML a mano. */
+  function parrafo(caja, trozos) {
+    var p = document.createElement("p");
+    trozos.forEach(function (t) {
+      if (t == null || t === "") return;
+      if (typeof t === "string") { p.appendChild(document.createTextNode(t)); return; }
+      var e = document.createElement(t.u ? "u" : "b");
+      e.textContent = t.u || t.b;
+      p.appendChild(e);
+    });
+    caja.appendChild(p);
+  }
+
+  var params = new URLSearchParams(location.search);
+  var tipo = params.get("t") || "";
+  var numeroDoc = "", waNum = "", mensajeWa = "", nombreArchivo = "Documento";
+
+  if (["certificado", "tiquete"].indexOf(tipo) === -1 || !params.get("n") || !params.get("k")) {
+    mostrarError("El enlace está incompleto. Pídalo de nuevo desde el panel.");
+    return;
+  }
+
+  fetch("/api/documento?t=" + encodeURIComponent(tipo) +
+        "&n=" + encodeURIComponent(params.get("n")) +
+        "&k=" + encodeURIComponent(params.get("k")))
+    .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+    .then(function (res) {
+      if (!res.ok || !res.d.ok) return mostrarError(res.d.error || "No se pudo abrir el documento.");
+      pintar(res.d);
+    })
+    .catch(function () {
+      mostrarError("No se pudo contactar al servidor. Revise la conexión e intente de nuevo.");
+    });
+
+  function pintar(d) {
+    var e = d.empresa, c = d.cliente, s = d.servicio;
+
+    $("empresa-linea").textContent =
+      e.razonSocial + " · Cédula jurídica " + e.cedula;
+
+    $("numero").textContent = d.numero || "";
+    $("emitido").textContent = fecha(d.emitido);
+    $("fecha-sv").textContent = fecha(s.fecha);
+
+    if (tipo === "certificado") pintarCertificado(d, e, c, s);
+    else pintarTiquete(d, e, c, s);
+
+    $("pie").innerHTML = "";
+    [e.nombre, e.sitio, e.telefonos.join(" / "), "WhatsApp " + e.whatsapp, e.correo]
+      .forEach(function (t) {
+        var sp = document.createElement("span");
+        sp.textContent = t;
+        $("pie").appendChild(sp);
+      });
+
+    $("cargando").hidden = true;
+    $("hoja").hidden = false;
+    $("acciones").hidden = false;
+
+    numeroDoc = d.numero || "";
+    waNum = (e.whatsapp || "").replace(/\D/g, "");
+  }
+
+  /* ---------- Certificado ---------- */
+  function pintarCertificado(d, e, c, s) {
+    var q = d.certifica || {};
+    document.title = "Certificación " + (d.numero || "") + " | Sanitarios Ticos";
+    $("titulo").textContent = "Certificación";
+    $("dt-fecha").textContent = "Fecha de la visita";
+    $("bloque-cert").hidden = false;
+
+    var datos = $("cert-datos");
+    par(datos, "Cliente:", c.nombre, true);
+    par(datos, "Cédula:", c.cedula);
+    par(datos, "Ubicación:", c.lugar);
+    par(datos, "Servicio brindado:", q.brindado);
+
+    var cuerpo = $("cert-cuerpo");
+
+    /* El párrafo que da fe. Es el de la plantilla de Word, palabra por
+       palabra: las empresas ya lo presentaron así ante Salud y
+       cambiarle la redacción sería cambiarle el valor. */
+    parrafo(cuerpo, [
+      "En calidad de representante legal de la empresa ",
+      { b: e.razonSocial }, ", cédula jurídica ", { b: e.cedula },
+      ", Permiso Sanitario de Funcionamiento ", { b: e.permisoSanitario },
+      " y Gestor de Residuos ", { b: e.gestorResiduos },
+      ", hago constar que el día ", { u: s.fechaLarga },
+      " se realizó la visita a las instalaciones de ",
+      { u: (c.nombre || "").toUpperCase() },
+      c.lugar ? ", en " : "", c.lugar ? { u: c.lugar } : "",
+      " para la ", { u: q.que + "." }
+    ]);
+
+    // Cuánto se sacó. Sólo si el servicio extrae algo Y hay cuánto:
+    // un certificado que diga "0 m³" no certifica nada.
+    if (q.saca && q.volumen) {
+      parrafo(cuerpo, [
+        "En total se succionó y transportó un total de ",
+        { b: numeroBonito(q.volumen) + " m³" }, " de ", { b: q.saca }, "."
+      ]);
+    }
+
+    if (q.planta) {
+      parrafo(cuerpo, [
+        "Lo extraído fue transportado y descargado en una planta de tratamiento " +
+        "avalada por el Ministerio de Salud Pública para recibir residuos de " +
+        "terceros, ubicada en la provincia de " + (q.provincia || "Alajuela") + "."
+      ]);
+    }
+
+    if (q.placa) {
+      parrafo(cuerpo, ["La visita se realizó en el camión placa: ", { b: q.placa }, "."]);
+    }
+
+    $("firma-nombre").textContent = e.representante || "";
+    $("firma-cargo").textContent = e.cargo || "";
+
+    /* La firma escaneada se muestra sólo si el archivo existe. Mientras
+       no esté, el certificado sale con la línea en blanco para firmarlo
+       a mano — que es mejor que un hueco con el icono de imagen rota. */
+    var f = $("firma-img");
+    f.onload = function () { f.hidden = false; };
+    f.onerror = function () { f.remove(); };
+    if (f.complete && f.naturalWidth > 0) f.hidden = false;
+
+    nombreArchivo = "Certificado-" + (d.numero || "SanitariosTicos");
+    mensajeWa = "Le comparto la certificación " + d.numero + " del servicio del " +
+                fecha(s.fecha) + ".";
+  }
+
+  // "8" y no "8.0"; "7.5" cuando de verdad lleva decimal.
+  function numeroBonito(n) {
+    var x = Number(n) || 0;
+    return (Math.round(x * 10) / 10).toString().replace(".", ",");
+  }
+
+  /* ---------- Tiquete ---------- */
+  function pintarTiquete(d, e, c, s) {
+    var g = d.cobro || {};
+    document.title = "Tiquete " + (d.numero || "") + " | Sanitarios Ticos";
+    $("titulo").textContent = "Tiquete de pago";
+    $("dt-fecha").textContent = "Fecha del servicio";
+    $("bloque-tiq").hidden = false;
+
+    var cl = $("tiq-cliente");
+    par(cl, "Nombre", c.nombre, true);
+    par(cl, "Cédula", c.cedula);
+    par(cl, "Teléfono", c.telefono);
+    par(cl, "Correo", c.correo);
+    par(cl, "Lugar", c.lugar);
+
+    var em = $("tiq-empresa");
+    par(em, "Empresa", e.razonSocial, true);
+    par(em, "Cédula", e.cedula);
+    par(em, "Teléfono", e.telefonos.join(" / "));
+    par(em, "WhatsApp", e.whatsapp);
+    par(em, "Correo", e.correo);
+
+    $("tiq-servicio").textContent = s.nombre || "Servicio";
+    $("tiq-sub").textContent = "Realizado el " + fecha(s.fecha);
+    $("tiq-monto").textContent = g.montoTexto || "—";
+
+    var cu = $("tiq-cuentas");
+    cu.innerHTML = "";
+    function linea(et, valor, clase) {
+      var div = document.createElement("div");
+      div.className = "lin" + (clase ? " " + clase : "");
+      var a = document.createElement("span"); a.textContent = et;
+      var b = document.createElement("span"); b.textContent = valor;
+      div.appendChild(a); div.appendChild(b);
+      cu.appendChild(div);
+    }
+    linea("Cobrado", g.montoTexto || "—");
+    linea("Recibido", g.pagadoTexto || "₡0");
+    if (g.saldo > 0) linea("Pendiente", g.saldoTexto, "total saldo-vivo");
+    else linea("Cancelado", g.montoTexto || "—", "total");
+
+    /* Qué es y qué NO es este papel. Un comprobante informal que alguien
+       confunda con una factura electrónica le arma un problema con
+       Hacienda al cliente, así que lo dice el documento mismo. */
+    $("tiq-nota").textContent = g.fe
+      ? "Este tiquete es un comprobante de servicio y de lo cobrado. No sustituye la " +
+        "factura electrónica: el cliente solicitó factura electrónica y se le envía aparte."
+      : "Este tiquete es un comprobante de servicio y de lo cobrado. No es una factura " +
+        "electrónica. Si necesita factura electrónica, puede solicitarla a " + e.correo + ".";
+
+    nombreArchivo = "Tiquete-" + (d.numero || "SanitariosTicos");
+    mensajeWa = "Le comparto el tiquete " + d.numero + " del servicio del " +
+                fecha(s.fecha) + ".";
+  }
+
+  /* ============================================================
+     El PDF
+
+     Mismo camino que la cotización: la hoja se dibuja a A4 exacto y
+     se mete entera en un PDF de una página, para que salga idéntico
+     en la compu y en el teléfono. Los títulos condensados usan
+     `font-stretch`, que el motor de captura no respeta —se come los
+     espacios—, así que en la copia se apaga y se condensa con un
+     scaleX, que hace lo mismo sin tocar el espaciado.
+     ============================================================ */
+  var _libs = null, _pdf = null;
+
+  function cargarLibs() {
+    if (_libs) return _libs;
+    _libs = new Promise(function (res, rej) {
+      var faltan = 2;
+      function ok() { if (--faltan === 0) res(); }
+      function add(src) {
+        var s = document.createElement("script");
+        s.src = src; s.onload = ok;
+        s.onerror = function () { rej(new Error("No se pudieron cargar las librerías del PDF.")); };
+        document.head.appendChild(s);
+      }
+      add("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+      add("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+    });
+    return _libs;
+  }
+
+  function construirPDF() {
+    if (_pdf) return _pdf;
+    _pdf = cargarLibs()
+      .then(function () { return document.fonts && document.fonts.ready; })
+      .then(function () {
+        return html2canvas($("hoja"), {
+          scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 1000,
+          onclone: function (doc) {
+            var h = doc.getElementById("hoja");
+            h.style.width = "210mm"; h.style.minHeight = "297mm";
+            h.style.margin = "0"; h.style.boxShadow = "none";
+
+            var apaga = doc.createElement("style");
+            apaga.textContent = "*{font-stretch:normal !important}";
+            doc.head.appendChild(apaga);
+
+            /* La franja "¡Su empresa de confianza!" NO entra acá: es una
+               banda de ancho completo, y volverla inline-block para
+               condensarla la encogería al ancho del texto. */
+            [[".folio h1", 0.72, "left top"],
+             [".folio .num", 0.86, "left top"]].forEach(function (r) {
+              Array.prototype.forEach.call(doc.querySelectorAll(r[0]), function (el) {
+                el.style.fontStretch = "normal";
+                el.style.display = "inline-block";
+                el.style.whiteSpace = "nowrap";
+                el.style.transform = "scaleX(" + r[1] + ")";
+                el.style.transformOrigin = r[2];
+                var sobra = el.offsetWidth * (1 - r[1]);
+                if (r[2].indexOf("right") === 0) el.style.marginLeft = -sobra + "px";
+                else if (r[2].indexOf("left") === 0) el.style.marginRight = -sobra + "px";
+              });
+            });
+            // El nombre del servicio se queda en bloque: uno escrito a
+            // mano puede ser largo y forzarlo a una línea lo desborda.
+            Array.prototype.forEach.call(doc.querySelectorAll(".tabla .svc"), function (el) {
+              el.style.transform = "scaleX(0.86)";
+              el.style.transformOrigin = "left top";
+            });
+          }
+        });
+      })
+      .then(function (canvas) {
+        var jsPDF = window.jspdf.jsPDF;
+        var pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+        var w = 210, h = 297, imgH = canvas.height * w / canvas.width;
+        // JPEG y no PNG: el PNG de una A4 a esta resolución pesa ~14 MB
+        // y no se puede mandar por WhatsApp.
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, w, Math.min(imgH, h));
+        var blob = pdf.output("blob");
+        return { blob: blob, url: URL.createObjectURL(blob), nombre: nombreArchivo + ".pdf" };
+      });
+    _pdf = _pdf.catch(function (err) { _pdf = null; throw err; });   // reintentar si falla
+    return _pdf;
+  }
+
+  function decir(t) {
+    $("aviso-accion").textContent = t;
+    if (t) setTimeout(function () { $("aviso-accion").textContent = ""; }, 4000);
+  }
+
+  function ocupado(btn, si) {
+    btn.disabled = si;
+    btn.dataset.txt = btn.dataset.txt || btn.textContent;
+    btn.textContent = si ? "Un momento…" : btn.dataset.txt;
+  }
+
+  function descargarPDF(p) {
+    var a = document.createElement("a");
+    a.href = p.url; a.download = p.nombre;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { a.remove(); }, 0);
+  }
+
+  $("btn-descargar").addEventListener("click", function () {
+    var b = this; ocupado(b, true); decir("");
+    construirPDF().then(function (p) { descargarPDF(p); })
+      .catch(function () { decir("No se pudo generar el PDF. Reintente."); })
+      .then(function () { ocupado(b, false); });
+  });
+
+  /* Enviar el PDF como ARCHIVO, no un enlace: el cliente lo recibe en
+     el chat y lo puede guardar, sin tener que abrir una página. */
+  $("btn-enviar").addEventListener("click", function () {
+    var b = this;
+    ocupado(b, true); decir("");
+    construirPDF().then(function (p) {
+      var file = new File([p.blob], p.nombre, { type: "application/pdf" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        /* SÓLO el archivo: con `text` o `url`, iOS agrega además "1
+           enlace" a la hoja de compartir, que es justo lo que no se
+           quiere mandar. */
+        return navigator.share({ files: [file] });
+      }
+      // Sin compartir de archivos (compu vieja): se baja el PDF y se
+      // abre WhatsApp con el texto, para adjuntarlo a mano.
+      descargarPDF(p);
+      if (waNum) window.open("https://wa.me/506" + waNum + "?text=" +
+        encodeURIComponent(mensajeWa + " Le adjunto el PDF."), "_blank");
+      decir("Se descargó el PDF: adjúntelo en el chat.");
+    }).catch(function (err) {
+      if (err && err.name === "AbortError") return;   // cerró el menú
+      decir("No se pudo compartir el PDF. Descárguelo y adjúntelo.");
+    }).then(function () { ocupado(b, false); });
+  });
+
+  $("btn-copiar").addEventListener("click", function () {
+    var txt = location.href;
+    function listo() { decir("Enlace copiado."); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(listo).catch(function () {
+        decir("No se pudo copiar. Copie la dirección de la barra.");
+      });
+      return;
+    }
+    decir("No se pudo copiar. Copie la dirección de la barra.");
+  });
+})();
+</script>
+</body>
+</html>

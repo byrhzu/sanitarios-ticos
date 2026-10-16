@@ -1602,6 +1602,21 @@ function fechaTexto(iso) {
   return p.length === 3 ? "el " + Number(p[2]) + " de " + MESES_LARGO[Number(p[1]) - 1] : "";
 }
 
+const DIAS_LARGO = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+
+/* "miércoles 07 de octubre del 2026" — como lo escribe el certificado.
+   El día de la semana se saca en UTC a propósito: con la hora local, una
+   fecha como "2026-10-07" se corre un día según el huso y el certificado
+   diría el día equivocado. */
+function fechaConDia(iso) {
+  const p = String(iso || "").split("-");
+  if (p.length !== 3) return "";
+  const d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+  if (isNaN(d.getTime())) return "";
+  return DIAS_LARGO[d.getUTCDay()] + " " + String(+p[2]).padStart(2, "0") +
+         " de " + MESES_LARGO[+p[1] - 1] + " del " + p[0];
+}
+
 /* Crea el cliente o lo actualiza si ya existe. El teléfono es la llave:
    la cédula mucha gente no la da y el correo se pierde, pero el número
    siempre está. Los datos nuevos sólo pisan a los viejos cuando traen
@@ -1877,6 +1892,8 @@ async function listaServicios(request, env) {
       `SELECT s.id, s.fecha, s.hora, s.servicio, s.detalle, s.monto, s.estado, s.proximo,
               s.cotizacion, s.cotizacion_id,
               ${(await hayColumna(env, "servicios", "fe")) ? "s.fe" : "0"} AS fe,
+              ${(await hayColumna(env, "servicios", "volumen")) ? "s.volumen" : "NULL"} AS volumen,
+              ${(await hayColumna(env, "servicios", "placa")) ? "s.placa" : "NULL"} AS placa,
               c.id AS cliente_id, c.nombre, c.telefono, c.provincia, c.canton,
               (SELECT COALESCE(SUM(p.monto), 0) FROM pagos p
                 WHERE p.servicio_id = s.id AND p.papelera IS NULL) AS pagado
@@ -1907,6 +1924,8 @@ async function listaServicios(request, env) {
           id: s.id, clienteId: s.cliente_id, cliente: s.nombre, telefono: s.telefono || null,
           servicio: etiqueta(s.servicio, null, "servicio"), servicioKey: s.servicio,
           fe: +s.fe === 1,
+          // Para el certificado: si ya se anotaron, no se vuelven a pedir.
+          volumen: s.volumen || null, placa: s.placa || null,
           detalle: s.detalle || null,
           provincia: s.provincia || null, canton: s.canton || null,
           lugar: [s.canton, s.provincia].filter(Boolean).join(", ") || null,
@@ -2932,6 +2951,12 @@ async function estadoCita(request, env) {
         WHERE id=?4 AND papelera IS NULL`
     ).bind(fecha, monto, proxBind, id, apunte || null, ...(conFE ? [fe] : [])).run();
 
+    /* Los m³ sacados y el camión, si se anotaron al cerrar el trabajo.
+       Sirven para el certificado, que se pide después y a veces meses
+       después: acordarse entonces de cuántos metros cúbicos fueron es
+       mucho pedir. */
+    await guardarMedidaDelTrabajo(env, id, cuerpo.volumen, cuerpo.placa);
+
     // El cliente se queda con la periodicidad usada, para el próximo.
     if (!sinMant && !proxManual && meses !== s.meses) {
       await env.DB.prepare(`UPDATE clientes SET meses=?1, actualizado=datetime('now') WHERE id=?2`)
@@ -2997,6 +3022,56 @@ async function estadoCita(request, env) {
 /* Qué incluye cada servicio, para el documento. Sólo los de extracción
    dicen "succión, transporte y disposición"; el resto no lleva esa línea
    —y un servicio escrito a mano nunca la lleva—. */
+/* Qué dice el certificado según lo que se hizo.
+
+   El que se emitía a mano era siempre de aguas residuales, porque es lo
+   que más se certifica. Pero un certificado que diga "recolección de
+   aguas residuales" de un destaqueo es un papel falso, así que cada
+   servicio trae su propia frase.
+
+     que      — cómo se nombra el trabajo dentro del texto
+     brindado — la línea "Servicio brindado:" de la cabecera
+     saca     — si se extrae algo (entonces se dicen los m³)
+     planta   — si lo extraído va a una planta de tratamiento avalada */
+const CERTIFICA = {
+  "tanques-septicos": {
+    que: "recolección de aguas residuales",
+    brindado: "Servicio de recolección de aguas residuales.",
+    saca: "aguas residuales", planta: true
+  },
+  "trampas-grasa": {
+    que: "limpieza de trampa de grasa",
+    brindado: "Servicio de limpieza y recolección de trampa de grasa.",
+    saca: "residuos de trampa de grasa", planta: true
+  },
+  "tanques-grasa": {
+    que: "limpieza de tanque de grasa",
+    brindado: "Servicio de limpieza y recolección de tanque de grasa.",
+    saca: "residuos de grasa", planta: true
+  },
+  destaqueo: {
+    que: "destaqueo de tuberías",
+    brindado: "Servicio de destaqueo de tuberías.",
+    saca: null, planta: false
+  },
+  "alquiler-tanques": {
+    que: "alquiler de tanques",
+    brindado: "Alquiler de tanques.",
+    saca: null, planta: false
+  }
+};
+
+/* Un servicio escrito a mano no está en la lista de arriba. Entonces el
+   certificado dice lo que el encargado escribió, sin inventarle ni la
+   planta de tratamiento ni los metros cúbicos. */
+function certificaDe(clave, nombreLibre) {
+  return CERTIFICA[clave] || {
+    que: (nombreLibre || "el servicio contratado").toLowerCase(),
+    brindado: nombreLibre || "Servicio contratado.",
+    saca: null, planta: false
+  };
+}
+
 const INCLUYE_SERVICIO = {
   "tanques-septicos": "Incluye la succión, el transporte y la disposición final de lo extraído.",
   "trampas-grasa":    "Incluye la succión, el transporte y la disposición final de lo extraído.",
@@ -3466,8 +3541,26 @@ const EMPRESA = {
   sitio: "sanitariosticoscr.com",
   /* Va bajo el nombre en el documento imprimible. Ya no son sedes: es
      un negocio de área de servicio, va donde el cliente. */
-  cobertura: "Cobertura en todo el país"
+  cobertura: "Cobertura en todo el país",
+
+  /* Lo que el certificado tiene que nombrar para que valga: quién firma
+     y con qué permisos. Salen del certificado que ya se emitía a mano
+     (2026-069, PAVICEN); acá quedan en un solo lugar, en vez de
+     reescribirse en cada documento de Word. */
+  representante: "Carlos Vinicio Leitón Villegas",
+  cargo: "Representante legal",
+  permisoSanitario: "0230-2020",
+  gestorResiduos: "MS-DPRSA-USA-RGA-061-2020",
+  // El camión de siempre. Es sólo el valor por defecto: al emitir el
+  // certificado se puede cambiar, que para eso un día habrá dos.
+  placa: "C146776"
 };
+
+/* El número del certificado: año y correlativo, como se venían
+   numerando a mano. El último hecho a mano fue el 2026-069, así que el
+   panel arranca en el 070. Cambiar esto NO renumera lo ya emitido: sólo
+   mueve el piso por si se emite alguno por fuera. */
+const CERTIFICADO_DESDE = 70;
 
 /* Qué mueve cada respuesta. Va debajo del dato en el documento, para que
    el cliente entienda de dónde sale el rango en vez de tener que creerlo. */
@@ -3849,6 +3942,262 @@ async function cotizar(request, env, ctx) {
    Pide número Y llave: el número solo no alcanza, porque es correlativo.
    La comparación se hace en la consulta, así que una llave equivocada
    simplemente no devuelve fila. */
+/* ============================================================================
+   Certificados y tiquetes
+
+   Dos papeles que a veces piden después de un trabajo ya hecho:
+
+     certificado — el que exige el Ministerio de Salud a las empresas:
+                   qué se recogió, cuánto, qué día y a dónde fue. Se
+                   emitía a mano en Word, uno por uno.
+     tiquete     — el comprobante informal de lo cobrado, para mandarle
+                   al cliente por WhatsApp.
+
+   Ninguno de los dos se pide siempre, así que no se generan solos: se
+   emiten cuando alguien los pide desde el panel.
+
+   Lo emitido queda CONGELADO. Si mañana el cliente cambia de nombre o
+   se corrige el monto, el papel que ya se entregó sigue diciendo lo que
+   decía — que es justamente lo que lo hace servir de comprobante.
+   ============================================================================ */
+
+const TIPOS_DOC = ["certificado", "tiquete"];
+
+/* Los m³ sacados y el camión que fue. Los dos son opcionales y casi
+   siempre vienen vacíos, así que se guardan en su propia sentencia: no
+   vale la pena renumerar los parámetros de un UPDATE que ya funciona
+   por un dato que la mayoría de las veces no viene.
+
+   Se llama desde dos lados: al cerrar el trabajo (si se anotaron ahí) y
+   al emitir el certificado (si se escribieron en ese momento). */
+async function guardarMedidaDelTrabajo(env, id, volumen, placa) {
+  const sets = [], vals = [];
+  const v = Number(String(volumen == null ? "" : volumen).replace(",", "."));
+  if (Number.isFinite(v) && v > 0 && await hayColumna(env, "servicios", "volumen")) {
+    sets.push("volumen = ?"); vals.push(v);
+  }
+  const p = texto(placa, 15);
+  if (p && await hayColumna(env, "servicios", "placa")) {
+    sets.push("placa = ?"); vals.push(p.toUpperCase());
+  }
+  if (!sets.length) return;
+  try {
+    await env.DB.prepare(`UPDATE servicios SET ${sets.join(", ")} WHERE id = ?`)
+      .bind(...vals, id).run();
+  } catch (e) {
+    // Que falte la columna no puede tumbar el cierre de un trabajo.
+    console.error("No se pudieron guardar los m³ o la placa:", e);
+  }
+}
+
+/* El número que sigue. Se mira el último emitido de ese tipo en el año
+   y se suma uno; para los certificados hay además un piso, porque los
+   primeros 69 del 2026 se hicieron a mano y no están en la base. */
+async function numeroSiguiente(env, tipo, ano) {
+  const prefijo = tipo === "certificado" ? ano + "-" : "TIQ-" + ano + "-";
+  const anchura = tipo === "certificado" ? 3 : 4;
+  let ultimo = 0;
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT numero FROM documentos WHERE tipo = ?1 AND numero LIKE ?2`
+    ).bind(tipo, prefijo + "%").all();
+    (results || []).forEach((r) => {
+      const n = parseInt(String(r.numero).slice(prefijo.length), 10);
+      if (Number.isFinite(n) && n > ultimo) ultimo = n;
+    });
+  } catch (e) {
+    console.error("No se pudo leer la numeración de documentos:", e);
+    throw e;
+  }
+  const piso = tipo === "certificado" ? CERTIFICADO_DESDE : 1;
+  return prefijo + String(Math.max(ultimo + 1, piso)).padStart(anchura, "0");
+}
+
+/* El lugar, sin repetir. En Alajuela de Alajuela, zonaTexto() da
+   "Coyol, Alajuela, Alajuela" — correcto pero feo en un papel que lee
+   el Ministerio. Acá se quita el repetido seguido: "Coyol, Alajuela". */
+function lugarCorto(provincia, canton, distrito) {
+  const partes = [];
+  [distrito, canton, provincia].forEach((p) => {
+    const v = (p || "").trim();
+    if (v && v.toLowerCase() !== (partes[partes.length - 1] || "").toLowerCase()) partes.push(v);
+  });
+  return partes.join(", ") || null;
+}
+
+/* Lo que va escrito en el papel, resuelto en el momento de emitirlo. */
+function armarDocumento(tipo, s, c, extra) {
+  const nombreSv = s.detalle || etiqueta(s.servicio, null, "servicio");
+  const base = {
+    tipo: tipo,
+    empresa: EMPRESA,
+    emitido: new Date().toISOString().slice(0, 10),
+    cliente: {
+      nombre: c.nombre || null,
+      cedula: c.cedula || null,
+      telefono: c.telefono || null,
+      correo: c.correo || null,
+      lugar: lugarCorto(c.provincia, c.canton, c.distrito),
+      senas: c.senas || null
+    },
+    servicio: {
+      nombre: nombreSv,
+      clave: s.servicio || null,
+      fecha: s.fecha || null,
+      fechaLarga: fechaConDia(s.fecha),
+      detalle: s.detalle || null
+    }
+  };
+
+  if (tipo === "certificado") {
+    const q = certificaDe(s.servicio, s.detalle);
+    base.certifica = {
+      que: q.que,
+      brindado: q.brindado,
+      // Los m³ sólo se dicen si de verdad se sacó algo y hay cuánto.
+      saca: q.saca,
+      volumen: q.saca && extra.volumen > 0 ? extra.volumen : null,
+      planta: !!q.planta,
+      // De dónde salió y a qué provincia fue lo recogido.
+      provincia: c.provincia || null,
+      placa: extra.placa || EMPRESA.placa
+    };
+  } else {
+    base.cobro = {
+      monto: extra.monto,
+      montoTexto: extra.monto != null ? colones(extra.monto) : null,
+      pagado: extra.pagado || 0,
+      pagadoTexto: colones(extra.pagado || 0),
+      saldo: Math.max(0, (extra.monto || 0) - (extra.pagado || 0)),
+      saldoTexto: colones(Math.max(0, (extra.monto || 0) - (extra.pagado || 0))),
+      metodo: extra.metodo || null,
+      // Si pidió factura electrónica, el tiquete lo dice: así nadie lo
+      // confunde con la factura de Hacienda, que sale aparte.
+      fe: !!extra.fe
+    };
+  }
+  return base;
+}
+
+/* Emitir (o recuperar) el papel de un servicio. Desde el panel. */
+async function emitirDocumento(request, env) {
+  if (!claveValida(request, env)) return json({ ok: false, error: "Clave incorrecta" }, 401);
+
+  let d;
+  try { d = await request.json(); }
+  catch (e) { return json({ ok: false, error: "Formato inválido" }, 400); }
+
+  const tipo = TIPOS_DOC.indexOf(d.tipo) !== -1 ? d.tipo : "";
+  const servicioId = parseInt(d.servicioId, 10);
+  if (!tipo) return json({ ok: false, error: "Tipo de documento inválido" }, 400);
+  if (!Number.isFinite(servicioId)) return json({ ok: false, error: "Servicio inválido" }, 400);
+
+  try {
+    const hayVol = await hayColumna(env, "servicios", "volumen");
+    const hayPlaca = await hayColumna(env, "servicios", "placa");
+    const hayFe = await hayColumna(env, "servicios", "fe");
+
+    const s = await env.DB.prepare(
+      `SELECT s.*, ${hayVol ? "s.volumen" : "NULL"} AS vol,
+              ${hayPlaca ? "s.placa" : "NULL"} AS pla,
+              ${hayFe ? "s.fe" : "0"} AS feSi,
+              (SELECT COALESCE(SUM(p.monto), 0) FROM pagos p
+                WHERE p.servicio_id = s.id AND p.papelera IS NULL) AS pagado,
+              (SELECT p.metodo FROM pagos p
+                WHERE p.servicio_id = s.id AND p.papelera IS NULL
+                ORDER BY p.fecha DESC, p.id DESC LIMIT 1) AS metodo
+         FROM servicios s WHERE s.id = ? AND s.papelera IS NULL`
+    ).bind(servicioId).first();
+    if (!s) return json({ ok: false, error: "No existe ese servicio" }, 404);
+    if (s.estado !== "completado") {
+      return json({ ok: false, error: "El servicio todavía no está marcado como hecho." }, 400);
+    }
+
+    const c = await env.DB.prepare(`SELECT * FROM clientes WHERE id = ?`).bind(s.cliente_id).first();
+    if (!c) return json({ ok: false, error: "No existe el cliente de ese servicio" }, 404);
+
+    /* Los m³ y la placa que vengan del panel se guardan en el servicio:
+       así el dato queda aunque el certificado se vuelva a emitir, y la
+       próxima vez ya sale puesto. */
+    const volumen = Number.isFinite(+d.volumen) && +d.volumen > 0 ? +d.volumen : (s.vol || 0);
+    const placa = (texto(d.placa, 15) || s.pla || EMPRESA.placa).toUpperCase();
+    if (tipo === "certificado") {
+      await guardarMedidaDelTrabajo(env, servicioId, volumen, placa);
+    }
+
+    /* ¿Ya se había emitido? Se devuelve el mismo, no uno nuevo. Pedir
+       dos veces el certificado de un trabajo no puede gastar dos
+       números del correlativo: eso rompe la numeración ante Salud. */
+    const previo = await env.DB.prepare(
+      `SELECT numero, llave FROM documentos
+        WHERE servicio_id = ?1 AND tipo = ?2 AND papelera IS NULL
+        ORDER BY id DESC LIMIT 1`
+    ).bind(servicioId, tipo).first();
+    if (previo) {
+      return json({ ok: true, reusado: true, tipo,
+        numero: previo.numero, llave: previo.llave,
+        url: `/documento?t=${tipo}&n=${encodeURIComponent(previo.numero)}&k=${encodeURIComponent(previo.llave)}` });
+    }
+
+    const datos = armarDocumento(tipo, s, c, {
+      volumen: volumen, placa: placa,
+      monto: s.monto, pagado: s.pagado, metodo: s.metodo, fe: !!s.feSi
+    });
+    const numero = await numeroSiguiente(env, tipo, new Date().getFullYear());
+    const llave = nuevaLlave();
+
+    await env.DB.prepare(
+      `INSERT INTO documentos (tipo, numero, llave, servicio_id, cliente_id, datos)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6)`
+    ).bind(tipo, numero, llave, servicioId, s.cliente_id,
+           JSON.stringify(Object.assign({ numero }, datos))).run();
+
+    return json({ ok: true, tipo, numero, llave,
+      url: `/documento?t=${tipo}&n=${encodeURIComponent(numero)}&k=${encodeURIComponent(llave)}` });
+  } catch (e) {
+    console.error("No se pudo emitir el documento:", e);
+    // La tabla puede no existir todavía: se dice en claro, no "error 500".
+    if (/no such table|no such column/i.test(String(e && e.message))) {
+      return json({ ok: false, error: "Falta correr la migración de documentos en la base." }, 500);
+    }
+    return json({ ok: false, error: "No se pudo emitir el documento" }, 500);
+  }
+}
+
+/* Leer un documento emitido. Público, por número y llave — igual que
+   las cotizaciones: el cliente abre el enlace sin entrar al panel. */
+async function verDocumento(request, env) {
+  const url = new URL(request.url);
+  const tipo = TIPOS_DOC.indexOf(url.searchParams.get("t")) !== -1 ? url.searchParams.get("t") : "";
+  const numero = texto(url.searchParams.get("n"), 30);
+  const llave = texto(url.searchParams.get("k"), 60);
+  if (!tipo || !numero || !llave) return json({ ok: false, error: "Faltan datos" }, 400);
+
+  let f;
+  try {
+    f = await env.DB.prepare(
+      `SELECT numero, datos, datetime(creado, '-6 hours') AS creado
+         FROM documentos
+        WHERE tipo = ?1 AND numero = ?2 AND llave = ?3 AND papelera IS NULL`
+    ).bind(tipo, numero, llave).first();
+  } catch (e) {
+    console.error("Error al consultar el documento:", e);
+    return json({ ok: false, error: "No se pudo consultar" }, 500);
+  }
+
+  // Mismo mensaje para "no existe" y "la llave está mal": distinguirlos
+  // le confirmaría a alguien que ese número sí existe.
+  if (!f) return json({ ok: false, error: "Ese documento no existe o el enlace está incompleto" }, 404);
+
+  let datos;
+  try { datos = JSON.parse(f.datos); }
+  catch (e) { return json({ ok: false, error: "El documento quedó mal guardado" }, 500); }
+
+  datos.numero = f.numero;
+  if (f.creado) datos.emitido = f.creado.slice(0, 10);
+  return json(Object.assign({ ok: true }, datos));
+}
+
 async function verCotizacion(request, env) {
   const url = new URL(request.url);
   const numero = texto(url.searchParams.get("n"), 30);
@@ -4573,6 +4922,10 @@ export default {
         (request.method === "GET" || request.method === "POST")) {
       return avisosPanel(request, env);
     }
+    /* Emitir el certificado o el tiquete de un trabajo ya hecho. */
+    if (url.pathname === "/api/panel/documento" && request.method === "POST") {
+      return emitirDocumento(request, env);
+    }
     if (url.pathname === "/api/panel/trabajo" && request.method === "POST") {
       return trabajoAMano(request, env);
     }
@@ -4654,6 +5007,11 @@ export default {
 
     // El documento imprimible pide sus datos acá. No lleva clave de
     // panel: lo abre el cliente, y lo que lo protege es la llave.
+    /* El certificado o el tiquete ya emitido. Público por enlace con
+       llave, como la cotización: el cliente lo abre sin entrar al panel. */
+    if (url.pathname === "/api/documento" && request.method === "GET") {
+      return verDocumento(request, env);
+    }
     if (url.pathname === "/api/cotizacion" && request.method === "GET") {
       return verCotizacion(request, env);
     }
