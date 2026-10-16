@@ -1894,7 +1894,8 @@ async function listaServicios(request, env) {
               ${(await hayColumna(env, "servicios", "fe")) ? "s.fe" : "0"} AS fe,
               ${(await hayColumna(env, "servicios", "volumen")) ? "s.volumen" : "NULL"} AS volumen,
               ${(await hayColumna(env, "servicios", "placa")) ? "s.placa" : "NULL"} AS placa,
-              c.id AS cliente_id, c.nombre, c.telefono, c.provincia, c.canton,
+              ${await columnaDocumentos(env, "s")},
+              c.id AS cliente_id, c.nombre, c.telefono, c.cedula, c.provincia, c.canton, c.distrito,
               (SELECT COALESCE(SUM(p.monto), 0) FROM pagos p
                 WHERE p.servicio_id = s.id AND p.papelera IS NULL) AS pagado
          FROM servicios s JOIN clientes c ON c.id = s.cliente_id
@@ -1926,6 +1927,12 @@ async function listaServicios(request, env) {
           fe: +s.fe === 1,
           // Para el certificado: si ya se anotaron, no se vuelven a pedir.
           volumen: s.volumen || null, placa: s.placa || null,
+          /* Lo que ya se emitió de este trabajo y qué le falta al
+             cliente para poder certificarlo. Con esto el menú dice
+             "Ver certificado" en vez de "Crear", y avisa de lo que
+             falta antes de hacer el viaje. */
+          documentos: documentosDeFila(s.docs),
+          faltaCertificado: faltaParaCertificar(s),
           detalle: s.detalle || null,
           provincia: s.provincia || null, canton: s.canton || null,
           lugar: [s.canton, s.provincia].filter(Boolean).join(", ") || null,
@@ -2456,6 +2463,9 @@ async function verCliente(request, env) {
               (SELECT m.fecha FROM mantenimientos m WHERE m.servicio_id = servicios.id
                  AND m.estado = 'programado' AND m.papelera IS NULL LIMIT 1) AS proximo, nota, estado
               ${(await hayColumna(env, "servicios", "fe")) ? ", fe" : ", 0 AS fe"}
+              ${(await hayColumna(env, "servicios", "volumen")) ? ", volumen" : ", NULL AS volumen"}
+              ${(await hayColumna(env, "servicios", "placa")) ? ", placa" : ", NULL AS placa"}
+              , ${await columnaDocumentos(env, "servicios")}
        FROM servicios WHERE cliente_id = ? AND papelera IS NULL ORDER BY fecha DESC, id DESC`
     ).bind(id).all();
 
@@ -2500,6 +2510,10 @@ async function verCliente(request, env) {
       return Object.assign({}, s, {
         servicioNombre: etiqueta(s.servicio, null, "servicio"),
         fe: +s.fe === 1,
+        // Lo mismo que en la lista de Servicios: qué papeles ya existen
+        // y qué le falta a este cliente para poder certificarlo.
+        documentos: documentosDeFila(s.docs),
+        faltaCertificado: faltaParaCertificar(c),
         pagado, saldo, estadoPago: estadoPago(monto, pagado), pagos: lista
       });
     });
@@ -2714,7 +2728,8 @@ async function agendaPanel(request, env) {
     try {
       const cr = await env.DB.prepare(
         `SELECT s.id, s.cliente_id, s.servicio, s.detalle, s.fecha, s.hora, s.monto,
-                c.nombre, c.telefono, c.provincia, c.canton
+                ${await columnaDocumentos(env, "s")},
+                c.nombre, c.telefono, c.cedula, c.provincia, c.canton, c.distrito
          FROM servicios s
          JOIN clientes c ON c.id = s.cliente_id
          WHERE s.estado = 'completado' AND s.papelera IS NULL AND c.papelera IS NULL
@@ -2727,6 +2742,11 @@ async function agendaPanel(request, env) {
         detalle: c.detalle || null, monto: c.monto || 0,
         lugar: [c.canton, c.provincia].filter(Boolean).join(", ") || null,
         fecha: c.fecha, hora: c.hora || null, estado: "completado",
+        /* Para poder sacar el certificado o el tiquete desde la misma
+           Agenda. Un trabajo de hace tres días se busca acá, no dando
+           vueltas por Clientes. */
+        documentos: documentosDeFila(c.docs),
+        faltaCertificado: faltaParaCertificar(c),
         wa: waDe(c.telefono, "Buenas" + (c.nombre ? " " + primerNombre(c.nombre) : "") +
                  ", le escribo de Sanitarios Ticos.")
       }));
@@ -3385,6 +3405,12 @@ async function columnasDe(env, tabla) {
 async function hayColumna(env, tabla, col) {
   return (await columnasDe(env, tabla)).has(col);
 }
+/* Una tabla existe si tiene columnas. Sirve para que una migración que
+   todavía no se corrió no tumbe una pantalla entera: se consulta sin
+   ella y listo. */
+async function hayTabla(env, tabla) {
+  return (await columnasDe(env, tabla)).size > 0;
+}
 async function hayColumnaLineas(env) {
   return hayColumna(env, "cotizaciones", "lineas");
 }
@@ -3550,7 +3576,6 @@ const EMPRESA = {
   representante: "Carlos Vinicio Leitón Villegas",
   cargo: "Representante legal",
   permisoSanitario: "0230-2020",
-  gestorResiduos: "MS-DPRSA-USA-RGA-061-2020",
   // El camión de siempre. Es sólo el valor por defecto: al emitir el
   // certificado se puede cambiar, que para eso un día habrá dos.
   placa: "C146776"
@@ -4013,6 +4038,45 @@ async function numeroSiguiente(env, tipo, ano) {
   return prefijo + String(Math.max(ultimo + 1, piso)).padStart(anchura, "0");
 }
 
+/* Qué le falta al cliente para poder certificarlo.
+
+   Un certificado es un papel que la empresa firma ante el Ministerio:
+   sin el nombre, la cédula y el lugar no identifica a nadie y no sirve
+   de nada. Más vale negarse acá que emitir uno en blanco y que lo
+   devuelvan. El tiquete no pide esto: es un comprobante informal. */
+function faltaParaCertificar(c) {
+  const falta = [];
+  if (!(c.nombre || "").trim()) falta.push("el nombre");
+  if (!(c.cedula || "").trim()) falta.push("la cédula");
+  if (!lugarCorto(c.provincia, c.canton, c.distrito)) falta.push("la dirección");
+  return falta;
+}
+
+/* Lo que ya se emitió de un servicio, por tipo. De acá sale que el
+   panel diga "Ver certificado" en vez de "Crear certificado": sin eso
+   se emitían dos del mismo trabajo sin querer. */
+function documentosDeFila(texto) {
+  const r = {};
+  String(texto || "").split("|").forEach((t) => {
+    const p = t.split(":");
+    if (p.length === 3 && p[0]) {
+      r[p[0]] = { numero: p[1], llave: p[2],
+                  url: `/documento?t=${p[0]}&n=${encodeURIComponent(p[1])}&k=${encodeURIComponent(p[2])}` };
+    }
+  });
+  return r;
+}
+
+/* El trozo de SQL que trae lo emitido de cada servicio. Se arma acá para
+   no repetirlo en las dos pantallas que lo necesitan, y devuelve vacío
+   mientras la tabla no exista. */
+async function columnaDocumentos(env, alias) {
+  if (!(await hayTabla(env, "documentos"))) return "'' AS docs";
+  return `(SELECT group_concat(d.tipo || ':' || d.numero || ':' || d.llave, '|')
+             FROM documentos d
+            WHERE d.servicio_id = ${alias}.id AND d.papelera IS NULL) AS docs`;
+}
+
 /* El lugar, sin repetir. En Alajuela de Alajuela, zonaTexto() da
    "Coyol, Alajuela, Alajuela" — correcto pero feo en un papel que lee
    el Ministerio. Acá se quita el repetido seguido: "Coyol, Alajuela". */
@@ -4115,6 +4179,18 @@ async function emitirDocumento(request, env) {
 
     const c = await env.DB.prepare(`SELECT * FROM clientes WHERE id = ?`).bind(s.cliente_id).first();
     if (!c) return json({ ok: false, error: "No existe el cliente de ese servicio" }, 404);
+
+    if (tipo === "certificado") {
+      const falta = faltaParaCertificar(c);
+      if (falta.length) {
+        const lista = falta.length === 1 ? falta[0]
+          : falta.slice(0, -1).join(", ") + " y " + falta[falta.length - 1];
+        return json({ ok: false, falta: falta,
+          error: "Para el certificado falta " + lista + " del cliente. " +
+                 "Complete la ficha de " + (c.nombre || "ese cliente") +
+                 " y vuelva a intentar." }, 400);
+      }
+    }
 
     /* Los m³ y la placa que vengan del panel se guardan en el servicio:
        así el dato queda aunque el certificado se vuelva a emitir, y la

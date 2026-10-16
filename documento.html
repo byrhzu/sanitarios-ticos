@@ -551,11 +551,13 @@ body {
     parrafo(cuerpo, [
       "En calidad de representante legal de la empresa ",
       { b: e.razonSocial }, ", cédula jurídica ", { b: e.cedula },
-      ", Permiso Sanitario de Funcionamiento ", { b: e.permisoSanitario },
-      " y Gestor de Residuos ", { b: e.gestorResiduos },
+      " y Permiso Sanitario de Funcionamiento ", { b: e.permisoSanitario },
       ", hago constar que el día ", { u: s.fechaLarga },
       " se realizó la visita a las instalaciones de ",
       { u: (c.nombre || "").toUpperCase() },
+      // La cédula del cliente, dentro del párrafo: el papel tiene que
+      // identificar a quién se le hizo el trabajo, no sólo nombrarlo.
+      c.cedula ? ", cédula " : "", c.cedula ? { u: c.cedula } : "",
       c.lugar ? ", en " : "", c.lugar ? { u: c.lugar } : "",
       " para la ", { u: q.que + "." }
     ]);

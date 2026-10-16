@@ -955,7 +955,12 @@
   .ag2-flechas svg { width: 17px; height: 17px; }
   .ag2-hoy { padding: 0 .7rem; font-size: .78rem; font-weight: 600; color: var(--p-primario); }
 
-  .ag2-conm { display: flex; gap: .5rem; align-items: center; }
+  /* Envuelve en vez de aplastar: en la columna angosta de la agenda,
+     los dos conmutadores no caben en una línea y el de la derecha
+     quedaba con la palabra cortada ("Trabaj…"). */
+  .ag2-conm { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+  .conm { flex: 0 0 auto; }
+  .ag2-hueco { flex: 1 1 0; min-width: 0; }
   .conm {
     display: inline-flex; padding: 3px; border-radius: 999px; gap: 2px;
     background: var(--p-ctrl); border: 1px solid var(--p-ctrl-bd);
@@ -966,14 +971,19 @@
     font-size: .76rem; font-weight: 600; color: var(--p-tenue);
     transition: background .18s var(--ease), color .18s var(--ease);
   }
-  .conm button svg { width: 15px; height: 15px; }
+  /* `flex-shrink: 0` no sobra: al ponerle la palabra al lado, el icono
+     —que también es un hijo flexible— se dejaba encoger hasta 0 y
+     desaparecía sin avisar. */
+  .conm button svg { width: 15px; height: 15px; flex: 0 0 auto; }
   .conm button[aria-pressed="true"] {
     background: var(--p-sup); color: var(--p-txt); box-shadow: 0 1px 3px rgba(16,26,48,.12);
   }
   :root[data-tema="oscuro"] .conm button[aria-pressed="true"] {
     background: var(--p-sup2); box-shadow: none;
   }
-  .conm.iconos button { padding: 0 .6rem; }
+  /* La palabra del conmutador de la agenda: se va en pantalla angosta,
+     donde la fila ya va apretada y el icono basta. */
+  @media (max-width: 560px) { .conm-tx { display: none; } }
 
   /* ---- La tira de días ---- */
   .ag2-dias, .ag2-rej { display: grid; grid-template-columns: repeat(7, 1fr); gap: .15rem; }
@@ -1254,6 +1264,21 @@
   .bt.chico { height: 1.95rem; padding: 0 .75rem; font-size: .82rem; }
   .bt.chico svg { width: 13px; height: 13px; }
   .bt svg { width: 14px; height: 14px; }
+  /* El "⋯" de más acciones.
+
+     Los tres puntos son tres topes de línea redondos: a 14px de caja, un
+     trazo de 1,8 sobre un lienzo de 24 queda en un píxel escaso. En
+     oscuro todavía se adivinaban por contraste; en claro desaparecían.
+     Se le da caja de 18 y trazo de 3 —casi 2,3px de punto— y el botón
+     se marca un poco más que sus vecinos, que es lo que lo hace
+     encontrable sin volverlo el protagonista de la fila. */
+  .cita-mas svg, .fila-menu svg, [data-menu-cita] svg, [data-svc-menu] svg,
+  [data-svc-menu-ficha] svg {
+    width: 18px; height: 18px; stroke-width: 3;
+  }
+  .cita-mas, [data-menu-cita] { color: var(--p-txt); }
+  .fila-menu, [data-svc-menu-ficha] { opacity: .8; }
+  .fila-menu:hover, [data-svc-menu-ficha]:hover { opacity: 1; }
   .bt:active { transform: scale(.97); }
   /* WhatsApp deja de ser un boton macizo. En cada renglon habia dos
      botones llenos compitiendo (verde + naranja) y ninguno mandaba: la
@@ -3295,13 +3320,19 @@
               <button type="button" data-v="semana" aria-pressed="true">Semana</button>
               <button type="button" data-v="mes" aria-pressed="false">Mes</button>
             </div>
-            <div style="flex:1"></div>
-            <div class="conm iconos" id="ag2-vista" role="group" aria-label="Calendario o lista">
-              <button type="button" data-v="cal" aria-pressed="true" aria-label="Calendario">
+            <div class="ag2-hueco"></div>
+            <!-- Con la palabra al lado del icono. Dos iconos pelados no
+                 decían que ahí vive la lista de trabajos realizados, y el
+                 encargado terminaba buscándolos por Clientes. En pantalla
+                 angosta la palabra se esconde y quedan los iconos. -->
+            <div class="conm" id="ag2-vista" role="group" aria-label="Calendario o lista">
+              <button type="button" data-v="cal" aria-pressed="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 10h18"/></svg>
+                <span class="conm-tx">Calendario</span>
               </button>
-              <button type="button" data-v="lista" aria-pressed="false" aria-label="Lista">
+              <button type="button" data-v="lista" aria-pressed="false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>
+                <span class="conm-tx">Trabajos</span>
               </button>
             </div>
           </div>
@@ -8088,8 +8119,15 @@
     // ya son botones grandes de la card, y el mantenimiento se define al
     // completar el trabajo.
     if (enAgenda) {
-      a.push(botAcc("reagendar", ICO.dia, svc.fecha ? "Reagendar" : "Agendar servicio"));
-      a.push(botAcc("cancelar", ICO.alerta, "Cancelar", "malo"));
+      /* Un trabajo ya hecho en la Agenda no se reagenda: lo que se pide
+         de él son los papeles. Antes había que salir a Clientes, buscar
+         la ficha y bajar hasta el servicio — mucho viaje para algo que
+         se pide con el cliente al teléfono. */
+      if (comp) a = a.concat(botonesDeDocumentos(svc));
+      else {
+        a.push(botAcc("reagendar", ICO.dia, svc.fecha ? "Reagendar" : "Agendar servicio"));
+        a.push(botAcc("cancelar", ICO.alerta, "Cancelar", "malo"));
+      }
       a.push(botAcc("eliminar", ICO.basura, "Eliminar", "malo"));
     } else {
       // Fuera del menú ya están WhatsApp y la acción principal (Hecho o
@@ -8101,11 +8139,7 @@
       if (comp) {
         a.push(botAcc("editar", ICO.lapiz, "Corregir fecha, monto o detalle"));
         a.push(botAcc("pago", ICO.cartera, "Ver o registrar pagos"));
-        /* Los dos papeles del trabajo hecho. No se piden siempre, así
-           que no se generan solos: viven acá, a un toque, y se emiten
-           cuando alguien los pide. */
-        a.push(botAcc("certificado", ICO.doc, "Crear certificado"));
-        a.push(botAcc("tiquete", ICO.cotizacion, "Crear tiquete de pago"));
+        a = a.concat(botonesDeDocumentos(svc));
       }
       a.push(botAcc("eliminar", ICO.basura, "Eliminar", "malo"));
     }
@@ -8114,6 +8148,21 @@
   }
 
   function cerrarAccs() { $("velo-accs").hidden = true; }
+
+  /* Los dos papeles del trabajo hecho, en el menú.
+
+     Si ya se emitió, el botón dice "Ver" y abre el mismo: decir "Crear"
+     invitaba a hacer un segundo, y un certificado repetido con otro
+     número descuadra la numeración ante Salud. */
+  function botonesDeDocumentos(svc) {
+    var d = svc.documentos || {};
+    return [
+      botAcc("certificado", ICO.doc,
+        d.certificado ? "Ver certificado " + d.certificado.numero : "Crear certificado"),
+      botAcc("tiquete", ICO.cotizacion,
+        d.tiquete ? "Ver tiquete " + d.tiquete.numero : "Crear tiquete de pago")
+    ];
+  }
 
   /* =========================================================
      Certificado y tiquete de un trabajo hecho
@@ -8139,6 +8188,21 @@
     if (s.estado !== "completado") {
       return avisar("El certificado y el tiquete son de trabajos ya marcados como hechos.", "mal");
     }
+
+    // Ya existe: se abre ese mismo, no se hace otro.
+    var ya = (s.documentos || {})[tipo];
+    if (ya) return window.open(ya.url, "_blank");
+
+    /* Sin nombre, cédula y dirección el certificado no identifica a
+       nadie. Se dice acá, antes de abrir nada: así el encargado va a
+       arreglar la ficha en vez de toparse con el error al final. */
+    if (tipo === "certificado" && s.faltaCertificado && s.faltaCertificado.length) {
+      var f = s.faltaCertificado;
+      var lista = f.length === 1 ? f[0] : f.slice(0, -1).join(", ") + " y " + f[f.length - 1];
+      return avisar("Para el certificado falta " + lista + " del cliente. " +
+                    "Complete la ficha y vuelva a intentar.", "mal");
+    }
+
     // El tiquete sale de lo que ya está guardado: no falta nada.
     if (tipo === "tiquete") return emitirDoc(tipo, s, {});
 
@@ -8192,6 +8256,11 @@
     })
       .then(function (d) {
         cerrarDoc();
+        /* Queda anotado en el registro que ya tenemos en pantalla, para
+           que el menú diga "Ver" de una y no haya que recargar la lista
+           para enterarse de algo que acabamos de hacer nosotros. */
+        s.documentos = s.documentos || {};
+        s.documentos[tipo] = { numero: d.numero, llave: d.llave, url: d.url };
         if (pestana) pestana.location = d.url;
         else location.href = d.url;          // si el navegador la bloqueó
         avisar(d.reusado
@@ -8678,6 +8747,19 @@
     }
 
     if (tipo === "cita") acc.push('<button type="button" class="bt fuerte" data-hecho="' + c.id + '">Hecho</button>');
+
+    /* De un trabajo ya hecho, lo que se pide son los papeles. Van acá
+       afuera y no escondidos en el "⋯": cuando alguien llama pidiendo
+       un certificado de la semana pasada, se busca el día en la agenda
+       y se hace desde ahí. */
+    if (tipo === "hecho") {
+      var d = c.documentos || {};
+      acc.push('<button type="button" class="bt" data-doc="certificado:' + c.id + '">' +
+        ICO.doc + (d.certificado ? "Ver certificado" : "Certificado") + "</button>");
+      acc.push('<button type="button" class="bt" data-doc="tiquete:' + c.id + '">' +
+        ICO.cotizacion + (d.tiquete ? "Ver tiquete" : "Tiquete") + "</button>");
+    }
+
     acc.push('<button type="button" class="bt" data-cliente="' + c.clienteId + '">Ver cliente</button>');
     acc.push('<button type="button" class="bt" data-menu-cita="' + c.id + '" title="Más acciones" aria-label="Más acciones">' + ICO.puntos + "</button>");
 
@@ -8962,6 +9044,15 @@
     if (e.target.closest("[data-lis-limpiar]")) {
       ag2.lis.fecha = "todas"; ag2.lis.sv = "";
       pintarAg2Hoja();
+      return;
+    }
+
+    // Certificado o tiquete, sin salir de la agenda.
+    var doc = e.target.closest("[data-doc]");
+    if (doc) {
+      var par = doc.dataset.doc.split(":");
+      var sv = (AGENDA.completados || []).filter(function (c) { return String(c.id) === par[1]; })[0];
+      if (sv) crearDocumento(par[0], Object.assign({ estado: "completado" }, sv));
       return;
     }
 
