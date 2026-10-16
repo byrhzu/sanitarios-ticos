@@ -158,11 +158,14 @@ body {
   width: 78mm;
   text-align: center;
 }
+/* La firma escaneada, a la medida de la línea. El alto manda —si no,
+   una firma ancha se estira hasta tapar medio documento— y el ancho
+   sale solo. */
 .firma-img {
-  height: 20mm;
+  height: 26mm;
   display: flex; align-items: flex-end; justify-content: center;
 }
-.firma-img img { max-height: 20mm; max-width: 100%; display: block; }
+.firma-img img { max-height: 26mm; max-width: 100%; width: auto; display: block; }
 .firma-linea { border-top: .8pt solid var(--tinta); margin-top: 1mm; padding-top: 1.6mm; }
 .firma-linea b { display: block; font-size: 9.5pt; font-weight: 700; text-transform: uppercase; }
 .firma-linea span { display: block; font-size: 8.4pt; color: var(--gris); text-transform: uppercase; }
