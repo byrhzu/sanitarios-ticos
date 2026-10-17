@@ -1555,10 +1555,10 @@ body.fabs-fuera .wa-fab {
    papel —borde, sombra, el naranja sólo en el filo de arriba— y no
    como otra franja de la página.
    ============================================================= */
-/* Sin margen negativo: la banda iba montada sobre el borde de la
-   portada y se veía bien… hasta que la portada creció con un botón más
-   y se le encaramó encima. Un respiro normal aguanta cualquier largo. */
-.cotiza-banda { padding: 2.2rem 0 0; }
+/* El ritmo sale del token del sitio, no de un número inventado para esta
+   sección sola (§45.4). Sin el padding de abajo, el borde de la caja
+   quedaba pegado al de la barra naranja: cero separación, medido. */
+.cotiza-banda { padding-block: clamp(2.6rem, 5vw, 4rem); }
 .cotiza-caja {
   display: grid;
   grid-template-columns: 1.05fr .95fr;
@@ -1606,8 +1606,69 @@ body.fabs-fuera .wa-fab {
 }
 
 @media (max-width: 900px) {
-  .cotiza-banda { padding-top: 1.6rem; }
   .cotiza-caja { grid-template-columns: 1fr; gap: 1.6rem; padding: 1.7rem 1.4rem; }
   .cotiza-txt p { font-size: .92rem; }
 }
 @media (prefers-reduced-motion: reduce) { .cotiza-op:hover { transform: none; } }
+
+
+/* =============================================================
+   La barra del precio del cotizador (§45.2)
+
+   De tesla.com/modely/design, medido: el monto vive a la vista desde
+   la primera respuesta y se actualiza, en vez de aparecer al final.
+   La proporción etiqueta:número que se midió allá es 1:3.
+
+   Acá NO va fija al borde inferior como la de Tesla: esta caja ya es
+   una isla sobre el papel, y una barra flotante encima de ella sería
+   una superficie más (§34, caja sobre caja). Va pegada arriba del
+   riel, que es donde la vista ya está.
+   ============================================================= */
+.cot-barra {
+  display: flex; align-items: baseline; justify-content: space-between;
+  flex-wrap: wrap; gap: .4rem 1.2rem;
+  margin: 0 0 1.4rem;
+  padding: 0 0 1.1rem;
+  border-bottom: 1px solid var(--line-2);
+}
+.cot-barra-num { display: flex; align-items: baseline; gap: .55rem; }
+/* 12px / peso 400 / gris, como la etiqueta medida en la referencia. */
+.cot-barra-et { font-size: .78rem; font-weight: 400; color: var(--muted); }
+.cot-barra strong {
+  font-family: var(--display);
+  font-size: clamp(1.7rem, 4.5vw, 2.4rem);
+  font-stretch: var(--ancho-cartel, 80%);
+  font-weight: 800; line-height: 1;
+  letter-spacing: -.015em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+/* Cuando en vez de un monto va una frase ("la cotiza el encargado"),
+   el corte de cartel no aplica: es texto, no cifra. */
+.cot-barra strong.es-texto {
+  font-size: 1.05rem; font-stretch: normal; font-weight: 700;
+  letter-spacing: 0; color: var(--orange-dk);
+}
+.cot-barra-pie { margin: 0; font-size: .8rem; color: var(--muted); }
+.cot-barra-pie:empty { display: none; }
+
+/* El paso del lugar, en filas sin caja (§45.2). Antes cada select iba
+   en su propio recuadro; eran tres cajas dentro de la caja grande. */
+.cot-lugar-filas { display: grid; gap: 0; }
+.cot-lugar-filas .f {
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  gap: .2rem 1rem; margin: 0;
+  padding: .85rem 0; border-bottom: 1px solid var(--line-2);
+}
+.cot-lugar-filas .f label {
+  grid-column: 1; font-size: .78rem; font-weight: 400; color: var(--muted); margin: 0;
+}
+.cot-lugar-filas .f select {
+  grid-column: 1 / -1; grid-row: 2;
+  border: 0; border-radius: 0; padding: 0; height: auto;
+  background: none; font-size: 1.05rem; font-weight: 600; color: var(--ink);
+}
+.cot-lugar-filas .f select:focus-visible {
+  outline: 2px solid var(--orange); outline-offset: 4px;
+}
+.cot-lugar-filas .f select:disabled { color: var(--muted); font-weight: 400; }

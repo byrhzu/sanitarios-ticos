@@ -148,6 +148,7 @@
       respuestas.servicio = op.id;
       pintarServicios();
       prepararTrabajo();
+      refrescarPrecio();
       avanzar();
     });
   }
@@ -155,6 +156,10 @@
   /* ---------- paso 2: el trabajo ---------- */
 
   function prepararTrabajo() {
+    /* Cada respuesta del trabajo vuelve a pasar por acá, así que es el
+       único lugar donde hay que pedir el precio: forma, medida y
+       antigüedad quedan cubiertas de una. */
+    refrescarPrecio();
     var svc = opciones.servicios[respuestas.servicio];
     var gForma = $("[data-cot-g-forma]"), gMedida = $("[data-cot-g-medida]"),
         gAnt = $("[data-cot-g-antiguedad]"), gDias = $("[data-cot-g-dias]");
@@ -276,13 +281,19 @@
       llenar(selD, (geografia[selP.value] || {})[selC.value] || [], "Primero el cantón");
       revisarCobertura();
     });
-    selD.addEventListener("change", revisarCobertura);
+    selD.addEventListener("change", function () { revisarCobertura(); refrescarPrecio(); });
   }
 
   /* ---------- paso 4: sus datos ---------- */
 
   // Chequeo suave, sólo para no hacer viajar al servidor por gusto. El
   // que manda es el servidor: acá no se normaliza nada.
+  // Marcar factura cambia el monto, así que la barra lo refleja de una.
+  (function () {
+    var f = document.getElementById("cot-factura");
+    if (f) f.addEventListener("change", refrescarPrecio);
+  })();
+
   function datosCompletos() {
     var nombre = document.getElementById("cot-nombre").value.trim();
     var tel = document.getElementById("cot-tel").value.replace(/\D/g, "");
@@ -294,6 +305,86 @@
       return "Marque la casilla para poder emitirle la cotización.";
     }
     return null;
+  }
+
+  /* ---------- la barra del precio (§45.2) ----------
+
+     El monto se muestra desde la primera respuesta y se recalcula con
+     cada una. El cálculo lo hace el servidor en /api/cotizar/precio, que
+     devuelve el número y nada más: así la tabla de recargos por distrito
+     no viaja al navegador.
+
+     Se espera un momento antes de preguntar. Tocando tres botones
+     seguidos se dispararían tres llamadas y la última podría contestar
+     antes que la primera, dejando en pantalla un precio viejo. */
+  var relojPrecio = null, vuelta = 0;
+
+  function datosDePrecio() {
+    return {
+      servicio: respuestas.servicio,
+      forma: respuestas.forma || "",
+      medida: respuestas.medida || "",
+      antiguedad: respuestas.antiguedad || "",
+      dias: respuestas.dias || null,
+      provincia: selP.value, canton: selC.value, distrito: selD.value,
+      factura: (document.getElementById("cot-factura") || {}).checked ? "iva" : "no"
+    };
+  }
+
+  function pintarBarra(d) {
+    var barra = $("[data-cot-barra]");
+    if (!barra) return;
+    var monto = $("[data-cot-barra-monto]"),
+        et = $("[data-cot-barra-et]"),
+        pie = $("[data-cot-barra-pie]");
+
+    /* El orden importa: una zona fuera de tabla viene SIN monto, así que
+       si se mira primero el monto se esconde la barra y se queda el
+       precio viejo en pantalla — que era justo el caso que había que
+       avisar. Primero se pregunta por la zona. */
+    if (d && d.fueraDeTabla) {
+      barra.hidden = false;
+      et.textContent = "Esa zona";
+      monto.textContent = "la cotiza el encargado";
+      monto.classList.add("es-texto");
+      pie.textContent = "";
+      return;
+    }
+
+    if (!d || d.min == null) { barra.hidden = true; return; }
+
+    monto.classList.remove("es-texto");
+    barra.hidden = false;
+    et.textContent = d.conZona ? "Su precio" : "Va en";
+    monto.textContent = colones(d.factura === "iva" ? d.totalConIVA : d.max);
+
+    /* Qué le falta al número para ser el definitivo. Decirlo acá evita
+       que el monto cambie al final sin explicación. */
+    var notas = [];
+    if (!d.conZona) notas.push("falta la ubicación");
+    if (d.factura === "iva") notas.push("IVA incluido");
+    if (d.avisoAntiguedad) notas.push("se confirma en la visita");
+    pie.textContent = notas.join(" · ");
+  }
+
+  function refrescarPrecio() {
+    if (!respuestas.servicio) { pintarBarra(null); return; }
+    clearTimeout(relojPrecio);
+    relojPrecio = setTimeout(function () {
+      var mia = ++vuelta;
+      fetch("/api/cotizar/precio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datosDePrecio())
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          // Llegó una respuesta vieja: la de después ya mandó.
+          if (mia !== vuelta) return;
+          pintarBarra(d && d.ok ? d : null);
+        })
+        .catch(function () { /* sin precio en vivo se sigue igual */ });
+    }, 220);
   }
 
   /* ---------- el envío ---------- */
@@ -341,6 +432,8 @@
         if (!res.ok || !res.d || !res.d.ok) {
           throw new Error((res.d && res.d.error) || "No se pudo cotizar");
         }
+        var barra = $("[data-cot-barra]");
+        if (barra) barra.hidden = true;   // el resultado ya trae el monto
         mostrarResultado(res.d);
       })
       .catch(function (e) {

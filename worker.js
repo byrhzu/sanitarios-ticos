@@ -4585,6 +4585,66 @@ function sumarDias(iso, dias) {
 
 /* Las opciones que muestra el chat. Salen de la misma tabla que el
    cálculo, así que no pueden desincronizarse. */
+/* El precio, y nada más.
+
+   La barra del cotizador muestra el monto desde la primera respuesta y lo
+   va actualizando (§45.3). Para eso hace falta calcular antes de que la
+   persona dé su nombre, y la otra opción —mandar la tabla de precios al
+   navegador— dejaría los recargos por distrito legibles en el inspector.
+
+   Entonces: este endpoint calcula y devuelve el número. No guarda nada, no
+   pide datos personales, no manda correos, no gasta un número de
+   cotización. Es la calculadora sola. */
+async function precioEnVivo(request, env) {
+  let d;
+  try { d = await request.json(); }
+  catch (e) { return json({ ok: false, error: "Formato inválido" }, 400); }
+
+  const provincia = texto(d.provincia, 40);
+  const canton = texto(d.canton, 60);
+  const distrito = texto(d.distrito, 80);
+
+  /* La dirección sólo se valida si viene entera. A media respuesta se
+     calcula igual, sin recargo: la barra tiene que mostrar algo desde la
+     primera pregunta, no esperar a que se escoja el distrito. */
+  if (provincia && canton && distrito) {
+    if (!direccionValida(provincia, canton, distrito)) {
+      return json({ ok: false, error: "Esa dirección no existe" }, 400);
+    }
+    const cob = coberturaDe(provincia, canton, distrito);
+    if (!cob.cubierto) {
+      return json({ ok: true, fueraDeTabla: true, motivo: cob.motivo, min: null });
+    }
+  }
+
+  const calculo = calcularCotizacion({
+    servicio: texto(d.servicio, 40),
+    forma: texto(d.forma, 40),
+    medida: texto(d.medida, 40),
+    antiguedad: texto(d.antiguedad, 20),
+    dias: d.dias,
+    provincia, canton, distrito
+  });
+  if (!calculo) return json({ ok: true, min: null });
+
+  const conIVA = d.factura === "iva";
+  const iva = conIVA ? Math.round(calculo.max * TARIFAS.iva.tasa) : 0;
+
+  return json({
+    ok: true,
+    min: calculo.min,
+    max: calculo.max,
+    desde: calculo.desde,
+    // Si todavía no se escogió distrito, el monto puede subir por la zona.
+    conZona: !!(provincia && canton && distrito),
+    avisoAntiguedad: calculo.avisoAntiguedad || null,
+    factura: conIVA ? "iva" : "no",
+    ivaTasa: TARIFAS.iva.tasa,
+    ivaMonto: iva,
+    totalConIVA: conIVA ? calculo.max + iva : null
+  });
+}
+
 function opcionesCotizacion() {
   const servicios = {};
   for (const [id, s] of Object.entries(TARIFAS.servicios)) {
@@ -5204,6 +5264,11 @@ export default {
     // Las opciones de la cotización salen de la misma tabla que el
     // cálculo, para que el chat nunca ofrezca algo que el motor no sepa
     // cobrar.
+    /* La calculadora sola: devuelve el monto y nada más. La usa la barra
+       del cotizador para mostrar el precio mientras se contesta. */
+    if (url.pathname === "/api/cotizar/precio" && request.method === "POST") {
+      return precioEnVivo(request, env);
+    }
     if (url.pathname === "/api/cotizar/opciones" && request.method === "GET") {
       return opcionesCotizacion();
     }

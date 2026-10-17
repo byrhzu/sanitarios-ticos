@@ -2160,3 +2160,84 @@ Correcciones de Byron sobre el flujo de crear y compartir.
   consola D1. Si la tabla falta, la agenda de recordatorios sigue
   funcionando (las citas caen a lista vacía) — pero agendar dará error
   hasta correrla.
+
+## 45 · El cotizador se vuelve el atractivo principal (2026-10-17)
+
+Byron: *"¿Puedes darle otro aspecto más innovador, elegante y funcional al
+cotizador? Quiero que este cotizador sea el principal atractivo."* Y un
+defecto concreto: en la portada la caja del cotizador choca con la barra
+naranja de abajo.
+
+### 45.1 La referencia leída
+
+**tesla.com/modely/design**, abierto y medido el 17 de octubre. Es un
+configurador, que es exactamente lo que estamos haciendo: alguien contesta
+cosas y un precio se arma. No se fue a Dribbble.
+
+Lo que se midió:
+
+| Qué | Valor medido |
+|---|---|
+| Barra del precio | `position: fixed`, abajo, siempre visible |
+| Imagen del producto | `position: sticky`, se queda mientras las opciones corren |
+| Etiqueta chica | 12px, peso 400, `#5C5E62` |
+| Número grande | 34–40px, peso 500 |
+| Fila de dato | sin borde, sin fondo, sin radio — separada sólo por espacio |
+
+### 45.2 Qué tomo y qué no
+
+**Tomo la barra del precio.** Es el hallazgo: el monto no espera al final,
+vive abajo desde la primera respuesta y se actualiza. Eso convierte un
+formulario en un configurador — se ve lo que cada respuesta hace al precio,
+y es la razón por la que uno sigue contestando. *Para este negocio* importa
+el doble: quien cotiza un tanque séptico no sabe si va a costar ₡40.000 o
+₡140.000, y la ansiedad por el número es lo que lo hace abandonar.
+
+**Tomo la fila sin caja.** Etiqueta chica gris arriba, valor grande abajo,
+separadas por espacio y un filete — no por una tarjeta. La relación medida
+es 1:3 entre etiqueta y valor. Reemplaza las cajas del paso del lugar y del
+desglose. *Porque* acá ya hay demasiadas superficies: la hoja, la caja del
+cotizador, y dentro otra caja por dato era caja sobre caja, que es
+justamente lo que Byron rechazó en el panel (§34).
+
+**NO tomo el escenario negro ni la foto fija.** El sitio es papel cálido y
+tinta, no un estudio fotográfico, y acá no hay un objeto que mostrar: el
+tanque de cada quien no lo tenemos. Importar el negro de Tesla sería
+pegarle a este sitio la estética de otro negocio.
+
+**NO tomo el modal.** Tesla mete los supuestos en una ventana aparte porque
+tiene espacio de sobra; acá el aviso de "el precio oficial lo da el
+encargado" tiene que estar a la vista, no escondido tras un clic (§22.4).
+
+### 45.3 El precio en vivo, sin soltar la tabla
+
+Para que la barra se actualice hace falta el precio antes de que la persona
+dé su nombre. Dos caminos:
+
+1. Mandar la tabla de precios al navegador y calcular ahí. Rápido, pero deja
+   los recargos por distrito legibles para cualquiera que abra el inspector.
+2. Un endpoint que sólo devuelve el número.
+
+Se escogió el 2: `POST /api/cotizar/precio`. No guarda nada, no pide datos
+personales, no manda correos — devuelve el monto y ya. La tabla de recargos
+se queda del lado del servidor, que es donde Byron la quiere.
+
+### 45.4 El ritmo de la portada
+
+La banda del cotizador no tenía respiro abajo y su borde quedaba pegado al
+de la barra naranja. Pasa a usar el mismo token de ritmo que el resto del
+sitio (`clamp(2.6rem, 5vw, 4rem)` arriba y abajo, el de `.block-tight`), en
+vez de un padding inventado para ella sola.
+
+### 45.5 Auditoría
+
+- **Prueba del logo:** cambiando el logo por el de una óptica, la barra del
+  precio sigue teniendo sentido (una óptica también configura un lente),
+  pero el contenido —formas de tanque, metros de fondo, distritos de
+  Alajuela— no se puede trasplantar. Pasa.
+- **Tics:** sin píldora sobre el titular, sin numeración 01/02/03 (el riel
+  numera pasos reales, que es otra cosa), sin mayúsculas rastreadas, sin
+  palabra en color dentro del titular.
+- **Trazabilidad:** la barra, las filas sin caja y la proporción 1:3 salen
+  de la medición de arriba. El naranja, el papel y Archivo vienen del
+  sistema que ya existía (§4, §5).

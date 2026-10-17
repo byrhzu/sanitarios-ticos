@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20261017c">
+<link rel="stylesheet" href="styles.css?v=20261017e">
 <script>document.documentElement.classList.add("js");setTimeout(function(){var d=document.documentElement;if(!d.classList.contains("is-ready"))d.classList.add("rv-rescate");},3000);</script>
 </head>
 <body>
@@ -73,6 +73,19 @@
 <section class="block-tight" style="padding-top:0;">
   <div class="wrap">
     <div class="cot-caja" data-cot aria-busy="false">
+
+      <!-- La barra del precio (§45.2). El monto no espera al final: vive
+           acá desde la primera respuesta y se actualiza con cada una. Es
+           lo que convierte el formulario en un configurador — se ve qué le
+           hace cada respuesta al precio, y es la razón por la que uno
+           sigue contestando. -->
+      <div class="cot-barra" data-cot-barra hidden>
+        <div class="cot-barra-num">
+          <span class="cot-barra-et" data-cot-barra-et>Va en</span>
+          <strong data-cot-barra-monto>—</strong>
+        </div>
+        <p class="cot-barra-pie" data-cot-barra-pie></p>
+      </div>
 
       <ol class="cot-rail" data-cot-rail>
         <li data-n="1" class="is-ahora">Servicio</li>
@@ -132,7 +145,10 @@
       <div class="cot-paso" data-cot-paso="lugar" hidden>
         <h2 class="cot-pregunta">¿Dónde queda la propiedad?</h2>
         <p class="cot-ayuda">Lo usamos para organizar la ruta del camión.</p>
-        <form class="form" data-cot-lugar novalidate>
+        <!-- Filas sin caja (§45.2): etiqueta chica arriba, valor grande
+             abajo, separadas por un filete. Tres recuadros dentro de la
+             caja del cotizador eran caja sobre caja. -->
+        <form class="form cot-lugar-filas" data-cot-lugar novalidate>
           <div class="f">
             <label for="cot-provincia">Provincia</label>
             <select id="cot-provincia" name="provincia" required>
@@ -145,7 +161,7 @@
               <option value="">Primero la provincia</option>
             </select>
           </div>
-          <div class="f f-full">
+          <div class="f">
             <label for="cot-distrito">Distrito</label>
             <select id="cot-distrito" name="distrito" required disabled>
               <option value="">Primero el cantón</option>
@@ -369,6 +385,6 @@
 </a>
 <script defer src="lib/manifest.js"></script>
 <script defer src="main.js?v=20260917b"></script>
-<script defer src="cotizador.js?v=20261017d"></script>
+<script defer src="cotizador.js?v=20261017f"></script>
 </body>
 </html>
