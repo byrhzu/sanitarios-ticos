@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260917a">
+<link rel="stylesheet" href="styles.css?v=20261017b">
 <script>document.documentElement.classList.add("js");setTimeout(function(){var d=document.documentElement;if(!d.classList.contains("is-ready"))d.classList.add("rv-rescate");},3000);</script>
 </head>
 <body>
@@ -152,6 +152,20 @@
             </select>
           </div>
         </form>
+
+        <!-- Aparece cuando esa zona no tiene precio automático. Se dice
+             acá, al escoger el distrito, y no después de que la persona
+             llenó nombre y teléfono para nada. -->
+        <div class="cot-fuera" id="cot-fuera" hidden>
+          <p class="cot-fuera-t">Esa zona la cotiza el encargado</p>
+          <p>Hasta ahí sí vamos, pero el precio depende del viaje y lo pone
+            una persona, no la calculadora. Escríbanos y se lo damos.</p>
+          <div class="cot-fuera-acc">
+            <a class="btn btn-wa" id="cot-fuera-wa" href="#" target="_blank" rel="noopener">Escribir por WhatsApp</a>
+            <a class="btn btn-line" href="/contacto">Pedir la cotización</a>
+          </div>
+        </div>
+
         <div class="cot-nav">
           <button type="button" class="cot-atras" data-cot-atras>← Volver</button>
           <button type="button" class="btn btn-orange" data-cot-sigue="lugar">Continuar</button>
@@ -341,6 +355,6 @@
 </a>
 <script defer src="lib/manifest.js"></script>
 <script defer src="main.js?v=20260917b"></script>
-<script defer src="cotizador.js?v=20260910b"></script>
+<script defer src="cotizador.js?v=20261017b"></script>
 </body>
 </html>

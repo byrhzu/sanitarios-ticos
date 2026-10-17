@@ -328,6 +328,12 @@ strong, b { font-weight: 600; }
 .btn-line-lt { border-color: var(--line-lt); color: var(--paper); }
 .btn-line-lt:hover { background: var(--paper); color: var(--ink); }
 
+/* Un botón apagado tiene que verse apagado: el de "Continuar" se
+   bloquea cuando la zona no se cotiza sola, y sin esto parecía que la
+   página no respondía. */
+.btn:disabled, .btn[disabled] { opacity: .45; cursor: not-allowed; }
+.btn:disabled:hover, .btn[disabled]:hover { background: var(--orange); }
+
 .btn-wa { background: var(--wa); color: #06331b; }
 .btn-wa:hover { background: #1cb955; }
 
@@ -1456,6 +1462,25 @@ body.fabs-fuera .wa-fab {
 .cot-msg { font-size: .88rem; font-weight: 500; color: var(--orange-dk); min-height: 1.2em; flex-basis: 100%; }
 .cot-msg.is-error { color: #c0392b; }
 
+/* Cuando la zona no tiene precio automático. No es un error —la persona
+   no hizo nada mal y el trabajo se puede hacer igual—, así que no va en
+   rojo: es un aviso con las dos salidas a mano. */
+.cot-fuera {
+  margin-top: 1.1rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--orange);
+  border-left-width: 3px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--orange) 7%, transparent);
+}
+.cot-fuera p { margin: 0; color: var(--muted); font-size: .92rem; line-height: 1.55; }
+.cot-fuera .cot-fuera-t {
+  color: var(--ink); font-weight: 700; font-size: 1rem; margin-bottom: .35rem;
+}
+.cot-fuera-acc { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .9rem; }
+.cot-fuera-acc .btn { flex: 0 1 auto; }
+@media (max-width: 520px) { .cot-fuera-acc .btn { flex: 1 1 100%; justify-content: center; } }
+
 /* Resultado. El monto manda; todo lo demás lo acompaña. */
 .cot-monto {
   font-family: var(--display); font-stretch: var(--ancho-cartel); font-weight: 700;
@@ -1504,3 +1529,72 @@ body.fabs-fuera .wa-fab {
   ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
   .qa details::details-content { transition: none; }
 }
+
+
+/* =============================================================
+   La banda del cotizador en la portada
+
+   Es la primera cosa después de la portada a propósito: entraban
+   cotizaciones solas aun con el botón escondido en el menú, así que
+   vale la pena que se vea sin bajar. Se lee como una ventana sobre el
+   papel —borde, sombra, el naranja sólo en el filo de arriba— y no
+   como otra franja de la página.
+   ============================================================= */
+/* Sin margen negativo: la banda iba montada sobre el borde de la
+   portada y se veía bien… hasta que la portada creció con un botón más
+   y se le encaramó encima. Un respiro normal aguanta cualquier largo. */
+.cotiza-banda { padding: 2.2rem 0 0; }
+.cotiza-caja {
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 2.4rem;
+  align-items: center;
+  padding: 2.2rem 2.4rem;
+  background: var(--paper);
+  border: 1px solid var(--line-2);
+  border-top: 4px solid var(--orange);
+  border-radius: 16px;
+  box-shadow: 0 18px 44px -26px rgba(27,25,23,.42);
+}
+.cotiza-et {
+  display: inline-block; font-size: .72rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--orange-dk);
+  margin-bottom: .6rem;
+}
+.cotiza-txt h2 {
+  margin: 0 0 .7rem; font-size: clamp(1.4rem, 2.6vw, 1.9rem);
+  line-height: 1.12; letter-spacing: -.01em;
+}
+.cotiza-txt p { margin: 0; color: var(--muted); font-size: .95rem; line-height: 1.6; max-width: 34rem; }
+
+.cotiza-lbl {
+  display: block; font-size: .78rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .08em; margin-bottom: .7rem;
+}
+/* Cada servicio es un renglón que se toca, no una tarjeta: tres
+   tarjetas acá harían competencia a las tarjetas de servicios que ya
+   vienen más abajo. */
+.cotiza-op {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: .85rem 1.1rem; margin-bottom: .5rem;
+  border: 1px solid var(--line-2); border-radius: 10px;
+  color: var(--ink); text-decoration: none; font-weight: 600; font-size: .95rem;
+  background: var(--paper);
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+.cotiza-op svg { width: 18px; height: 18px; color: var(--orange-dk); flex: 0 0 auto; }
+.cotiza-op:hover {
+  border-color: var(--orange); background: color-mix(in srgb, var(--orange) 8%, transparent);
+  transform: translateX(3px);
+}
+.cotiza-todos {
+  display: inline-block; margin-top: .3rem; font-size: .88rem; font-weight: 600;
+  color: var(--orange-dk); text-decoration: underline; text-underline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+  .cotiza-banda { padding-top: 1.6rem; }
+  .cotiza-caja { grid-template-columns: 1fr; gap: 1.6rem; padding: 1.7rem 1.4rem; }
+  .cotiza-txt p { font-size: .92rem; }
+}
+@media (prefers-reduced-motion: reduce) { .cotiza-op:hover { transform: none; } }

@@ -23,6 +23,7 @@
 
   var opciones = null;      // tarifas y preguntas, del servidor
   var geografia = null;     // provincias → cantones → distritos
+  var cubiertos = null;     // dónde la tabla de precios sí llega
   var respuestas = {};      // lo que la persona lleva contestado
   var historial = [];       // pasos ya vistos, para el botón "Volver"
   var pasoActual = null;
@@ -235,15 +236,47 @@
     sel.disabled = !lista.length;
   }
 
+  /* ¿Tiene precio automático esta dirección?
+
+     La lista de lo cubierto viene del servidor —sólo los nombres, no
+     los montos— para poder decirlo apenas se escoge el distrito. Donde
+     no llega, el trabajo igual se hace: lo que no se puede es ponerle
+     precio solo, así que se ofrece el WhatsApp y la solicitud. */
+  function zonaCubierta(prov, cant, dist) {
+    if (!prov || !cant || !dist) return true;    // todavía no ha escogido
+    var c = cubiertos && cubiertos[prov] && cubiertos[prov][cant];
+    return !!(c && c.indexOf(dist) !== -1);
+  }
+
+  function revisarCobertura() {
+    var fuera = $("#cot-fuera") || document.getElementById("cot-fuera");
+    if (!fuera) return;
+    var dentro = zonaCubierta(selP.value, selC.value, selD.value);
+    fuera.hidden = dentro;
+    var sigue = $('[data-cot-sigue="lugar"]');
+    if (sigue) sigue.disabled = !dentro;
+    if (!dentro) {
+      var wa = document.getElementById("cot-fuera-wa");
+      if (wa) {
+        var donde = [selD.value, selC.value, selP.value].filter(Boolean).join(", ");
+        wa.href = "https://wa.me/" + WA + "?text=" + encodeURIComponent(
+          "Buenas, necesito una cotización para " + donde + ".");
+      }
+    }
+  }
+
   function prepararLugar() {
     llenar(selP, Object.keys(geografia), "");
     selP.addEventListener("change", function () {
       llenar(selC, Object.keys(geografia[selP.value] || {}), "Primero la provincia");
       llenar(selD, [], "Primero el cantón");
+      revisarCobertura();
     });
     selC.addEventListener("change", function () {
       llenar(selD, (geografia[selP.value] || {})[selC.value] || [], "Primero el cantón");
+      revisarCobertura();
     });
+    selD.addEventListener("change", revisarCobertura);
   }
 
   /* ---------- paso 4: sus datos ---------- */
@@ -294,6 +327,16 @@
     })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
+        /* El servidor también revisa la cobertura, por si la lista del
+           navegador quedó vieja. No es un error de la persona, así que
+           no se pinta en rojo: se la devuelve al paso del lugar, donde
+           ya está el recuadro con el WhatsApp. */
+        if (res.d && res.d.fueraDeTabla) {
+          mostrar("lugar");
+          revisarCobertura();
+          avisar(res.d.error || "Esa zona la cotiza el encargado.");
+          return;
+        }
         if (!res.ok || !res.d || !res.d.ok) {
           throw new Error((res.d && res.d.error) || "No se pudo cotizar");
         }
@@ -340,7 +383,11 @@
 
     var cuerpo = $("[data-cot-desglose]");
     cuerpo.textContent = "";
-    (d.desglose || []).forEach(function (fila) {
+    /* El recargo por la zona va marcado `interno`: se suma al precio
+       pero no se le muestra al cliente como una línea aparte. Lo que
+       cuesta llegar hasta su casa es cuenta de la empresa, no algo que
+       haya que justificarle renglón por renglón. */
+    (d.desglose || []).filter(function (f) { return !f.interno; }).forEach(function (fila) {
       var tr = document.createElement("tr");
       var td1 = document.createElement("td");
       td1.textContent = fila.concepto;
@@ -448,8 +495,23 @@
       if (!d || !d.ok || !g || !g.ok || !g.geografia) throw new Error("sin opciones");
       opciones = d;
       geografia = g.geografia;
+      cubiertos = g.cubiertos || {};
       pintarServicios();
       prepararLugar();
+
+      /* De la portada se llega con el servicio ya escogido (?s=…). Se
+         salta directo a la segunda pregunta: la primera ya la contestó
+         al tocar el renglón, y volvérsela a hacer es hacerle repetir
+         algo que acaba de decir. */
+      var pedido = new URLSearchParams(location.search).get("s");
+      if (pedido && opciones.servicios[pedido]) {
+        respuestas.servicio = pedido;
+        pintarServicios();
+        prepararTrabajo();
+        historial.push("servicio");
+        mostrar(secuencia()[1]);
+        return;
+      }
       mostrar("servicio");
     })
     .catch(function () {

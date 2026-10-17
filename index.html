@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20260917a">
+<link rel="stylesheet" href="styles.css?v=20261017b">
 <script>document.documentElement.classList.add("js");setTimeout(function(){var d=document.documentElement;if(!d.classList.contains("is-ready"))d.classList.add("rv-rescate");},3000);</script>
 <script type="application/ld+json">
 {
@@ -117,6 +117,10 @@
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h3.5l1.8 4.4-2.2 1.6a12.5 12.5 0 0 0 6.9 6.9l1.6-2.2L21 15.5V19a2 2 0 0 1-2.2 2A16.8 16.8 0 0 1 3 5.2 2 2 0 0 1 5 3Z"/></svg>
           Llamar 2440-1110
         </a>
+        <!-- El cotizador, en la portada y no sólo en el menú: en el
+             teléfono la banda de abajo queda pasada la foto, y la
+             mayoría de las visitas entran por el teléfono. -->
+        <a class="btn btn-line btn-lg" href="/cotizar">Ver el precio en línea</a>
         <a class="btn btn-line btn-lg" href="https://wa.me/50683417547?text=Hola%2C%20necesito%20una%20cotizaci%C3%B3n." target="_blank" rel="noopener">Cotizar por WhatsApp</a>
       </div>
     </div>
@@ -132,6 +136,43 @@
         </span>
       </figcaption>
     </figure>
+  </div>
+</section>
+
+
+<!-- El cotizador, arriba y a la vista.
+
+     Estaba a dos clics —en el menú y en una sección de más abajo— y aun
+     así entraban cotizaciones solas. Puesto acá, pegado a la portada,
+     se ve antes de bajar: tocar el servicio ya lleva el cotizador con
+     esa respuesta puesta, así que la primera pregunta se contesta sin
+     haber cambiado de página. -->
+<section class="cotiza-banda">
+  <div class="wrap">
+    <div class="cotiza-caja">
+      <div class="cotiza-txt">
+        <span class="cotiza-et">Sin llamar a nadie</span>
+        <h2>Sepa cuánto cuesta<br>antes de que llegue el camión</h2>
+        <p>Unas preguntas cortas y le damos el monto con nuestras tarifas
+           reales. Le queda un documento con su número.</p>
+      </div>
+      <div class="cotiza-ops">
+        <span class="cotiza-lbl">¿Qué necesita?</span>
+        <a class="cotiza-op" href="/cotizar?s=tanques-septicos">
+          <span>Limpieza de tanque séptico</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="cotiza-op" href="/cotizar?s=destaqueo">
+          <span>Destaqueo de tuberías</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="cotiza-op" href="/cotizar?s=trampas-grasa">
+          <span>Limpieza de trampa de grasa</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="cotiza-todos" href="/cotizar">Ver los demás servicios</a>
+      </div>
+    </div>
   </div>
 </section>
 

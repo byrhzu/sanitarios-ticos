@@ -1,4 +1,5 @@
 import { GEOGRAFIA } from "./lib/geografia-cr.js";
+import { RECARGOS } from "./lib/recargos-cr.js";
 import { normalizarTelefono, normalizarCedula, normalizarCorreo, normalizarNombre }
   from "./lib/datos-cr.js";
 
@@ -3126,7 +3127,7 @@ const TARIFAS = {
       nombre: "Limpieza de tanque séptico",
       formas: {
         redondo: {
-          etiqueta: "Redondo, de cemento",
+          etiqueta: "Redondo, de cemento o de alcantarillas",
           medidas: {
             "2x1": { etiqueta: "2 m de fondo por 1 m de diámetro", precio: 40000 }
           }
@@ -3134,9 +3135,9 @@ const TARIFAS = {
         tierra: {
           etiqueta: "Hueco de tierra",
           medidas: {
-            "4m": { etiqueta: "4 metros de fondo", precio: 90000 },
-            "5m": { etiqueta: "5 metros de fondo", precio: 110000 },
-            "6m": { etiqueta: "6 metros de fondo", precio: 140000 }
+            "4m": { etiqueta: "4 metros de fondo por 1 m de diámetro", precio: 60000 },
+            "5m": { etiqueta: "5 metros de fondo por 1 m de diámetro", precio: 80000 },
+            "6m": { etiqueta: "6 metros de fondo por 1 m de diámetro", precio: 110000 }
           }
         },
         plastico: {
@@ -3165,7 +3166,7 @@ const TARIFAS = {
        distancia no entra en la cuenta automática. */
     "trampas-grasa": {
       nombre: "Limpieza de trampa de grasa",
-      rango: [35000, 40000]
+      desde: 35000
     },
     "tanques-grasa": {
       nombre: "Limpieza de tanque de grasa",
@@ -3173,7 +3174,7 @@ const TARIFAS = {
     },
     "destaqueo": {
       nombre: "Destaqueo de tuberías",
-      rango: [30000, 35000]
+      desde: 30000
     },
 
     // El alquiler se cobra por día con un piso de ocho.
@@ -3185,16 +3186,47 @@ const TARIFAS = {
   }
 };
 
-/* ¿POR QUÉ NO HAY RECARGO POR DISTANCIA ACÁ?
+/* EL RECARGO POR UBICACIÓN
 
-   Porque el propietario decidió que el cliente no lo vea. El negocio
-   apunta a llenar los camiones dentro de las zonas que ya cubre, no a
-   viajar; para lo que cae fuera, el precio base es el mismo y el
-   recargo lo pone él antes de dar el precio en firme.
+   Antes no existía: el precio era el mismo desde Alajuela centro que
+   desde Atenas, y el encargado lo ajustaba por aparte. Ahora el
+   encargado llenó la tabla distrito por distrito y el recargo entra en
+   la cuenta, sumado al precio base.
 
-   Meterlo en la fórmula habría sido inventar un número que él no dio, y
-   además mostrarle al cliente algo que no quiere mostrarle. La zona se
-   sigue guardando en cada cotización para poder estudiarla después. */
+   El cliente NO ve el desglose del recargo: ve un precio. Lo que paga
+   por llegar hasta su casa es asunto de la empresa, no una línea que
+   haya que justificarle. En el panel sí se ve, porque ahí sirve.
+
+   Y donde la tabla no llega, no se inventa: ver `coberturaDe`. */
+
+/* ¿Se puede cotizar sola esta dirección?
+
+   Devuelve el recargo cuando sí, y por qué no cuando no. Son dos
+   motivos y los dos quieren decir "esto lo ve el encargado":
+
+     sin-distrito — no se escogió distrito; sin él no hay precio
+     fuera       — el distrito está marcado "no aplica", o la provincia
+                   entera queda fuera del área (Cartago, Guanacaste,
+                   Limón, Puntarenas)
+
+   Que no se cotice sola NO quiere decir que no se haga el trabajo: la
+   solicitud entra desde cualquier parte del país y el encargado pone
+   el precio. Lo que no se hace es que una tabla invente un número para
+   un viaje que nadie ha medido. */
+function coberturaDe(provincia, canton, distrito) {
+  if (!distrito) return { cubierto: false, motivo: "sin-distrito" };
+  const cantones = RECARGOS[provincia];
+  const distritos = cantones && cantones[canton];
+  const monto = distritos && distritos[distrito];
+  if (typeof monto !== "number") return { cubierto: false, motivo: "fuera" };
+  return { cubierto: true, recargo: monto };
+}
+
+/* Las provincias donde la tabla sí llega. El sitio las usa para avisar
+   antes de que la persona llene todo el formulario. */
+function provinciasCubiertas() {
+  return Object.keys(RECARGOS);
+}
 
 function colones(n) {
   return "₡" + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -3458,6 +3490,16 @@ function calcularCotizacion(entrada) {
 
   if (min == null) return null;
 
+  /* El recargo por llegar hasta ahí. Se suma al precio, y en el
+     desglose queda nombrado como lo que es para que el panel lo pueda
+     ver; el documento del cliente no lo muestra aparte. */
+  const cob = coberturaDe(entrada.provincia, entrada.canton, entrada.distrito);
+  if (cob.cubierto && cob.recargo > 0) {
+    min += cob.recargo;
+    if (max != null) max += cob.recargo;
+    desglose.push({ concepto: "Recargo por la zona", monto: cob.recargo, interno: true });
+  }
+
   /* `max` en null quiere decir "desde": es un piso, no un rango. Se
      guarda igual al mínimo porque la columna de la base no acepta
      nulos, y quien muestra el dato entiende que min igual a max es un
@@ -3470,6 +3512,7 @@ function calcularCotizacion(entrada) {
     desde: max == null,
     dias: diasAlquiler,
     desglose: desglose,
+    recargoZona: cob.cubierto ? cob.recargo : null,
     provisional: TARIFAS.provisional,
     ivaIncluido: TARIFAS.iva.incluido,
     vigenciaDias: TARIFAS.vigenciaDias
@@ -3726,11 +3769,35 @@ async function cotizar(request, env, ctx) {
     }
   }
 
-  /* La zona sale del cantón, que la persona ya dio. NO entra en el
-     precio: el recargo por distancia lo pone el encargado y el cliente
-     no lo ve. Se guarda para poder estudiar después de dónde viene el
-     trabajo y afinar el perímetro. */
+  /* La zona gruesa (dentro o fuera del GAM) se sigue guardando para
+     poder estudiar de dónde viene el trabajo. El precio ya no sale de
+     ella sino del recargo por distrito. */
   const zona = zonaDeProvincia(provincia);
+
+  /* ¿Llega la tabla hasta ahí?
+
+     Si no llega, la página NO inventa un precio. Desde el sitio se
+     contesta que esa zona se cotiza directo con el encargado, y la
+     persona tiene el WhatsApp y la solicitud a mano: el trabajo se
+     puede hacer igual, lo que no se puede es ponerle precio solo.
+
+     Desde el PANEL sí se deja pasar: ahí el precio lo escribe el
+     encargado a mano, que es exactamente para lo que existe este
+     camino. */
+  if (!esPanel && !lugarLibre) {
+    const cob = coberturaDe(provincia, canton, distrito);
+    if (!cob.cubierto) {
+      return json({
+        ok: false,
+        fueraDeTabla: true,
+        motivo: cob.motivo,
+        zona: zonaTexto(provincia, canton, distrito),
+        error: cob.motivo === "sin-distrito"
+          ? "Para darle el precio hace falta el distrito."
+          : "Esa zona no tiene precio automático: la cotiza el encargado."
+      }, 422);
+    }
+  }
 
   /* UNA cotización puede llevar VARIOS servicios: dos tanques de
      tamaños distintos, el tanque y la trampa de grasa. Partirlo en dos
@@ -5109,7 +5176,20 @@ export default {
        navegador por un día: son ~490 distritos y no tiene sentido
        pedirlos otra vez en cada visita. */
     if (url.pathname === "/api/geografia" && request.method === "GET") {
-      return new Response(JSON.stringify({ ok: true, geografia: GEOGRAFIA }), {
+      /* Junto con la lista va QUÉ distritos tienen precio automático,
+         para que el cotizador lo pueda decir apenas se escoge el
+         distrito y no después de llenar todo el formulario.
+
+         Van sólo los nombres, NUNCA los montos: cuánto se cobra por
+         llegar a cada lado es cuenta de la empresa. */
+      const cubiertos = {};
+      Object.keys(RECARGOS).forEach((prov) => {
+        cubiertos[prov] = {};
+        Object.keys(RECARGOS[prov]).forEach((cant) => {
+          cubiertos[prov][cant] = Object.keys(RECARGOS[prov][cant]);
+        });
+      });
+      return new Response(JSON.stringify({ ok: true, geografia: GEOGRAFIA, cubiertos }), {
         headers: {
           "Content-Type": "application/json; charset=utf-8",
           "Cache-Control": "public, max-age=86400"
