@@ -500,9 +500,8 @@ strong, b { font-weight: 600; }
 }
 .fact b {
   margin-top: .7rem;
-  font-family: var(--display); font-weight: 600;
-  font-size: .76rem; letter-spacing: .15em; text-transform: uppercase;
-  color: var(--ink);
+  font-family: var(--display); font-weight: 700;
+  font-size: .92rem; color: var(--ink);
 }
 .fact span {
   margin-top: .25rem;
@@ -784,8 +783,7 @@ strong, b { font-weight: 600; }
 .data { display: grid; gap: 0; }
 .data li { display: flex; gap: 1rem; align-items: baseline; padding-block: 1rem; }
 .data small {
-  min-width: 6.5rem; font-size: .74rem; text-transform: uppercase;
-  letter-spacing: .13em; color: var(--muted-2);
+  min-width: 6.5rem; font-size: .82rem; color: var(--muted-2);
 }
 .data a, .data span { font-family: var(--display); font-weight: 600; font-size: 1.02rem; }
 .data a { transition: color .2s var(--ease); }
@@ -799,7 +797,7 @@ strong, b { font-weight: 600; }
 .foot-grid { display: grid; gap: 2.2rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); }
 .foot-brand img { height: 74px; width: auto; margin-bottom: 1rem; }
 .foot-brand p { max-width: 24rem; font-size: .9rem; }
-.foot h3.foot-t, .foot h4 { font-family: var(--display); font-size: .76rem; letter-spacing: .18em; text-transform: uppercase; color: var(--orange-lt); margin-bottom: .9rem; }
+.foot h3.foot-t, .foot h4 { font-family: var(--display); font-weight: 700; font-size: .95rem; color: var(--orange-lt); margin-bottom: .9rem; }
 .foot-col { display: flex; flex-direction: column; gap: .5rem; }
 .foot-col a { transition: color .2s var(--ease); }
 .foot-col a:hover { color: var(--paper); }
@@ -1297,7 +1295,7 @@ body.fabs-fuera .wa-fab {
   /* Los cuatro datos en 2×2. Apilados uno debajo de otro ocupaban
      media pantalla de puro scroll para decir "3 camiones, 24/7". */
   .fact strong { font-size: 1.9rem; }
-  .fact b { margin-top: .5rem; font-size: .7rem; letter-spacing: .1em; }
+  .fact b { margin-top: .5rem; font-size: .86rem; }
   .fact span { font-size: .82rem; }
 
   /* El número de cada servicio pasa arriba del título. Al lado se
@@ -1672,3 +1670,21 @@ body.fabs-fuera .wa-fab {
   outline: 2px solid var(--orange); outline-offset: 4px;
 }
 .cot-lugar-filas .f select:disabled { color: var(--muted); font-weight: 400; }
+
+/* =============================================================
+   MAYÚSCULAS RASTREADAS — la regla
+
+   Byron lo señaló tres veces: el rótulo diminuto en mayúsculas con
+   mucho tracking ("CAMIONES CISTERNA", "SIN LLAMAR A NADIE") es la
+   tipografía que delata una página hecha por una máquina. No está
+   prohibida por fea: está prohibida por repetida.
+
+   En el SITIO PÚBLICO no se usa. Las cifras y los rótulos se
+   distinguen por tamaño y peso, que es lo que ya hace el resto.
+
+   Las dos excepciones vivas, las dos declaradas:
+     · .marquee span — es un rótulo que corre, y el rótulo del camión
+       es la referencia principal del proyecto (§2.1).
+     · la barra de la tabla del documento imprimible — una vez por
+       pieza, justificada contra la referencia B (§12).
+   ============================================================= */
