@@ -571,11 +571,16 @@ body {
       ]);
     }
 
+    /* La planta de tratamiento. La provincia sale de los datos de la
+       EMPRESA, nunca de los del cliente: la planta está donde está, y
+       antes a un cliente de Heredia le salía que sus residuos se
+       descargaron en una planta de Heredia. */
     if (q.planta) {
       parrafo(cuerpo, [
         "Lo extraído fue transportado y descargado en una planta de tratamiento " +
         "avalada por el Ministerio de Salud Pública para recibir residuos de " +
-        "terceros, ubicada en la provincia de " + (q.provincia || "Alajuela") + "."
+        "terceros, ubicada en la provincia de " +
+        (q.plantaProvincia || e.plantaProvincia || "Alajuela") + "."
       ]);
     }
 

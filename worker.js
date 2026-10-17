@@ -3576,6 +3576,9 @@ const EMPRESA = {
   representante: "Carlos Vinicio Leitón Villegas",
   cargo: "Representante legal",
   permisoSanitario: "0230-2020",
+  /* La planta de tratamiento que recibe lo que se extrae. Está en
+     Alajuela y no cambia: el certificado la nombra siempre igual. */
+  plantaProvincia: "Alajuela",
   // El camión de siempre. Es sólo el valor por defecto: al emitir el
   // certificado se puede cambiar, que para eso un día habrá dos.
   placa: "C146776"
@@ -4128,8 +4131,14 @@ function armarDocumento(tipo, s, c, extra) {
       saca: q.saca,
       volumen: q.saca && extra.volumen > 0 ? extra.volumen : null,
       planta: !!q.planta,
-      // De dónde salió y a qué provincia fue lo recogido.
-      provincia: c.provincia || null,
+      /* Dónde está la planta que recibe lo extraído. Es SIEMPRE la
+         misma, y es un dato de la empresa — no del cliente.
+
+         Acá decía `c.provincia`, o sea la provincia del cliente: a un
+         cliente de Heredia le salió un certificado jurando que los
+         residuos se descargaron en una planta de Heredia. Eso es decir
+         algo falso en un papel firmado ante el Ministerio. */
+      plantaProvincia: EMPRESA.plantaProvincia,
       placa: extra.placa || EMPRESA.placa
     };
   } else {
@@ -4211,20 +4220,41 @@ async function emitirDocumento(request, env) {
        dos veces el certificado de un trabajo no puede gastar dos
        números del correlativo: eso rompe la numeración ante Salud. */
     const previo = await env.DB.prepare(
-      `SELECT numero, llave FROM documentos
+      `SELECT id, numero, llave FROM documentos
         WHERE servicio_id = ?1 AND tipo = ?2 AND papelera IS NULL
         ORDER BY id DESC LIMIT 1`
     ).bind(servicioId, tipo).first();
+
+    const armar = () => armarDocumento(tipo, s, c, {
+      volumen: volumen, placa: placa,
+      monto: s.monto, pagado: s.pagado, metodo: s.metodo, fe: !!s.feSi
+    });
+
+    /* Corregir uno ya emitido. Se equivocó en los m³, en la placa o en
+       los datos del cliente: se vuelve a armar con lo que hay HOY y se
+       guarda sobre el mismo papel.
+
+       El número NO cambia. Es una corrección del mismo documento, no
+       uno nuevo: si cada arreglo gastara un número del correlativo, la
+       numeración ante Salud quedaría llena de huecos. La llave tampoco,
+       para que el enlace que ya se le mandó al cliente siga abriendo —
+       y abriendo lo corregido. */
+    if (previo && d.rehacer) {
+      await env.DB.prepare(
+        `UPDATE documentos SET datos = ?1 WHERE id = ?2`
+      ).bind(JSON.stringify(Object.assign({ numero: previo.numero }, armar())), previo.id).run();
+      return json({ ok: true, corregido: true, tipo,
+        numero: previo.numero, llave: previo.llave,
+        url: `/documento?t=${tipo}&n=${encodeURIComponent(previo.numero)}&k=${encodeURIComponent(previo.llave)}` });
+    }
+
     if (previo) {
       return json({ ok: true, reusado: true, tipo,
         numero: previo.numero, llave: previo.llave,
         url: `/documento?t=${tipo}&n=${encodeURIComponent(previo.numero)}&k=${encodeURIComponent(previo.llave)}` });
     }
 
-    const datos = armarDocumento(tipo, s, c, {
-      volumen: volumen, placa: placa,
-      monto: s.monto, pagado: s.pagado, metodo: s.metodo, fe: !!s.feSi
-    });
+    const datos = armar();
     const numero = await numeroSiguiente(env, tipo, new Date().getFullYear());
     const llave = nuevaLlave();
 

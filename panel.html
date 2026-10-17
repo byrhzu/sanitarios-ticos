@@ -1131,6 +1131,21 @@
   .det-l svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--p-tenue); margin-top: .15rem; }
   .det-l span { color: var(--p-txt2); min-width: 0; }
   .det-acc { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .7rem; }
+  /* En el teléfono, en rejilla de dos.
+
+     Con el certificado y el tiquete, acá abajo hay cuatro botones de
+     anchos distintos: envueltos quedaban uno solo arriba, dos abajo y
+     el "⋯" descolgado en una tercera línea, cada uno empezando donde
+     terminaba el anterior. En rejilla todos miden igual y los bordes
+     se alinean. El "⋯" cierra la segunda fila, que es la posición que
+     ya tenía. */
+  @media (max-width: 620px) {
+    .det-acc { display: grid; grid-template-columns: 1fr 1fr; gap: .45rem; }
+    .det-acc .bt { width: 100%; min-width: 0; padding: 0 .6rem; }
+    /* Un número impar de botones: el último se estira a lo ancho en vez
+       de dejar un hueco al lado. */
+    .det-acc .bt:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  }
 
   .ag2-vacio { text-align: center; color: var(--p-tenue); padding: 2.6rem 1rem; }
   .ag2-vacio b { display: block; color: var(--p-txt); font-size: .95rem; margin-bottom: .3rem; }
@@ -8123,7 +8138,7 @@
          de él son los papeles. Antes había que salir a Clientes, buscar
          la ficha y bajar hasta el servicio — mucho viaje para algo que
          se pide con el cliente al teléfono. */
-      if (comp) a = a.concat(botonesDeDocumentos(svc));
+      if (comp) a = a.concat(botonesDeDocumentos(svc, true));
       else {
         a.push(botAcc("reagendar", ICO.dia, svc.fecha ? "Reagendar" : "Agendar servicio"));
         a.push(botAcc("cancelar", ICO.alerta, "Cancelar", "malo"));
@@ -8140,6 +8155,7 @@
         a.push(botAcc("editar", ICO.lapiz, "Corregir fecha, monto o detalle"));
         a.push(botAcc("pago", ICO.cartera, "Ver o registrar pagos"));
         a = a.concat(botonesDeDocumentos(svc));
+        a = a.concat(botonesDeDocumentos(svc, true));
       }
       a.push(botAcc("eliminar", ICO.basura, "Eliminar", "malo"));
     }
@@ -8154,8 +8170,17 @@
      Si ya se emitió, el botón dice "Ver" y abre el mismo: decir "Crear"
      invitaba a hacer un segundo, y un certificado repetido con otro
      número descuadra la numeración ante Salud. */
-  function botonesDeDocumentos(svc) {
+  function botonesDeDocumentos(svc, soloCorregir) {
     var d = svc.documentos || {};
+    /* Corregir sólo aparece sobre lo que ya existe: no se corrige un
+       papel que no se ha hecho. Y va en el "⋯" y no afuera, para no
+       alargar la fila con algo que se usa de vez en cuando. */
+    if (soloCorregir) {
+      var c = [];
+      if (d.certificado) c.push(botAcc("corregir-certificado", ICO.lapiz, "Corregir el certificado"));
+      if (d.tiquete) c.push(botAcc("corregir-tiquete", ICO.lapiz, "Corregir el tiquete"));
+      return c;
+    }
     return [
       botAcc("certificado", ICO.doc,
         d.certificado ? "Ver certificado " + d.certificado.numero : "Crear certificado"),
@@ -8225,7 +8250,41 @@
     (pide ? $("doc-volumen") : $("doc-placa")).focus();
   }
 
-  function cerrarDoc() { $("velo-doc").hidden = true; docPendiente = null; }
+  /* Corregir un papel ya hecho: se equivocó en los m³, en la placa, o
+     se arregló algo del cliente después de emitirlo.
+
+     Conserva el número y el enlace: es el mismo documento corregido, no
+     uno nuevo. El que ya se le mandó al cliente le va a abrir la
+     versión buena. */
+  function corregirDocumento(tipo, s) {
+    if (!s || !s.id) return;
+    if (tipo === "tiquete") {
+      /* El tiquete no tiene nada que preguntar: se rehace con el monto,
+         los pagos y los datos del cliente como están hoy. */
+      return emitirDoc(tipo, s, { rehacer: true });
+    }
+    docPendiente = { tipo: tipo, svc: s, rehacer: true };
+    $("doc-t").textContent = "Corregir el certificado";
+    $("doc-sub").textContent = [s.nombre, s.servicio, s.fecha ? fechaLarga(s.fecha) : ""]
+      .filter(Boolean).join(" · ");
+    var clave = s.servicioKey || s.servicio || "";
+    $("doc-vol-f").hidden = SACA_VOLUMEN.indexOf(clave) === -1;
+    $("doc-volumen").value = s.volumen ? String(s.volumen) : "";
+    $("doc-placa").value = s.placa || placaRecordada() || "";
+    $("doc-aviso").textContent = "Conserva el número " +
+      ((s.documentos || {}).certificado || {}).numero +
+      ". Los datos del cliente se toman como están ahora.";
+    $("doc-aviso").classList.remove("is-error");
+    $("doc-crear").textContent = "Guardar";
+    $("velo-doc").hidden = false;
+    $("doc-volumen").focus();
+  }
+
+  function cerrarDoc() {
+    $("velo-doc").hidden = true;
+    docPendiente = null;
+    $("doc-crear").textContent = "Crear";
+  }
 
   $("doc-cancelar").addEventListener("click", cerrarDoc);
   $("velo-doc").addEventListener("click", function (e) {
@@ -8237,7 +8296,8 @@
     if (placa) recordarYDevolverPlaca(placa);
     emitirDoc(docPendiente.tipo, docPendiente.svc, {
       volumen: $("doc-volumen").value.trim().replace(",", "."),
-      placa: placa
+      placa: placa,
+      rehacer: docPendiente.rehacer === true
     }, this);
   });
 
@@ -8252,7 +8312,8 @@
     pedir("/api/panel/documento", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tipo: tipo, servicioId: s.id,
-                             volumen: extra.volumen || "", placa: extra.placa || "" })
+                             volumen: extra.volumen || "", placa: extra.placa || "",
+                             rehacer: extra.rehacer === true })
     })
       .then(function (d) {
         cerrarDoc();
@@ -8263,9 +8324,11 @@
         s.documentos[tipo] = { numero: d.numero, llave: d.llave, url: d.url };
         if (pestana) pestana.location = d.url;
         else location.href = d.url;          // si el navegador la bloqueó
-        avisar(d.reusado
-          ? "Ese " + nombre + " ya estaba hecho (" + d.numero + "): se abrió el mismo."
-          : "Listo: " + nombre + " " + d.numero + ".");
+        avisar(d.corregido
+          ? "Corregido el " + nombre + " " + d.numero + ". El enlace es el mismo."
+          : d.reusado
+            ? "Ese " + nombre + " ya estaba hecho (" + d.numero + "): se abrió el mismo."
+            : "Listo: " + nombre + " " + d.numero + ".");
       })
       .catch(function (err) {
         if (pestana) pestana.close();
@@ -8278,7 +8341,10 @@
         }
       })
       .then(function () {
-        if (boton) { boton.disabled = false; boton.textContent = "Crear"; }
+        if (boton) {
+          boton.disabled = false;
+          boton.textContent = (docPendiente && docPendiente.rehacer) ? "Guardar" : "Crear";
+        }
       });
   }
 
@@ -8402,6 +8468,8 @@
     if (acc === "mant") return verCliente(s.clienteId);   // la ficha muestra el próximo + el expediente
     if (acc === "certificado") return crearDocumento("certificado", s);
     if (acc === "tiquete") return crearDocumento("tiquete", s);
+    if (acc === "corregir-certificado") return corregirDocumento("certificado", s);
+    if (acc === "corregir-tiquete") return corregirDocumento("tiquete", s);
     if (acc === "eliminar") return eliminarServicio(s);
   });
 
