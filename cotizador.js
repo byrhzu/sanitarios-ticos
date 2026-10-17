@@ -317,7 +317,8 @@
       nombre: document.getElementById("cot-nombre").value,
       telefono: document.getElementById("cot-tel").value,
       cedula: document.getElementById("cot-cedula").value,
-      correo: document.getElementById("cot-correo").value
+      correo: document.getElementById("cot-correo").value,
+      factura: document.getElementById("cot-factura").checked ? "iva" : "no"
     };
 
     fetch("/api/cotizar", {
@@ -373,12 +374,38 @@
       unNumero ? colones(d.min) : colones(d.min) + " – " + colones(d.max)
     ));
 
-    /* El IVA se suma aparte, y son 13%: dejarlo sólo en una fila de la
-       tabla de abajo sería esconderlo. Va pegado al monto. */
-    var nota = document.querySelector("[data-cot-iva]");
-    if (nota) {
-      nota.textContent = d.ivaIncluido ? "IVA incluido en el monto." : "Al monto se le suma el IVA.";
-      nota.hidden = false;
+    /* El IVA, resuelto y no anunciado.
+
+       Antes decía "al monto se le suma el IVA" y dejaba la cuenta al
+       cliente, que entonces no sabía cuánto iba a pagar. Ahora, si
+       marcó la casilla de factura, se muestran los tres números; si
+       no, el precio de arriba es el que es y acá no va nada. */
+    var cuentas = document.querySelector("[data-cot-cuentas]");
+    if (cuentas) {
+      cuentas.textContent = "";
+      if (d.factura === "iva" && d.totalConIVA) {
+        [["Servicio", colones(d.max)],
+         ["IVA " + Math.round((d.ivaTasa || 0.13) * 100) + "%", colones(d.ivaMonto)],
+         ["Total a pagar", colones(d.totalConIVA)]].forEach(function (par, i) {
+          var fila = document.createElement("div");
+          fila.className = "cot-cuenta" + (i === 2 ? " es-total" : "");
+          var a = document.createElement("span"); a.textContent = par[0];
+          var b = document.createElement("span"); b.textContent = par[1];
+          fila.appendChild(a); fila.appendChild(b);
+          cuentas.appendChild(fila);
+        });
+        cuentas.hidden = false;
+      } else {
+        cuentas.hidden = true;
+      }
+    }
+
+    /* Si no sabe hace cuánto se limpió el tanque, el precio va sin
+       recargo y acá se dice hasta cuánto puede subir en la visita. */
+    var notaAnt = document.querySelector("[data-cot-nota-ant]");
+    if (notaAnt) {
+      notaAnt.textContent = d.avisoAntiguedad || "";
+      notaAnt.hidden = !d.avisoAntiguedad;
     }
 
     var cuerpo = $("[data-cot-desglose]");
@@ -397,9 +424,12 @@
       tr.appendChild(td2);
       cuerpo.appendChild(tr);
     });
+    /* El último renglón ya no habla del IVA: arriba está la cuenta
+       hecha, y decir "IVA no incluido" debajo de un "Total a pagar"
+       que sí lo lleva es contradecirse en la misma pantalla. */
     var tr = document.createElement("tr");
     var td1 = document.createElement("td");
-    td1.textContent = d.ivaIncluido ? "IVA incluido" : "IVA no incluido";
+    td1.textContent = d.factura === "iva" ? "Con factura electrónica" : "Sin factura electrónica";
     var td2 = document.createElement("td");
     td2.textContent = "Vigencia: " + (d.vigenciaDias || 15) + " días";
     tr.appendChild(td1);

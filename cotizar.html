@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
 
-<link rel="stylesheet" href="styles.css?v=20261017b">
+<link rel="stylesheet" href="styles.css?v=20261017c">
 <script>document.documentElement.classList.add("js");setTimeout(function(){var d=document.documentElement;if(!d.classList.contains("is-ready"))d.classList.add("rv-rescate");},3000);</script>
 </head>
 <body>
@@ -193,6 +193,13 @@
             <label for="cot-correo">Correo <span class="opt">(opcional)</span></label>
             <input id="cot-correo" name="correo" type="email" autocomplete="email" placeholder="nombre@correo.com">
           </div>
+          <!-- La factura electrónica se pregunta acá y no al final: de
+               ella depende el monto que se muestra, y preguntarla
+               después de dar el precio obligaría a cambiarlo. -->
+          <label class="f-consiente f-full">
+            <input type="checkbox" id="cot-factura">
+            <span>Necesito factura electrónica. <small>Se le suma el IVA del 13%.</small></span>
+          </label>
           <label class="f-consiente f-full">
             <input type="checkbox" id="cot-consiente" required>
             <span>Acepto que Sanitarios Ticos use estos datos para emitir la cotización y contactarme, según la <a href="/privacidad" target="_blank" rel="noopener">política de privacidad</a>.</span>
@@ -209,7 +216,14 @@
       <div class="cot-paso" data-cot-paso="resultado" hidden>
         <h2 class="cot-pregunta" data-cot-servicio-nombre>Su cotización</h2>
         <p class="cot-monto" data-cot-monto><small data-cot-monto-et>Precio estimado</small>&nbsp;</p>
-        <p class="cot-iva" data-cot-iva hidden></p>
+        <!-- Monto, IVA y total, uno debajo de otro. Sólo sale cuando
+             la persona pidió factura; si no, arriba está el precio y
+             no hay nada más que sumar. -->
+        <div class="cot-cuentas" data-cot-cuentas hidden></div>
+
+        <!-- Cuando no se sabe la antigüedad del tanque: el precio va sin
+             recargo, pero se dice hasta cuánto puede subir. -->
+        <p class="cot-nota-ant" data-cot-nota-ant hidden></p>
 
         <div class="cot-oficial">
           <b>Este monto es un estimado automático.</b> El precio oficial se lo da el
@@ -355,6 +369,6 @@
 </a>
 <script defer src="lib/manifest.js"></script>
 <script defer src="main.js?v=20260917b"></script>
-<script defer src="cotizador.js?v=20261017b"></script>
+<script defer src="cotizador.js?v=20261017d"></script>
 </body>
 </html>

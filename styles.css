@@ -1462,6 +1462,27 @@ body.fabs-fuera .wa-fab {
 .cot-msg { font-size: .88rem; font-weight: 500; color: var(--orange-dk); min-height: 1.2em; flex-basis: 100%; }
 .cot-msg.is-error { color: #c0392b; }
 
+/* Monto, IVA y total. Sólo aparece cuando la persona pidió factura. */
+.cot-cuentas { margin: 1rem 0 0; max-width: 24rem; }
+.cot-cuenta {
+  display: flex; justify-content: space-between; gap: 1.5rem;
+  padding: .55rem 0; border-bottom: 1px solid var(--line-2);
+  font-size: .95rem; font-variant-numeric: tabular-nums;
+}
+.cot-cuenta span:last-child { font-weight: 600; }
+.cot-cuenta.es-total {
+  border-bottom: 0; margin-top: .4rem; padding: .7rem .9rem;
+  background: color-mix(in srgb, var(--orange) 10%, transparent);
+  border-left: 3px solid var(--orange);
+  font-size: 1.1rem; font-weight: 700;
+}
+/* Cuando no se sabe la antigüedad del tanque. */
+.cot-nota-ant {
+  margin: .9rem 0 0; padding-left: .9rem;
+  border-left: 2px solid var(--line-2);
+  color: var(--muted); font-size: .9rem; line-height: 1.55; max-width: 44rem;
+}
+
 /* Cuando la zona no tiene precio automático. No es un error —la persona
    no hizo nada mal y el trabajo se puede hacer igual—, así que no va en
    rojo: es un aviso con las dos salidas a mano. */
@@ -1490,12 +1511,6 @@ body.fabs-fuera .wa-fab {
 /* Sin mayúsculas rastreadas: son la firma tipográfica que Byron ya
    rechazó dos veces. Basta con que sea pequeño y gris. */
 .cot-monto small { display: block; font-size: .82rem; font-stretch: var(--ancho-texto); font-weight: 600; color: var(--muted); letter-spacing: .01em; margin-bottom: .45rem; }
-.cot-iva[hidden] { display: none; }
-.cot-iva {
-  margin: -.2rem 0 1.1rem;
-  font-family: var(--display); font-weight: 600;
-  font-size: .95rem; color: var(--muted);
-}
 .cot-oficial {
   background: var(--orange-tint); border-left: 3px solid var(--orange);
   padding: .85rem 1rem; border-radius: 0 10px 10px 0; color: var(--ink-2);
@@ -1556,20 +1571,18 @@ body.fabs-fuera .wa-fab {
   border-radius: 16px;
   box-shadow: 0 18px 44px -26px rgba(27,25,23,.42);
 }
-.cotiza-et {
-  display: inline-block; font-size: .72rem; font-weight: 700;
-  letter-spacing: .14em; text-transform: uppercase; color: var(--orange-dk);
-  margin-bottom: .6rem;
-}
+/* Sin rótulo en mayúsculas rastreadas encima del título: es la
+   tipografía que delata una página hecha por una máquina, y acá
+   además no decía nada que el título no dijera. */
 .cotiza-txt h2 {
-  margin: 0 0 .7rem; font-size: clamp(1.4rem, 2.6vw, 1.9rem);
-  line-height: 1.12; letter-spacing: -.01em;
+  margin: 0 0 .7rem; font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+  line-height: 1.15; letter-spacing: -.01em;
 }
 .cotiza-txt p { margin: 0; color: var(--muted); font-size: .95rem; line-height: 1.6; max-width: 34rem; }
 
 .cotiza-lbl {
-  display: block; font-size: .78rem; font-weight: 700; color: var(--muted);
-  text-transform: uppercase; letter-spacing: .08em; margin-bottom: .7rem;
+  display: block; font-size: .85rem; font-weight: 600; color: var(--muted);
+  margin-bottom: .7rem;
 }
 /* Cada servicio es un renglón que se toca, no una tarjeta: tres
    tarjetas acá harían competencia a las tarjetas de servicios que ya

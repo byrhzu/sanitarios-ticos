@@ -3113,9 +3113,24 @@ const TARIFAS = {
   /* Cuánto sube por el tiempo sin limpiar. Más años es más lodo
      compactado, que es más trabajo. Sólo aplica al tanque séptico. */
   antiguedad: {
-    "1a2":  { etiqueta: "Hace 1 o 2 años",          monto: 0 },
-    "3a4":  { etiqueta: "Hace 3 o 4 años",          monto: 5000 },
-    "5mas": { etiqueta: "5 años o más, o no sabe",  monto: 10000 }
+    "1a2":  { etiqueta: "Hace 1 o 2 años",  monto: 0 },
+    "3a4":  { etiqueta: "Hace 3 o 4 años",  monto: 5000 },
+    "5mas": { etiqueta: "Hace 5 años o más", monto: 10000 },
+    /* No saberlo no se castiga. Antes "no sabe" iba junto con "5 años
+       o más" y cobraba los 10.000: a quien compró la casa el año
+       pasado se le cobraba de más por no saber algo que nadie le dijo.
+
+       Ahora paga el precio base y el documento avisa que el monto
+       final se ve en la visita, diciendo hasta cuánto puede subir.
+       Decir el techo es lo que hace que el aviso sirva: "puede subir"
+       a secas no deja decidir nada. */
+    "nose": {
+      etiqueta: "No lo sé",
+      monto: 0,
+      tope: 10000,
+      aviso: "Al no conocer la antigüedad, el precio final se confirma en la visita. " +
+             "El recargo máximo por lodo acumulado es de ₡10.000."
+    }
   },
 
   servicios: {
@@ -3451,7 +3466,7 @@ function calcularCotizacion(entrada) {
   const svc = TARIFAS.servicios[entrada.servicio];
   if (!svc) return null;
 
-  let min = null, max = null, diasAlquiler = null;
+  let min = null, max = null, diasAlquiler = null, avisoAntiguedad = null;
   const desglose = [];
 
   if (svc.formas) {
@@ -3466,6 +3481,9 @@ function calcularCotizacion(entrada) {
     min = medida.precio + anos.monto;
     desglose.push({ concepto: forma.etiqueta + ", " + medida.etiqueta, monto: medida.precio });
     if (anos.monto) desglose.push({ concepto: anos.etiqueta, monto: anos.monto });
+    // Cuando no se sabe la antigüedad, el precio sale sin recargo pero
+    // con el aviso de hasta cuánto puede subir en la visita.
+    if (anos.aviso) avisoAntiguedad = anos.aviso;
 
   } else if (svc.rango) {
     min = svc.rango[0];
@@ -3513,6 +3531,7 @@ function calcularCotizacion(entrada) {
     dias: diasAlquiler,
     desglose: desglose,
     recargoZona: cob.cubierto ? cob.recargo : null,
+    avisoAntiguedad: avisoAntiguedad,
     provisional: TARIFAS.provisional,
     ivaIncluido: TARIFAS.iva.incluido,
     vigenciaDias: TARIFAS.vigenciaDias
@@ -3752,7 +3771,14 @@ async function cotizar(request, env, ctx) {
   //   'iva' → cobrar IVA 13%
   //   'exo' → exonerado (IVA 0, se rotula "Exonerado" en el documento)
   //   'no'  → sin factura electrónica (el monto sale tal cual)
-  const factura = esPanel && ["iva", "exo"].indexOf(cuerpo.factura) !== -1 ? cuerpo.factura : "no";
+  /* Quién pide factura electrónica. Desde el sitio se puede marcar
+     "iva": es la casilla del cotizador, y de ella depende que el monto
+     salga con el 13% aparte o a secas. "exo" (exonerado) sigue siendo
+     sólo del panel: es una condición tributaria que la empresa tiene
+     que verificar, no algo que el visitante declare de sí mismo. */
+  const factura = ["iva", "exo"].indexOf(cuerpo.factura) !== -1
+    ? (cuerpo.factura === "exo" && !esPanel ? "no" : cuerpo.factura)
+    : "no";
 
   const provincia = texto(cuerpo.provincia, 40);
   const canton = texto(cuerpo.canton, 60);
@@ -4007,11 +4033,21 @@ async function cotizar(request, env, ctx) {
   /* El orden importa: lo de `calculo` primero y lo de acá después. Al
      revés, el nombre que trae la tabla pisaría el que escribió el
      encargado y el panel diría "Otro" en vez de "Bombeo de pozo". */
+  /* El IVA, ya resuelto. Antes el sitio decía "al monto se le suma el
+     IVA" y dejaba la cuenta al cliente; ahora, si marcó la casilla, el
+     documento y la pantalla muestran los tres números —monto, IVA y
+     total— y si no la marcó, sale el precio y nada más. */
+  const ivaMonto = factura === "iva" ? Math.round(calculo.max * TARIFAS.iva.tasa) : 0;
+
   const salida = Object.assign(
     { ok: true, numero: numero, enlace: enlace, nombre: nombre, telefono: telefono },
     calculo,
     {
       aMano: todoAMano,
+      factura: factura,
+      ivaTasa: TARIFAS.iva.tasa,
+      ivaMonto: ivaMonto,
+      totalConIVA: factura === "iva" ? calculo.max + ivaMonto : null,
       servicioNombre: servicioLibre || calculo.servicioNombre ||
                       etiqueta(entrada.servicio, null, "servicio")
     }
@@ -4561,7 +4597,7 @@ function opcionesCotizacion() {
         medidas: Object.entries(f.medidas).map(([mk, m]) => ({ id: mk, etiqueta: m.etiqueta }))
       }));
       o.antiguedad = Object.entries(TARIFAS.antiguedad)
-        .map(([k, a]) => ({ id: k, etiqueta: a.etiqueta }));
+        .map(([k, a]) => ({ id: k, etiqueta: a.etiqueta, aviso: a.aviso || null }));
     } else if (s.porDia) {
       o.tipo = "alquiler";
       o.porDia = s.porDia;
