@@ -2953,7 +2953,7 @@
          otra. Se escribe todo a mano y se emite igual. -->
     <button type="button" class="acc-op" data-crear="certificado">
       <span class="acc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></span>
-      <b>Certificado a mano</b>
+      <b>Certificado</b>
       <span class="acc-fl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
     <button type="button" class="acc-op" data-crear="cotizacion">
@@ -3824,42 +3824,40 @@
      de otra (el dueño del local, el condominio). -->
 <div class="velo" id="velo-cert" hidden>
   <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="cl-t">
-    <h2 id="cl-t">Certificado a mano</h2>
-    <p class="hoja-cuando">Para un trabajo que no está en la herramienta, o cuando
-      el certificado va a nombre de alguien distinto de quien lo contrató.</p>
+    <h2 id="cl-t">Certificado</h2>
 
-    <div class="f">
-      <label for="cl-nombre">Cliente <small>(a quién se le emite)</small></label>
+    <div class="f req">
+      <label for="cl-nombre">Cliente</label>
       <input type="text" id="cl-nombre" autocomplete="off" maxlength="120" placeholder="PAVICEN Limitada">
     </div>
     <div class="nueva-rejilla">
       <div class="f">
-        <label for="cl-cedula">Cédula <small>(opcional)</small></label>
+        <label for="cl-cedula">Cédula</label>
         <input type="text" id="cl-cedula" autocomplete="off" maxlength="30" placeholder="3-102-036166">
       </div>
-      <div class="f">
+      <div class="f req">
         <label for="cl-fecha">Fecha de la visita</label>
         <input type="date" id="cl-fecha">
       </div>
     </div>
-    <div class="f">
+    <div class="f req">
       <label for="cl-lugar">Dirección</label>
       <input type="text" id="cl-lugar" autocomplete="off" maxlength="160" placeholder="Coyol, Alajuela">
     </div>
-    <div class="f">
+    <div class="f req">
       <label for="cl-servicio">Servicio brindado</label>
       <select id="cl-servicio"></select>
     </div>
-    <div class="f" id="cl-libre-f" hidden>
+    <div class="f req" id="cl-libre-f" hidden>
       <label for="cl-libre">¿Cuál servicio?</label>
       <input type="text" id="cl-libre" autocomplete="off" maxlength="120" placeholder="ej. Bombeo de pozo">
     </div>
     <div class="nueva-rejilla">
       <div class="f" id="cl-vol-f">
-        <label for="cl-volumen">Metros cúbicos <small>(opcional)</small></label>
+        <label for="cl-volumen">Metros cúbicos</label>
         <input type="text" id="cl-volumen" inputmode="decimal" autocomplete="off" placeholder="ej. 8">
       </div>
-      <div class="f">
+      <div class="f req">
         <label for="cl-placa">Camión</label>
         <input type="text" id="cl-placa" autocomplete="off" maxlength="15" placeholder="C146776">
       </div>
@@ -8369,7 +8367,10 @@
     $("cl-lugar").value = "";
     $("cl-libre").value = "";
     $("cl-volumen").value = "";
-    $("cl-placa").value = placaRecordada() || "";
+    /* La placa NO se rellena sola. Antes se heredaba la del último
+       trabajo y, si nadie la tocaba, el certificado salía con esa —
+       un dato que nadie escribió y que nadie revisa. Se escribe. */
+    $("cl-placa").value = "";
     $("cl-fecha").value = hoyISO();
     $("cl-aviso").textContent = "";
     $("cl-aviso").classList.remove("is-error");
@@ -8402,6 +8403,19 @@
     var aviso = $("cl-aviso");
     aviso.classList.remove("is-error");
     aviso.textContent = "";
+
+    if (!placa) {
+      aviso.textContent = "Falta la placa del camión.";
+      aviso.classList.add("is-error");
+      $("cl-placa").focus();
+      return;
+    }
+    if (sv === "__otro" && !$("cl-libre").value.trim()) {
+      aviso.textContent = "Escriba cuál fue el servicio.";
+      aviso.classList.add("is-error");
+      $("cl-libre").focus();
+      return;
+    }
 
     // La pestaña se abre antes de pedir, o el navegador la bloquea.
     var pestana = window.open("", "_blank");

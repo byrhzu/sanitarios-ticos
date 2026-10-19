@@ -4412,10 +4412,17 @@ async function certificadoSuelto(d, env) {
   const lugar = texto(d.lugar, 160);
   const fecha = soloFecha(d.fecha);
 
+  /* La placa se exige: antes caía en la del camión de siempre si no
+     venía, y un certificado terminaba afirmando que fue ese camión sin
+     que nadie lo hubiera escrito. En un papel firmado, un dato que se
+     rellena solo es un dato que nadie revisó. */
+  const placaEscrita = texto(d.placa, 15);
+
   const falta = [];
   if (!nombre) falta.push("el nombre del cliente");
   if (!lugar) falta.push("la dirección");
   if (!fecha) falta.push("la fecha de la visita");
+  if (!placaEscrita) falta.push("la placa del camión");
   if (falta.length) {
     return json({ ok: false, error: "Falta " + (falta.length === 1 ? falta[0]
       : falta.slice(0, -1).join(", ") + " y " + falta[falta.length - 1]) + "." }, 400);
@@ -4425,7 +4432,7 @@ async function certificadoSuelto(d, env) {
   const libre = texto(d.servicioLibre, 120);
   const q = certificaDe(CERTIFICA[clave] ? clave : "", libre);
   const volumen = Number(String(d.volumen == null ? "" : d.volumen).replace(",", "."));
-  const placa = (texto(d.placa, 15) || EMPRESA.placa).toUpperCase();
+  const placa = placaEscrita.toUpperCase();
 
   const datos = {
     tipo: "certificado",
