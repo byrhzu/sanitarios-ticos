@@ -559,7 +559,10 @@ body {
       // identificar a quién se le hizo el trabajo, no sólo nombrarlo.
       c.cedula ? ", cédula " : "", c.cedula ? { u: c.cedula } : "",
       c.lugar ? ", en " : "", c.lugar ? { u: c.lugar } : "",
-      " para la ", { u: q.que + "." }
+      /* El artículo viene del servidor: los de la lista son femeninos
+         ("para la recolección"), pero un servicio escrito a mano no
+         lleva ninguno — si no, sale "para la bombeo de pozo". */
+      " para " + (q.articulo == null ? "la " : q.articulo), { u: q.que + "." }
     ]);
 
     // Cuánto se sacó. Sólo si el servicio extrae algo Y hay cuánto:

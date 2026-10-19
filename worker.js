@@ -3056,27 +3056,27 @@ async function estadoCita(request, env) {
      planta   — si lo extraído va a una planta de tratamiento avalada */
 const CERTIFICA = {
   "tanques-septicos": {
-    que: "recolección de aguas residuales",
+    que: "recolección de aguas residuales", articulo: "la ",
     brindado: "Servicio de recolección de aguas residuales.",
     saca: "aguas residuales", planta: true
   },
   "trampas-grasa": {
-    que: "limpieza de trampa de grasa",
+    que: "limpieza de trampa de grasa", articulo: "la ",
     brindado: "Servicio de limpieza y recolección de trampa de grasa.",
     saca: "residuos de trampa de grasa", planta: true
   },
   "tanques-grasa": {
-    que: "limpieza de tanque de grasa",
+    que: "limpieza de tanque de grasa", articulo: "la ",
     brindado: "Servicio de limpieza y recolección de tanque de grasa.",
     saca: "residuos de grasa", planta: true
   },
   destaqueo: {
-    que: "destaqueo de tuberías",
+    que: "destaqueo de tuberías", articulo: "el ",
     brindado: "Servicio de destaqueo de tuberías.",
     saca: null, planta: false
   },
   "alquiler-tanques": {
-    que: "alquiler de tanques",
+    que: "alquiler de tanques", articulo: "el ",
     brindado: "Alquiler de tanques.",
     saca: null, planta: false
   }
@@ -3086,8 +3086,18 @@ const CERTIFICA = {
    certificado dice lo que el encargado escribió, sin inventarle ni la
    planta de tratamiento ni los metros cúbicos. */
 function certificaDe(clave, nombreLibre) {
-  return CERTIFICA[clave] || {
-    que: (nombreLibre || "el servicio contratado").toLowerCase(),
+  /* El artículo lo trae cada servicio: "la recolección" pero "el
+     destaqueo". Ponerlo fijo en la plantilla daba "para la destaqueo
+     de tuberías", que es justo el tipo de error que nadie revisa en un
+     papel que se entrega firmado. */
+  if (CERTIFICA[clave]) return CERTIFICA[clave];
+  /* Un servicio escrito a mano no lleva artículo: los de la lista son
+     todos femeninos ("la recolección", "la limpieza") y el artículo va
+     fijo en la plantilla, pero con un texto libre salía "para la bombeo
+     de pozo". Sin artículo funciona con cualquier cosa que escriban. */
+  return {
+    que: nombreLibre || "el servicio contratado",
+    articulo: "",
     brindado: nombreLibre || "Servicio contratado.",
     saca: null, planta: false
   };
@@ -4229,6 +4239,7 @@ function armarDocumento(tipo, s, c, extra) {
     const q = certificaDe(s.servicio, s.detalle);
     base.certifica = {
       que: q.que,
+      articulo: q.articulo == null ? "la " : q.articulo,
       brindado: q.brindado,
       // Los m³ sólo se dicen si de verdad se sacó algo y hay cuánto.
       saca: q.saca,
@@ -4270,8 +4281,22 @@ async function emitirDocumento(request, env) {
   catch (e) { return json({ ok: false, error: "Formato inválido" }, 400); }
 
   const tipo = TIPOS_DOC.indexOf(d.tipo) !== -1 ? d.tipo : "";
-  const servicioId = parseInt(d.servicioId, 10);
   if (!tipo) return json({ ok: false, error: "Tipo de documento inválido" }, 400);
+
+  /* Certificado suelto: sin servicio detrás.
+
+     Pasa cuando el trabajo no entró por la herramienta, o cuando lo
+     contrató una empresa y el certificado va a nombre de otra —el
+     dueño del local, el condominio—. Ahí no hay servicio al que
+     colgarse, así que los datos vienen escritos a mano.
+
+     Se guarda igual, con servicio_id 0. No es por tener el dato: es
+     por el NÚMERO. Si estos no gastaran correlativo, dos certificados
+     distintos podrían salir con el mismo 2026-07X y eso es
+     exactamente lo que no puede pasar ante Salud. */
+  if (d.libre === true) return certificadoSuelto(d, env);
+
+  const servicioId = parseInt(d.servicioId, 10);
   if (!Number.isFinite(servicioId)) return json({ ok: false, error: "Servicio inválido" }, 400);
 
   try {
@@ -4379,6 +4404,74 @@ async function emitirDocumento(request, env) {
   }
 }
 
+/* Un certificado escrito a mano, sin servicio detrás. Mismo formato,
+   mismo correlativo, misma llave pública: desde afuera no se distingue
+   de los demás, que es como tiene que ser. */
+async function certificadoSuelto(d, env) {
+  const nombre = texto(d.nombre, 120);
+  const lugar = texto(d.lugar, 160);
+  const fecha = soloFecha(d.fecha);
+
+  const falta = [];
+  if (!nombre) falta.push("el nombre del cliente");
+  if (!lugar) falta.push("la dirección");
+  if (!fecha) falta.push("la fecha de la visita");
+  if (falta.length) {
+    return json({ ok: false, error: "Falta " + (falta.length === 1 ? falta[0]
+      : falta.slice(0, -1).join(", ") + " y " + falta[falta.length - 1]) + "." }, 400);
+  }
+
+  const clave = texto(d.servicio, 40);
+  const libre = texto(d.servicioLibre, 120);
+  const q = certificaDe(CERTIFICA[clave] ? clave : "", libre);
+  const volumen = Number(String(d.volumen == null ? "" : d.volumen).replace(",", "."));
+  const placa = (texto(d.placa, 15) || EMPRESA.placa).toUpperCase();
+
+  const datos = {
+    tipo: "certificado",
+    empresa: EMPRESA,
+    emitido: new Date().toISOString().slice(0, 10),
+    // Sin ficha de cliente: lo que se escribió es lo que hay.
+    cliente: { nombre, cedula: texto(d.cedula, 30) || null, telefono: null,
+               correo: null, lugar, senas: null },
+    servicio: {
+      nombre: libre || (CERTIFICA[clave] ? q.brindado : "Servicio contratado"),
+      clave: clave || null,
+      fecha,
+      fechaLarga: fechaConDia(fecha),
+      detalle: null
+    },
+    certifica: {
+      que: q.que,
+      articulo: q.articulo == null ? "la " : q.articulo,
+      brindado: libre || q.brindado,
+      saca: q.saca,
+      volumen: q.saca && volumen > 0 ? volumen : null,
+      planta: !!q.planta,
+      plantaProvincia: EMPRESA.plantaProvincia,
+      placa
+    }
+  };
+
+  try {
+    const numero = await numeroSiguiente(env, "certificado", new Date().getFullYear());
+    const llave = nuevaLlave();
+    await env.DB.prepare(
+      `INSERT INTO documentos (tipo, numero, llave, servicio_id, cliente_id, datos)
+       VALUES ('certificado', ?1, ?2, 0, NULL, ?3)`
+    ).bind(numero, llave, JSON.stringify(Object.assign({ numero }, datos))).run();
+
+    return json({ ok: true, tipo: "certificado", numero, llave,
+      url: `/documento?t=certificado&n=${encodeURIComponent(numero)}&k=${encodeURIComponent(llave)}` });
+  } catch (e) {
+    console.error("No se pudo emitir el certificado suelto:", e);
+    if (/no such table|no such column/i.test(String(e && e.message))) {
+      return json({ ok: false, error: "Falta correr la migración de documentos en la base." }, 500);
+    }
+    return json({ ok: false, error: "No se pudo emitir el certificado" }, 500);
+  }
+}
+
 /* Leer un documento emitido. Público, por número y llave — igual que
    las cotizaciones: el cliente abre el enlace sin entrar al panel. */
 async function verDocumento(request, env) {
@@ -4410,6 +4503,16 @@ async function verDocumento(request, env) {
 
   datos.numero = f.numero;
   if (f.creado) datos.emitido = f.creado.slice(0, 10);
+
+  /* Los certificados emitidos antes de que el artículo se guardara no
+     lo traen, y sin él la plantilla pone "la" — que a un destaqueo le
+     queda mal. Se deduce del texto congelado, así los ya entregados
+     salen bien al volverlos a abrir sin tener que rehacerlos. */
+  if (datos.certifica && datos.certifica.articulo == null) {
+    const match = Object.values(CERTIFICA).find((c) => c.que === datos.certifica.que);
+    datos.certifica.articulo = match ? match.articulo : "la ";
+  }
+
   return json(Object.assign({ ok: true }, datos));
 }
 

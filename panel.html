@@ -31,7 +31,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=20261017g">
+<link rel="stylesheet" href="styles.css?v=20261019a">
 <style>
   /* =========================================================
      Panel interno — v3
@@ -2948,6 +2948,14 @@
       <b>Nuevo cliente</b>
       <span class="acc-fl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
     </button>
+    <!-- Un certificado sin servicio detrás: el trabajo no entró por la
+         herramienta, o lo contrató una empresa y el papel va a nombre de
+         otra. Se escribe todo a mano y se emite igual. -->
+    <button type="button" class="acc-op" data-crear="certificado">
+      <span class="acc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></span>
+      <b>Certificado a mano</b>
+      <span class="acc-fl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+    </button>
     <button type="button" class="acc-op" data-crear="cotizacion">
       <span class="acc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5V5a2 2 0 0 1 2-2h6.5a2 2 0 0 1 1.4.6l7.5 7.5a2 2 0 0 1 0 2.8l-6.6 6.6a2 2 0 0 1-2.8 0L3.6 13a2 2 0 0 1-.6-1.5z"/><circle cx="7.5" cy="7.5" r="1.4"/></svg></span>
       <b>Nueva cotización</b>
@@ -3806,6 +3814,60 @@
     <div class="hoja-pie">
       <button type="button" class="btn-suave" id="h-saltar">Sólo marcar como hecho</button>
       <button type="button" class="btn-fuerte" id="h-guardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Certificado escrito a mano, sin servicio detrás. Los mismos datos
+     que lleva cualquier certificado, pero tecleados: el trabajo no entró
+     por la herramienta, o lo contrató una empresa y el papel va a nombre
+     de otra (el dueño del local, el condominio). -->
+<div class="velo" id="velo-cert" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="cl-t">
+    <h2 id="cl-t">Certificado a mano</h2>
+    <p class="hoja-cuando">Para un trabajo que no está en la herramienta, o cuando
+      el certificado va a nombre de alguien distinto de quien lo contrató.</p>
+
+    <div class="f">
+      <label for="cl-nombre">Cliente <small>(a quién se le emite)</small></label>
+      <input type="text" id="cl-nombre" autocomplete="off" maxlength="120" placeholder="PAVICEN Limitada">
+    </div>
+    <div class="nueva-rejilla">
+      <div class="f">
+        <label for="cl-cedula">Cédula <small>(opcional)</small></label>
+        <input type="text" id="cl-cedula" autocomplete="off" maxlength="30" placeholder="3-102-036166">
+      </div>
+      <div class="f">
+        <label for="cl-fecha">Fecha de la visita</label>
+        <input type="date" id="cl-fecha">
+      </div>
+    </div>
+    <div class="f">
+      <label for="cl-lugar">Dirección</label>
+      <input type="text" id="cl-lugar" autocomplete="off" maxlength="160" placeholder="Coyol, Alajuela">
+    </div>
+    <div class="f">
+      <label for="cl-servicio">Servicio brindado</label>
+      <select id="cl-servicio"></select>
+    </div>
+    <div class="f" id="cl-libre-f" hidden>
+      <label for="cl-libre">¿Cuál servicio?</label>
+      <input type="text" id="cl-libre" autocomplete="off" maxlength="120" placeholder="ej. Bombeo de pozo">
+    </div>
+    <div class="nueva-rejilla">
+      <div class="f" id="cl-vol-f">
+        <label for="cl-volumen">Metros cúbicos <small>(opcional)</small></label>
+        <input type="text" id="cl-volumen" inputmode="decimal" autocomplete="off" placeholder="ej. 8">
+      </div>
+      <div class="f">
+        <label for="cl-placa">Camión</label>
+        <input type="text" id="cl-placa" autocomplete="off" maxlength="15" placeholder="C146776">
+      </div>
+    </div>
+    <p class="estado-linea" id="cl-aviso" role="status" aria-live="polite"></p>
+    <div class="hoja-pie">
+      <button type="button" class="btn-suave" id="cl-cancelar">Cancelar</button>
+      <button type="button" class="btn-fuerte" id="cl-crear">Crear certificado</button>
     </div>
   </div>
 </div>
@@ -8280,6 +8342,99 @@
     $("doc-volumen").focus();
   }
 
+  /* =========================================================
+     Certificado a mano
+     =========================================================
+
+     Sin servicio detrás: los datos se escriben. Se emite igual que
+     cualquier otro —mismo formato, mismo correlativo, mismo enlace—
+     porque desde afuera no tiene por qué distinguirse. */
+
+  // Los servicios que extraen algo piden m³; los demás, no.
+  var SV_CERT = [
+    { id: "tanques-septicos", et: "Limpieza de tanque séptico", vol: true },
+    { id: "trampas-grasa",    et: "Limpieza de trampa de grasa", vol: true },
+    { id: "tanques-grasa",    et: "Limpieza de tanque de grasa", vol: true },
+    { id: "destaqueo",        et: "Destaqueo de tuberías",       vol: false },
+    { id: "alquiler-tanques", et: "Alquiler de tanques",         vol: false },
+    { id: "__otro",           et: "Otro (lo escribo)",           vol: false }
+  ];
+
+  function abrirCertificadoLibre() {
+    $("cl-servicio").innerHTML = SV_CERT.map(function (o) {
+      return '<option value="' + o.id + '">' + escHtml(o.et) + "</option>";
+    }).join("");
+    $("cl-nombre").value = "";
+    $("cl-cedula").value = "";
+    $("cl-lugar").value = "";
+    $("cl-libre").value = "";
+    $("cl-volumen").value = "";
+    $("cl-placa").value = placaRecordada() || "";
+    $("cl-fecha").value = hoyISO();
+    $("cl-aviso").textContent = "";
+    $("cl-aviso").classList.remove("is-error");
+    ajustarCertLibre();
+    $("velo-cert").hidden = false;
+    $("cl-nombre").focus();
+  }
+
+  // El campo de m³ y el de "¿cuál servicio?" aparecen según lo escogido.
+  function ajustarCertLibre() {
+    var v = $("cl-servicio").value;
+    var o = SV_CERT.filter(function (x) { return x.id === v; })[0] || {};
+    $("cl-vol-f").hidden = !o.vol;
+    $("cl-libre-f").hidden = v !== "__otro";
+  }
+  $("cl-servicio").addEventListener("change", ajustarCertLibre);
+
+  function cerrarCertLibre() { $("velo-cert").hidden = true; }
+  $("cl-cancelar").addEventListener("click", cerrarCertLibre);
+  $("velo-cert").addEventListener("click", function (e) {
+    if (e.target === $("velo-cert")) cerrarCertLibre();
+  });
+
+  $("cl-crear").addEventListener("click", function () {
+    var b = this;
+    var sv = $("cl-servicio").value;
+    var placa = $("cl-placa").value.trim().toUpperCase();
+    if (placa) recordarYDevolverPlaca(placa);
+
+    var aviso = $("cl-aviso");
+    aviso.classList.remove("is-error");
+    aviso.textContent = "";
+
+    // La pestaña se abre antes de pedir, o el navegador la bloquea.
+    var pestana = window.open("", "_blank");
+    b.disabled = true; b.textContent = "Creando…";
+
+    pedir("/api/panel/documento", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tipo: "certificado", libre: true,
+        nombre: $("cl-nombre").value.trim(),
+        cedula: $("cl-cedula").value.trim(),
+        lugar: $("cl-lugar").value.trim(),
+        fecha: $("cl-fecha").value,
+        servicio: sv === "__otro" ? "" : sv,
+        servicioLibre: sv === "__otro" ? $("cl-libre").value.trim() : "",
+        volumen: $("cl-volumen").value.trim().replace(",", "."),
+        placa: placa
+      })
+    })
+      .then(function (d) {
+        cerrarCertLibre();
+        if (pestana) pestana.location = d.url;
+        else location.href = d.url;
+        avisar("Listo: certificado " + d.numero + ".");
+      })
+      .catch(function (err) {
+        if (pestana) pestana.close();
+        aviso.textContent = String((err && err.message) || "No se pudo crear el certificado.");
+        aviso.classList.add("is-error");
+      })
+      .then(function () { b.disabled = false; b.textContent = "Crear certificado"; });
+  });
+
   function cerrarDoc() {
     $("velo-doc").hidden = true;
     docPendiente = null;
@@ -9392,6 +9547,7 @@
       var q = b.dataset.crear;
       if (q === "servicio") return abrirCita(ag2.dia ? { fecha: ag2.dia } : {});
       if (q === "cliente") return abrirNuevoCliente();
+      if (q === "certificado") return abrirCertificadoLibre();
       prellenar = null;
       irA("nueva", {});
     });
