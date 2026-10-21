@@ -1472,9 +1472,17 @@ async function resumenPanel(request, env) {
 
        Los que ya tienen visita agendada NO entran: están resueltos,
        aunque su fecha no haya llegado. */
-    const AVISO_MANT_DIAS = 3;
-    const mantVencidos = proximos.filter((p) => !p.yaAgendado && p.dias <= AVISO_MANT_DIAS);
-    const mantSemana = proximos.filter((p) => !p.yaAgendado && p.dias > AVISO_MANT_DIAS && p.dias <= 7);
+    /* El AVISO (la notificación, el correo) sale tres días antes: es la
+       alarma, y una alarma que suena un mes antes no es una alarma.
+
+       La LISTA de Pendientes es otra cosa: es el trabajo que hay por
+       delante, y ahí caben los del mes. Con "Posponer" y "No lo quiere"
+       ya no se acumulan para siempre, que era el miedo de tenerlos
+       todos ahí. Los que pasan del mes viven en la hoja de
+       Mantenimientos, con sus mismos botones. */
+    const HORIZONTE_MANT = 30;
+    const mantVencidos = proximos.filter((p) => !p.yaAgendado && p.dias <= HORIZONTE_MANT);
+    const mantSemana = proximos.filter((p) => !p.yaAgendado && p.dias > HORIZONTE_MANT && p.dias <= 60);
 
     return json({
       ok: true,
@@ -2131,8 +2139,15 @@ async function listaMantenimientos(request, env) {
     const { results } = await env.DB.prepare(
       `SELECT m.id, m.tipo, m.fecha, m.estado, m.meses, m.reemplazado_por,
               so.fecha AS hechoFecha,
-              c.id AS cliente_id, c.nombre, c.telefono, c.canton, c.provincia, c.recordatorio,
-              CAST(julianday(m.fecha) - julianday(date('now','-6 hours')) AS INTEGER) AS dias
+              c.id AS cliente_id, c.nombre, c.telefono, c.canton, c.provincia,
+              c.distrito, c.senas, c.recordatorio,
+              CAST(julianday(m.fecha) - julianday(date('now','-6 hours')) AS INTEGER) AS dias,
+              /* ¿Ya hay visita agendada para este cliente y este tipo?
+                 La lista lo dice en vez de ofrecer agendar otra vez. */
+              (SELECT sp.fecha FROM servicios sp
+                WHERE sp.cliente_id = m.cliente_id AND sp.servicio = m.tipo
+                  AND sp.estado IN ('programado','en_proceso') AND sp.papelera IS NULL
+                ORDER BY sp.fecha LIMIT 1) AS yaAgendado
          FROM mantenimientos m
          JOIN clientes c ON c.id = m.cliente_id
          LEFT JOIN servicios so ON so.id = m.servicio_id
@@ -2143,9 +2158,19 @@ async function listaMantenimientos(request, env) {
     const items = (results || []).map((m) => ({
       id: m.id, clienteId: m.cliente_id, nombre: m.nombre, telefono: m.telefono || null,
       servicio: etiqueta(m.tipo, null, "servicio"), tipo: m.tipo,
+      // La clave cruda y la dirección entera: de acá sale el formulario
+      // de agendar ya lleno, sin que nadie reescriba nada.
+      servicioKey: m.tipo,
+      provincia: m.provincia || null, canton: m.canton || null,
+      distrito: m.distrito || null, senas: m.senas || null,
       lugar: [m.canton, m.provincia].filter(Boolean).join(", ") || null,
-      fecha: m.fecha, hechoFecha: m.hechoFecha || null, estado: m.estado,
-      dias: m.dias, recordatorio: !!m.recordatorio
+      fecha: m.fecha, proximo: m.fecha,
+      hechoFecha: m.hechoFecha || null, estado: m.estado,
+      dias: m.dias, recordatorio: !!m.recordatorio,
+      yaAgendado: m.yaAgendado || null,
+      wa: waDe(m.telefono, "Buenas" + (m.nombre ? " " + primerNombre(m.nombre) : "") +
+               ", le escribo de Sanitarios Ticos: ya le toca el mantenimiento de " +
+               etiqueta(m.tipo, null, "servicio").toLowerCase() + ". ¿Qué día le sirve?")
     }));
 
     // Un mantenimiento 'programado' con fecha pasada es un VENCIDO: se

@@ -1775,7 +1775,22 @@
      El número es lo que se mira; la etiqueta y la fecha lo acompañan.
      La fecha va separada por un filete y no por un punto medio: un
      punto pega dos datos distintos como si fueran uno. */
+  .mant-caja {
+    border: 1px solid var(--p-borde); border-radius: var(--radio-chico);
+    padding: .2rem .8rem .2rem; margin-bottom: .5rem; background: var(--p-tarj);
+  }
   .mant-fila { align-items: center; }
+  .mant-caja .mant-fila { border: 0; background: none; padding-left: 0; padding-right: 0; }
+  /* Las acciones, pegadas bajo su fila y separadas por un filete: son
+     de ESE mantenimiento, no de la lista. */
+  .mant-acc {
+    display: flex; flex-wrap: wrap; gap: .4rem;
+    padding: .1rem 0 .7rem; margin-top: -.2rem;
+  }
+  .mant-ya {
+    display: block; padding: .1rem 0 .7rem;
+    font-size: .8rem; color: var(--est-ok-tx);
+  }
   .mant-der {
     display: flex; flex-direction: column; align-items: flex-end;
     gap: .4rem; flex: 0 0 auto;
@@ -4612,10 +4627,16 @@
     try { visto = localStorage.getItem(AM_VISTO) || ""; } catch (e) {}
     // La marca lleva la cuenta y el día: cambia cualquiera de los dos y
     // el aviso vuelve.
-    var marca = hoyISO() + ":" + n;
+    var marca = hoyISO() + ":" + (lista.filter(function (x) { return x.dias <= 7; }).length);
     if (visto === marca) { caja.hidden = true; return; }
 
-    var vencidos = lista.filter(function (x) { return x.dias < 0; }).length;
+    /* El aviso de arriba cuenta sólo lo que urge —vencidos y los de
+       esta semana—, no el mes entero: un aviso que dice 30 no hace que
+       nadie haga nada. La lista de abajo sí trae el mes. */
+    var urgentes = lista.filter(function (x) { return x.dias <= 7; });
+    n = urgentes.length;
+    if (!n) { caja.hidden = true; return; }
+    var vencidos = urgentes.filter(function (x) { return x.dias < 0; }).length;
     var txt = n === 1 ? "Hay <b>1 mantenimiento</b> por hacer"
                       : "Hay <b>" + n + " mantenimientos</b> por hacer";
     if (vencidos) {
@@ -7590,17 +7611,45 @@
     return Number(p[2]) + " " + mes + (p[0] === hoyISO().slice(0, 4) ? "" : " " + p[0]);
   }
 
+  /* Los mantenimientos de la hoja se guardan por índice para que los
+     botones no tengan que cargar el registro entero en un atributo. */
+  var MANT_LISTA = [];
+
   function filaMant(m, mostrarDias) {
     var es = MANT_EST[m.estado] || { t: m.estado, cls: "mudo" };
-    return '<div class="toca-fila mant-fila" data-cliente="' + m.clienteId + '">' +
-      '<div class="toca-quien"><b>' + escHtml(m.nombre) + "</b><small>" +
-        piezas([m.servicio, m.lugar]) + "</small></div>" +
-      '<div class="mant-der">' +
-        '<span class="pastilla ' + es.cls + '">' + escHtml(es.t) + "</span>" +
-        (mostrarDias ? cuentaMant(m)
-                     : '<span class="mant-cuenta"><span class="mc-f">' +
-                       escHtml(fechaCorta(m.fecha)) + "</span></span>") +
-      "</div></div>";
+    var ix = MANT_LISTA.push(m) - 1;
+
+    /* Las acciones viven acá también, no sólo en Pendientes. En
+       Pendientes salen los que ya urgen; acá está la lista entera, y es
+       donde uno entra cuando el cliente llama antes de tiempo — que es
+       justo cuando hay que poder agendarle sin dar vueltas. */
+    var acc = "";
+    if (m.estado === "programado") {
+      if (m.yaAgendado) {
+        acc = '<span class="mant-ya">Ya tiene visita el ' +
+              escHtml(fechaCorta(m.yaAgendado)) + "</span>";
+      } else {
+        acc = '<div class="mant-acc">' +
+          (m.wa ? '<a class="bt chico wa" href="' + escHtml(m.wa) + '" target="_blank" rel="noopener">' +
+                  ICO.wa + "Escribirle</a>" : "") +
+          '<button type="button" class="bt chico fuerte" data-mant-agendar="' + ix + '">Agendar</button>' +
+          '<button type="button" class="bt chico" data-mant-posponer="' + ix + '">Posponer</button>' +
+          '<button type="button" class="bt chico malo" data-mant-no="' + ix + '">No lo quiere</button>' +
+        "</div>";
+      }
+    }
+
+    return '<div class="mant-caja">' +
+      '<div class="toca-fila mant-fila clic" data-cliente="' + m.clienteId + '">' +
+        '<div class="toca-quien"><b>' + escHtml(m.nombre) + "</b><small>" +
+          piezas([m.servicio, m.lugar]) + "</small></div>" +
+        '<div class="mant-der">' +
+          '<span class="pastilla ' + es.cls + '">' + escHtml(es.t) + "</span>" +
+          (mostrarDias ? cuentaMant(m)
+                       : '<span class="mant-cuenta"><span class="mc-f">' +
+                         escHtml(fechaCorta(m.fecha)) + "</span></span>") +
+        "</div></div>" + acc +
+    "</div>";
   }
 
   function grupoMant(titulo, lista, mostrarDias) {
@@ -7609,6 +7658,32 @@
       '<span class="n">' + lista.length + "</span></h3>" +
       '<div class="fichas">' + lista.map(function (m) { return filaMant(m, mostrarDias); }).join("") + "</div></div>";
   }
+
+  /* Las tres respuestas, también desde la hoja de Mantenimientos.
+     Mismas funciones que en Pendientes: un mantenimiento es el mismo
+     registro se mire desde donde se mire. */
+  $("mant-cuerpo").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-mant-agendar],[data-mant-posponer],[data-mant-no]");
+    if (!b) { 
+      var f = e.target.closest("[data-cliente]");
+      if (f && !e.target.closest("a")) { $("velo-mantenimientos").hidden = true; verCliente(f.dataset.cliente); }
+      return;
+    }
+    e.stopPropagation();
+    var m = MANT_LISTA[Number(b.dataset.mantAgendar != null ? b.dataset.mantAgendar
+                            : b.dataset.mantPosponer != null ? b.dataset.mantPosponer
+                            : b.dataset.mantNo)];
+    if (!m) return;
+    if (b.dataset.mantAgendar != null) {
+      $("velo-mantenimientos").hidden = true;
+      return abrirCita({ cliente: m });
+    }
+    if (b.dataset.mantPosponer != null) {
+      $("velo-mantenimientos").hidden = true;
+      return abrirPosponer(m);
+    }
+    return cerrarMantenimiento(m, b);
+  });
 
   function marcarMant(n) {
     var e = $("mant-n"); e.textContent = String(n || 0); e.hidden = !n;
@@ -7620,6 +7695,7 @@
     $("velo-mantenimientos").hidden = false;
     pedir("/api/panel/mantenimientos").then(function (d) {
       marcarMant((d.counts && d.counts.vencidos) || 0);
+      MANT_LISTA = [];
       var html = grupoMant("Vencidos", d.vencidos, true) +
                  grupoMant("Próximos", d.proximos, true) +
                  grupoMant("Historial", d.historial, false);
