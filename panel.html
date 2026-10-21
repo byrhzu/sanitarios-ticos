@@ -9157,7 +9157,10 @@
         $("estado-agenda").textContent = "";
         if (!ag2.dia) { ag2.dia = hoyISO(); ag2.ancla = new Date(ag2.dia + "T12:00:00"); }
         pintarAg2();
-        marcar("pend-agenda", d.resumen.vencidos);
+        /* El contador de Agenda cuenta lo de la Agenda: trabajos cuya
+           fecha ya pasó y nadie cerró. Los mantenimientos ya no se
+           cuentan acá porque ya no se muestran acá. */
+        marcar("pend-agenda", d.resumen.sinCerrar || 0);
         sellar();
       })
       .catch(function () {

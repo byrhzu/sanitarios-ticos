@@ -2854,6 +2854,12 @@ async function agendaPanel(request, env) {
       citas,
       completados,
       resumen: {
+        /* Lo que la AGENDA tiene pendiente: trabajos cuya fecha ya pasó
+           y nadie cerró. Antes el contador de Agenda traía los
+           mantenimientos vencidos, pero los mantenimientos salieron de
+           la agenda: el número señalaba algo que ya no estaba ahí. Esos
+           se cuentan en Pendientes, que es donde viven. */
+        sinCerrar: citas.filter((c) => c.dias < 0).length,
         vencidos: activos.filter((i) => i.dias < 0).length,
         mes:      activos.filter((i) => i.dias >= 0 && i.dias <= 30).length,
         trimestre:activos.filter((i) => i.dias >= 0 && i.dias <= 90).length,
