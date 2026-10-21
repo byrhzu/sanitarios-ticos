@@ -4081,17 +4081,20 @@
      repite). Hay uno programado a la vez; al hacerse, nace el siguiente. -->
 <div class="velo" id="velo-mant-ed" hidden>
   <div class="hoja hoja-form" role="dialog" aria-modal="true" aria-labelledby="me-t">
-    <h2 id="me-t">Mantenimiento</h2>
+    <!-- Un mantenimiento es un RECORDATORIO, no una visita. Lo que se
+         agenda es un servicio; el recordatorio sólo dice cuándo tocaría.
+         Las palabras de esta hoja tienen que decir eso. -->
+    <h2 id="me-t">Recordatorio de mantenimiento</h2>
     <p class="dim" id="me-sub" style="color:var(--p-tenue); margin:.3rem 0 1rem;"></p>
     <input type="hidden" id="me-id">
     <div class="nueva-rejilla">
       <div class="f req"><label for="me-tipo">Servicio</label><select id="me-tipo"></select></div>
-      <div class="f req"><label for="me-fecha">Próxima fecha</label><input type="date" id="me-fecha"></div>
+      <div class="f req"><label for="me-fecha">Avisar el</label><input type="date" id="me-fecha"></div>
       <div class="f req"><label for="me-meses">Se repite cada</label><select id="me-meses"></select></div>
     </div>
     <p class="estado-linea" id="me-aviso" role="status" aria-live="polite"></p>
     <div class="hoja-pie">
-      <button type="button" class="btn-suave malo" id="me-quitar" hidden>Quitar mantenimiento</button>
+      <button type="button" class="btn-suave malo" id="me-quitar" hidden>Quitar el recordatorio</button>
       <button type="button" class="btn-suave" id="me-cerrar">Cancelar</button>
       <button type="button" class="btn-fuerte" id="me-guardar">Guardar</button>
     </div>
@@ -4832,8 +4835,10 @@
   }
 
   /* Cada tipo trae su dato fuerte, su etiqueta y la acción que lo resuelve.
-     Resolverlo lo saca de acá: agendar un mantenimiento vencido lo manda a
-     la Agenda, porque pasó a tener fecha. Ése es el hilo. */
+     Resolverlo lo saca de acá. Ojo con la palabra: un mantenimiento no
+     se agenda — lo que se agenda es un SERVICIO nuevo del mismo tipo, y
+     ese servicio, al completarse, deja el siguiente recordatorio. El
+     mantenimiento es el aviso de que toca, no la visita. */
   function tarjetaPend(g, x, i) {
     var clave = g.id + ":" + i;
     var abierto = pendAbierto === clave;
@@ -7063,7 +7068,7 @@
     var hayProg = mants.some(function (x) { return x.estado === "programado"; });
     var expMant = '<div class="tarj exp-tarj">' +
       '<div class="tarj-h"><h3>Mantenimientos' + (mants.length ? ' <span class="exp-n">' + mants.length + "</span>" : "") + "</h3>" +
-        (hayProg ? "" : '<button type="button" class="bt fuerte exp-add" data-mant-nuevo>' + ICO.mas + "Programar</button>") + "</div>" +
+        (hayProg ? "" : '<button type="button" class="bt fuerte exp-add" data-mant-nuevo>' + ICO.mas + "Poner recordatorio</button>") + "</div>" +
       (mants.length ? '<ul class="exp-list">' + mants.map(function (x) {
         var et = { programado: "", hecho: "Hecho", reemplazado: "Reemplazado", cancelado: "Quitado" }[x.estado];
         var prog = x.estado === "programado";
