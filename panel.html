@@ -1013,7 +1013,21 @@
   :root[data-tema="oscuro"] .ag2-d[aria-pressed="true"] .n { background: var(--p-sup2); box-shadow: none; }
   /* Un punto por trabajo, hasta tres: dice cuánto hay sin poner un número. */
   .ag2-d .pts { display: flex; gap: 2px; height: 4px; align-items: center; color: var(--p-acento); }
-  .ag2-d .pts i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; display: block; }
+  /* El punto toma el color de su servicio (--pt), los mismos de las
+     píldoras. Un día con dos tanques y un destaqueo se lee de un
+     vistazo, en vez de decir sólo "hay tres cosas". El trabajo ya
+     hecho va hueco: cuenta, pero no pide nada. */
+  .ag2-d .pts i {
+    width: 5px; height: 5px; border-radius: 50%; display: block;
+    background: var(--pt, currentColor);
+  }
+  .ag2-d .pts i.hecho { background: none; box-shadow: inset 0 0 0 1.5px var(--pt, currentColor); }
+  /* En el día escogido y en hoy, el fondo es fuerte y los colores de
+     servicio no se leen encima: ahí el punto vuelve a ser neutro. */
+  .ag2-d[aria-pressed="true"] .pts i, .ag2-d.hoy .pts i { background: currentColor; }
+  .ag2-d[aria-pressed="true"] .pts i.hecho, .ag2-d.hoy .pts i.hecho {
+    background: none; box-shadow: inset 0 0 0 1.5px currentColor;
+  }
 
   /* ---- La hoja del día ---- */
   .ag2-hoja {
@@ -4448,7 +4462,9 @@
       tono: "var(--est-curso-tx)" },
     { id: "cobros",       titulo: "Cobros pendientes",         corto: "Cobros",
       tono: "var(--est-mal-tx)" },
-    { id: "mantenimientos", titulo: "Mantenimientos vencidos",  corto: "Mantenimientos",
+    /* "Vencidos" ya no: entran desde tres días antes de la fecha, que
+       es cuando todavía se puede hacer algo con ellos. */
+    { id: "mantenimientos", titulo: "Mantenimientos por hacer",  corto: "Mantenimientos",
       tono: "var(--est-espera-tx)" },
     { id: "solicitudes",  titulo: "Solicitudes nuevas",         corto: "Solicitudes",
       tono: "var(--p-primario)" },
@@ -4544,9 +4560,19 @@
       acc.push('<button type="button" class="bt" data-cliente="' + x.clienteId + '">Ver cliente</button>');
 
     } else if (g.id === "mantenimientos") {
+      /* Ahora entran desde tres días antes, así que "Vencido" ya no
+         vale para todos: el que todavía no llega dice cuántos días le
+         faltan. Es la diferencia entre avisar y regañar. */
       cuanto = cuando(x.dias);
-      etq = "Vencido";
+      etq = x.dias < 0 ? "Vencido" : x.dias === 0 ? "Hoy" : "Ya viene";
       det = filaDet(I_NOTA_AG, x.servicio) + filaDet(I_PIN_AG, x.lugar);
+      /* Primero escribirle, después agendar: el mantenimiento no se
+         hace el día del calendario, se hace el día que el cliente
+         pueda. El WhatsApp ya va con la pregunta escrita. */
+      if (x.wa) {
+        acc.push('<a class="bt wa" href="' + escHtml(x.wa) + '" target="_blank" rel="noopener">' +
+          ICO.wa + "Escribirle</a>");
+      }
       acc.push('<button type="button" class="bt fuerte" data-pagendar="' + escHtml(x.nombre) +
         "|" + escHtml(x.telefono || "") + '">Agendar</button>');
       acc.push('<button type="button" class="bt" data-cliente="' + x.clienteId + '">Ver cliente</button>');
@@ -8764,19 +8790,27 @@
       });
   }
 
-  /* Lo de un día: lo agendado, lo ya hecho y a quién le toca. Son tres
-     cosas distintas y se pintan distinto, pero viven en el mismo día. */
+  /* Lo de un día: lo agendado y lo ya hecho. NADA MÁS.
+
+     Los mantenimientos salieron de acá. Eran una fecha de calendario,
+     no una visita: el camión no sale ese día, sale el que el cliente
+     diga. Puestos en la agenda se leían como trabajo pendiente y
+     ensuciaban el único lugar donde hay que poder confiar —"esto es lo
+     que hay que ir a hacer"—. Pasó con Eco Huellas: la visita el lunes
+     y el recordatorio el martes, como si fueran dos cosas.
+
+     Ahora viven sólo en Pendientes, y avisan tres días antes. */
   function deDiaAg(iso) {
     var orden = function (a, b) { return (a.hora || "99").localeCompare(b.hora || "99"); };
     return {
       citas: (AGENDA.citas || []).filter(function (c) { return c.fecha === iso; }).sort(orden),
       hechos: (AGENDA.completados || []).filter(function (c) { return c.fecha === iso; }).sort(orden),
-      toca: (AGENDA.items || []).filter(function (i) { return i.recordatorio && i.proximo === iso; })
+      toca: []
     };
   }
   function cuantosAg(iso) {
     var g = deDiaAg(iso);
-    return g.citas.length + g.hechos.length + g.toca.length;
+    return g.citas.length + g.hechos.length;
   }
 
   function pintarAg2() { pintarAg2Tira(); pintarAg2Hoja(); }
@@ -8811,8 +8845,17 @@
   }
 
   function celdaAg2(d, hoy, fuera, soloNum) {
-    var f = isoDe(d), n = cuantosAg(f), pts = "";
-    for (var i = 0; i < Math.min(n, 3); i++) pts += "<i></i>";
+    var f = isoDe(d), g = deDiaAg(f), pts = "";
+    /* Cada punto del color de su servicio, los mismos de las píldoras:
+       de un vistazo se ve que el martes hay dos tanques y un destaqueo,
+       no sólo "hay tres cosas". Lo hecho va con el punto hueco. */
+    var delDia = g.citas.concat(g.hechos);
+    for (var i = 0; i < Math.min(delDia.length, 3); i++) {
+      var c = delDia[i];
+      var hecho = i >= g.citas.length;
+      pts += '<i style="--pt:' + svAg(c.servicioKey || "").c + '"' +
+             (hecho ? ' class="hecho"' : "") + "></i>";
+    }
     return '<button type="button" class="ag2-d' + (fuera ? " fuera" : "") +
       (f === hoy ? " hoy" : "") + '" data-dia-ag="' + f + '"' +
       ' aria-pressed="' + (f === ag2.dia) + '">' +

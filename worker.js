@@ -1173,9 +1173,20 @@ async function resumenPanel(request, env) {
            AND ${dia} <= date('now', '-6 hours', '-${Math.max(1, TARIFAS.vigenciaDias - 5)} days')`),
       /* 15 · los mantenimientos que vienen. Sólo el último trabajo de
              cada cliente y sólo si tiene el recordatorio prendido. */
-      q(`SELECT m.fecha AS proximo, so.fecha AS fecha, m.tipo AS servicio, c.id AS cliente_id, c.nombre,
+      q(`SELECT m.id AS mant_id, m.fecha AS proximo, so.fecha AS fecha, m.tipo AS servicio,
+                c.id AS cliente_id, c.nombre,
                 c.telefono, c.canton, c.provincia,
-                CAST(julianday(m.fecha) - julianday(date('now','-6 hours')) AS INTEGER) AS dias
+                CAST(julianday(m.fecha) - julianday(date('now','-6 hours')) AS INTEGER) AS dias,
+                /* ¿Ya hay una visita agendada para este cliente y este tipo?
+                   Si la hay, el mantenimiento está resuelto en la práctica
+                   aunque su fecha todavía no llegue: el cliente llamó antes
+                   y la vuelta ya está en el calendario. Sin esto, el
+                   recordatorio seguía apareciendo como pendiente al lado de
+                   la visita que lo resuelve — el caso de Eco Huellas. */
+                (SELECT sp.fecha FROM servicios sp
+                  WHERE sp.cliente_id = m.cliente_id AND sp.servicio = m.tipo
+                    AND sp.estado IN ('programado','en_proceso') AND sp.papelera IS NULL
+                  ORDER BY sp.fecha LIMIT 1) AS yaAgendado
          FROM mantenimientos m
          JOIN clientes c ON c.id = m.cliente_id
          LEFT JOIN servicios so ON so.id = m.servicio_id
@@ -1353,10 +1364,18 @@ async function resumenPanel(request, env) {
     const variacion = (hoy, ayer) => (ayer > 0 ? Math.round(((hoy - ayer) / ayer) * 100) : null);
 
     const proximos = filas(15).map((f) => ({
+      id: f.mant_id,
       clienteId: f.cliente_id, nombre: f.nombre, telefono: f.telefono,
       servicio: etiqueta(f.servicio, null, "servicio"),
+      servicioKey: f.servicio,
       lugar: [f.canton, f.provincia].filter(Boolean).join(", ") || null,
-      proximo: f.proximo, dias: f.dias
+      proximo: f.proximo, dias: f.dias,
+      // La fecha de la visita que ya lo resuelve, o null.
+      yaAgendado: f.yaAgendado || null,
+      wa: waDe(f.telefono, "Buenas" + (f.nombre ? " " + primerNombre(f.nombre) : "") +
+               ", le escribo de Sanitarios Ticos: ya le toca el mantenimiento" +
+               (f.servicio ? " de " + etiqueta(f.servicio, null, "servicio").toLowerCase() : "") +
+               ". ¿Qué día le sirve?")
     }));
 
     /* Lo que hay que hacer hoy, en una sola lista. El panel deja de ser
@@ -1439,8 +1458,16 @@ async function resumenPanel(request, env) {
       id: f.id, nombre: f.nombre, telefono: f.telefono,
       servicio: f.servicio, zona: f.zona, horas: f.horas
     }));
-    const mantVencidos = proximos.filter((p) => p.dias < 0);
-    const mantSemana = proximos.filter((p) => p.dias >= 0 && p.dias <= 7);
+    /* Los que piden acción. Antes sólo entraban los ya vencidos, o sea
+       que uno se enteraba cuando ya se había pasado la fecha. Ahora
+       entran desde TRES DÍAS ANTES: da tiempo de llamar al cliente y
+       acomodar la visita en la ruta, que es de lo que se trata.
+
+       Los que ya tienen visita agendada NO entran: están resueltos,
+       aunque su fecha no haya llegado. */
+    const AVISO_MANT_DIAS = 3;
+    const mantVencidos = proximos.filter((p) => !p.yaAgendado && p.dias <= AVISO_MANT_DIAS);
+    const mantSemana = proximos.filter((p) => !p.yaAgendado && p.dias > AVISO_MANT_DIAS && p.dias <= 7);
 
     return json({
       ok: true,
