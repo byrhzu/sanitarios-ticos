@@ -1174,8 +1174,8 @@ async function resumenPanel(request, env) {
       /* 15 · los mantenimientos que vienen. Sólo el último trabajo de
              cada cliente y sólo si tiene el recordatorio prendido. */
       q(`SELECT m.id AS mant_id, m.fecha AS proximo, so.fecha AS fecha, m.tipo AS servicio,
-                c.id AS cliente_id, c.nombre,
-                c.telefono, c.canton, c.provincia,
+                c.id AS cliente_id, c.nombre, c.meses,
+                c.telefono, c.canton, c.provincia, c.distrito, c.senas,
                 CAST(julianday(m.fecha) - julianday(date('now','-6 hours')) AS INTEGER) AS dias,
                 /* ¿Ya hay una visita agendada para este cliente y este tipo?
                    Si la hay, el mantenimiento está resuelto en la práctica
@@ -1368,6 +1368,13 @@ async function resumenPanel(request, env) {
       clienteId: f.cliente_id, nombre: f.nombre, telefono: f.telefono,
       servicio: etiqueta(f.servicio, null, "servicio"),
       servicioKey: f.servicio,
+      /* La dirección completa viaja con el mantenimiento. Agendarlo es
+         repetir un trabajo que ya se hizo: volver a escribir el nombre,
+         el teléfono y la dirección de un cliente que ya está en la base
+         es trabajo que el panel puede ahorrarse. */
+      provincia: f.provincia || null, canton: f.canton || null,
+      distrito: f.distrito || null, senas: f.senas || null,
+      meses: f.meses || null,
       lugar: [f.canton, f.provincia].filter(Boolean).join(", ") || null,
       proximo: f.proximo, dias: f.dias,
       // La fecha de la visita que ya lo resuelve, o null.
@@ -2042,10 +2049,40 @@ async function guardarMantenimiento(request, env) {
   try { b = await request.json(); } catch { return json({ ok: false, error: "Formato inválido" }, 400); }
   const id = parseInt(b.id, 10);
   try {
+    /* POSPONER. El cliente no puede ahora pero sí después: la fecha se
+       mueve y el mantenimiento deja de pedir cosas hasta entonces.
+       Sigue vivo, que es la diferencia con cerrarlo.
+
+       `recordado` se limpia: si ya se le había escrito por la fecha
+       vieja, por la nueva hay que volverle a escribir. */
+    if (b.posponer === true) {
+      if (!Number.isFinite(id)) return json({ ok: false, error: "Mantenimiento inválido" }, 400);
+      const nueva = soloFecha(b.fecha);
+      if (!nueva) return json({ ok: false, error: "Falta la fecha nueva" }, 400);
+      await env.DB.prepare(
+        `UPDATE mantenimientos SET fecha = ?1, recordado = NULL, actualizado = datetime('now')
+          WHERE id = ?2`).bind(nueva, id).run();
+      await env.DB.prepare(`UPDATE servicios SET proximo = ?1
+         WHERE id = (SELECT servicio_id FROM mantenimientos WHERE id = ?2)`).bind(nueva, id).run();
+      return json({ ok: true, fecha: nueva });
+    }
+
+    /* CERRARLO. El cliente dijo que no. Deja de ser una tarea —que es
+       de lo que se trata: lo que nadie va a hacer no puede quedarse
+       pidiendo atención para siempre— pero NO se borra: queda en el
+       historial del cliente con el motivo, y el día que vuelva a
+       contratar nace uno nuevo solo.
+
+       El motivo se guarda si la tabla tiene dónde; si no, el cierre
+       funciona igual. */
     if (b.quitar === true) {
       if (!Number.isFinite(id)) return json({ ok: false, error: "Mantenimiento inválido" }, 400);
-      await env.DB.prepare(`UPDATE mantenimientos SET estado = 'cancelado', actualizado = datetime('now') WHERE id = ?`)
-        .bind(id).run();
+      const motivo = texto(b.motivo, 200);
+      const conNota = motivo && await hayColumna(env, "mantenimientos", "nota");
+      await env.DB.prepare(
+        `UPDATE mantenimientos SET estado = 'cancelado'${conNota ? ", nota = ?2" : ""},
+                actualizado = datetime('now') WHERE id = ?1`
+      ).bind(...(conNota ? [id, motivo] : [id])).run();
       // El "próximo" del servicio que lo originó deja de mostrarse.
       await env.DB.prepare(`UPDATE servicios SET proximo = NULL
          WHERE id = (SELECT servicio_id FROM mantenimientos WHERE id = ?)`).bind(id).run();

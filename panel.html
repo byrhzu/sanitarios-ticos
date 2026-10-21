@@ -3914,6 +3914,31 @@
   </div>
 </div>
 
+<!-- Posponer un mantenimiento: el cliente no puede ahora pero sí
+     después. Se corre la fecha y deja de pedir atención hasta entonces;
+     sigue vivo, que es la diferencia con cerrarlo. -->
+<div class="velo" id="velo-posp" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="po-t">
+    <h2 id="po-t">Posponer</h2>
+    <p class="hoja-cuando" id="po-sub"></p>
+    <div class="seg" id="po-rapido" role="group" aria-label="Para cuándo">
+      <button type="button" class="seg-b" data-posp="1">1 mes</button>
+      <button type="button" class="seg-b" data-posp="3">3 meses</button>
+      <button type="button" class="seg-b" data-posp="6">6 meses</button>
+      <button type="button" class="seg-b" data-posp="fecha">Otra fecha</button>
+    </div>
+    <div class="f" id="po-fecha-f" hidden>
+      <label for="po-fecha">¿Para qué día?</label>
+      <input type="date" id="po-fecha">
+    </div>
+    <p class="estado-linea" id="po-aviso" role="status" aria-live="polite"></p>
+    <div class="hoja-pie">
+      <button type="button" class="btn-suave" id="po-cancelar">Cancelar</button>
+      <button type="button" class="btn-fuerte" id="po-guardar">Posponer</button>
+    </div>
+  </div>
+</div>
+
 <!-- Certificado escrito a mano, sin servicio detrás. Los mismos datos
      que lleva cualquier certificado, pero tecleados: el trabajo no entró
      por la herramienta, o lo contrató una empresa y el papel va a nombre
@@ -4614,6 +4639,106 @@
     irA("pendientes", {});
   });
 
+  /* ---- Posponer ----
+     Tres atajos y una fecha a mano. Los atajos cubren el 90%: "llámeme
+     en tres meses" es lo que dice la gente, no una fecha exacta. */
+  var posponiendo = null, pospMeses = 3;
+
+  function abrirPosponer(m) {
+    posponiendo = m;
+    pospMeses = 3;
+    $("po-sub").textContent = [m.nombre, m.servicio].filter(Boolean).join(" · ");
+    $("po-fecha").value = sumarMesesISO(m.proximo || hoyISO(), 3);
+    $("po-fecha-f").hidden = true;
+    marcarPosp("3");
+    $("po-aviso").textContent = "";
+    $("po-aviso").classList.remove("is-error");
+    $("velo-posp").hidden = false;
+  }
+
+  function marcarPosp(v) {
+    Array.prototype.forEach.call($("po-rapido").children, function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.posp === v));
+    });
+  }
+
+  // La fecha base es la que ya tenía, no hoy: posponer tres meses un
+  // mantenimiento de la semana pasada es correrlo tres meses desde su
+  // fecha, no desde hoy.
+  function sumarMesesISO(iso, n) {
+    var p = String(iso || "").split("-");
+    if (p.length !== 3) return hoyISO();
+    var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    d.setMonth(d.getMonth() + n);
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") +
+           "-" + String(d.getDate()).padStart(2, "0");
+  }
+
+  $("po-rapido").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-posp]"); if (!b) return;
+    var v = b.dataset.posp;
+    marcarPosp(v);
+    if (v === "fecha") { $("po-fecha-f").hidden = false; $("po-fecha").focus(); return; }
+    pospMeses = Number(v);
+    $("po-fecha-f").hidden = true;
+    if (posponiendo) $("po-fecha").value = sumarMesesISO(posponiendo.proximo || hoyISO(), pospMeses);
+  });
+  $("po-cancelar").addEventListener("click", function () { $("velo-posp").hidden = true; posponiendo = null; });
+  $("velo-posp").addEventListener("click", function (e) {
+    if (e.target === $("velo-posp")) { $("velo-posp").hidden = true; posponiendo = null; }
+  });
+  $("po-guardar").addEventListener("click", function () {
+    if (!posponiendo) return;
+    var b = this;
+    var fecha = $("po-fecha").value;
+    if (!fecha) {
+      $("po-aviso").textContent = "Escoja para qué día.";
+      $("po-aviso").classList.add("is-error");
+      return;
+    }
+    b.disabled = true; b.textContent = "Guardando…";
+    pedir("/api/panel/mantenimiento", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: posponiendo.id, posponer: true, fecha: fecha })
+    })
+      .then(function () {
+        $("velo-posp").hidden = true;
+        avisar("Mantenimiento movido al " + fechaLarga(fecha) + ".");
+        posponiendo = null;
+        refrescarTrasCambio();
+        resumenCargado = false; cargarResumen();
+      })
+      .catch(function (err) {
+        $("po-aviso").textContent = String((err && err.message) || "No se pudo posponer.");
+        $("po-aviso").classList.add("is-error");
+      })
+      .then(function () { b.disabled = false; b.textContent = "Posponer"; });
+  });
+
+  /* ---- "No lo quiere" ----
+     Cerrarlo no es borrarlo: queda en el historial del cliente con el
+     motivo, y el día que vuelva a contratar nace uno nuevo solo. Lo que
+     se acaba es que siga pidiendo atención. */
+  function cerrarMantenimiento(m, boton) {
+    var motivo = prompt("¿Por qué no lo quiere?\n\n(Queda anotado en el cliente. " +
+      "Si vuelve a contratar, el mantenimiento nace de nuevo.)", "");
+    if (motivo === null) return;   // canceló
+    boton.disabled = true;
+    pedir("/api/panel/mantenimiento", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: m.id, quitar: true, motivo: motivo.trim() })
+    })
+      .then(function () {
+        avisar("Listo, ese mantenimiento deja de pedir atención.");
+        refrescarTrasCambio();
+        resumenCargado = false; cargarResumen();
+      })
+      .catch(function (err) {
+        boton.disabled = false;
+        avisar(String((err && err.message) || "No se pudo cerrar."), "mal");
+      });
+  }
+
   function pintarPendientes() {
     var total = GRUPOS_P.reduce(function (n, g) { return n + PEND[g.id].length; }, 0);
 
@@ -4700,8 +4825,15 @@
         acc.push('<a class="bt wa" href="' + escHtml(x.wa) + '" target="_blank" rel="noopener">' +
           ICO.wa + "Escribirle</a>");
       }
-      acc.push('<button type="button" class="bt fuerte" data-pagendar="' + escHtml(x.nombre) +
-        "|" + escHtml(x.telefono || "") + '">Agendar</button>');
+      /* Agendar lleva TODO lo del cliente: nombre, teléfono, servicio y
+         dirección. Un mantenimiento es repetir un trabajo que ya se
+         hizo; volver a escribir datos que ya están en la base es
+         trabajo que el panel puede ahorrarse. */
+      acc.push('<button type="button" class="bt fuerte" data-mant-agendar="' + i + '">Agendar</button>');
+      /* Las dos salidas del "ahora no". Sin ellas, lo que el cliente no
+         va a hacer se queda pidiendo atención para siempre. */
+      acc.push('<button type="button" class="bt" data-mant-posponer="' + i + '">Posponer</button>');
+      acc.push('<button type="button" class="bt malo" data-mant-no="' + i + '">No lo quiere</button>');
       acc.push('<button type="button" class="bt" data-cliente="' + x.clienteId + '">Ver cliente</button>');
 
     } else if (g.id === "solicitudes") {
@@ -4761,9 +4893,24 @@
       return;
     }
 
-    var b = e.target.closest("[data-cliente],[data-pago],[data-pagendar],[data-phecho],[data-preagendar],[data-pcotagendar],[data-pcotperdida]");
+    var b = e.target.closest("[data-cliente],[data-pago],[data-pagendar],[data-phecho],[data-preagendar],[data-pcotagendar],[data-pcotperdida],[data-mant-agendar],[data-mant-posponer],[data-mant-no]");
     if (!b) return;
     if (b.dataset.cliente != null) return verCliente(b.dataset.cliente);
+
+    /* ---- Las tres respuestas a un mantenimiento ----
+       Agendarlo, correrlo para después, o cerrarlo porque el cliente
+       dijo que no. Las tres lo sacan de la lista; sólo la primera manda
+       el camión. */
+    var m = null;
+    ["mantAgendar", "mantPosponer", "mantNo"].forEach(function (k) {
+      if (b.dataset[k] != null) m = (PEND.mantenimientos || [])[Number(b.dataset[k])];
+    });
+    if (b.dataset.mantAgendar != null) {
+      if (m) abrirCita({ cliente: m });
+      return;
+    }
+    if (b.dataset.mantPosponer != null) { if (m) abrirPosponer(m); return; }
+    if (b.dataset.mantNo != null) { if (m) cerrarMantenimiento(m, b); return; }
     /* Las dos salidas de un trabajo sin cerrar. Son las MISMAS funciones
        de la Agenda y reciben el mismo objeto: el servidor lo devuelve con
        esa forma justamente para no tener dos caminos para lo mismo. */
