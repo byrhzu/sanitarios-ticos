@@ -1472,17 +1472,21 @@ async function resumenPanel(request, env) {
 
        Los que ya tienen visita agendada NO entran: están resueltos,
        aunque su fecha no haya llegado. */
-    /* El AVISO (la notificación, el correo) sale tres días antes: es la
-       alarma, y una alarma que suena un mes antes no es una alarma.
+    /* El reparto, tal como lo pidió Byron:
 
-       La LISTA de Pendientes es otra cosa: es el trabajo que hay por
-       delante, y ahí caben los del mes. Con "Posponer" y "No lo quiere"
-       ya no se acumulan para siempre, que era el miedo de tenerlos
-       todos ahí. Los que pasan del mes viven en la hoja de
-       Mantenimientos, con sus mismos botones. */
-    const HORIZONTE_MANT = 30;
+         vencidos y hasta 3 días  → Pendientes. Son los que hay que
+                                    atender: escribirle al cliente y
+                                    acomodar la visita.
+         más de 3 días            → sólo la hoja de Mantenimientos.
+                                    Están bien donde están; traerlos a
+                                    Pendientes es llenar de ruido la
+                                    lista de lo que hay que hacer hoy.
+
+       Los que ya tienen visita agendada no entran a ninguna de las
+       dos: están resueltos. */
+    const HORIZONTE_MANT = 3;
     const mantVencidos = proximos.filter((p) => !p.yaAgendado && p.dias <= HORIZONTE_MANT);
-    const mantSemana = proximos.filter((p) => !p.yaAgendado && p.dias > HORIZONTE_MANT && p.dias <= 60);
+    const mantSemana = proximos.filter((p) => !p.yaAgendado && p.dias > HORIZONTE_MANT && p.dias <= 7);
 
     return json({
       ok: true,

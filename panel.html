@@ -4627,16 +4627,12 @@
     try { visto = localStorage.getItem(AM_VISTO) || ""; } catch (e) {}
     // La marca lleva la cuenta y el día: cambia cualquiera de los dos y
     // el aviso vuelve.
-    var marca = hoyISO() + ":" + (lista.filter(function (x) { return x.dias <= 7; }).length);
+    var marca = hoyISO() + ":" + n;
     if (visto === marca) { caja.hidden = true; return; }
 
-    /* El aviso de arriba cuenta sólo lo que urge —vencidos y los de
-       esta semana—, no el mes entero: un aviso que dice 30 no hace que
-       nadie haga nada. La lista de abajo sí trae el mes. */
-    var urgentes = lista.filter(function (x) { return x.dias <= 7; });
-    n = urgentes.length;
-    if (!n) { caja.hidden = true; return; }
-    var vencidos = urgentes.filter(function (x) { return x.dias < 0; }).length;
+    /* La lista que llega ya son sólo los que urgen —vencidos y hasta
+       tres días—, así que el aviso los cuenta todos. */
+    var vencidos = lista.filter(function (x) { return x.dias < 0; }).length;
     var txt = n === 1 ? "Hay <b>1 mantenimiento</b> por hacer"
                       : "Hay <b>" + n + " mantenimientos</b> por hacer";
     if (vencidos) {
