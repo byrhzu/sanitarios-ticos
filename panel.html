@@ -1757,7 +1757,16 @@
   .pg-x { border: none; background: none; color: var(--p-tenue); font-size: 1.25rem; line-height: 1; cursor: pointer; padding: 0 .35rem; border-radius: 7px; }
   .pg-x:hover { color: var(--est-mal-tx); background: var(--est-mal-bg); }
   /* ---------- Papelera (F4) ---------- */
-  .hoja-ancha { max-width: 600px; }
+  /* Dos trampas juntas, y por eso `.hoja-ancha` nunca ensanchó nada:
+     `width` manda sobre `max-width`, y `.hoja` —que trae
+     width:min(32rem,100%)— está declarada MÁS ABAJO en la hoja, así
+     que con la misma especificidad le ganaba. Se sube la
+     especificidad y se vuelve a declarar el ancho. */
+  .hoja.hoja-ancha { width: min(600px, 100%); max-width: 600px; }
+  /* La de mantenimientos lista decenas de registros con cuatro acciones
+     cada uno: en compu hay pantalla de sobra y apretarlos a 32rem era
+     desperdiciarla. */
+  .hoja.hoja-mant { width: min(880px, 100%); max-width: 880px; }
   /* Aire entre secciones: antes el titulillo de la siguiente quedaba
      pegado a la última ficha de la anterior y las dos listas se leían
      como una sola. */
@@ -1775,26 +1784,50 @@
      El número es lo que se mira; la etiqueta y la fecha lo acompañan.
      La fecha va separada por un filete y no por un punto medio: un
      punto pega dos datos distintos como si fueran uno. */
-  .mant-caja {
+  /* ---- La tarjeta de un mantenimiento ----
+     UNA sola superficie (regla de superficies, nivel 2). Lo de adentro
+     son renglones, no cajas. */
+  .mant-item {
     border: 1px solid var(--p-borde); border-radius: var(--radio-chico);
-    padding: .2rem .8rem .2rem; margin-bottom: .5rem; background: var(--p-tarj);
+    background: var(--p-tarj); box-shadow: var(--p-alza-fila);
+    padding: .9rem 1.1rem; margin-bottom: .6rem;
   }
-  .mant-fila { align-items: center; }
-  .mant-caja .mant-fila { border: 0; background: none; padding-left: 0; padding-right: 0; }
-  /* Las acciones, pegadas bajo su fila y separadas por un filete: son
-     de ESE mantenimiento, no de la lista. */
-  .mant-acc {
-    display: flex; flex-wrap: wrap; gap: .4rem;
-    padding: .1rem 0 .7rem; margin-top: -.2rem;
+  .mant-top {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1rem 1.4rem; flex-wrap: wrap;
   }
-  .mant-ya {
-    display: block; padding: .1rem 0 .7rem;
-    font-size: .8rem; color: var(--est-ok-tx);
-  }
+  .mant-quien { min-width: 0; flex: 1 1 14rem; }
+  .mant-quien b { display: block; font-weight: 600; font-size: 1rem; }
+  .mant-quien small { display: block; color: var(--p-tenue); font-size: .85rem; margin-top: .15rem; }
   .mant-der {
-    display: flex; flex-direction: column; align-items: flex-end;
-    gap: .4rem; flex: 0 0 auto;
+    display: flex; align-items: center; gap: .55rem .9rem;
+    flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end;
   }
+  /* Ya tiene visita: se dice en verde y en positivo, no como una
+     alarma. Es lo contrario de estar pendiente. */
+  .mant-ya {
+    display: inline-flex; align-items: center; gap: .35rem;
+    font-size: .85rem; font-weight: 600; color: var(--est-ok-tx);
+  }
+  .mant-ya svg { width: 15px; height: 15px; }
+  /* Los botones, dentro de la tarjeta y separados por un filete. Antes
+     colgaban fuera del borde porque vivían en otra caja. */
+  .mant-acc {
+    display: flex; flex-wrap: wrap; gap: .45rem;
+    margin-top: .85rem; padding-top: .8rem;
+    border-top: 1px solid var(--p-linea);
+  }
+  /* En compu hay espacio: la salida fea se va al extremo, lejos del
+     dedo que viene a agendar. */
+  @media (min-width: 720px) {
+    .mant-item { padding: 1rem 1.3rem; }
+    .mant-acc .mant-no { margin-left: auto; }
+  }
+  @media (max-width: 560px) {
+    .mant-der { width: 100%; justify-content: flex-start; }
+    .mant-acc .bt { flex: 1 1 auto; justify-content: center; }
+  }
+
   .mant-cuenta {
     display: inline-flex; align-items: baseline; gap: .3rem;
     font-size: .78rem; color: var(--p-tenue); white-space: nowrap;
@@ -3793,7 +3826,7 @@
 
 <!-- Papelera (F4): todo lo borrado, para restaurar o eliminar de verdad. -->
 <div class="velo" id="velo-mantenimientos" hidden>
-  <div class="hoja hoja-ancha" role="dialog" aria-modal="true" aria-labelledby="mant-t">
+  <div class="hoja hoja-ancha hoja-mant" role="dialog" aria-modal="true" aria-labelledby="mant-t">
     <h2 id="mant-t">Mantenimientos</h2>
     <div id="mant-cuerpo"></div>
     <div class="hoja-pie">
@@ -7611,41 +7644,53 @@
      botones no tengan que cargar el registro entero en un atributo. */
   var MANT_LISTA = [];
 
+  /* UNA tarjeta por mantenimiento, no una dentro de otra.
+
+     Antes esto reusaba `.toca-fila` —que ya es una tarjeta— metida en
+     otra caja para colgarle los botones: caja sobre caja, los botones
+     montados sobre el borde y los márgenes peleando. Es la regla de
+     superficies del panel, y la rompí yo.
+
+     Ahora es una sola pieza con su propia rejilla: a la izquierda quién
+     y qué, a la derecha cuándo, y los botones abajo separados por un
+     filete. En compu las dos columnas van lado a lado —hay espacio de
+     sobra—; en teléfono se apilan. */
   function filaMant(m, mostrarDias) {
     var es = MANT_EST[m.estado] || { t: m.estado, cls: "mudo" };
     var ix = MANT_LISTA.push(m) - 1;
+    var prog = m.estado === "programado";
 
-    /* Las acciones viven acá también, no sólo en Pendientes. En
-       Pendientes salen los que ya urgen; acá está la lista entera, y es
-       donde uno entra cuando el cliente llama antes de tiempo — que es
-       justo cuando hay que poder agendarle sin dar vueltas. */
+    /* Quien ya tiene visita NO dice "vencido": tenerla agendada es
+       justamente lo contrario de estar pendiente. Decir las dos cosas
+       en la misma tarjeta es contradecirse. */
+    var cuando = m.yaAgendado
+      ? '<span class="mant-ya">' + ICO.visto + "Visita el " + escHtml(fechaCorta(m.yaAgendado)) + "</span>"
+      : mostrarDias ? cuentaMant(m)
+                    : '<span class="mant-cuenta"><span class="mc-f">' +
+                      escHtml(fechaCorta(m.fecha)) + "</span></span>";
+
     var acc = "";
-    if (m.estado === "programado") {
-      if (m.yaAgendado) {
-        acc = '<span class="mant-ya">Ya tiene visita el ' +
-              escHtml(fechaCorta(m.yaAgendado)) + "</span>";
-      } else {
-        acc = '<div class="mant-acc">' +
-          (m.wa ? '<a class="bt chico wa" href="' + escHtml(m.wa) + '" target="_blank" rel="noopener">' +
-                  ICO.wa + "Escribirle</a>" : "") +
-          '<button type="button" class="bt chico fuerte" data-mant-agendar="' + ix + '">Agendar</button>' +
-          '<button type="button" class="bt chico" data-mant-posponer="' + ix + '">Posponer</button>' +
-          '<button type="button" class="bt chico malo" data-mant-no="' + ix + '">No lo quiere</button>' +
-        "</div>";
-      }
+    if (prog && !m.yaAgendado) {
+      acc = '<div class="mant-acc">' +
+        (m.wa ? '<a class="bt chico wa" href="' + escHtml(m.wa) + '" target="_blank" rel="noopener">' +
+                ICO.wa + "Escribirle</a>" : "") +
+        '<button type="button" class="bt chico fuerte" data-mant-agendar="' + ix + '">Agendar</button>' +
+        '<button type="button" class="bt chico" data-mant-posponer="' + ix + '">Posponer</button>' +
+        '<button type="button" class="bt chico malo mant-no" data-mant-no="' + ix + '">No lo quiere</button>' +
+      "</div>";
     }
 
-    return '<div class="mant-caja">' +
-      '<div class="toca-fila mant-fila clic" data-cliente="' + m.clienteId + '">' +
-        '<div class="toca-quien"><b>' + escHtml(m.nombre) + "</b><small>" +
-          piezas([m.servicio, m.lugar]) + "</small></div>" +
-        '<div class="mant-der">' +
+    return '<article class="mant-item">' +
+      '<div class="mant-top">' +
+        '<div class="mant-quien clic" data-cliente="' + m.clienteId + '">' +
+          "<b>" + escHtml(m.nombre) + "</b>" +
+          "<small>" + piezas([m.servicio, m.lugar]) + "</small>" +
+        "</div>" +
+        '<div class="mant-der">' + cuando +
           '<span class="pastilla ' + es.cls + '">' + escHtml(es.t) + "</span>" +
-          (mostrarDias ? cuentaMant(m)
-                       : '<span class="mant-cuenta"><span class="mc-f">' +
-                         escHtml(fechaCorta(m.fecha)) + "</span></span>") +
-        "</div></div>" + acc +
-    "</div>";
+        "</div>" +
+      "</div>" + acc +
+    "</article>";
   }
 
   function grupoMant(titulo, lista, mostrarDias) {
@@ -7692,8 +7737,11 @@
     pedir("/api/panel/mantenimientos").then(function (d) {
       marcarMant((d.counts && d.counts.vencidos) || 0);
       MANT_LISTA = [];
+      /* El orden es el de la urgencia: lo que ya se paso, lo que viene,
+         lo que ya quedó resuelto, y al final lo que ya pasó. */
       var html = grupoMant("Vencidos", d.vencidos, true) +
                  grupoMant("Próximos", d.proximos, true) +
+                 grupoMant("Con visita agendada", d.agendados, false) +
                  grupoMant("Historial", d.historial, false);
       $("mant-cuerpo").innerHTML = html ||
         '<p class="vacio-ok">Todavía no hay mantenimientos.</p>';

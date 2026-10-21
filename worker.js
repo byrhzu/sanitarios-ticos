@@ -2177,16 +2177,23 @@ async function listaMantenimientos(request, env) {
                etiqueta(m.tipo, null, "servicio").toLowerCase() + ". ¿Qué día le sirve?")
     }));
 
-    // Un mantenimiento 'programado' con fecha pasada es un VENCIDO: se
-    // saca aparte porque es lo que de verdad hay que atender.
-    const vencidos = items.filter((i) => i.estado === "programado" && i.dias < 0);
-    const proximos = items.filter((i) => i.estado === "programado" && i.dias >= 0)
+    /* Tres grupos, y el orden importa.
+
+       Un mantenimiento con visita ya agendada NO es un vencido aunque
+       su fecha haya pasado: tener la visita puesta es justamente lo
+       contrario de estar pendiente. Decirle "vencido" al lado de "ya
+       tiene visita" es contradecirse en la misma tarjeta. Van aparte. */
+    const prog = items.filter((i) => i.estado === "programado");
+    const agendados = prog.filter((i) => i.yaAgendado)
+                          .sort((a, b) => String(a.yaAgendado).localeCompare(String(b.yaAgendado)));
+    const vencidos = prog.filter((i) => !i.yaAgendado && i.dias < 0);
+    const proximos = prog.filter((i) => !i.yaAgendado && i.dias >= 0)
                           .sort((a, b) => a.dias - b.dias);
     const historial = items.filter((i) => i.estado !== "programado");
 
     return json({
       ok: true,
-      vencidos, proximos, historial,
+      vencidos, agendados, proximos, historial,
       counts: { vencidos: vencidos.length, proximos: proximos.length, historial: historial.length }
     });
   } catch (e) {
