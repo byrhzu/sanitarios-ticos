@@ -459,6 +459,33 @@
   .yo[aria-expanded="true"], .yo:hover { box-shadow: 0 0 0 2px var(--p-acento); }
 
   .titulo-caja { min-width: 0; margin: 1rem 0 .9rem; }
+
+  /* El aviso de mantenimientos por hacer. Va con el tono de "espera":
+     no es un error ni una alarma, es trabajo que hay que acomodar. */
+  .aviso-mant {
+    display: flex; align-items: center; gap: .7rem;
+    margin: 0 0 1rem; padding: .7rem .9rem;
+    border-radius: var(--radio-chico);
+    background: var(--est-espera-bg);
+    border: 1px solid color-mix(in srgb, var(--est-espera-tx) 35%, transparent);
+  }
+  .aviso-mant[hidden] { display: none; }
+  .aviso-mant p { margin: 0; flex: 1 1 auto; font-size: .92rem; color: var(--p-txt); }
+  .aviso-mant p b { font-weight: 700; }
+  .am-ico {
+    flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--est-espera-tx);
+  }
+  .am-x {
+    flex: 0 0 auto; width: 1.9rem; height: 1.9rem; border-radius: 8px;
+    color: var(--p-tenue); font-size: 1.1rem; line-height: 1;
+    background: none; border: 0; cursor: pointer;
+  }
+  .am-x:hover { background: var(--p-sup2); color: var(--p-txt); }
+  @media (max-width: 560px) {
+    .aviso-mant { flex-wrap: wrap; }
+    .aviso-mant p { flex: 1 1 100%; order: -1; }
+  }
   .titulo-caja[hidden] { display: none; }
   .lienzo-top h1 {
     font-family: var(--display); font-size: 1.75rem; font-weight: 700;
@@ -1731,8 +1758,49 @@
   .pg-x:hover { color: var(--est-mal-tx); background: var(--est-mal-bg); }
   /* ---------- Papelera (F4) ---------- */
   .hoja-ancha { max-width: 600px; }
-  .pap-grupo { margin-bottom: 1.1rem; }
-  .pap-grupo h3 { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--p-tenue); margin: 0 0 .3rem; }
+  /* Aire entre secciones: antes el titulillo de la siguiente quedaba
+     pegado a la última ficha de la anterior y las dos listas se leían
+     como una sola. */
+  .pap-grupo { margin-bottom: 1.8rem; }
+  .pap-grupo + .pap-grupo { margin-top: .4rem; }
+  /* Sin mayúsculas rastreadas, acá tampoco. Se distingue por peso y
+     por el conteo al lado, no por estirar las letras. */
+  .pap-grupo h3 {
+    font-size: .88rem; font-weight: 700; color: var(--p-txt2);
+    margin: 0 0 .6rem; display: flex; align-items: baseline; gap: .45rem;
+  }
+  .pap-grupo h3 .n { font-size: .78rem; font-weight: 600; color: var(--p-tenue); }
+
+  /* ---- La cuenta del mantenimiento ----
+     El número es lo que se mira; la etiqueta y la fecha lo acompañan.
+     La fecha va separada por un filete y no por un punto medio: un
+     punto pega dos datos distintos como si fueran uno. */
+  .mant-fila { align-items: center; }
+  .mant-der {
+    display: flex; flex-direction: column; align-items: flex-end;
+    gap: .4rem; flex: 0 0 auto;
+  }
+  .mant-cuenta {
+    display: inline-flex; align-items: baseline; gap: .3rem;
+    font-size: .78rem; color: var(--p-tenue); white-space: nowrap;
+  }
+  .mant-cuenta b {
+    font-family: var(--display); font-size: 1.05rem; font-weight: 700;
+    color: var(--p-txt); font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .mant-cuenta.venc b { color: var(--est-mal-tx); }
+  .mant-cuenta .mc-u { margin-right: .15rem; }
+  /* El filete que reemplaza al punto medio. */
+  .mant-cuenta .mc-f {
+    padding-left: .55rem; margin-left: .2rem;
+    border-left: 1px solid var(--p-linea);
+    color: var(--p-tenue);
+  }
+  .mant-cuenta .mc-f:first-child { border-left: 0; padding-left: 0; margin-left: 0; }
+  @media (max-width: 460px) {
+    .mant-der { align-items: flex-end; }
+    .mant-cuenta { font-size: .74rem; }
+  }
   .pap-item { display: flex; align-items: center; gap: 1rem; padding: .55rem 0; border-top: 1px solid var(--p-linea); }
   .pap-quien { flex: 1 1 auto; min-width: 0; }
   .pap-quien b { font-weight: 500; }
@@ -3068,6 +3136,20 @@
         <h1 id="titulo-vista">Hoy</h1>
       </div>
 
+      <!-- El aviso de lo que toca, al entrar.
+
+           El recordatorio por notificación sólo llega al teléfono y sólo
+           si se dio permiso; en la compu —que es donde más se usa— no
+           saltaba nada y había que acordarse de ir a mirar. Esto sale
+           arriba, en la pantalla donde uno cae al abrir, y se va de un
+           toque hasta que haya algo nuevo. -->
+      <div class="aviso-mant" id="aviso-mant" hidden>
+        <span class="am-ico" aria-hidden="true"></span>
+        <p id="am-txt"></p>
+        <button type="button" class="bt chico fuerte" id="am-ver">Ver cuáles</button>
+        <button type="button" class="am-x" id="am-cerrar" aria-label="Ocultar el aviso">&times;</button>
+      </div>
+
       <!-- Clientes, Cotizaciones y Solicitudes traen su propia casilla de
            filtro. Tener las dos era tener dos cajas iguales a veinte
            centímetros haciendo cosas distintas, y la de abajo ganaba
@@ -4225,6 +4307,8 @@
   ["n-monto", "t-monto", "h-monto", "pg-monto-n"].forEach(function (id) { montoLibre(document.getElementById(id)); });
 
   var MESES = ["ene","feb","mar","abr","may","jun","jul","ago","set","oct","nov","dic"];
+  var MES_CORTO = ["ene","feb","mar","abr","may","jun",
+                   "jul","ago","set","oct","nov","dic"];
   var MES_LARGO = ["enero","febrero","marzo","abril","mayo","junio",
                    "julio","agosto","setiembre","octubre","noviembre","diciembre"];
   function fechaCorta(iso) {
@@ -4484,8 +4568,51 @@
       cotizaciones: h.cotizSinServicio || []
     };
     pendAbierto = null;
+    pintarAvisoMant(PEND.mantenimientos);
     pintarPendientes();
   }
+
+  /* El aviso de arriba. Sale cuando hay mantenimientos por hacer y se
+     puede ocultar; vuelve a salir si la cuenta cambia, para que
+     ocultarlo hoy no lo silencie cuando mañana haya uno más. */
+  var AM_VISTO = "st-aviso-mant";
+
+  function pintarAvisoMant(lista) {
+    var caja = $("aviso-mant");
+    if (!caja) return;
+    var n = (lista || []).length;
+    if (!n) { caja.hidden = true; return; }
+
+    var visto = "";
+    try { visto = localStorage.getItem(AM_VISTO) || ""; } catch (e) {}
+    // La marca lleva la cuenta y el día: cambia cualquiera de los dos y
+    // el aviso vuelve.
+    var marca = hoyISO() + ":" + n;
+    if (visto === marca) { caja.hidden = true; return; }
+
+    var vencidos = lista.filter(function (x) { return x.dias < 0; }).length;
+    var txt = n === 1 ? "Hay <b>1 mantenimiento</b> por hacer"
+                      : "Hay <b>" + n + " mantenimientos</b> por hacer";
+    if (vencidos) {
+      // Se lee como una frase, no con un punto medio pegando dos datos.
+      txt += vencidos === n ? ", ya vencido" + (n > 1 ? "s" : "")
+                            : ", " + vencidos + (vencidos === 1 ? " ya vencido" : " ya vencidos");
+    }
+    $("am-txt").innerHTML = txt + ".";
+    caja.hidden = false;
+    caja.dataset.marca = marca;
+  }
+
+  $("am-cerrar").addEventListener("click", function () {
+    var caja = $("aviso-mant");
+    try { localStorage.setItem(AM_VISTO, caja.dataset.marca || ""); } catch (e) {}
+    caja.hidden = true;
+  });
+  $("am-ver").addEventListener("click", function () {
+    $("aviso-mant").hidden = true;
+    pendFiltro = "mantenimientos";
+    irA("pendientes", {});
+  });
 
   function pintarPendientes() {
     var total = GRUPOS_P.reduce(function (n, g) { return n + PEND[g.id].length; }, 0);
@@ -7286,23 +7413,53 @@
     return "en " + d + " días";
   }
 
+  /* La cuenta, no una frase.
+
+     Antes decía "en 11 días · 1 nov 2026": el punto medio pegaba dos
+     datos distintos como si fueran uno, y la frase se leía toda al
+     mismo peso. Ahora el número manda —es lo que se mira— y la fecha
+     va al lado, separada por un filete en vez de por un punto.
+
+     Vencido se dice al revés y en rojo, que es lo que es. */
+  function cuentaMant(m) {
+    var d = Number(m.dias);
+    var venc = d < 0;
+    var n = Math.abs(d);
+    var cifra = d === 0 ? "hoy" : String(n);
+    var unidad = d === 0 ? "" : (n === 1 ? "día" : "días");
+    return '<span class="mant-cuenta' + (venc ? " venc" : "") + '">' +
+      '<span class="mc-et">' + (venc ? "vencido hace" : d === 0 ? "le toca" : "faltan") + "</span>" +
+      '<b>' + escHtml(cifra) + "</b>" +
+      (unidad ? '<span class="mc-u">' + unidad + "</span>" : "") +
+      '<span class="mc-f">' + escHtml(fechaCorta(m.fecha)) + "</span>" +
+    "</span>";
+  }
+
+  // "1 nov 2026", y sin el año cuando es este mismo.
+  function fechaCorta(iso) {
+    var p = String(iso || "").split("-");
+    if (p.length !== 3) return "";
+    var mes = MES_CORTO[Number(p[1]) - 1] || "";
+    return Number(p[2]) + " " + mes + (p[0] === hoyISO().slice(0, 4) ? "" : " " + p[0]);
+  }
+
   function filaMant(m, mostrarDias) {
     var es = MANT_EST[m.estado] || { t: m.estado, cls: "mudo" };
-    var cuando = mostrarDias
-      ? '<span class="dim" style="font-size:.75rem;">' + escHtml(textoDias(m.dias)) +
-        (m.dias < 0 ? "" : " · " + escHtml(fechaLarga(m.fecha))) + "</span>"
-      : '<span class="dim" style="font-size:.75rem;">' + escHtml(fechaLarga(m.fecha)) + "</span>";
-    return '<div class="toca-fila" data-cliente="' + m.clienteId + '">' +
+    return '<div class="toca-fila mant-fila" data-cliente="' + m.clienteId + '">' +
       '<div class="toca-quien"><b>' + escHtml(m.nombre) + "</b><small>" +
         piezas([m.servicio, m.lugar]) + "</small></div>" +
-      '<div class="toca-cuando" style="align-items:flex-end;gap:.35rem;">' +
-        '<span class="pastilla ' + es.cls + '">' + escHtml(es.t) + "</span>" + cuando +
+      '<div class="mant-der">' +
+        '<span class="pastilla ' + es.cls + '">' + escHtml(es.t) + "</span>" +
+        (mostrarDias ? cuentaMant(m)
+                     : '<span class="mant-cuenta"><span class="mc-f">' +
+                       escHtml(fechaCorta(m.fecha)) + "</span></span>") +
       "</div></div>";
   }
 
   function grupoMant(titulo, lista, mostrarDias) {
     if (!lista || !lista.length) return "";
-    return '<div class="pap-grupo"><h3>' + escHtml(titulo) + " (" + lista.length + ")</h3>" +
+    return '<div class="pap-grupo"><h3>' + escHtml(titulo) +
+      '<span class="n">' + lista.length + "</span></h3>" +
       '<div class="fichas">' + lista.map(function (m) { return filaMant(m, mostrarDias); }).join("") + "</div></div>";
   }
 
@@ -9859,6 +10016,11 @@
     // mismo lado; el acceso directo sirve una vez, no para siempre.
     if (v !== "agenda") history.replaceState(null, "", location.pathname);
     irA(v);
+    /* El resumen se pide al arrancar aunque se caiga en la Agenda: de
+       ahí sale el aviso de mantenimientos, y el aviso tiene que verse
+       en la pantalla donde uno entra, no sólo si se va a Pendientes.
+       De paso deja esa vista lista. */
+    if (!resumenCargado) cargarResumen();
   }
 
   /* Ver la clave mientras se escribe. El icono cambia de ojo a ojo

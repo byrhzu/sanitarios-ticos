@@ -5190,16 +5190,27 @@ async function tareaDiaria(env) {
     /* Sólo el último trabajo de cada cliente, sólo si el recordatorio
        está prendido, y sólo si todavía no se le escribió por este.
        `recordado` es lo que evita escribirle todos los días desde que le
-       toca hasta que por fin hace el trabajo. */
+       toca hasta que por fin hace el trabajo.
+
+       Y se avisa TRES DÍAS ANTES, no el día. Avisar el día que vence es
+       avisar tarde: no da tiempo de llamar al cliente ni de acomodar la
+       visita en la ruta. Es el mismo margen con que entran a Pendientes.
+
+       Los que ya tienen visita agendada no entran: están resueltos. */
     vencen = (await env.DB.prepare(
       `SELECT m.id, so.fecha AS fecha, m.tipo AS servicio, m.fecha AS proximo,
               c.id AS cliente_id, c.nombre, c.correo, c.canton, c.canal
          FROM mantenimientos m
          JOIN clientes c ON c.id = m.cliente_id
          LEFT JOIN servicios so ON so.id = m.servicio_id
-        WHERE m.estado = 'programado' AND m.papelera IS NULL AND m.fecha <= ?1
+        WHERE m.estado = 'programado' AND m.papelera IS NULL
+          AND m.fecha <= date(?1, '+3 days')
           AND m.recordado IS NULL
-          AND c.recordatorio = 1 AND c.papelera IS NULL`
+          AND c.recordatorio = 1 AND c.papelera IS NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM servicios sp
+             WHERE sp.cliente_id = m.cliente_id AND sp.servicio = m.tipo
+               AND sp.estado IN ('programado','en_proceso') AND sp.papelera IS NULL)`
     ).bind(hoy).all()).results || [];
   } catch (e) {
     console.error("No se pudo leer la agenda del día:", e);
