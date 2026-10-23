@@ -57,6 +57,34 @@ le manda al servidor: de `{forma, medida, antiguedad, dias}` a
 Migrarlo es un cambio de servidor además de panel, y toca el cotizador
 público, que es por donde entran los clientes. Se hace aparte.
 
+## Comprobar que lo publicado es lo nuevo
+
+**Se publica con un push a `main`.** Comprobado el 23 de octubre de 2026
+comparando `https://sanitariosticoscr.com/` contra `index.html`: salen
+idénticos byte por byte.
+
+El panel está detrás de Cloudflare Access, así que desde afuera sólo se ve
+el ingreso de Google — hay que entrar para verlo. Ya adentro, la señal más
+rápida de que está corriendo el panel generado y no una copia vieja:
+
+- En **Pendientes**, la lista de solicitudes: los teléfonos ahora salen
+  partidos, `2954-9200` en vez de `29549200`. Lo mismo en el repaso de la
+  cotización. Eran los dos únicos lugares del panel donde salían de
+  corrido.
+
+Y si se quiere algo tajante, en la consola:
+
+```js
+typeof PUERTA === 'object' ? 'panel nuevo' : 'todavia el viejo'
+```
+
+**El service worker no estorba acá, aunque lo parezca.** En `sw.js` las
+navegaciones van primero a la red y la copia guardada sólo se usa si el
+`fetch` falla (regla 2, `pedido.mode === "navigate"`). Como el panel es un
+solo archivo con todo adentro, llega fresco y no hace falta recarga dura.
+Lo que sí es cache-first son los archivos estáticos del sitio, que el
+panel no usa para su apariencia.
+
 ## El resto
 
 - `worker.js` — el servidor. No es generado.
