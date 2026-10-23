@@ -33,6 +33,33 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="styles.css?v=20261019a">
 <style>
+/* ▼ GENERADO · estilo — sale de baizzen/sistemas/operaciones. No editar acá: se pierde al correr armar.py */
+/* ═══════════════════════════════════════════════════════════════════════════
+   La base
+
+   El panel del cliente colgaba del styles.css del sitio público para esto:
+   la caja de borde a borde, los botones sin cara de botón y los enlaces sin
+   subrayado. Acá no hay sitio público del cual colgar, así que va lo que de
+   verdad se usa y nada más. Son ocho reglas; traerse las 72 KB del otro
+   archivo era traerse la marca de alguien de paquete.
+   ═════════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; }
+html { -webkit-text-size-adjust: 100%; }
+img, svg, video { display: block; max-width: 100%; }
+img { height: auto; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { border: 0; background: none; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+ul, ol { list-style: none; padding: 0; }
+
+/* =========================================================
+     Panel de operaciones — baizzen labs
+
+     Sacado de un panel que lleva dos años corriendo en una empresa de
+     verdad. Lo que cambió al traerlo acá es de marca y de oficio, no de
+     funcionamiento: los colores salen de la configuración y el
+     vocabulario es el de un taller.
+     ========================================================= */
   /* =========================================================
      Panel interno — v3
 
@@ -154,8 +181,12 @@
        saturación: con cinco tonos puros la agenda se lee como una bolsa
        de confites. Ninguno es el naranja de marca ni un color de estado,
        que ya significan otra cosa. */
-    --sv-tanque: #2c5f9e; --sv-destaqueo: #1f6b70; --sv-grasa: #9a5a2c;
-    --sv-obra:   #4a5568; --sv-alquiler:  #55538f;
+    /* Un color por servicio. Acompañan, no significan: el ícono es el
+       que identifica. Son ranuras numeradas a propósito: cada servicio
+       dice en la configuración a cuál apunta, así que renombrar un
+       servicio —o instalar el panel en otro oficio— no toca el estilo. */
+    --sv-1: #2c5f9e; --sv-2: #1f6b70; --sv-3: #9a5a2c;
+    --sv-4: #55538f; --sv-5: #3f7a4e; --sv-neutro: #4a5568;
 
     --est-ok-bg:     #e7f3ea;  --est-ok-tx:     #136c3a;
     --est-curso-bg:  #e8eefb;  --est-curso-tx:  #1f56a3;
@@ -200,8 +231,8 @@
 
     /* Los mismos cinco estados, escogidos aparte para el fondo oscuro
        y medidos contra él: todos pasan 5.9:1 o más. */
-    --sv-tanque: #6f9ddd; --sv-destaqueo: #52b4b8; --sv-grasa: #d49a6a;
-    --sv-obra:   #9aa7bd; --sv-alquiler:  #9a97cf;
+    --sv-1: #6f9ddd; --sv-2: #52b4b8; --sv-3: #d49a6a;
+    --sv-4: #9a97cf; --sv-5: #76b98a; --sv-neutro: #9aa7bd;
 
     --est-ok-bg:     rgba(52,199,123,.16);  --est-ok-tx:     #63d69b;
     --est-curso-bg:  rgba(90,150,230,.18);  --est-curso-tx:  #8ab8ef;
@@ -2956,10 +2987,33 @@
       transition-duration: .01ms !important;
     }
   }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   El sello de la empresa
+
+   Reemplaza al logo mientras no haya uno. Va en la barra, en el pie y en el
+   avatar, en los tres tamaños que esos tres sitios pedían a la imagen.
+   ═════════════════════════════════════════════════════════════════════════ */
+  .sello-marca {
+    display: grid; place-items: center; flex: none;
+    width: 30px; height: 30px; border-radius: 9px;
+    background: var(--p-acento); color: #fff;
+    font-size: .78rem; font-weight: 700; letter-spacing: .01em;
+  }
+  .barra-pie .sello-marca { width: 26px; height: 26px; border-radius: 8px; font-size: .7rem; }
+  .clave-logo .sello-marca,
+  #arranque-sello { width: 52px; height: 52px; border-radius: 15px; font-size: 1.25rem; }
+  #arranque-sello {
+    display: grid; place-items: center; margin: 0 auto;
+    background: var(--p-acento); color: #fff; font-weight: 700;
+  }
+/* ▲ FIN · estilo */
 </style>
 </head>
 <body>
 
+<!-- ▼ GENERADO · cuerpo — sale de baizzen/sistemas/operaciones. No editar acá: se pierde al correr armar.py -->
 <!-- Lo primero que se ve, y casi siempre lo único: mientras se le
      pregunta al servidor cómo se entra hoy.
 
@@ -2968,7 +3022,7 @@
      abría el panel — pidiendo algo que ya no hace falta. -->
 <section class="clave-pantalla" id="pantalla-arranque">
   <div class="arranque">
-    <div class="clave-logo"><img src="assets/img/logo-mascota.webp" alt="" width="52" height="52"></div>
+    <div class="clave-logo" id="arranque-sello"></div>
     <p>Abriendo el panel…</p>
   </div>
 </section>
@@ -2977,7 +3031,7 @@
      Access esté apagado: el servidor lo dice y entonces aparece. -->
 <section class="clave-pantalla" id="pantalla-clave" hidden>
   <div class="clave-caja">
-    <div class="clave-logo"><img src="assets/img/logo-mascota.webp" alt="" width="52" height="52"></div>
+    <div class="clave-logo" id="clave-sello"></div>
     <h1>Panel interno</h1>
     <form id="form-clave">
       <div class="f">
@@ -2998,10 +3052,9 @@
 <div class="panel" id="panel" hidden>
 
   <aside class="barra">
-    <div class="barra-logo">
-      <img src="assets/img/logo-mascota.webp" alt="" width="30" height="30">
-      <b>Sanitarios Ticos</b>
-    </div>
+    <!-- Vacío a propósito: lo llena la conexión, con el sello y el
+         nombre de la empresa o con su logo. -->
+    <div class="barra-logo" id="barra-marca"></div>
 
     <!-- Cuatro destinos y el "+". Lo que se fue y a dónde:
            Hoy        → la Agenda, que abre en hoy
@@ -3060,7 +3113,7 @@
     </button>
 
     <div class="barra-pie">
-      <img src="assets/img/logo-mascota.webp" alt="" width="26" height="26">
+      <span class="sello-marca" id="pie-sello" aria-hidden="true"></span>
       <span class="quien"><b>Panel interno</b><small id="sello">Actualizado</small></span>
     </div>
   </aside>
@@ -3138,7 +3191,7 @@
           <!-- El logo/avatar, a la derecha del todo. De él cuelga el
                menú con los avisos, el tema y salir. -->
           <button type="button" class="yo" id="btn-yo" aria-haspopup="true" aria-expanded="false" aria-label="Ajustes y salir">
-            <img src="assets/img/logo-mascota.webp" alt="" width="30" height="30">
+            <span class="sello-marca" id="yo-sello" aria-hidden="true"></span>
           </button>
 
           <div class="menu-yo" id="menu-yo" hidden>
@@ -3176,6 +3229,7 @@
               </svg>
               Salir
             </button>
+
           </div>
         </span>
       </div>
@@ -3553,9 +3607,11 @@
 
           <section class="paso" data-paso="2" hidden>
             <p class="grupo">¿Qué necesita?</p>
-            <!-- Lo que se pregunta depende del servicio: un tanque
-                 séptico necesita forma, medida y antigüedad; un alquiler
-                 los días; los demás nada, porque tienen precio de tabla.
+            <!-- En este taller el precio sale del diagnóstico, así que
+                 del trabajo sólo se pregunta cuál es y cuántos. Los campos
+                 escondidos de abajo son para una instalación donde el
+                 precio venga de una tabla y el servicio tenga que
+                 preguntar lo suyo.
 
                  Y puede necesitar MÁS DE UNO: dos tanques de tamaños
                  distintos, el tanque y la trampa de grasa. Cada bloque es
@@ -3638,19 +3694,6 @@
      el sistema no puede adivinar —cuándo se hizo y cuánto se cobró— y
      de los que depende el recordatorio de dentro de dos años. -->
 <div class="avisos" id="avisos" role="status" aria-live="polite"></div>
-
-<!-- La invitación a instalarla. Se enciende sola desde el código de abajo y
-     sólo si el panel NO se está viendo ya como aplicación. -->
-<div class="instalar" id="instalar-caja" hidden>
-  <img src="assets/img/icono-app-192.png" alt="" width="38" height="38">
-  <p id="instalar-txt"></p>
-  <button type="button" class="bt fuerte" id="instalar-si" hidden>Instalar</button>
-  <button type="button" class="instalar-x" id="instalar-no" aria-label="Ahora no">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-      <path d="M6 6l12 12M18 6 6 18"/>
-    </svg>
-  </button>
-</div>
 
 <!-- Anotar un trabajo que no vino de una cotización, y de paso registrar
      al cliente. Antes un cliente sólo podía nacer marcando una cotización
@@ -4131,7 +4174,192 @@
   </div>
 </div>
 
+<!-- La invitación a instalarla. Se enciende sola desde el código de abajo y
+     sólo si el panel NO se está viendo ya como aplicación. -->
+<div class="instalar" id="instalar-caja" hidden>
+  <img src="" alt="" width="38" height="38" id="instalar-ico" hidden>
+  <p id="instalar-txt"></p>
+  <button type="button" class="bt fuerte" id="instalar-si" hidden>Instalar</button>
+  <button type="button" class="instalar-x" id="instalar-no" aria-label="Ahora no">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <path d="M6 6l12 12M18 6 6 18"/>
+    </svg>
+  </button>
+</div>
+<!-- ▲ FIN · cuerpo -->
+
 <script>
+/* ▼ GENERADO · logica — sale de baizzen/sistemas/operaciones. No editar acá: se pierde al correr armar.py */
+/* Los datos de esta instalación. Los pone armar.py desde
+   sistemas/<sistema>/destinos/sanitarios-ticos.json — no se edita acá. */
+window.INSTALACION = {
+	"empresa": "Sanitarios Ticos",
+	"icono": "assets/img/icono-app-192.png",
+	"logo": "assets/img/logo-mascota.webp",
+	"quien": "Leitón",
+	"servicios": [
+		{
+			"color": "var(--sv-1)",
+			"etiqueta": "Limpieza de tanque séptico",
+			"icono": "<ellipse cx=\"12\" cy=\"6.3\" rx=\"7.5\" ry=\"2.6\"/><path d=\"M4.5 6.3v11.4c0 1.45 3.36 2.6 7.5 2.6s7.5-1.15 7.5-2.6V6.3\"/><path d=\"M5.6 13.4c1.6 0 1.6 1.25 3.2 1.25s1.6-1.25 3.2-1.25 1.6 1.25 3.2 1.25 1.6-1.25 3.2-1.25\"/>",
+			"id": "tanques-septicos",
+			"vol": true
+		},
+		{
+			"color": "var(--sv-2)",
+			"etiqueta": "Destaqueo de tuberías",
+			"icono": "<path d=\"M2.6 4.3v7.4M21.4 21.4h-7.4\"/><path d=\"M4.2 5.6h5.4a9 9 0 0 1 9 9v5.4\"/><path d=\"M4.2 10.4h5.4a4.2 4.2 0 0 1 4.2 4.2v5.4\"/>",
+			"id": "destaqueo",
+			"vol": false
+		},
+		{
+			"color": "var(--sv-3)",
+			"etiqueta": "Limpieza de trampa de grasa",
+			"icono": "<path d=\"M3.2 4.6h17.6l-6.4 7.8v6.6a1.7 1.7 0 0 1-2.45 1.5l-1.9-1a1.7 1.7 0 0 1-.9-1.5v-5.6Z\"/><path d=\"M5.9 7.4c1.35 0 1.35 1.05 2.7 1.05s1.35-1.05 2.7-1.05 1.35 1.05 2.7 1.05 1.35-1.05 2.7-1.05\"/>",
+			"id": "trampas-grasa",
+			"vol": true
+		},
+		{
+			"color": "var(--sv-3)",
+			"etiqueta": "Limpieza de tanque de grasa",
+			"icono": "<path d=\"M4.6 4.6h14.8v11.1a4.3 4.3 0 0 1-4.3 4.3H8.9a4.3 4.3 0 0 1-4.3-4.3Z\"/><path d=\"M12 8.4c1.95 2.1 2.95 3.6 2.95 4.65a2.95 2.95 0 1 1-5.9 0C9.05 12 10.05 10.5 12 8.4Z\"/>",
+			"id": "tanques-grasa",
+			"vol": true
+		},
+		{
+			"color": "var(--sv-4)",
+			"etiqueta": "Alquiler de tanques",
+			"icono": "<path d=\"M6.4 4.2h9.2v13.6a2.2 2.2 0 0 1-2.2 2.2H8.6a2.2 2.2 0 0 1-2.2-2.2Z\"/><path d=\"M5.4 4.2h11.2M7.2 8.6h7.6M7.2 12.8h7.6\"/><path d=\"M15.6 14.2h3.6v3\"/>",
+			"id": "alquiler-tanques",
+			"vol": false
+		},
+		{
+			"alias": true,
+			"color": "var(--sv-1)",
+			"etiqueta": "",
+			"icono": "<ellipse cx=\"12\" cy=\"6.3\" rx=\"7.5\" ry=\"2.6\"/><path d=\"M4.5 6.3v11.4c0 1.45 3.36 2.6 7.5 2.6s7.5-1.15 7.5-2.6V6.3\"/><path d=\"M5.6 13.4c1.6 0 1.6 1.25 3.2 1.25s1.6-1.25 3.2-1.25 1.6 1.25 3.2 1.25 1.6-1.25 3.2-1.25\"/>",
+			"id": "tanque",
+			"vol": false
+		},
+		{
+			"alias": true,
+			"color": "var(--sv-3)",
+			"etiqueta": "",
+			"icono": "<path d=\"M3.2 4.6h17.6l-6.4 7.8v6.6a1.7 1.7 0 0 1-2.45 1.5l-1.9-1a1.7 1.7 0 0 1-.9-1.5v-5.6Z\"/><path d=\"M5.9 7.4c1.35 0 1.35 1.05 2.7 1.05s1.35-1.05 2.7-1.05 1.35 1.05 2.7 1.05 1.35-1.05 2.7-1.05\"/>",
+			"id": "grasa",
+			"vol": false
+		},
+		{
+			"alias": true,
+			"color": "var(--sv-4)",
+			"etiqueta": "",
+			"icono": "<path d=\"M6.4 4.2h9.2v13.6a2.2 2.2 0 0 1-2.2 2.2H8.6a2.2 2.2 0 0 1-2.2-2.2Z\"/><path d=\"M5.4 4.2h11.2M7.2 8.6h7.6M7.2 12.8h7.6\"/><path d=\"M15.6 14.2h3.6v3\"/>",
+			"id": "alquiler",
+			"vol": false
+		}
+	],
+	"sesion": "/api/panel/sesion"
+};
+
+/* ══════════════════════════════════════════════════════════════════════
+   LA PUERTA · del lado del servidor
+
+   Lo que corre en una instalación. Casi todo lo hace el panel por su
+   cuenta —pedirDeVerdad ya es el fetch contra el Worker, con la clave
+   guardada— así que acá sólo se dice quién es la empresa, cuáles son sus
+   servicios y que sí, que esto está instalado de verdad.
+
+   Lo que la empresa tiene de propio viene en INSTALACION, que armar.py
+   escribe desde destinos/<cliente>.json.
+   ══════════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  var I = window.INSTALACION || {};
+
+  window.PUERTA = {
+
+    /* Sin nada acá, el panel usa pedirDeVerdad: su propio fetch contra
+       /api/, con la cabecera de la clave y el cuido de la sesión de
+       Access. No hay por qué repetirlo. */
+    pedir: null,
+
+    sesion: function () {
+      return fetch(I.sesion || "/api/panel/sesion")
+        .then(function (r) { return r.ok ? r.json() : null; });
+    },
+
+    quien: function () { return I.quien || ""; },
+
+    /* Los servicios de esta empresa: cómo se llaman, cuáles piden que el
+       comprobante nombre el equipo, y con qué color e ícono salen en la
+       agenda. Esto es lo que de verdad distingue una instalación de otra
+       en este sistema, y por eso es configuración y no código. */
+    servicios: function () { return I.servicios || []; },
+
+    puedeAvisar: function () {
+      return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+    },
+
+    instalable: function () { return true; },
+
+    puedeSalir: function () { return true; }
+  };
+
+  /* ── La marca de la empresa ──────────────────────────────────────────
+     El logo y el nombre son de la instalación, no del producto, así que
+     los pone la conexión y el markup se queda igual para todos. Con logo
+     van las imágenes; sin logo, un sello con las iniciales, que es lo
+     que hace el demo. */
+
+  function iniciales(nombre) {
+    var p = String(nombre || "").trim().split(/\s+/);
+    var a = (p[0] || "")[0] || "";
+    var b = (p.length > 1 ? p[p.length - 1] : "")[0] || "";
+    return (a + b).toUpperCase();
+  }
+
+  function pintarMarca() {
+    var nombre = I.empresa || I.quien || "";
+    var letras = iniciales(nombre);
+
+    var barra = document.getElementById("barra-marca");
+    if (barra) {
+      barra.innerHTML =
+        (I.logo ? '<img src="' + I.logo + '" alt="" width="30" height="30">'
+                : '<span class="sello-marca">' + letras + "</span>") +
+        "<b>" + nombre + "</b>";
+    }
+
+    ["arranque-sello", "clave-sello"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = I.logo
+        ? '<img src="' + I.logo + '" alt="" width="52" height="52">'
+        : letras;
+    });
+
+    ["pie-sello", "yo-sello"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (I.logo) el.innerHTML = '<img src="' + I.logo + '" alt="" width="26" height="26">';
+      else el.textContent = letras;
+    });
+
+    /* El ícono de la invitación a instalar: también es el de la empresa. */
+    var img = document.getElementById("instalar-ico");
+    if (img && I.icono) { img.src = I.icono; img.hidden = false; }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", pintarMarca);
+  } else {
+    pintarMarca();
+  }
+
+})();
+
 (function () {
   "use strict";
 
@@ -4330,7 +4558,16 @@
     return new Array(n + 1).join(una);
   }
 
+  /* La única puerta del panel hacia afuera. En una instalación contesta
+     pedirDeVerdad, el fetch contra el Worker de la empresa. En el demo la
+     conexión pone la suya y contesta desde el mismo navegador. Las dos
+     devuelven lo mismo, con la misma forma, así que nada más de este
+     archivo sabe en cuál de las dos está corriendo. */
   function pedir(ruta, opciones) {
+    return (PUERTA.pedir || pedirDeVerdad)(ruta, opciones);
+  }
+
+  function pedirDeVerdad(ruta, opciones) {
     var o = opciones || {};
     o.headers = Object.assign({ "X-Clave": clave }, o.headers || {});
     return fetch(ruta, o).then(function (r) {
@@ -4894,6 +5131,9 @@
     } else if (g.id === "solicitudes") {
       cuanto = espera(x.horas);
       etq = x.horas >= 24 ? "Sin atender" : "Nueva";
+      /* El teléfono va partido, como en todas las demás listas. Acá
+         salía entero —29549200 en vez de 2954-9200—, que es el único
+         sitio del panel donde no se leía de un golpe. */
       det = filaDet(I_NOTA_AG, x.servicio) + filaDet(I_PIN_AG, x.zona) +
             filaDet(I_TEL_AG, x.telefono);
       acc.push('<button type="button" class="bt fuerte" data-ir=\'' +
@@ -5877,9 +6117,11 @@
     var s = OPC.servicios[sel.value];
     var tipo = s ? s.tipo : null;
 
-    /* Con un servicio escrito a mano no hay tabla que preguntar forma ni
-       medida: lo que describe el trabajo es el detalle del paso 4, y el
-       precio lo pone el encargado. */
+    /* Un servicio puede pedir datos de más —una variante, una medida, una
+       antigüedad— cuando su precio sale de una tabla. En este taller
+       ninguno lo hace: el monto sale del diagnóstico y lo escribe quien
+       revisó. El mecanismo se queda porque es lo que deja que otra
+       instalación lo use sin tocar el panel. */
     $(pre + "-campo-forma").hidden = tipo !== "tanque";
     $(pre + "-campo-medida").hidden = tipo !== "tanque";
     $(pre + "-campo-antiguedad").hidden = tipo !== "tanque";
@@ -6265,7 +6507,8 @@
           .filter(Boolean).join(", ");
     var filas = [
       ["Cliente", $("n-nombre").value || "—"],
-      ["Teléfono", $("n-telefono").value || "—"],
+      // Partido, como en el resto del panel: el repaso es para revisar.
+      ["Teléfono", tel($("n-telefono").value) || "—"],
       ["Cédula", $("n-cedula").value || "—"],
       ["Correo", $("n-correo").value || "—"],
       ["Ubicación", lugar || "—"]
@@ -8717,9 +8960,13 @@
      cerrar el trabajo, sale de una; si no, se pregunta acá y queda
      guardado para la próxima. */
 
-  // Los servicios que extraen algo: son los únicos cuyo certificado
-  // dice metros cúbicos. En un destaqueo, preguntarlos no tiene sentido.
-  var SACA_VOLUMEN = ["tanques-septicos", "trampas-grasa", "tanques-grasa"];
+  /* De cuáles servicios el comprobante nombra el equipo. Sale de la
+     configuración: hay oficios donde todos lo piden y oficios donde sólo
+     algunos. Un servicio escrito a mano nunca, porque ahí el detalle va
+     en el texto libre. */
+  var PIDE_EQUIPO = PUERTA.servicios()
+    .filter(function (s) { return s.vol; })
+    .map(function (s) { return s.id; });
 
   var docPendiente = null;
 
@@ -8755,7 +9002,7 @@
        `servicio` ya viene traducido), y en la ficha del cliente es
        `servicio` a secas. Se miran las dos. */
     var clave = s.servicioKey || s.servicio || "";
-    var pide = SACA_VOLUMEN.indexOf(clave) !== -1;
+    var pide = PIDE_EQUIPO.indexOf(clave) !== -1;
     $("doc-vol-f").hidden = !pide;
     $("doc-volumen").value = s.volumen ? String(s.volumen) : "";
     $("doc-placa").value = s.placa || placaRecordada() || "";
@@ -8783,7 +9030,7 @@
     $("doc-sub").textContent = [s.nombre, s.servicio, s.fecha ? fechaLarga(s.fecha) : ""]
       .filter(Boolean).join(" · ");
     var clave = s.servicioKey || s.servicio || "";
-    $("doc-vol-f").hidden = SACA_VOLUMEN.indexOf(clave) === -1;
+    $("doc-vol-f").hidden = PIDE_EQUIPO.indexOf(clave) === -1;
     $("doc-volumen").value = s.volumen ? String(s.volumen) : "";
     $("doc-placa").value = s.placa || placaRecordada() || "";
     $("doc-aviso").textContent = "Conserva el número " +
@@ -8803,15 +9050,16 @@
      cualquier otro —mismo formato, mismo correlativo, mismo enlace—
      porque desde afuera no tiene por qué distinguirse. */
 
-  // Los servicios que extraen algo piden m³; los demás, no.
-  var SV_CERT = [
-    { id: "tanques-septicos", et: "Limpieza de tanque séptico", vol: true },
-    { id: "trampas-grasa",    et: "Limpieza de trampa de grasa", vol: true },
-    { id: "tanques-grasa",    et: "Limpieza de tanque de grasa", vol: true },
-    { id: "destaqueo",        et: "Destaqueo de tuberías",       vol: false },
-    { id: "alquiler-tanques", et: "Alquiler de tanques",         vol: false },
-    { id: "__otro",           et: "Otro (lo escribo)",           vol: false }
-  ];
+  /* Los servicios del comprobante a mano. Salen de la configuración de la
+     empresa y no de una lista escrita acá: renombrarlos tiene que
+     cambiarlos en todas partes, también en este menú. */
+  var SV_CERT = PUERTA.servicios()
+    /* Los alias existen sólo para que un registro viejo caiga en el
+       ícono correcto. No son servicios que alguien elija, así que no van
+       en el menú. */
+    .filter(function (s) { return !s.alias; })
+    .map(function (s) { return { id: s.id, et: s.etiqueta, vol: !!s.vol }; })
+    .concat([{ id: "__otro", et: "Otro (lo escribo)", vol: false }]);
 
   function abrirCertificadoLibre() {
     $("cl-servicio").innerHTML = SV_CERT.map(function (o) {
@@ -9134,49 +9382,51 @@
   /* Un ícono y un color por tipo de servicio. El ícono identifica; el
      color sólo acompaña. Se dibujan en tres o cuatro trazos porque a
      19 px no sobrevive el detalle. La clave viene del servidor en
-     `servicioKey`, que es la cruda — la etiqueta ya traducida va aparte. */
-  var SV_AG = {
-    /* Tanque séptico: el cilindro de pie con el líquido ondulado. */
-    "tanques-septicos": { c: "var(--sv-tanque)",
-      i: '<ellipse cx="12" cy="6.3" rx="7.5" ry="2.6"/>' +
-         '<path d="M4.5 6.3v11.4c0 1.45 3.36 2.6 7.5 2.6s7.5-1.15 7.5-2.6V6.3"/>' +
-         '<path d="M5.6 13.4c1.6 0 1.6 1.25 3.2 1.25s1.6-1.25 3.2-1.25 1.6 1.25 3.2 1.25 1.6-1.25 3.2-1.25"/>' },
-    /* Destaqueo: el codo de tubería con la reducción. */
-    destaqueo: { c: "var(--sv-destaqueo)",
-      i: '<path d="M2.6 4.3v7.4M21.4 21.4h-7.4"/>' +
-         '<path d="M4.2 5.6h5.4a9 9 0 0 1 9 9v5.4"/>' +
-         '<path d="M4.2 10.4h5.4a4.2 4.2 0 0 1 4.2 4.2v5.4"/>' },
-    /* Trampa de grasa: el embudo separador. */
-    "trampas-grasa": { c: "var(--sv-grasa)",
-      i: '<path d="M3.2 4.6h17.6l-6.4 7.8v6.6a1.7 1.7 0 0 1-2.45 1.5l-1.9-1a1.7 1.7 0 0 1-.9-1.5v-5.6Z"/>' +
-         '<path d="M5.9 7.4c1.35 0 1.35 1.05 2.7 1.05s1.35-1.05 2.7-1.05 1.35 1.05 2.7 1.05 1.35-1.05 2.7-1.05"/>' },
-    /* Tanque de grasa: el depósito con la gota adentro. Comparte el color
-       de la trampa porque es la misma familia, pero la silueta es otra —
-       la trampa separa, el tanque guarda — y así no se confunden de un
-       vistazo. La caja con ondas que había antes se leía como el ícono de
-       una imagen rota a 19 px. */
-    "tanques-grasa": { c: "var(--sv-grasa)",
-      i: '<path d="M4.6 4.6h14.8v11.1a4.3 4.3 0 0 1-4.3 4.3H8.9a4.3 4.3 0 0 1-4.3-4.3Z"/>' +
-         '<path d="M12 8.4c1.95 2.1 2.95 3.6 2.95 4.65a2.95 2.95 0 1 1-5.9 0C9.05 12 10.05 10.5 12 8.4Z"/>' },
-    /* Alquiler: el tanque portátil con el asa. */
-    "alquiler-tanques": { c: "var(--sv-alquiler)",
-      i: '<path d="M6.4 4.2h9.2v13.6a2.2 2.2 0 0 1-2.2 2.2H8.6a2.2 2.2 0 0 1-2.2-2.2Z"/>' +
-         '<path d="M5.4 4.2h11.2M7.2 8.6h7.6M7.2 12.8h7.6"/>' +
-         '<path d="M15.6 14.2h3.6v3"/>' },
-    /* "Otro" y los escritos a mano: no se les inventa una categoría, pero
-       sí tienen color y un ícono propio — el de "algo más" — para que no
-       parezcan un registro a medias. */
-    otro: { c: "var(--sv-obra)",
+     `servicioKey`, que es la cruda — la etiqueta ya traducida va aparte.
+
+     Vienen con el servicio, no escritos acá: lo que dibuja un taller no
+     es lo que dibuja una empresa de tanques, y ese es justamente el
+     cambio que no debería obligar a tocar el panel. */
+  var SV_AG = {};
+  PUERTA.servicios().forEach(function (s) {
+    if (s.color && s.icono) SV_AG[s.id] = { c: s.color, i: s.icono };
+  });
+  var SV_AG_VIEJO = {
+    /* Diagnóstico: la lupa. Es lo primero que pasa cuando entra un
+       equipo, y lo único que se cobra sin arreglar nada. */
+    diagnostico: { c: "var(--sv-1)",
+      i: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.2 15.2 21 21"/>' +
+         '<path d="M8 10.5h5M10.5 8v5"/>' },
+    /* Reparación: la llave de boca. */
+    reparacion: { c: "var(--sv-2)",
+      i: '<path d="M15.2 7.3a4.4 4.4 0 0 1-5.9 5.9L4.6 17.9a2 2 0 0 0 2.8 2.8l4.7-4.7a4.4 4.4 0 0 0 5.9-5.9l-2.4 2.4-2.3-2.3Z"/>' },
+    /* Mantenimiento preventivo: el engranaje. */
+    mantenimiento: { c: "var(--sv-3)",
+      i: '<circle cx="12" cy="12" r="3.1"/>' +
+         '<path d="M12 2.6v2.6M12 18.8v2.6M21.4 12h-2.6M5.2 12H2.6' +
+         'M18.6 5.4 16.8 7.2M7.2 16.8l-1.8 1.8M18.6 18.6l-1.8-1.8M7.2 7.2 5.4 5.4"/>' },
+    /* Instalación: el equipo montado en su sitio. */
+    instalacion: { c: "var(--sv-4)",
+      i: '<rect x="3.4" y="6.4" width="17.2" height="12.2" rx="2.2"/>' +
+         '<path d="M3.4 10.6h17.2M8.2 3.2v3.2M15.8 3.2v3.2M8 14.6h3"/>' },
+    /* Garantía: el escudo. */
+    garantia: { c: "var(--sv-5)",
+      i: '<path d="M12 2.9 20 6v6.1c0 4.4-3.3 7.6-8 9.1-4.7-1.5-8-4.7-8-9.1V6Z"/>' +
+         '<path d="m8.8 12.1 2.3 2.3 4.1-4.6"/>' },
+    /* "Otro" y lo escrito a mano: no se les inventa una categoría, pero
+       sí tienen color y un ícono propio para que no parezcan un registro
+       a medias. */
+    otro: { c: "var(--sv-neutro)",
       i: '<circle cx="12" cy="12" r="8.5"/>' +
          '<path d="M8.2 12h.01M12 12h.01M15.8 12h.01" stroke-width="2.2"/>' }
   };
-  /* Nombres cortos que también se usaron en algún punto. Se dejan como
-     alias para que un registro viejo no caiga en el ícono neutro. */
-  SV_AG.tanque = SV_AG["tanques-septicos"];
-  SV_AG.grasa = SV_AG["trampas-grasa"];
-  SV_AG.alquiler = SV_AG["alquiler-tanques"];
 
-  function svAg(k) { return SV_AG[k] || SV_AG.otro; }
+  /* Si un servicio no trajo ícono, se cae a la tabla de respaldo, y de
+     ahí al genérico. Nunca un hueco. */
+  Object.keys(SV_AG_VIEJO).forEach(function (k) {
+    if (!SV_AG[k]) SV_AG[k] = SV_AG_VIEJO[k];
+  });
+  function svAg(k) { return SV_AG[k] || SV_AG.otro || SV_AG_VIEJO.otro; }
   function icoAg(k) {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" ' +
       'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + svAg(k).i + "</svg>";
@@ -10090,7 +10340,9 @@
        grande nombra la vista, salvo en Hoy: ahí lo dice la portada, y
        repetirlo sería decir tres veces lo mismo en el mismo pantallazo. */
     $("top-donde").textContent = saludo() + ",";
-    $("top-quien").textContent = "Leitón";
+    /* A quién saluda: el nombre del dueño en una instalación, el de la
+       empresa del ejemplo en el demo. Lo sabe la conexión. */
+    $("top-quien").textContent = PUERTA.quien();
     /* Antes Hoy escondía el titular: la portada ya decía dónde estaba
        uno. Pendientes no es portada, así que lleva su nombre como las
        demás. */
@@ -10244,7 +10496,11 @@
     location.reload();
   }
   var salidaAccess = "";
-  $("btn-salir").addEventListener("click", salir);
+  /* En el demo el renglón de Salir no está: no hay sesión que cerrar. */
+  /* En una instalación se sale y se vuelve a entrar; en el demo no hay
+     con qué entrar, así que el botón no tiene sentido y se esconde. */
+  if (PUERTA.puedeSalir()) $("btn-salir").addEventListener("click", salir);
+  else $("btn-salir").hidden = true;
 
   $("btn-csv").addEventListener("click", function () {
     // La descarga no puede llevar encabezados propios, así que acá la
@@ -10366,9 +10622,10 @@
   var ICO_CAMPANA = ico("M18 8.5a6 6 0 1 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5M13.7 20a2 2 0 0 1-3.4 0");
   var ICO_CAMPANA_NO = ico("M8.6 4.2A6 6 0 0 1 18 8.5c0 1.6.2 2.9.5 3.9M6.3 6.3A6 6 0 0 0 6 8.5c0 6-2.5 7.5-2.5 7.5h13M13.7 20a2 2 0 0 1-3.4 0M3 3l18 18");
 
-  function puedeAvisar() {
-    return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-  }
+  /* Los avisos al teléfono necesitan un service worker. En una
+     instalación se registra y la campana sirve; en el demo no, porque no
+     se le deja uno instalado en el aparato a quien pasó a mirarlo. */
+  function puedeAvisar() { return PUERTA.puedeAvisar(); }
 
   function pintarAvisos(activo, texto) {
     var b = $("btn-avisos");
@@ -10380,8 +10637,19 @@
     $("btn-campana").classList.toggle("encendida", !!activo);
   }
 
+  /* Si el panel se está viendo como aplicación y no como pestaña. */
+  function instalada() {
+    return window.matchMedia("(display-mode: standalone)").matches ||
+           window.navigator.standalone === true;
+  }
+
   function revisarAvisos() {
-    if (!puedeAvisar()) return;
+    if (!puedeAvisar()) {
+      pintarAvisos(false, "Los avisos llegan con el panel instalado");
+      $("btn-avisos").disabled = true;
+      $("btn-campana").hidden = true;
+      return;
+    }
     /* En iPhone, `Notification` existe pero suscribirse falla si la app
        no está instalada. Decirlo antes vale más que un error después. */
     if (esIOS && !instalada()) {
@@ -10487,8 +10755,7 @@
     if (campo) campo.focus();
   }
 
-  fetch("/api/panel/sesion")
-    .then(function (r) { return r.ok ? r.json() : null; })
+  PUERTA.sesion()
     .then(function (d) {
       if (d && d.modo === "access") {
         if (d.salir) salidaAccess = d.salir;
@@ -10508,91 +10775,76 @@
 
   var quienEntro = "";
 
-  /* =========================================================
-     Instalarla en el teléfono
-     =========================================================
+  /* Todo lo de abajo sólo corre en una instalación. La puerta lo apaga
+     entero en el demo: no hay por qué dejar un service worker ni un
+     ícono en la pantalla de inicio del aparato de quien pasó a mirar. */
+  if (PUERTA.instalable()) {
+    /* =========================================================
+       Instalarla en el teléfono
+       =========================================================
 
-     El service worker es lo que hace que el panel abra de una y aguante
-     una calle con mala señal. Va con alcance /panel: el sitio público no
-     pasa por él y nada de lo que se publique queda atrapado en su copia.
+       El service worker es lo que hace que el panel abra de una y aguante
+       una calle con mala señal. Va con alcance /panel: el sitio público no
+       pasa por él y nada de lo que se publique queda atrapado en su copia.
 
-     Se registra después de `load` a propósito. Si se registra antes,
-     compite por el ancho de banda con la primera pantalla, que es
-     justamente lo que se está tratando de acelerar. */
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function () {
-      navigator.serviceWorker.register("/sw.js", { scope: "/panel" })
-        .catch(function () { /* Sin él el panel funciona igual, sólo abre más lento. */ });
+       Se registra después de `load` a propósito. Si se registra antes,
+       compite por el ancho de banda con la primera pantalla, que es
+       justamente lo que se está tratando de acelerar. */
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/sw.js", { scope: "/panel" })
+          .catch(function () { /* Sin él el panel funciona igual, sólo abre más lento. */ });
+      });
+    }
+
+    /* El aviso para instalarla. Sólo aparece si NO está ya instalada, y se
+       va para siempre en cuanto se instala o se cierra.
+
+       Android manda el evento y basta con un botón. iPhone no lo manda
+       nunca: en Safari hay que decirle a la persona los dos toques, porque
+       no hay ninguna forma de abrir ese menú desde la página. */
+    var YA_NO = "panel-no-instalar";
+    var invitacion = null;
+
+    function rechazada() {
+      try { return localStorage.getItem(YA_NO) === "1"; } catch (e) { return false; }
+    }
+    function noPreguntarMas() {
+      try { localStorage.setItem(YA_NO, "1"); } catch (e) {}
+      var c = $("instalar-caja");
+      if (c) c.hidden = true;
+    }
+
+    function mostrarInvitacion(texto, conBoton) {
+      if (instalada() || rechazada()) return;
+      var c = $("instalar-caja");
+      $("instalar-txt").textContent = texto;
+      $("instalar-si").hidden = !conBoton;
+      c.hidden = false;
+    }
+
+    window.addEventListener("beforeinstallprompt", function (e) {
+      e.preventDefault();
+      invitacion = e;
+      mostrarInvitacion("Guárdelo en la pantalla de inicio y ábralo como una aplicación.", true);
     });
+
+    // iPhone: no hay evento, hay que explicarlo.
+    if (esIOS && !instalada()) {
+      mostrarInvitacion("Para tenerlo como aplicación: toque Compartir y luego “Añadir a inicio”.", false);
+    }
+
+    $("instalar-si").addEventListener("click", function () {
+      if (!invitacion) return;
+      invitacion.prompt();
+      invitacion.userChoice.then(function () { invitacion = null; noPreguntarMas(); });
+    });
+    $("instalar-no").addEventListener("click", noPreguntarMas);
+    window.addEventListener("appinstalled", noPreguntarMas);
   }
 
-  /* El aviso para instalarla. Sólo aparece si NO está ya instalada, y se
-     va para siempre en cuanto se instala o se cierra.
-
-     Android manda el evento y basta con un botón. iPhone no lo manda
-     nunca: en Safari hay que decirle a la persona los dos toques, porque
-     no hay ninguna forma de abrir ese menú desde la página. */
-  var YA_NO = "panel-no-instalar";
-  var invitacion = null;
-
-  function instalada() {
-    return window.matchMedia("(display-mode: standalone)").matches ||
-           window.navigator.standalone === true;
-  }
-  function rechazada() {
-    try { return localStorage.getItem(YA_NO) === "1"; } catch (e) { return false; }
-  }
-  function noPreguntarMas() {
-    try { localStorage.setItem(YA_NO, "1"); } catch (e) {}
-    var c = $("instalar-caja");
-    if (c) c.hidden = true;
-  }
-
-  function mostrarInvitacion(texto, conBoton) {
-    if (instalada() || rechazada()) return;
-    var c = $("instalar-caja");
-    $("instalar-txt").textContent = texto;
-    $("instalar-si").hidden = !conBoton;
-    c.hidden = false;
-  }
-
-  window.addEventListener("beforeinstallprompt", function (e) {
-    e.preventDefault();
-    invitacion = e;
-    mostrarInvitacion("Guárdelo en la pantalla de inicio y ábralo como una aplicación.", true);
-  });
-
-  // iPhone: no hay evento, hay que explicarlo.
-  if (esIOS && !instalada()) {
-    mostrarInvitacion("Para tenerlo como aplicación: toque Compartir y luego “Añadir a inicio”.", false);
-  }
-
-  $("instalar-si").addEventListener("click", function () {
-    if (!invitacion) return;
-    invitacion.prompt();
-    invitacion.userChoice.then(function () { invitacion = null; noPreguntarMas(); });
-  });
-  $("instalar-no").addEventListener("click", noPreguntarMas);
-  window.addEventListener("appinstalled", noPreguntarMas);
 })();
 
-/* Octubre: decoracion de temporada.
-
-   Se apaga sola. `getMonth()` lee la hora del aparato, que en la calle
-   es la de Costa Rica, asi que el 1 de noviembre el panel vuelve solo a
-   como estaba y no hay nada que acordarse de quitar.
-
-   Vuelve cada octubre. Si algun ano no se quiere, se borra este bloque
-   entero y el CSS de `.deco-oct`: no hay nada mas que tocar. */
-var TELARANA = '<line x1="200" y1="0" x2="-5.0" y2="0.0"/><line x1="200" y1="0" x2="0.1" y2="45.6"/><line x1="200" y1="0" x2="15.3" y2="88.9"/><line x1="200" y1="0" x2="39.7" y2="127.8"/><line x1="200" y1="0" x2="72.2" y2="160.3"/><line x1="200" y1="0" x2="111.1" y2="184.7"/><line x1="200" y1="0" x2="154.4" y2="199.9"/><line x1="200" y1="0" x2="200.0" y2="205.0"/><path d="M167.9 0.0 Q172.2 3.1 168.7 7.1 Q173.6 9.2 171.1 13.9 Q176.3 14.9 174.9 20.0 Q180.2 19.8 180.0 25.1 Q185.1 23.7 186.1 28.9 Q190.8 26.4 192.9 31.3 Q196.9 27.8 200.0 32.1"/><path d="M135.8 0.0 Q144.5 6.3 137.4 14.3 Q147.3 18.5 142.1 27.9 Q152.7 29.7 149.8 40.0 Q160.5 39.5 160.0 50.2 Q170.3 47.3 172.1 57.9 Q181.5 52.7 185.7 62.6 Q193.7 55.5 200.0 64.2"/><path d="M103.7 0.0 Q116.7 9.4 106.1 21.4 Q120.9 27.7 113.2 41.8 Q129.0 44.6 124.7 60.1 Q140.7 59.3 139.9 75.3 Q155.4 71.0 158.2 86.8 Q172.3 79.1 178.6 93.9 Q190.6 83.3 200.0 96.3"/><path d="M71.5 0.0 Q88.9 12.5 74.8 28.6 Q94.5 36.9 84.3 55.7 Q105.4 59.5 99.6 80.1 Q121.0 79.0 119.9 100.4 Q140.5 94.6 144.3 115.7 Q163.1 105.5 171.4 125.2 Q187.5 111.1 200.0 128.5"/><path d="M39.4 0.0 Q61.2 15.6 43.4 35.7 Q68.1 46.1 55.3 69.7 Q81.7 74.3 74.5 100.1 Q101.2 98.8 99.9 125.5 Q125.7 118.3 130.3 144.7 Q153.9 131.9 164.3 156.6 Q184.4 138.8 200.0 160.6"/><path d="M7.3 0.0 Q33.4 18.8 12.1 42.9 Q41.8 55.4 26.4 83.6 Q58.0 89.2 49.3 120.1 Q81.5 118.5 79.9 150.7 Q110.8 142.0 116.4 173.6 Q144.6 158.2 157.1 187.9 Q181.2 166.6 200.0 192.7"/>';
-(function () {
-  if (new Date().getMonth() !== 9) return;   // 9 = octubre
-  var d = document.createElement("div");
-  d.className = "deco-oct";
-  d.setAttribute("aria-hidden", "true");
-  d.innerHTML = '<svg viewBox="0 0 200 200" aria-hidden="true">' + TELARANA + "</svg>";
-  document.body.appendChild(d);
-})();
 
 /* Barra de abajo: el vidrio responde al desplazamiento. Arriba del todo
    se posa (sombra baja); apenas el contenido empieza a pasarle por
@@ -10613,6 +10865,25 @@ var TELARANA = '<line x1="200" y1="0" x2="-5.0" y2="0.0"/><line x1="200" y1="0" 
   }, { passive: true });
   marcar();
 })();
+
+/* Octubre: decoracion de temporada.
+
+   Se apaga sola. `getMonth()` lee la hora del aparato, que en la calle
+   es la de Costa Rica, asi que el 1 de noviembre el panel vuelve solo a
+   como estaba y no hay nada que acordarse de quitar.
+
+   Vuelve cada octubre. Si algun ano no se quiere, se borra este bloque
+   entero y el CSS de `.deco-oct`: no hay nada mas que tocar. */
+var TELARANA = '<line x1="200" y1="0" x2="-5.0" y2="0.0"/><line x1="200" y1="0" x2="0.1" y2="45.6"/><line x1="200" y1="0" x2="15.3" y2="88.9"/><line x1="200" y1="0" x2="39.7" y2="127.8"/><line x1="200" y1="0" x2="72.2" y2="160.3"/><line x1="200" y1="0" x2="111.1" y2="184.7"/><line x1="200" y1="0" x2="154.4" y2="199.9"/><line x1="200" y1="0" x2="200.0" y2="205.0"/><path d="M167.9 0.0 Q172.2 3.1 168.7 7.1 Q173.6 9.2 171.1 13.9 Q176.3 14.9 174.9 20.0 Q180.2 19.8 180.0 25.1 Q185.1 23.7 186.1 28.9 Q190.8 26.4 192.9 31.3 Q196.9 27.8 200.0 32.1"/><path d="M135.8 0.0 Q144.5 6.3 137.4 14.3 Q147.3 18.5 142.1 27.9 Q152.7 29.7 149.8 40.0 Q160.5 39.5 160.0 50.2 Q170.3 47.3 172.1 57.9 Q181.5 52.7 185.7 62.6 Q193.7 55.5 200.0 64.2"/><path d="M103.7 0.0 Q116.7 9.4 106.1 21.4 Q120.9 27.7 113.2 41.8 Q129.0 44.6 124.7 60.1 Q140.7 59.3 139.9 75.3 Q155.4 71.0 158.2 86.8 Q172.3 79.1 178.6 93.9 Q190.6 83.3 200.0 96.3"/><path d="M71.5 0.0 Q88.9 12.5 74.8 28.6 Q94.5 36.9 84.3 55.7 Q105.4 59.5 99.6 80.1 Q121.0 79.0 119.9 100.4 Q140.5 94.6 144.3 115.7 Q163.1 105.5 171.4 125.2 Q187.5 111.1 200.0 128.5"/><path d="M39.4 0.0 Q61.2 15.6 43.4 35.7 Q68.1 46.1 55.3 69.7 Q81.7 74.3 74.5 100.1 Q101.2 98.8 99.9 125.5 Q125.7 118.3 130.3 144.7 Q153.9 131.9 164.3 156.6 Q184.4 138.8 200.0 160.6"/><path d="M7.3 0.0 Q33.4 18.8 12.1 42.9 Q41.8 55.4 26.4 83.6 Q58.0 89.2 49.3 120.1 Q81.5 118.5 79.9 150.7 Q110.8 142.0 116.4 173.6 Q144.6 158.2 157.1 187.9 Q181.2 166.6 200.0 192.7"/>';
+(function () {
+  if (new Date().getMonth() !== 9) return;   // 9 = octubre
+  var d = document.createElement("div");
+  d.className = "deco-oct";
+  d.setAttribute("aria-hidden", "true");
+  d.innerHTML = '<svg viewBox="0 0 200 200" aria-hidden="true">' + TELARANA + "</svg>";
+  document.body.appendChild(d);
+})();
+/* ▲ FIN · logica */
 </script>
 
 </body>
