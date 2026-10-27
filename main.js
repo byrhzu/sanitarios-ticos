@@ -963,6 +963,20 @@
         .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
         .then(function (res) {
           cargando.remove();
+          /* Esa zona no tiene precio automático. NO es que el cálculo
+             fallara: el trabajo se hace igual, lo que no se puede es
+             ponerle precio solo. Víctor tiene que decir eso y ofrecer
+             la salida, no quedarse en "no me salió". */
+          if (res.d && res.d.fueraDeTabla) {
+            cotizando = false;
+            agregarMensaje(
+              "Diay, hasta " + (res.d.zona || "esa zona") + " sí llegamos, pero el precio " +
+              "depende del viaje y lo pone el encargado, no la calculadora. " +
+              "Escríbale al WhatsApp 8341-7547 con la dirección y se lo da de una.",
+              false, true
+            );
+            return;
+          }
           if (!res.ok || !res.d.ok) throw new Error((res.d && res.d.error) || "sin cotización");
           mostrarCotizacion(res.d);
         })

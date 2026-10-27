@@ -3967,6 +3967,13 @@ async function cotizar(request, env, ctx) {
       antiguedad: texto(x.antiguedad, 40),
       // Alquiler
       dias: x.dias,
+      /* La ubicación VA en la línea. Sin esto `calcularCotizacion` no
+         podía mirar el recargo por distrito —le llegaban undefined— y
+         toda cotización guardada salía al precio base, con la tabla de
+         recargos sin hacer nada. La barra del cotizador sí lo sumaba
+         (ésa calcula por otro camino), así que el monto de la pantalla
+         y el del documento no coincidían. */
+      provincia, canton, distrito,
       zona
     };
     return {
