@@ -10,36 +10,64 @@
    1. Tokens
    ============================================================= */
 :root {
-  /* Papel cálido — el 80 % de la página */
-  --paper:    #faf7f2;
-  --paper-2:  #f3ece2;
-  --paper-3:  #e9dfd1;
+  /* =============================================================
+     PALETA MONOCROMÁTICA · un solo matiz, el del camión
+     =============================================================
+
+     El naranja del rótulo es #ef6511 — matiz 22,7°. De ahí sale TODA
+     la escala: el papel es ese mismo naranja desaturado y subido de
+     luz; los fondos oscuros son ese mismo naranja bajado, no un azul
+     pizarra prestado. Antes el sitio tenía dos familias peleando
+     (papel cálido + pizarra fría); ahora es una sola, y las secciones
+     se distinguen por PESO dentro de la escala, no por cambio de
+     color. Eso es lo que da el juego sin ensuciar.
+
+     Cada paso está comprobado contra AA (ver abajo).
+     ============================================================= */
+  --c-50:  #fcf8f5;   /* papel */
+  --c-100: #f7ece6;   /* papel, un paso */
+  --c-200: #eedcd0;   /* papel hondo · filetes */
+  --c-300: #ddbba7;   /* bordes sobre oscuro */
+  --c-400: #c88e6a;   /* texto suave sobre oscuro — 6,1:1 */
+  --c-500: #ef6511;   /* la marca. El del camión, sin tocar */
+  --c-600: #b44d0e;   /* naranja de texto sobre papel — 5,0:1 */
+  --c-700: #813a0e;   /* naranja hondo */
+  --c-800: #452511;   /* oscuro medio */
+  --c-900: #29190f;   /* oscuro de sección */
+  --c-950: #19100b;   /* tinta */
+
+  /* Papel — el 80 % de la página */
+  --paper:    var(--c-50);
+  --paper-2:  var(--c-100);
+  --paper-3:  var(--c-200);
   --white:    #ffffff;
 
   /* Tinta */
-  --ink:      #1b1917;
-  --ink-2:    #3c3630;
-  --muted:    #6b6259;   /* 5.4:1 sobre papel */
-  --muted-2:  #746b63;   /* 4.6:1 sobre papel-2 */
+  --ink:      var(--c-950);
+  --ink-2:    #3b2a1e;
+  --muted:    #78685e;   /* 5,0:1 sobre papel */
+  --muted-2:  #847368;   /* 4,6:1 sobre papel-2 */
 
   /* Naranja de marca — acento, nunca fondo grande */
-  --orange:      #ef6511;
-  --orange-dk:   #b34c0d;  /* 4.5:1 — enlaces y texto */
-  --orange-lt:   #ff8a3d;
+  --orange:      var(--c-500);
+  --orange-dk:   var(--c-600);  /* 5,0:1 — enlaces y texto */
+  --orange-lt:   #e59b63;
   --orange-soft: rgba(239,101,17,.10);
-  --orange-tint: #fbeee5;   /* el naranja suave ya compuesto, opaco */
+  --orange-tint: var(--c-100);   /* el naranja suave ya compuesto, opaco */
   --orange-line: rgba(239,101,17,.28);
 
-  /* Pizarra — secciones oscuras, complemento frío del naranja */
-  --slate:    #1f2c33;
-  --slate-2:  #2a3a43;
-  --slate-3:  #3a4d57;
+  /* Las secciones oscuras. Ya no son pizarra fría: son el mismo
+     naranja al fondo de su escala. El nombre se conserva para no
+     reescribir medio archivo, pero de frío ya no tienen nada. */
+  --slate:    var(--c-900);
+  --slate-2:  var(--c-800);
+  --slate-3:  #5a3419;
 
   --wa:       #25d366;
 
-  --line:     rgba(27,25,23,.13);
-  --line-2:   rgba(27,25,23,.22);
-  --line-lt:  rgba(250,247,242,.16);
+  --line:     rgba(25,16,11,.13);
+  --line-2:   rgba(25,16,11,.22);
+  --line-lt:  rgba(252,248,245,.16);
 
   /* Una sola familia con eje de ancho (Archivo, Omnibus-Type). El
      titular usa el corte estrecho y pesado —el del logo y el rótulo del
@@ -271,7 +299,11 @@ strong, b { font-weight: 600; }
 }
 .head.is-stuck { box-shadow: 0 1px 20px rgba(27,25,23,.09); }
 .head-in {
-  width: min(100% - (var(--gut) * 2), 1440px); margin-inline: auto;
+  /* La MISMA medida que el contenido (--wrap). Estaba en 1440 mientras
+     todo lo demás iba en 1240: el logo arrancaba 45px más a la
+     izquierda que el titular, y esa esquina vacía era lo primero que
+     se veía al abrir. Una página se alinea por una sola columna. */
+  width: min(100% - (var(--gut) * 2), var(--wrap)); margin-inline: auto;
   min-height: var(--head-h);
   display: flex; align-items: center; gap: 1.5rem;
 }
@@ -510,36 +542,41 @@ strong, b { font-weight: 600; }
 }
 
 /* --- Índice de servicios (filas, no tarjetas) ---
-   Deja de ser una lista y pasa a ser un índice numerado: 01–05 en el
-   corte de cartel, el único sistema de énfasis del sitio (§5). El número
-   grande en naranja hace que la sección más plana pegue como el resto —
-   y en móvil, donde no hay foto al pasar el mouse, es lo que le da peso. */
-.index { counter-reset: svc; }
+   SIN numeración. El propio DIRECCION-DE-ARTE.md §"Cero numeración"
+   la había sacado —"fuera los números de las filas de servicio"— y
+   había vuelto al CSS. Un 01–05 no ordena nada acá: nadie contrata el
+   servicio 3 por ser el 3, y es de los tics que delatan la plantilla.
+
+   El peso lo da ahora la escala: una barra del matiz de la marca que
+   se va oscureciendo fila por fila. Juega con la paleta, acompaña la
+   lectura hacia abajo y no inventa un orden que no existe. */
+.index { --paso: 0; }
 .row {
   position: relative;
-  counter-increment: svc;
-  display: grid; grid-template-columns: auto 1fr auto;
+  display: grid; grid-template-columns: 4px 1fr auto;
   gap: clamp(.9rem, 2.5vw, 1.8rem);
-  align-items: center;
+  align-items: stretch;
   padding-block: clamp(1.4rem, 3vw, 2.1rem);
   transition: background-color .3s var(--ease);
 }
 .row::before {
-  content: counter(svc, decimal-leading-zero);
-  align-self: center;
-  font-family: var(--display); font-stretch: var(--ancho-cartel);
-  font-weight: 800; font-variant-numeric: tabular-nums;
-  font-size: clamp(1.55rem, 3.6vw, 2.7rem); line-height: .9;
-  letter-spacing: -.04em; color: var(--orange);
-  transition: color .3s var(--ease), transform .3s var(--ease);
+  content: ""; width: 4px; border-radius: 2px;
+  background: var(--c-300);
+  transition: background-color .3s var(--ease);
 }
-.row:hover { background: var(--paper-3); }
-.row:hover::before { color: var(--orange-dk); transform: translateX(2px); }
-.row-t { min-width: 0; }
+/* Cada fila un paso más honda en la misma escala. */
+.row:nth-child(1)::before { background: var(--c-300); }
+.row:nth-child(2)::before { background: var(--c-400); }
+.row:nth-child(3)::before { background: var(--c-500); }
+.row:nth-child(4)::before { background: var(--c-600); }
+.row:nth-child(5)::before { background: var(--c-700); }
+.row:hover { background: var(--paper-2); }
+.row:hover::before { background: var(--c-500); }
+.row-t { min-width: 0; align-self: center; }
 .row-t h3 { font-size: clamp(1.25rem, 2.6vw, 1.85rem); letter-spacing: -.03em; }
 .row-t p { margin-top: .35rem; color: var(--muted); font-size: .93rem; max-width: 44ch; }
 .row-go {
-  width: 44px; height: 44px; flex: 0 0 auto;
+  width: 44px; height: 44px; flex: 0 0 auto; align-self: center;
   display: grid; place-items: center;
   border: 1px solid var(--line-2);
   color: var(--ink);
@@ -1361,7 +1398,10 @@ body.fabs-fuera .wa-fab {
 /* Sangrado de la imagen de portada hasta el borde del viewport */
 @media (min-width: 1024px) {
   /* La foto llega justo hasta el borde derecho de la ventana */
-  .cover-media { margin-right: calc((min(100vw - var(--gut) * 2, var(--wrap)) - 100vw) / 2); }
+  /* La foto se salía hasta el borde de la ventana mientras el texto
+     quedaba metido en su columna: todo el peso a un lado y una franja
+     muerta al otro. Ahora las dos columnas comparten la medida y la
+     imagen termina donde termina la página. */
   .cover-media img { aspect-ratio: 3/2.4; }
   /* La foto sangra hasta el borde de la ventana. Antes cortaba el velo
      antes de ese borde y el corte se veía como un tajo vertical sobre

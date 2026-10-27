@@ -2241,3 +2241,65 @@ vez de un padding inventado para ella sola.
 - **Trazabilidad:** la barra, las filas sin caja y la proporción 1:3 salen
   de la medición de arriba. El naranja, el papel y Archivo vienen del
   sistema que ya existía (§4, §5).
+
+## 46 · Paleta monocromática y el hero alineado (2026-10-26)
+
+Byron, con una captura marcada: *"crea una paleta monocromática de acuerdo
+a la identidad"*, *"mal acomodo, la imagen carga todo hacia un solo lado"*,
+*"eliminar textos sobreexplicativos"*.
+
+### 46.1 Un solo matiz: el del camión
+
+El naranja del rótulo es `#ef6511`. Medido: **matiz 22,7°**, saturación 87%,
+luz 50%. De ese matiz sale TODA la escala —el papel es el mismo naranja
+desaturado y subido de luz; los fondos oscuros son el mismo naranja bajado—
+en vez de las dos familias que peleaban antes (papel cálido + pizarra fría).
+
+| Paso | Valor | Para qué |
+|---|---|---|
+| `--c-50` | `#fcf8f5` | papel |
+| `--c-100` | `#f7ece6` | papel, un paso |
+| `--c-200` | `#eedcd0` | papel hondo, filetes |
+| `--c-300` | `#ddbba7` | bordes sobre oscuro |
+| `--c-400` | `#c88e6a` | texto suave sobre oscuro |
+| `--c-500` | `#ef6511` | **la marca, sin tocar** |
+| `--c-600` | `#b44d0e` | naranja de texto |
+| `--c-700` | `#813a0e` | naranja hondo |
+| `--c-800` | `#452511` | oscuro medio |
+| `--c-900` | `#29190f` | oscuro de sección |
+| `--c-950` | `#19100b` | tinta |
+
+Contraste comprobado (AA pide 4,5 en texto): tinta sobre papel 17,8 ·
+apagado sobre papel 5,0 · naranja de texto sobre papel 5,0 · papel sobre
+oscuro 16,0 · naranja claro sobre oscuro 6,1 · la marca sobre oscuro 5,3.
+
+Las secciones ahora se distinguen por **peso dentro de la escala**, no por
+cambio de color. Eso es lo que da juego sin ensuciar.
+
+### 46.2 El hero estaba descuadrado, medido
+
+- `.head-in` iba a **1440px** y todo lo demás a `--wrap` (**1240px**): el
+  logo arrancaba en 93px y el titular en 93… pero el logo en 48. Una
+  esquina vacía de 45px que era lo primero que se veía. La cabecera pasa a
+  la misma medida que el contenido.
+- `.cover-media` tenía un `margin-right` negativo que la sacaba hasta el
+  borde de la ventana (terminaba en 1433 con la página en 1333). Todo el
+  peso a un lado y una franja muerta al otro. Fuera: las dos columnas
+  comparten la medida.
+- Fuera el `.cover-stamp` ("Equipo propio, rotulado"), que Byron marcó.
+
+### 46.3 Los números de servicio, otra vez fuera
+
+El §"Cero numeración" de este mismo documento ya los había sacado —"fuera
+los números de las filas de servicio"— y habían vuelto al CSS. Un `01–05`
+no ordena nada: nadie contrata el servicio 3 por ser el 3.
+
+En su lugar, una barra del matiz que se va hondando fila por fila
+(`--c-300` → `--c-700`). Juega con la paleta, acompaña la lectura hacia
+abajo y no inventa un orden que no existe.
+
+### 46.4 Los textos
+
+Cada servicio dice lo que es y para. Se fueron las promesas defensivas
+("sin derrames ni malos olores"), los calificativos vacíos ("profesional")
+y los condicionales ("según lo que el terreno permita").
