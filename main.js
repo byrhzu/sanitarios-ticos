@@ -730,7 +730,14 @@
        un destaqueo nada — el precio ya está en tabla. Por eso la lista
        no es fija: se arma cuando la persona escoge el servicio. */
     function pasosDelTrabajo() {
-      var svc = opciones.servicios[respuestas.servicio];
+      /* `opciones` llega del servidor y acá abajo hay un
+         `var PASOS = armarPasos()` que corre AL CARGAR la página, con
+         `opciones` todavía en null. Sin esta guarda eso tiraba un
+         TypeError que mataba el resto del archivo: el botón "Cotizar
+         ahora" se quedaba sin su oyente y, por el chat, `PASOS` nunca
+         se asignaba y `siguientePaso` reventaba — que es el "No pude
+         cargar el cotizador" que veía la gente. */
+      var svc = opciones && opciones.servicios[respuestas.servicio];
       if (!svc) return [];
       if (svc.tipo === "tanque") {
         return [
@@ -1107,7 +1114,11 @@
           if (!d || !d.ok || !g || !g.ok || !g.geografia) throw new Error("sin opciones");
           opciones = d;
           geografia = g.geografia;
-          siguientePaso();
+          /* Las preguntas del trabajo dependen del servicio y el
+             servicio sale de estas opciones: hasta acá no se podían
+             armar de verdad. */
+          PASOS = armarPasos();
+          return true;
         })
         .catch(function () {
           cargando.remove();
@@ -1116,7 +1127,14 @@
             false
           );
           terminar();
-        });
+          return false;
+        })
+        /* El primer paso va FUERA del `.then` de la carga. Estaba
+           adentro, así que cualquier error suyo caía en el `catch` de
+           arriba y se reportaba como "no pude cargar el cotizador" —
+           un error de otra cosa disfrazado de red. Un mensaje que
+           miente sobre la causa cuesta días de búsqueda. */
+        .then(function (cargo) { if (cargo) siguientePaso(); });
     }
 
     if (botonCotizar) {
