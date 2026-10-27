@@ -3,46 +3,21 @@
 Sitio público, cotizador y panel de operaciones.
 Cloudflare Pages + `worker.js` con D1.
 
-## El panel es generado
+## El panel se edita acá
 
-`panel.html` **no se edita acá**. Casi todo ese archivo sale de la fuente
-del sistema, que vive en el repositorio de baizzen:
+`panel.html` **se edita en esta carpeta**, como cualquier otro archivo del
+sitio.
 
-```
-../baizzen/sistemas/operaciones/
-```
+Salió de la plantilla «operaciones» de baizzen el 27 de octubre de 2026, pero
+desde esa fecha va por su cuenta: **ya no se regenera y nada de lo que se le
+cambie acá se pierde.**
 
-Para cambiar el panel:
+Si quiere ver de dónde vino, la plantilla está en
+`../baizzen/sistemas/operaciones/` y los valores con los que se armó quedaron
+en `../baizzen/sistemas/desprendidos/sanitarios-ticos.json`. Son referencia,
+no fuente.
 
-1. Se edita en `../baizzen/sistemas/operaciones/fuente/` (o en
-   `conexion/servidor.js`, si cambia cómo habla con el servidor).
-2. `cd "../baizzen" && python3 sistemas/armar.py operaciones sanitarios-ticos`
-3. Se revisa el diff acá y se hace commit normal.
-
-Lo que es de Sanitarios Ticos y no del sistema —el logo, los servicios con
-su ícono y su color, el vocabulario («certificado», «tiquete», «tanque»)—
-está en:
-
-```
-../baizzen/sistemas/operaciones/destinos/sanitarios-ticos.json
-```
-
-Dentro del archivo, el código generado va entre marcas:
-
-```
-/* ▼ GENERADO · logica — … */   …   /* ▲ FIN · logica */
-```
-
-Fuera de esas marcas —el `<head>`, el manifest, los iconos, el link a
-`styles.css`— sí es de acá.
-
-**Un cambio hecho a mano dentro de las marcas se pierde** la próxima vez
-que alguien corra `armar.py`. Lo que vale es hacerlo en la fuente: así el
-arreglo le llega también al demo de labs y a cualquier otro cliente.
-
-Un detalle: la decoración de octubre es de acá, no del sistema. Vive en
-`../baizzen/sistemas/operaciones/extras/octubre.js` y sólo la lleva este
-destino.
+**No corra `armar.py` esperando que toque este panel.** Ya no lo toca.
 
 ## El cotizador todavía NO es generado
 
