@@ -464,11 +464,11 @@ ul, ol { list-style: none; padding: 0; }
        dónde estoy y quién soy · el título · buscar y crear.  */
   .lienzo-top { margin-bottom: var(--e5); }
   .top-fila { display: flex; align-items: center; gap: var(--e2); }
-  /* El saludo en una sola línea, a la izquierda. "Buenas tardes, Leitón". */
+  /* El renglón de contexto, a la izquierda: el día de hoy. */
   .top-saludo { display: flex; align-items: baseline; gap: .35rem; min-width: 0; flex: 1 1 auto; }
-  .top-saludo small { color: var(--p-tenue); font-size: .95rem; }
   .top-saludo b {
-    font-family: var(--display); font-weight: 600; font-size: .98rem;
+    font-family: var(--display); font-weight: 500; font-size: .98rem;
+    color: var(--p-txt2);
     letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .top-acc { position: relative; margin-left: auto; display: flex; align-items: center; gap: var(--e2); flex: 0 0 auto; }
@@ -833,9 +833,13 @@ ul, ol { list-style: none; padding: 0; }
      unica caja del Resumen es la de Top clientes, que si es una entidad. */
   .dinero { padding: .1rem 0 0; }
   .dinero-cab { display: flex; align-items: baseline; gap: .6rem; }
+  /* En minúscula y sin rastrear. Las mayúsculas espaciadas son el tic
+     tipográfico que Byron mandó a quitar del sitio público; el panel se
+     había quedado con las suyas. Una etiqueta no necesita gritar para
+     leerse como etiqueta: le basta con ser más chica y más tenue que la
+     cifra que rotula. */
   .dinero-et {
-    margin: 0; font-size: .82rem; font-weight: 600; letter-spacing: .04em;
-    text-transform: uppercase; color: var(--p-txt2);
+    margin: 0; font-size: .82rem; font-weight: 600; color: var(--p-txt2);
   }
   .dinero-rango { color: var(--p-tenue); font-size: .78rem; }
   .dinero-cifra {
@@ -1049,15 +1053,17 @@ ul, ol { list-style: none; padding: 0; }
   .ag2-dias, .ag2-rej { display: grid; grid-template-columns: repeat(7, 1fr); gap: .15rem; }
   .ag2-dias { margin-top: .9rem; }
   .ag2-rej { margin-top: .3rem; }
+  /* Las iniciales del calendario ya son una sola letra: la mayúscula
+     la pone el texto, no el CSS. */
   .ag2-rej .enc {
-    text-align: center; font-size: .66rem; font-weight: 600; color: var(--p-tenue);
-    text-transform: uppercase; padding-bottom: .2rem;
+    text-align: center; font-size: .68rem; font-weight: 600; color: var(--p-tenue);
+    padding-bottom: .2rem;
   }
   .ag2-d {
     display: flex; flex-direction: column; align-items: center; gap: .2rem;
     padding: .4rem 0 .5rem; border-radius: 14px;
   }
-  .ag2-d .l { font-size: .68rem; font-weight: 600; color: var(--p-tenue); text-transform: uppercase; }
+  .ag2-d .l { font-size: .68rem; font-weight: 600; color: var(--p-tenue); }
   .ag2-d .n {
     width: 2.1rem; height: 2.1rem; border-radius: 50%;
     display: inline-flex; align-items: center; justify-content: center;
@@ -1434,9 +1440,16 @@ ul, ol { list-style: none; padding: 0; }
   .barras button { width: 100%; text-align: left; padding: .32rem 0; border-radius: 5px; }
   .barras button:hover .b-k { color: var(--p-acento-t); }
   .b-fila { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .3rem; }
-  .b-n { color: var(--p-tenue); font-variant-numeric: tabular-nums; }
-  .b-pista { height: 5px; background: var(--p-sup2); border-radius: 3px; overflow: hidden; }
-  .b-rell { height: 100%; background: var(--p-dato1); border-radius: 3px; }
+  .b-n { color: var(--p-tenue); font-variant-numeric: tabular-nums;
+         display: flex; align-items: baseline; gap: .75rem; }
+  .b-pista { height: 8px; background: var(--p-linea); border-radius: 999px; overflow: hidden; }
+  /* El relleno era azul (--p-dato1). Ese azul es de la gráfica de
+     arriba, donde hay DOS series y el color es lo único que las
+     separa. Acá hay una sola serie: el azul no distinguía nada, sólo
+     metía un segundo color de marca en una pantalla que ya tiene el
+     suyo. Y abajo, en "Clientes que más pagaron", las mismas barras
+     salían naranja — dos lenguajes para la misma idea. */
+  .b-rell { height: 100%; background: var(--p-acento); border-radius: 999px; }
 
   /* ---------- Listas ---------- */
   /* Pestañas de estado. La línea de abajo hace de riel: el activo se
@@ -1496,10 +1509,8 @@ ul, ol { list-style: none; padding: 0; }
   table.lista { width: 100%; border-collapse: collapse; white-space: nowrap; }
   table.lista th, table.lista td { padding: .66rem .85rem; text-align: left; vertical-align: middle; }
   table.lista tbody tr { border-top: 1px solid var(--p-linea); }
-  /* La única vez en toda la pantalla que hay mayúsculas rastreadas. */
   table.lista th {
-    font-size: .69rem; font-weight: 500; letter-spacing: .07em;
-    text-transform: uppercase; color: var(--p-tenue);
+    font-size: .75rem; font-weight: 600; color: var(--p-tenue);
   }
   table.lista td.ancha { white-space: normal; min-width: 15rem; color: var(--p-txt2); }
   table.lista tbody tr:hover { background: var(--p-fondo); }
@@ -2252,8 +2263,7 @@ ul, ol { list-style: none; padding: 0; }
     border: 1px solid color-mix(in srgb, var(--p-acento) 22%, transparent);
   }
   .apuntes-t {
-    margin: 0 0 .5rem; font-size: .72rem; font-weight: 700; letter-spacing: .05em;
-    text-transform: uppercase; color: var(--p-acento-t);
+    margin: 0 0 .5rem; font-size: .78rem; font-weight: 700; color: var(--p-acento-t);
   }
   :root[data-tema="oscuro"] .apuntes-t { color: var(--p-acento); }
   .apunte + .apunte { margin-top: .6rem; padding-top: .6rem; border-top: 1px solid var(--p-linea); }
@@ -2273,8 +2283,7 @@ ul, ol { list-style: none; padding: 0; }
     display: grid; gap: .1rem; margin-top: .9rem; padding-top: .85rem;
     border-top: 1px solid var(--p-linea);
   }
-  .fe-iva-et { font-size: .78rem; font-weight: 700; letter-spacing: .04em;
-    text-transform: uppercase; color: var(--est-mal-tx); }
+  .fe-iva-et { font-size: .78rem; font-weight: 700; color: var(--est-mal-tx); }
   .fe-iva-n { font-family: var(--datos); font-size: 1.6rem; font-weight: 700;
     letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
   .fe-iva-pie { font-size: .78rem; color: var(--p-tenue); }
@@ -2315,8 +2324,7 @@ ul, ol { list-style: none; padding: 0; }
   .sv-bloque.extra { margin-top: 1rem; padding-top: .9rem; border-top: 1px solid var(--p-linea); }
   .sv-cab { display: flex; align-items: center; justify-content: space-between;
     gap: .8rem; margin-bottom: .7rem; }
-  .sv-n { font-size: .78rem; font-weight: 700; letter-spacing: .04em;
-    text-transform: uppercase; color: var(--p-tenue); }
+  .sv-n { font-size: .78rem; font-weight: 700; color: var(--p-tenue); }
 
   /* El renglón de la agenda: servicio, detalle y el botón de quitar en
      una sola línea mientras quepa. */
@@ -2377,8 +2385,7 @@ ul, ol { list-style: none; padding: 0; }
     display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
     margin: .55rem 0 0; padding-top: .55rem; border-top: 1px solid var(--p-linea);
   }
-  .precio-suma span { color: var(--p-tenue); font-size: .8rem; font-weight: 600;
-    letter-spacing: .04em; text-transform: uppercase; }
+  .precio-suma span { color: var(--p-tenue); font-size: .8rem; font-weight: 600; }
   .precio-suma b { font-family: var(--datos); font-size: 1.05rem; font-weight: 700;
     font-variant-numeric: tabular-nums; }
   @media (max-width: 26rem) {
@@ -2576,6 +2583,28 @@ ul, ol { list-style: none; padding: 0; }
     font-family: var(--datos); font-size: .82rem; font-weight: 600; color: var(--tono);
   }
   .pcab-t small { display: block; color: var(--p-tenue); font-size: .76rem; margin-top: .15rem; }
+  /* El renglón de contexto: qué trabajo y dónde. Las dos piezas no van
+     separadas por un "·" —el punto de separador ya lo mandó a quitar
+     Byron de las otras listas— sino por peso: la primera en el color
+     del texto, la segunda tenue. */
+  .pcab-s {
+    display: flex; flex-wrap: wrap; gap: .1rem .55rem;
+    margin-top: .2rem; font-size: .8rem; color: var(--p-txt2); min-width: 0;
+  }
+  .pcab-s span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pcab-s .tenue { color: var(--p-tenue); }
+  /* En escritorio el nombre y el "hace 3 días" caben en el mismo
+     renglón, y la fila baja de tres líneas a dos. Con diecinueve
+     pendientes en pantalla eso es la diferencia entre verlos todos y
+     andar rodando. */
+  @media (min-width: 60rem) {
+    .pcab-t { display: grid; grid-template-columns: auto auto 1fr; align-items: baseline;
+              column-gap: .7rem; }
+    .pcab-t b { grid-column: 1; }
+    .pcab-t .cuanto { grid-column: 2; margin-top: 0; }
+    .pcab-t small { grid-column: 3; margin-top: 0; }
+    .pcab-s { grid-column: 1 / -1; }
+  }
   .pcab-der { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; }
   .pcab-fl { color: var(--p-tenue); display: inline-flex; transition: transform .28s var(--ease); }
   .pcab-fl svg { width: 17px; height: 17px; }
@@ -2650,8 +2679,12 @@ ul, ol { list-style: none; padding: 0; }
     .top-cli { grid-template-columns: 1.4rem minmax(0, 1fr) auto; }
     .top-cli .top-barra { display: none; }
   }
-  /* Barras por facturación: el subtítulo con la cantidad de trabajos. */
-  .barras .b-n .b-sub { color: var(--p-tenue); font-weight: 400; margin-left: .2rem; }
+  /* Barras por facturación: la cantidad de trabajos, a la derecha del
+     monto. Iba pegada con un " · " y sin unidad: "₡900.000 · 18". El
+     punto no decía nada y el 18 tampoco, hasta que uno adivinaba que
+     eran trabajos. Ahora lo dice. */
+  .barras .b-n .b-sub { color: var(--p-tenue); font-weight: 400;
+    min-width: 5.2rem; text-align: right; }
   /* Ficha: botón "Programar" y filas de mantenimiento editables. */
   .exp-tarj .tarj-h { align-items: center; }
   /* La accion de la cabecera de la tarjeta. Llevaba un min-width de
@@ -3169,11 +3202,20 @@ ul, ol { list-style: none; padding: 0; }
     <div class="lienzo-top">
 
       <div class="top-fila">
-        <!-- Guía § pág 5: el texto (saludo) en una sola línea a la
-             izquierda, y el logo/avatar del lado derecho, con los avisos
-             y los ajustes colgando de él. -->
+        <!-- Guía § pág 5: a la izquierda el renglón de contexto, y el
+             logo/avatar del lado derecho, con los avisos y los ajustes
+             colgando de él.
+
+             Decía "Buenos días, Leitón". El lugar más visible de la
+             pantalla gastado en saludar a alguien que ya sabe cómo se
+             llama: el panel se abre para trabajar, y lo que hay que
+             saber al abrirlo es qué día es, porque de eso dependen el
+             "hoy" de la agenda y el "hace tres días" de los pendientes.
+             El nombre no se perdió, se fue al menú del avatar, que es
+             donde uno va cuando la pregunta es "¿con cuál cuenta
+             entré?". -->
         <span class="top-saludo">
-          <small id="top-donde">Buenas</small><b id="top-quien">Leitón</b>
+          <b id="top-dia">Hoy</b>
         </span>
         <span class="top-acc">
           <button type="button" class="rueda" id="btn-refrescar" title="Actualizar" aria-label="Actualizar">
@@ -3199,7 +3241,7 @@ ul, ol { list-style: none; padding: 0; }
 
           <div class="menu-yo" id="menu-yo" hidden>
             <div class="menu-cabeza">
-              <b>Panel interno</b>
+              <b id="menu-yo-quien">Panel interno</b>
               <small class="frescura" id="frescura">Cargando…</small>
             </div>
             <button type="button" id="btn-avisos" hidden></button>
@@ -4639,11 +4681,6 @@ window.INSTALACION = {
     var d = Math.floor(horas / 24);
     return "hace " + d + (d === 1 ? " día" : " días");
   }
-  function saludo() {
-    var h = new Date().getHours();
-    return h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
-  }
-
   var DIAS_SEM = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
   /* Corta, porque va en el renglón chico de arriba y compite con dos
      botones. El año sobra: nadie abre el panel con dudas sobre el año. */
@@ -4705,6 +4742,13 @@ window.INSTALACION = {
 
      Sin icon-box y sin chispas: la chispa de "Trabajos" dibujaba la
      serie de cotizaciones, así que además mentía. */
+  /* Desde cuándo viene lo que falta por cobrar. */
+  function pieDelSaldo(d) {
+    var lista = (d.hoy && d.hoy.cobrosPend) || [];
+    if (!lista.length) return "Hay trabajos sin cobrar";
+    return "El más viejo es del " + fechaCorta(lista[0].fecha);
+  }
+
   function pintarCifras(d) {
     var cobrado   = d.ingresos.cobrado || 0;
     var facturado = d.ingresos.monto || 0;
@@ -4740,13 +4784,23 @@ window.INSTALACION = {
         '<div class="dinero-sub">' +
           dato({ vista: "servicios", estado: "completado" }, "Facturado", facturado,
                colones(facturado), d.ticket ? "Promedio " + colones(d.ticket) + " por trabajo" : "", "", true) +
+          /* El pie decía "Hay trabajos sin cobrar": repetía la cifra con
+             palabras y no agregaba nada. Lo que sirve de una cifra de
+             saldo es desde cuándo viene: una deuda de esta semana y una
+             de hace dos meses son dos problemas distintos. La lista
+             viene ordenada del más viejo al más nuevo y está topada en
+             20, así que la FECHA del primero siempre es cierta —el
+             conteo no lo sería. */
           dato({ vista: "clientes" }, "Saldo por cobrar", saldo, colones(saldo),
-               saldo > 0 ? "Hay trabajos sin cobrar" : "Nadie debe nada",
+               saldo > 0 ? pieDelSaldo(d) : "Nadie debe nada",
                saldo > 0 ? "debe" : "", true) +
         "</div>" +
       "</section>" +
       '<div class="tira">' +
-        dato({ vista: "servicios", estado: "completado" }, "Trabajos", trabajos, String(trabajos), "") +
+        /* Sin el pie, un "15" pelado se lee como el total de la
+           historia. Es de los últimos N días, como todo lo de arriba. */
+        dato({ vista: "servicios", estado: "completado" }, "Trabajos", trabajos, String(trabajos),
+             "Completados en " + dias + " días") +
         dato({ vista: "cotizaciones", desde: d.desde, hasta: d.hasta }, "Cotizaciones", cotiz, String(cotiz),
              d.variacion.cot != null ? (d.variacion.cot > 0 ? "+" : "") + d.variacion.cot + "% vs. periodo anterior" : "") +
         '<button type="button" class="dato" data-ir=\'' +
@@ -5083,15 +5137,21 @@ window.INSTALACION = {
   function tarjetaPend(g, x, i) {
     var clave = g.id + ":" + i;
     var abierto = pendAbierto === clave;
-    var cuanto = "", etq = "", det = "", acc = [];
+    /* `resu` es el renglón que va DEBAJO del nombre con la tapa cerrada:
+       qué trabajo es y dónde. Antes el renglón cerrado decía sólo el
+       nombre y "hace 3 días", y para saber si era un tanque séptico en
+       Atenas o un destaqueo en Escazú había que abrir la tarjeta —una
+       por una, en una lista de diecinueve. El dato ya venía del
+       servidor; lo único que faltaba era enseñarlo. */
+    var cuanto = "", etq = "", det = "", acc = [], resu = [], tono = null;
 
     if (g.id === "trabajos") {
       cuanto = x.dias === 1 ? "Ayer" : "Hace " + x.dias + " días";
       etq = "Sin confirmar";
+      resu = [x.servicio, x.lugar];
       // Mismo separador que en la Agenda: esta tarjeta es un trabajo de allá.
-      var barra = function (a) { return a.filter(Boolean).join(" | "); };
-      det = filaDet(I_NOTA_AG, barra([x.servicio, x.hora ? horaBonita(x.hora) + " " + ampmDe(x.hora) : ""])) +
-            filaDet(I_PIN_AG, barra([x.lugar, x.senas])) +
+      det = filaDet(I_RELOJ_AG, x.hora ? horaBonita(x.hora) + " " + ampmDe(x.hora) : "") +
+            filaDet(I_PIN_AG, x.senas) +
             filaDet(I_NOTA_AG, x.detalle);
       if (x.wa) acc.push('<a class="bt wa" href="' + escHtml(x.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Escribir</a>");
       acc.push('<button type="button" class="bt fuerte" data-phecho="' + x.id + '">Marcar hecho</button>');
@@ -5101,8 +5161,8 @@ window.INSTALACION = {
     } else if (g.id === "cobros") {
       cuanto = colones(x.saldo);
       etq = fechaLarga(x.fecha);
-      det = filaDet(I_NOTA_AG, x.servicio) +
-            filaDet(I_PLATA_AG, colones(x.monto) + " · pagado " + colones(x.pagado));
+      resu = [x.servicio, "de " + colones(x.monto)];
+      det = filaDet(I_PLATA_AG, "Pagado " + colones(x.pagado) + " de " + colones(x.monto));
       if (x.wa) acc.push('<a class="bt wa" href="' + escHtml(x.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Cobrar</a>");
       acc.push('<button type="button" class="bt fuerte" data-pago="' + x.clienteId + ":" + x.id + '">Registrar pago</button>');
       acc.push('<button type="button" class="bt" data-cliente="' + x.clienteId + '">Ver cliente</button>');
@@ -5113,7 +5173,17 @@ window.INSTALACION = {
          faltan. Es la diferencia entre avisar y regañar. */
       cuanto = cuando(x.dias);
       etq = x.dias < 0 ? "Vencido" : x.dias === 0 ? "Hoy" : "Ya viene";
-      det = filaDet(I_NOTA_AG, x.servicio) + filaDet(I_PIN_AG, x.lugar);
+      resu = [x.servicio, x.lugar];
+      /* El color de la fila lo pone el grupo, y eso está bien: dice de
+         qué clase de pendiente se trata. Pero dentro de este grupo
+         conviven dos cosas distintas —uno que se pasó y uno que
+         todavía no llega— y las dos salían del mismo ámbar, con la
+         diferencia escrita nada más. El que se pasó se pone en el rojo
+         que el panel ya usa para "algo va mal". */
+      if (x.dias < 0) tono = "var(--est-mal-tx)";
+      /* El servicio y el lugar ya están en el renglón cerrado. Lo que
+         queda acá son las señas, que no caben arriba. */
+      det = filaDet(I_PIN_AG, x.senas);
       /* Primero escribirle, después agendar: el mantenimiento no se
          hace el día del calendario, se hace el día que el cliente
          pueda. El WhatsApp ya va con la pregunta escrita. */
@@ -5135,11 +5205,11 @@ window.INSTALACION = {
     } else if (g.id === "solicitudes") {
       cuanto = espera(x.horas);
       etq = x.horas >= 24 ? "Sin atender" : "Nueva";
+      resu = [x.servicio, x.zona];
       /* El teléfono va partido, como en todas las demás listas. Acá
          salía entero —29549200 en vez de 2954-9200—, que es el único
          sitio del panel donde no se leía de un golpe. */
-      det = filaDet(I_NOTA_AG, x.servicio) + filaDet(I_PIN_AG, x.zona) +
-            filaDet(I_TEL_AG, x.telefono);
+      det = filaDet(I_TEL_AG, x.telefono);
       acc.push('<button type="button" class="bt fuerte" data-ir=\'' +
         escHtml(JSON.stringify({ vista: "solicitudes" })) + "'>Ver solicitud</button>");
 
@@ -5150,8 +5220,8 @@ window.INSTALACION = {
          no un menú de lo que se le puede hacer a una cotización. */
       cuanto = espera(x.horas);
       etq = "Sin respuesta";
-      det = filaDet(I_NOTA_AG, piezas2([x.numero, x.servicio, x.monto])) +
-            filaDet(I_PIN_AG, [x.canton, x.provincia].filter(Boolean).join(", "));
+      resu = [x.servicio, [x.canton, x.provincia].filter(Boolean).join(", ")];
+      det = filaDet(I_NOTA_AG, piezas2([x.numero, x.monto]));
       if (x.wa) acc.push('<a class="bt wa" href="' + escHtml(x.wa) + '" target="_blank" rel="noopener">' + ICO.wa + "Consultar</a>");
       acc.push('<button type="button" class="bt fuerte" data-pcotagendar="' + x.id + '">Agendar el servicio</button>');
       acc.push('<button type="button" class="bt" data-pcotperdida="' + x.id + '">No se hizo</button>');
@@ -5159,11 +5229,16 @@ window.INSTALACION = {
         escHtml(JSON.stringify({ vista: "cotizaciones", buscar: x.numero })) + "'>Ver cotización</button>");
     }
 
-    return '<div class="pcard">' +
+    return '<div class="pcard"' + (tono ? ' style="--tono:' + tono + '"' : "") + ">" +
       '<button type="button" class="pcab" data-pabrir="' + clave + '" aria-expanded="' + abierto + '">' +
         '<span class="pcab-t"><b>' + escHtml(x.nombre || "Sin nombre") + "</b>" +
           '<span class="cuanto">' + escHtml(cuanto) + "</span>" +
           (etq && g.id === "cobros" ? "<small>" + escHtml(etq) + "</small>" : "") +
+          (resu.filter(Boolean).length
+            ? '<span class="pcab-s">' + resu.filter(Boolean).map(function (t, n) {
+                return '<span' + (n ? ' class="tenue"' : "") + ">" + escHtml(t) + "</span>";
+              }).join("") + "</span>"
+            : "") +
         "</span>" +
         '<span class="pcab-der">' +
           (g.id === "cobros" ? "" : '<span class="ptag">' + escHtml(etq) + "</span>") +
@@ -5302,7 +5377,8 @@ window.INSTALACION = {
       var dentro =
         '<div class="b-fila"><span class="b-k">' + escHtml(f.k) + "</span>" +
           '<span class="b-n num">' + escHtml(colones(f.monto || 0)) +
-          '<small class="b-sub"> · ' + f.n + "</small></span></div>" +
+          '<small class="b-sub">' + f.n + (f.n === 1 ? " trabajo" : " trabajos") +
+          "</small></span></div>" +
         '<div class="b-pista"><div class="b-rell" style="width:' + pct + '%"></div></div>';
       var ir = { vista: aDonde || "cotizaciones" };
       ir[campo] = f.id;
@@ -9691,6 +9767,7 @@ window.INSTALACION = {
   var I_TEL_AG = '<path d="M7 3.5h3l1.5 4-2 1.4a11 11 0 0 0 5.6 5.6l1.4-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 5 5.7 2 2 0 0 1 7 3.5Z"/>';
   var I_PIN_AG = '<path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/>';
   var I_PLATA_AG = '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M9.5 10h5M9.5 14h5"/>';
+  var I_RELOJ_AG = '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>';
   function filaDet(icono, txt) {
     if (!txt) return "";
     return '<div class="det-l"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
@@ -10343,10 +10420,11 @@ window.INSTALACION = {
     /* El saludo vive en la cabecera y no cambia de pantalla. El titular
        grande nombra la vista, salvo en Hoy: ahí lo dice la portada, y
        repetirlo sería decir tres veces lo mismo en el mismo pantallazo. */
-    $("top-donde").textContent = saludo() + ",";
-    /* A quién saluda: el nombre del dueño en una instalación, el de la
-       empresa del ejemplo en el demo. Lo sabe la conexión. */
-    $("top-quien").textContent = PUERTA.quien();
+    $("top-dia").textContent = fechaDeHoy();
+    /* De quién es la sesión: el nombre del dueño en una instalación, el
+       de la empresa del ejemplo en el demo. Lo sabe la conexión. Vive en
+       la cabeza del menú del avatar, que es de donde cuelga "Salir". */
+    $("menu-yo-quien").textContent = PUERTA.quien();
     /* Antes Hoy escondía el titular: la portada ya decía dónde estaba
        uno. Pendientes no es portada, así que lleva su nombre como las
        demás. */
