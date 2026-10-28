@@ -8,6 +8,12 @@ tools/
 # Fotos originales sin comprimir (las versiones optimizadas están en assets/img/)
 assets/fotos-originales/
 
+# Grabaciones de pantalla y videos de trabajo que quedan en la raíz.
+# No son del sitio: si uno de estos entra al repo, Cloudflare lo sirve.
+ST - Nueva Web
+*.mp4
+*.mov
+
 # Nunca subir claves ni datos de clientes
 .dev.vars
 .env
