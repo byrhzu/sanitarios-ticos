@@ -1,220 +1,132 @@
-# Pasar sanitariosticos.com de Wix a la página nueva
+# Pasar el sitio a sanitariosticos.com
 
-Guía para hacerlo sin romper nada. Léala completa una vez antes de tocar
-el primer botón: hay un paso que, si se salta, deja a la empresa sin
-correo.
+Estado al 13 de noviembre de 2026, leído del DNS público.
 
----
+## Lo que hay hoy
 
-## Lo que hay hoy (revisado el 9 de setiembre de 2026)
-
-Esto no es suposición: se consultó el DNS público del dominio.
-
-| Cosa | Cómo está |
+| | |
 |---|---|
-| Registrador | **Wix.com Ltd.** El dominio se compró ahí |
-| Registrado desde | 20 de julio de 2017 |
-| Estado | `ok` — está **desbloqueado**, se puede transferir |
-| Nameservers | `ns4.wixdns.net` y `ns5.wixdns.net` |
-| La página | Apunta a los servidores de Wix (185.230.63.x) |
-| **El correo** | **Google Workspace** (`aspmx.l.google.com` y cuatro más) |
+| Registrador | **Wix.com Ltd.** |
+| Registrado | 20 jul 2017 · vence **20 jul 2028** (pagado, no corre prisa) |
+| Nameservers | `ns4.wixdns.net`, `ns5.wixdns.net` |
+| El sitio | apunta a Wix (`185.230.63.x`) |
+| **El correo** | **Google Workspace** (`aspmx.l.google.com`) |
 | SPF | `v=spf1 include:_spf.google.com ~all` |
-| DMARC | `_dmarc` es un CNAME hacia `_dmarc.wixemails.com` |
+| DMARC | CNAME a `_dmarc.wixemails.com` |
+| `www` | CNAME a `cdn3.wixdns.net` |
+| Candados | `clientTransferProhibited` y `clientUpdateProhibited` |
 
-**Lo importante de esa tabla:** el correo `info@sanitariosticos.com` es una
-cuenta de Google, no de Wix. Vive en registros DNS que hoy administra Wix.
-Si el dominio cambia de nameservers y esos registros no se copiaron antes,
-**la empresa deja de recibir correos**. No hay aviso, no hay rebote visible
-para quien escribe: simplemente dejan de llegar.
+**Lo más importante de esa tabla es el correo.** `info@sanitariosticos.com`
+es Google Workspace y vive de los registros MX. Si los nameservers cambian
+sin que los MX estén copiados del otro lado, **el correo de la empresa deja
+de entrar** — y no rebota con un error claro, simplemente se cae. Es el
+único paso de todo esto que no se arregla con un «control Z».
 
----
+## La decisión que conviene tomar
 
-## El problema grande: las páginas de zona
+Usted dijo «sacaré el dominio de Wix (no sé a dónde trasladarlo)». Son dos
+cosas distintas y sólo hace falta una hoy:
 
-El sitio de Wix tiene **quince páginas** publicadas, y Google las tiene
-indexadas. Diez de ellas son páginas de zona:
+1. **Quién cobra el dominio** (el registrador). Hoy Wix.
+2. **Quién contesta las preguntas de DNS** (los nameservers). Hoy Wix.
 
-```
-/limpieza-de-tanques-septicos-heredi
-/limpieza-de-tanques-septicos-alajue
-/limpieza-de-tanques-septicos-san-jo
-/tanques-septicos-y-drenajes-san-joa
-/limpieza-de-tuberias-san-joaquin-de
-/destaqueo-de-tuberias-san-joaquin-f
-/limpieza-de-trampas-de-grasa-san-jo
-/construccion-de-drenajes-san-joaqui
-/construccion-de-plantas-de-tratamie
-/construccion-de-tanques-septicos-sa
-```
+**Para que el sitio funcione sólo hace falta cambiar la 2.** Cloudflare no
+necesita ser el registrador: basta con que Wix apunte los nameservers a
+Cloudflare. Eso es un cambio de una pantalla, tarda entre minutos y unas
+horas en propagarse, y se devuelve igual de rápido si algo sale mal.
 
-(Las direcciones vienen cortadas así, a 34 caracteres. No es error de
-copia: Wix las generaba de esa forma.)
+Mover el registrador es otra cosa: los dos candados están puestos, hay que
+pedirle a Wix el código de autorización, y el traslado se tarda de 5 a 7
+días. **No lo haga hoy.** Hágalo dentro de unas semanas, con el sitio ya
+estable, cuando no importe si se atrasa.
 
-Esas páginas son, con toda probabilidad, **por las que la empresa aparece
-en Google** cuando alguien busca "limpieza de tanques sépticos Heredia".
-La página nueva no las tiene.
+Si después lo quiere mover, Cloudflare Registrar cobra el precio de costo,
+sin recargo, y le suma un año al vencimiento. Pero eso es para otro día.
 
-**Lo que ya quedó resuelto en el código:** `worker.js` contesta esas doce
-direcciones viejas con un **301** hacia la página nueva que corresponde.
-Un 301 le dice a Google "esto se mudó aquí" y le pasa parte del valor.
+## El orden, que es lo que importa
 
-**Lo que NO resuelve:** *parte*, no todo. Mandar diez páginas de zona a
-una sola página de servicios pierde justo lo que las hacía rankear — que
-cada una hablaba de una zona. La solución de verdad es rehacer las
-páginas de zona en el sitio nuevo. Es el "perímetro" que quedó pendiente.
+### Antes de tocar nada
 
-**Recomendación:** el 301 evita el 404, que es lo peor. Pero conviene
-hacer el perímetro pronto, no dentro de seis meses.
+- [ ] **Anote los registros actuales.** Entre al panel de DNS de Wix y
+      guarde una captura de **todos** los registros: MX, TXT, CNAME,
+      subdominios. Lo de arriba es lo que se ve desde afuera; puede haber
+      más que no se publica.
+- [ ] **Busque el DKIM de Google.** En `google._domainkey` no hay nada, así
+      que o no está configurado o usa otro selector. Mírelo en el panel de
+      Google Workspace (Aplicaciones → Gmail → Autenticar correo). Si
+      existe, ese TXT también hay que copiarlo.
+- [ ] **Decida qué pasa con el dominio viejo.** `sanitariosticoscr.com` es
+      el que Google tiene indexado hoy. No lo deje morir: tiene que quedar
+      redirigiendo con 301 al nuevo, o se pierde el posicionamiento que ya
+      ganó. Un 301 le pasa el valor al nuevo dominio; un dominio apagado
+      no le pasa nada a nadie.
 
----
+### El cambio
 
-## Los pasos, en orden
+- [ ] **1 · Agregue el dominio en Cloudflare.** «Add a site» →
+      `sanitariosticos.com`. Cloudflare escanea el DNS actual y copia lo
+      que encuentra.
+- [ ] **2 · Revise registro por registro contra su captura.** El escaneo
+      es bueno pero no es perfecto, y lo que se le escape se pierde. Que
+      estén los cinco MX de Google, el SPF, el DMARC y el DKIM si lo hay.
+      **No pase del paso 2 hasta que esto esté revisado.**
+- [ ] **3 · Ponga el sitio.** En Cloudflare Pages, el proyecto
+      `sanitarios-ticos`, agregue `sanitariosticos.com` y
+      `www.sanitariosticos.com` como dominios personalizados. Cloudflare
+      crea los registros solo.
+- [ ] **4 · Ahora sí, cambie los nameservers en Wix.** Dominios → su
+      dominio → Nameservers → personalizados → los dos que le dio
+      Cloudflare.
+- [ ] **5 · Espere y compruebe.** Suele tardar menos de una hora.
+      - `dig NS sanitariosticos.com` tiene que decir Cloudflare.
+      - `dig MX sanitariosticos.com` tiene que seguir diciendo Google.
+      - **Mándese un correo a `info@sanitariosticos.com` desde afuera y
+        confirme que llega.** No lo dé por hecho.
+      - El sitio abre en `https://sanitariosticos.com` con candado.
 
-### 1 · Meter el dominio en Cloudflare
+### Después, ya con el sitio arriba
 
-En el panel de Cloudflare: **Add a site** → escriba `sanitariosticos.com`
-→ plan **Free**.
+- [ ] **6 · Cloudflare Access.** La política que protege `/panel` está
+      amarrada a `sanitariosticoscr.com`. Hay que agregarle el dominio
+      nuevo, o el panel queda abierto o queda inalcanzable. **Compruébelo
+      entrando usted mismo**, no lo dé por hecho.
+- [ ] **7 · Resend.** Los correos salen de
+      `avisos@sanitariosticoscr.com` (está en tres lugares de
+      `worker.js`). Dos caminos:
+      - *Lo fácil:* no tocar nada. Siguen saliendo del dominio viejo y
+        funcionan igual, mientras ese dominio siga verificado en Resend.
+      - *Lo correcto:* verificar `sanitariosticos.com` en Resend, agregar
+        los registros que pida, y cambiar las tres líneas. Ojo: el SPF
+        nuevo tiene que **sumarse** al de Google, no reemplazarlo. Un
+        dominio sólo puede tener un registro SPF.
+- [ ] **8 · Los 119 enlaces del código.** El dominio viejo está escrito
+      119 veces en 18 archivos: los `canonical`, los `og:url`, el
+      `sitemap.xml`, el `robots.txt` y los datos estructurados de Google.
+      Eso lo cambio yo de un solo golpe cuando me diga, pero **va de
+      último**: si se cambian antes de que el dominio nuevo responda, los
+      canonical apuntan a un sitio que todavía no existe y Google se
+      confunde.
+- [ ] **9 · El 301 del dominio viejo.** Una regla de redirección en
+      Cloudflare: todo `sanitariosticoscr.com/*` → `sanitariosticos.com/$1`,
+      con código 301, conservando la ruta. Que `/cotizar` caiga en
+      `/cotizar`, no en la portada.
+- [ ] **10 · Google Search Console.** Agregue la propiedad nueva, mande el
+      sitemap nuevo, y use «Cambio de dirección» desde la vieja. Eso es lo
+      que le dice a Google que es una mudanza y no un sitio nuevo.
 
-Cloudflare escanea el DNS actual y copia lo que encuentra. **No confíe en
-que copió todo.**
+## Lo que puedo hacer yo y lo que no
 
-### 2 · Revisar los registros ANTES de tocar nada
+**Yo puedo:** cambiar los 119 enlaces del código, ajustar el `sitemap.xml`
+y el `robots.txt`, cambiar el remitente en `worker.js`, y comprobar desde
+afuera que el DNS quedó bien (`dig`, y abrir el sitio).
 
-Este es el paso que no se salta. En **DNS → Records** del dominio recién
-agregado, confirme que estén los cinco de correo:
-
-| Tipo | Nombre | Contenido | Prioridad |
-|---|---|---|---|
-| MX | `sanitariosticos.com` | `aspmx.l.google.com` | 10 |
-| MX | `sanitariosticos.com` | `alt1.aspmx.l.google.com` | 20 |
-| MX | `sanitariosticos.com` | `alt2.aspmx.l.google.com` | 30 |
-| MX | `sanitariosticos.com` | `alt3.aspmx.l.google.com` | 40 |
-| MX | `sanitariosticos.com` | `alt4.aspmx.l.google.com` | 50 |
-
-Y estos dos:
-
-| Tipo | Nombre | Contenido |
-|---|---|---|
-| TXT | `sanitariosticos.com` | `v=spf1 include:_spf.google.com ~all` |
-| CNAME | `_dmarc` | `_dmarc.wixemails.com` |
-
-Los que falten, agréguelos a mano. **Los MX y el SPF van en gris (DNS
-only), no en naranja** — el naranja es para tráfico web, y a un registro
-de correo lo rompe.
-
-Deje por ahora los registros que apuntan a Wix (el A de la raíz y el
-CNAME de `www`). Mientras los nameservers no cambien, no molestan.
-
-### 3 · Cambiar los nameservers en Wix
-
-Cloudflare le va a dar dos nombres, del tipo `xxx.ns.cloudflare.com`.
-Cópielos exactos.
-
-En Wix: **Dominios → sanitariosticos.com → Avanzado → Nameservers** →
-cambiar a nameservers externos y pegar los dos de Cloudflare.
-
-Desde este momento el sitio de Wix deja de responder en el dominio. Es
-lo esperado. Todavía **no** hay nada nuevo respondiendo: va a haber un
-rato en que el dominio no muestre la página. Por eso conviene hacerlo un
-día de poco movimiento, no un lunes a las 9 de la mañana.
-
-### 4 · Esperar a que Cloudflare diga "Active"
-
-Suele tardar de minutos a un par de horas; el máximo formal son 24. Va a
-llegar un correo de Cloudflare.
-
-### 5 · Probar el correo antes de seguir
-
-En cuanto diga "Active": mande un correo **desde afuera** (por ejemplo
-desde Gmail personal) a `info@sanitariosticos.com` y confirme que llega.
-Y conteste desde ahí, para probar la salida.
-
-Si no llega, pare acá y revise los MX. No siga al paso 6.
-
-### 6 · Conectar el dominio a la página
-
-En Cloudflare: **Workers & Pages → sanitarios-ticos → Settings → Domains
-& Routes → Add → Custom domain**. Agregue los dos, uno por uno:
-
-- `sanitariosticos.com`
-- `www.sanitariosticos.com`
-
-Cloudflare le va a avisar que ya existe un registro para esa dirección
-(el que apuntaba a Wix) y le va a ofrecer reemplazarlo. Acepte: **ese** sí
-se reemplaza. Los MX no se tocan.
-
-El certificado de seguridad (el candado) se emite solo, en un minuto o
-dos. No hay que comprarlo ni configurarlo.
-
-### 7 · Que la raíz mande a www
-
-Las páginas del sitio se declaran como `www.sanitariosticos.com`. Para
-que `sanitariosticos.com` a secas no quede como una copia:
-
-**Rules → Redirect Rules → Create rule**
-
-- Nombre: `raíz a www`
-- Si: `Hostname` `equals` `sanitariosticos.com`
-- Entonces: **Dynamic redirect**, `concat("https://www.sanitariosticos.com", http.request.uri.path)`, tipo **301**, preservar query string.
-
-### 8 · Abrir el sitio a Google
-
-Hasta ahora el sitio le pide a Google que **no** lo indexe, porque vivía
-en una dirección temporal. Ya con el dominio puesto:
-
-```bash
-python3 tools/modo-publicacion.py produccion
-```
-
-Eso quita la marca `noindex` de las seis páginas públicas y abre el
-`robots.txt`. Después:
-
-```bash
-git add -A && git commit -m "Abrir el sitio a Google" && git push
-```
-
-### 9 · Avisarle a Google
-
-En **Google Search Console**: agregar la propiedad `sanitariosticos.com`,
-verificarla (con Cloudflare ya se hace con un clic), y mandar el sitemap:
-`https://www.sanitariosticos.com/sitemap.xml`
-
-Revise ahí, durante las semanas siguientes, el informe de **Cobertura**:
-ahí van a aparecer las páginas viejas marcadas como redirigidas. Eso es lo
-esperado.
-
----
-
-## Lo que se destraba cuando el dominio esté puesto
-
-| Cosa | Qué hay que hacer |
-|---|---|
-| **Correo al cliente** | Hoy los avisos salen desde `onboarding@resend.dev` y sólo pueden llegar a `byrhu36@gmail.com`. Con el dominio en Cloudflare se verifica `sanitariosticos.com` en Resend (pega tres registros DNS), se cambia el `from:` en `worker.js` a algo como `avisos@sanitariosticos.com`, y `CORREO_AVISO` al correo del encargado |
-| **WhatsApp automático** | La API de WhatsApp de Meta exige dominio verificado. Con esto se puede empezar el trámite, y de ahí salen los recordatorios de los 24 meses |
-| **Las páginas de zona** | El perímetro de Google que quedó pendiente |
-
----
+**Yo no puedo:** entrar a Cloudflare, a Wix, a Google Workspace ni a
+Resend. No tengo credenciales de ninguno. Todo lo de los pasos 1 a 7 lo
+hace usted; yo le voy comprobando desde afuera que cada paso quedó.
 
 ## Si algo sale mal
 
-Volver atrás es cambiar los nameservers en Wix de vuelta a
-`ns4.wixdns.net` y `ns5.wixdns.net`. Tarda lo mismo en propagar.
-
-Por eso: **no cancele el plan de Wix el mismo día.** Déjelo vivo una o
-dos semanas, hasta estar seguro.
-
----
-
-## Anexo · Transferir el registro a Cloudflare (opcional, después)
-
-Esto es aparte y no corre prisa. Cambiar los nameservers (pasos 1 a 6) ya
-le da todo lo que necesita; el dominio simplemente sigue *comprado* en
-Wix y se renueva ahí.
-
-Si después quiere pasarlo del todo, el dominio ya está desbloqueado
-(estado `ok`) y tiene más de sesenta días, que son los dos requisitos.
-En Wix se pide el código de autorización, en Cloudflare se pega en
-**Domain Registration → Transfer Domains**, y tarda de cinco a siete días.
-Cloudflare cobra el precio de costo, sin recargo.
-
-Hágalo *después* de que el sitio esté funcionando, no al mismo tiempo.
+Mientras el registrador siga siendo Wix, **devolver los nameservers a
+`ns4.wixdns.net` y `ns5.wixdns.net` deja todo como estaba.** Esa es la
+razón de no mover el registrador el mismo día: deja la puerta de atrás
+abierta.
