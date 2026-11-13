@@ -3798,6 +3798,14 @@ function numeroCotizacion(id) {
 async function avisarCotizacion(datos, env) {
   if (!env.RESEND_API_KEY || !env.CORREO_AVISO) return;
 
+  /* El aviso es para enterarse de alguien que cotizó SOLO, sin hablar
+     con nadie: una del formulario o una de Víctor. Las del panel —y las
+     de una solicitud, que también se hacen desde el panel— las acaba de
+     hacer el encargado con el cliente al teléfono: avisarle por correo
+     de algo que hizo él hace diez segundos es ruido, y el ruido enseña
+     a ignorar el buzón, que es justo lo contrario de lo que se quiere. */
+  if (datos.origen === "panel" || datos.origen === "solicitud") return;
+
   const filas = [
     ["Número", datos.numero],
     ["Servicio", datos.servicioNombre],
@@ -3816,15 +3824,10 @@ async function avisarCotizacion(datos, env) {
        <b>Estimado automático.</b> El precio oficial lo pone usted al hablar
        con el cliente${datos.provisional ? " (además, estas tarifas siguen en revisión)" : ""}.</p>`;
 
-  /* De dónde salió la cotización cambia qué hay que hacer con ella. Una
-     del sitio es alguien que entró solo y todavía no ha hablado con
-     nadie: es la que hay que contestar hoy. Una del panel ya la hizo el
-     encargado, con el cliente al teléfono. */
-  const deAfuera = datos.origen !== "panel";
-  const quien = datos.origen === "panel" ? "Se emitió una cotización desde el panel"
-              : datos.origen === "solicitud" ? "Se cotizó una solicitud"
-              : datos.origen === "formulario" ? "Alguien se cotizó en el sitio web"
-              : "Víctor cotizó a alguien";
+  /* Sólo quedan dos caminos: el formulario del sitio y Víctor. Los dos
+     son alguien que entró solo y todavía no ha hablado con nadie. */
+  const quien = datos.origen === "formulario" ? "Alguien se cotizó en el sitio web"
+                                              : "Víctor cotizó a alguien";
 
   /* El WhatsApp ya armado dentro del correo: el objetivo del aviso es
      escribirle antes de que llame a otro, y buscar el número a mano es
@@ -3833,7 +3836,7 @@ async function avisarCotizacion(datos, env) {
     "Buenas" + (datos.nombre ? " " + primerNombre(datos.nombre) : "") +
     ", le escribo de Sanitarios Ticos por la cotización " + (datos.numero || "") +
     " que acaba de hacer en la página. ¿Se la coordinamos?");
-  const boton = wa && deAfuera
+  const boton = wa
     ? `<p style="margin:18px 0 0;"><a href="${wa}" style="display:inline-block;background:#25d366;
          color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px 18px;
          border-radius:8px;">Escribirle por WhatsApp</a></p>`
@@ -3843,7 +3846,7 @@ async function avisarCotizacion(datos, env) {
     from: "Sanitarios Ticos <avisos@sanitariosticoscr.com>",
     to: [env.CORREO_AVISO],
     // Un solo monto no se escribe "₡65.000 a ₡65.000".
-    subject: (deAfuera ? "Cotización nueva en el sitio" : "Cotización") +
+    subject: "Cotización nueva en el sitio" +
              ` ${datos.numero} — ${montoTexto(datos.min, datos.max)}`,
     html: `<div style="font-family:system-ui,sans-serif;color:#1b1917;">
              <h2 style="margin:0 0 12px;font-size:18px;">${quien}</h2>

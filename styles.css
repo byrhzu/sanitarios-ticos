@@ -1662,6 +1662,11 @@ body.fabs-fuera .wa-fab {
    una superficie más (§34, caja sobre caja). Va pegada arriba del
    riel, que es donde la vista ya está.
    ============================================================= */
+/* [hidden] pierde contra el display de abajo, como en el riel y los
+   pasos. Sin esta linea la barra salia desde que cargaba la pagina,
+   con un "Va en —" sin precio: un elemento vacio arriba de la primera
+   pregunta, que es lo primero que uno ve al entrar. */
+.cot-barra[hidden] { display: none; }
 .cot-barra {
   display: flex; align-items: baseline; justify-content: space-between;
   flex-wrap: wrap; gap: .4rem 1.2rem;
