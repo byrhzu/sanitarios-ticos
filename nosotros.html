@@ -128,20 +128,28 @@
 <section class="block" id="cobertura">
   <div class="wrap">
     <div class="split" style="margin-bottom:2.2rem;">
-      <h2 class="rv" style="font-size:clamp(1.9rem,4.2vw,2.9rem); max-width:15ch;">El Gran Área Metropolitana, todos los días</h2>
-      <p class="lead rv">El GAM es nuestra zona de trabajo: ahí el camión llega rápido y, en una emergencia, el mismo día. <strong>Fuera del GAM también damos servicio</strong>: coordinamos la fecha según la ruta y le confirmamos el costo antes de salir.</p>
+      <h2 class="rv" style="font-size:clamp(1.9rem,4.2vw,2.9rem); max-width:16ch;">Veintiséis cantones con precio en línea</h2>
+      <p class="lead rv">En estos cantones el cotizador le da el monto de una vez, porque la ruta ya está medida. <strong>Fuera de ellos también damos servicio</strong>: el precio depende del viaje y se lo pone el encargado, no la calculadora.</p>
     </div>
 
     <ul class="data franjas rv">
-      <li><small>San José</small><span>San José centro, Escazú, Santa Ana, Tibás, Moravia, Goicoechea, Montes de Oca y Curridabat</span></li>
-      <li><small>Heredia</small><span>Heredia, San Joaquín de Flores, Belén, Santo Domingo, San Pablo, Barva, San Rafael, San Isidro, Santa Bárbara</span></li>
-      <li><small>Alajuela</small><span>Alajuela centro, Río Segundo, La Garita, San Antonio del Tejar y Atenas</span></li>
+      <!-- Los cantones salen de lib/recargos-cr.js, que es la tabla con la
+           que el cotizador calcula. Antes esta lista estaba escrita a mano
+           y se había quedado corta: faltaban Grecia, Poás, San Mateo,
+           Desamparados, Mora, Alajuelita, Coronado y Flores, que sí tienen
+           precio. Si se agrega un cantón a la tabla, hay que agregarlo
+           también acá. -->
+      <li><small>San José</small><span>San José, Escazú, Desamparados, Mora, Goicoechea, Santa Ana, Alajuelita, Coronado, Tibás, Moravia, Montes de Oca y Curridabat</span></li>
+      <li><small>Heredia</small><span>Heredia, Barva, Santo Domingo, Santa Bárbara, San Rafael, San Isidro, Belén, Flores y San Pablo</span></li>
+      <li><small>Alajuela</small><span>Alajuela, Grecia, Poás, Atenas y San Mateo</span></li>
     </ul>
 
     <div class="reach-note rv" style="background:var(--paper-2); border-left-color:var(--ink); color:var(--ink-2); margin-top:1.6rem;">
-      <b>Y fuera del Gran Área Metropolitana:</b> Guanacaste, Puntarenas, Limón,
-      la Zona Norte y la Zona Sur. Ahí coordinamos la fecha según la ruta del
-      camión, y el costo se lo confirmamos antes de salir.
+      <b>Y fuera de esos cantones:</b> Cartago, Guanacaste, Puntarenas, Limón,
+      la Zona Norte y la Zona Sur, y los distritos más alejados de las tres
+      provincias de arriba. Ahí el trabajo se hace igual: lo que cambia es
+      que el precio se lo da el encargado por teléfono o WhatsApp, con la
+      dirección en la mano, y no el cotizador.
     </div>
   </div>
 </section>
@@ -218,7 +226,7 @@
   <div class="wrap-wide foot-grid">
     <div class="foot-brand">
       <img src="assets/img/logo-sanitarios-ticos.webp" alt="Sanitarios Ticos" width="604" height="420" loading="lazy">
-      <p>Manejo de aguas residuales en Costa Rica. Trabajamos todo el Gran Área Metropolitana y llegamos al resto del país coordinando la visita.</p>
+      <p>Manejo de aguas residuales en Costa Rica. Precio en línea en veintiséis cantones de San José, Heredia y Alajuela; al resto del país llegamos coordinando la visita.</p>
       <div class="social">
         <a href="https://www.facebook.com/SanitariosTicosCR/" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M14 9V7c0-.9.4-1.4 1.5-1.4H17V3h-2.6C11.8 3 11 4.4 11 6.6V9H9v3h2v9h3v-9h2.3l.4-3z"/></svg></a>
         <a href="https://www.instagram.com/sanitariosticos_/?hl=es-la" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17" cy="7" r="1.1" fill="currentColor" stroke="none"/></svg></a>
