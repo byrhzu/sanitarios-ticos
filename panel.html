@@ -30,7 +30,7 @@
 <meta name="theme-color" content="#10171b" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="styles.css?v=20261026a">
 <style>
 /* estilo — salió de la plantilla «operaciones» de baizzen el 27 de octubre de 2026.
@@ -104,19 +104,31 @@ ul, ol { list-style: none; padding: 0; }
      Byron, y es la que le da el aire de aplicación y no de hoja de
      cálculo. Inter se queda sólo para los números de las tablas, donde
      el ancho fijo importa más que el carácter. */
+  /* Una sola familia: Plus Jakarta Sans, la misma regla que quedó
+     escrita en Zenda. Poppins en el texto e Inter en los números eran
+     dos dibujos distintos conviviendo en la misma fila —el nombre del
+     cliente en uno, su teléfono en el otro—, y además la pareja
+     Poppins + Inter es la que trae puesta cualquier panel generado.
+     Jakarta conserva el aire redondo de Poppins, es más angosta (caben
+     más datos por renglón) y trae cifras tabulares, que era la única
+     razón por la que Inter estaba acá. Las tres variables se quedan
+     para no tocar las reglas que ya las usan. */
   :root {
-    --sans:    "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --display: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --datos:   "Inter", system-ui, -apple-system, sans-serif;
-  }
-  .lista, .lista td, .lista th, .hist, .cifra-n, .ficha-monto, .hecha-rango,
-  .ref, .cal, .delta, .cli-top .tel {
-    font-family: var(--datos);
+    --sans:    "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --display: var(--sans);
+    --datos:   var(--sans);
   }
   .panel, .clave-pantalla { font-family: var(--sans); }
-  /* Los números en las cifras y las tablas van de ancho fijo: si no,
-     una columna de montos baila al cambiar de dígito. */
-  .panel { font-feature-settings: "tnum" 1, "cv05" 1; }
+  /* Los números van de ancho fijo donde se comparan en columna —tablas,
+     montos, el calendario—: si no, una columna de montos baila al
+     cambiar de dígito. En el texto corrido NO: en Jakarta el uno
+     tabular deja un hueco a cada lado, y "13 de noviembre" o un
+     teléfono se leen partidos. Por eso la regla va en esta lista y no
+     en todo el panel. */
+  .lista, .lista td, .lista th, .hist, .cifra-n, .ficha-monto, .hecha-rango,
+  .ref, .cal, .delta, .num, .dinero-cifra, .fe-iva-n, .top-monto {
+    font-variant-numeric: tabular-nums;
+  }
 
   /* ---------- Temas ---------- */
   /* Claro: el papel tibio del sitio. Oscuro: el mismo slate de la
@@ -140,7 +152,11 @@ ul, ol { list-style: none; padding: 0; }
     --p-sup2:    #e6ecf6;
     --p-txt:     #101a30;
     --p-txt2:    #39445c;
-    --p-tenue:   #78849c;
+    /* Era #78849c: 3,8:1 sobre blanco y 3,2:1 sobre las filas teñidas.
+       Con ese gris van los teléfonos, las fechas y los pies de cada
+       cifra, o sea la mitad de lo que se lee en el panel. Éste pasa
+       4,5:1 en las tres superficies donde aparece. */
+    --p-tenue:   #5f6b83;
     --p-linea:   rgba(16,26,48,.14);
     --p-barra:   #ffffff;
     /* Controles: el boton de iOS no es un contorno de 1px casi invisible,
@@ -148,20 +164,26 @@ ul, ol { list-style: none; padding: 0; }
        perdia contra el papel blanco. */
     --p-ctrl:    #eef1f7;
     --p-ctrl-bd: rgba(16,26,48,.12);
-    /* Vidrio de la barra de abajo. */
-    --p-vidrio:     rgba(255,255,255,.72);
-    --p-vidrio-bd:  rgba(16,26,48,.10);
-    --p-vidrio-luz: rgba(255,255,255,.9);
+    /* El borde de lo que se escribe o se escoge: 3,3:1 sobre blanco. */
+    --p-borde-campo: #8290a6;
     --p-barra-t: #101a30;
     /* Naranja: sólo acento. */
     --p-acento:  #ef6511;
     --p-acento-t:#c4500b;
     --p-suave:   rgba(239,101,17,.11);
-    /* Azul primario: lo seleccionado, lo activo, los enlaces. */
-    --p-primario:  #234f9e;
-    --p-primario-t:#1b3f82;
-    --p-prim-suave:rgba(35,79,158,.11);
-    --p-dato1:   #234f9e;
+    /* Azul primario: lo seleccionado, lo activo, los enlaces. Mate, de
+       la familia de Zenda: el #234f9e de antes era un azul de pantalla,
+       saturado al 64%, que al lado del naranja competía con él. Bajado
+       de saturación se queda de fondo y el naranja resalta solo. */
+    --p-primario:  #34557f;
+    --p-primario-t:#1f3550;
+    --p-prim-suave:rgba(52,85,127,.11);
+    /* Lo que va ENCIMA de un relleno primario. En claro es blanco; en
+       oscuro el primario se aclara y el texto pasa a tinta. Antes iba
+       `#fff` escrito a mano en cada regla y en oscuro quedaba blanco
+       sobre azul medio, a 3,9:1. */
+    --p-sobre-prim:#ffffff;
+    --p-dato1:   #34557f;
     --p-dato2:   #ef6511;
     --p-sombra:  none;
 
@@ -191,7 +213,7 @@ ul, ol { list-style: none; padding: 0; }
     --sv-4: #55538f; --sv-5: #3f7a4e; --sv-neutro: #4a5568;
 
     --est-ok-bg:     #e7f3ea;  --est-ok-tx:     #136c3a;
-    --est-curso-bg:  #e8eefb;  --est-curso-tx:  #1f56a3;
+    --est-curso-bg:  #e9eef3;  --est-curso-tx:  #34557f;
     --est-espera-bg: #f8f0d0;  --est-espera-tx: #736213;
     --est-mal-bg:    #fbeae9;  --est-mal-tx:    #a82a2a;
     --est-off-bg:    #ece7e0;  --est-off-tx:    #655c53;
@@ -217,17 +239,16 @@ ul, ol { list-style: none; padding: 0; }
     --p-barra:   #14203a;
     --p-ctrl:    rgba(255,255,255,.07);
     --p-ctrl-bd: rgba(255,255,255,.14);
-    --p-vidrio:     rgba(20,32,58,.62);
-    --p-vidrio-bd:  rgba(255,255,255,.13);
-    --p-vidrio-luz: rgba(255,255,255,.07);
+    --p-borde-campo: #6e8099;
     --p-barra-t: #eaf0fb;
     --p-acento:  #ff7a2b;
     --p-acento-t:#ff9254;
     --p-suave:   rgba(255,122,43,.15);
-    --p-primario:  #5480d8;
-    --p-primario-t:#7098e0;
-    --p-prim-suave:rgba(84,128,216,.18);
-    --p-dato1:   #5480d8;
+    --p-primario:  #8fb0d6;
+    --p-primario-t:#a9c3dd;
+    --p-prim-suave:rgba(143,176,214,.16);
+    --p-sobre-prim:#0f1a2e;
+    --p-dato1:   #8fb0d6;
     --p-dato2:   #ff7a2b;
     --p-sombra:  none;
 
@@ -237,7 +258,7 @@ ul, ol { list-style: none; padding: 0; }
     --sv-4: #9a97cf; --sv-5: #76b98a; --sv-neutro: #9aa7bd;
 
     --est-ok-bg:     rgba(52,199,123,.16);  --est-ok-tx:     #63d69b;
-    --est-curso-bg:  rgba(90,150,230,.18);  --est-curso-tx:  #8ab8ef;
+    --est-curso-bg:  rgba(143,176,214,.16); --est-curso-tx:  #a9c3dd;
     --est-espera-bg: rgba(226,172,90,.18);  --est-espera-tx: #e2ac5a;
     --est-mal-bg:    rgba(239,144,132,.16); --est-mal-tx:    #ef9084;
     --est-off-bg:    rgba(255,255,255,.08); --est-off-tx:    #93a1a9;
@@ -260,13 +281,30 @@ ul, ol { list-style: none; padding: 0; }
      datos. Con un fondo cálido eso se perdería, así que el degradado va
      a muy poca saturación y las tarjetas suben a casi blanco. El color
      fuerte se lo queda el dato, no el papel. */
-  .panel { --barra: 240px; --radio: 20px; --radio-chico: 14px; }
+  .panel { --barra: 240px; }
 
   /* El radio vive en `:root` y no sólo en `.panel`: la hoja modal y la
      pantalla de clave cuelgan del `body`, fuera de `.panel`, y ahí la
      variable no existía — la hoja salía con esquinas cuadradas. */
   :root {
-    --radio: 20px; --radio-chico: 14px;
+    /* Cuatro radios y cada uno con su oficio, como en Zenda:
+
+         --radio        16px  tarjetas, hojas, paneles
+         --radio-chico  10px  lo que vive dentro de una tarjeta
+         --r-ctrl       10px  botones, campos, selectores
+         --r-chip        6px  etiquetas de estado y chips
+
+       La píldora (999px) se queda sólo para lo que es redondo de por
+       sí: contadores, puntos, pistas de barra, el asa de la hoja. Antes
+       todo botón y toda etiqueta era una cápsula, que es la forma por
+       defecto de cualquier interfaz generada y la que hacía que un
+       botón, un filtro y un estado se vieran como la misma cosa. */
+    --radio: 16px; --radio-chico: 10px;
+    --r-ctrl: 10px; --r-chip: 6px;
+    /* Dos tiempos. Nada en la interfaz dura más que esto: el panel se
+       abre veinte veces al día y lo que se disfruta la primera vez
+       estorba la décima. */
+    --t-rapida: .15s; --t-media: .2s;
     /* Tres capas, no un degradado. Un beige que va de claro a menos
        claro es el fondo por defecto de cualquier plantilla; lo que hace
        que un papel se vea escogido es que tenga temperatura: un resplandor
@@ -302,6 +340,10 @@ ul, ol { list-style: none; padding: 0; }
        --p-alza2 se reserva para lo que de verdad está encima (modales). */
     --p-alza:   none;
     --p-alza2:  0 12px 32px -12px rgba(16,26,48,.18);
+    /* Lo que flota un rato y se va: menús, resultados, globos. Una sola
+       sombra para todos; cada uno traía la suya escrita a mano, entre
+       el 18% y el 35% de negro. */
+    --p-flota:  0 6px 20px rgba(16,26,48,.12);
   }
   :root[data-tema="oscuro"] {
     /* El mismo esquema en oscuro: el resplandor naranja arriba a la
@@ -315,6 +357,7 @@ ul, ol { list-style: none; padding: 0; }
     --p-alza-fila: none;
     --p-alza:   none;
     --p-alza2:  0 16px 40px -14px rgba(0,0,0,.65);
+    --p-flota:  0 6px 20px rgba(0,0,0,.45);
   }
 
   /* El sitio público define h1 como titular de cartel: condensado al
@@ -329,7 +372,7 @@ ul, ol { list-style: none; padding: 0; }
     background: var(--p-fondo); color: var(--p-txt);
     background-image: var(--p-lienzo);
     background-attachment: fixed;
-    font-size: 13.5px; letter-spacing: -.01em;
+    font-size: 14px; letter-spacing: -.005em;
     transition: background .2s var(--ease), color .2s var(--ease);
     position: relative;
   }
@@ -394,7 +437,7 @@ ul, ol { list-style: none; padding: 0; }
      como lo hacen los tableros de plantilla y es lo que el propietario
      ya señaló dos veces como tipografía de máquina. */
   .barra nav .grupo-nav {
-    color: color-mix(in srgb, var(--p-barra-t) 42%, transparent);
+    color: var(--p-tenue);
     font-size: .74rem; font-weight: 500;
     padding: 1.1rem .65rem .35rem;
   }
@@ -419,15 +462,19 @@ ul, ol { list-style: none; padding: 0; }
   .fab {
     display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
     background: var(--p-acento); color: #fff; font-weight: 600;
-    transition: transform .15s var(--ease), box-shadow .15s var(--ease);
+    transition: transform var(--t-rapida) var(--ease), background var(--t-rapida) var(--ease);
   }
   .fab svg { width: 20px; height: 20px; }
-  .fab:hover { box-shadow: 0 8px 22px -6px rgba(239,101,17,.7); }
-  .fab:active { transform: scale(.94); }
+  /* Al pasar el cursor el botón de crear soltaba un resplandor naranja
+     al 70%. Un botón que brilla es un botón de anuncio: acá se oscurece
+     un punto, que es la respuesta que da cualquier otro botón del
+     panel. */
+  .fab:hover { background: var(--p-acento-t); }
+  .fab:active { transform: scale(.97); }
   .hueco-fab { display: none; }
 
   @media (min-width: 860px) {
-    .fab { width: calc(100% - 1.4rem); margin: 0 .7rem 1rem; padding: .7rem 1rem; border-radius: 14px; }
+    .fab { width: calc(100% - 1.4rem); margin: 0 .7rem 1rem; padding: .7rem 1rem; border-radius: var(--r-ctrl); }
   }
   @media (max-width: 859px) {
     .fab {
@@ -540,7 +587,7 @@ ul, ol { list-style: none; padding: 0; }
     position: absolute; z-index: 45; top: calc(100% + .5rem); right: 0;
     min-width: 12.5rem; padding: .35rem;
     background: var(--p-sup); border: 1px solid var(--p-linea);
-    border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.22);
+    border-radius: var(--radio-chico); box-shadow: var(--p-flota);
   }
   .menu-cabeza { padding: .5rem .6rem .6rem; border-bottom: 1px solid var(--p-linea); margin-bottom: .3rem; }
   .menu-cabeza b { display: block; font-weight: 600; font-size: .84rem; }
@@ -561,7 +608,7 @@ ul, ol { list-style: none; padding: 0; }
   }
   .buscador input {
     width: 100%; font-family: inherit; font-size: 13.5px;
-    padding: .5rem .7rem .5rem 2rem; border-radius: 8px;
+    padding: .5rem .7rem .5rem 2rem; border-radius: var(--r-ctrl);
     background: var(--p-sup); color: var(--p-txt); border: 1px solid var(--p-linea);
   }
   .buscador input:focus { border-color: var(--p-primario); outline: none; }
@@ -586,26 +633,15 @@ ul, ol { list-style: none; padding: 0; }
   .hallazgos {
     position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 40;
     background: var(--p-sup); border: 1px solid var(--p-borde);
-    border-radius: 12px; padding: var(--e1);
-    box-shadow: 0 12px 32px rgba(0,0,0,.22); max-height: 22rem; overflow-y: auto;
+    border-radius: var(--radio-chico); padding: var(--e1);
+    box-shadow: var(--p-flota); max-height: 22rem; overflow-y: auto;
   }
-  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .hallazgos, .menu-yo {
-      background: color-mix(in srgb, var(--p-sup) 82%, transparent);
-      -webkit-backdrop-filter: blur(16px) saturate(160%);
-      backdrop-filter: blur(16px) saturate(160%);
-    }
-    .velo {
-      background: rgba(12,18,22,.4);
-      -webkit-backdrop-filter: blur(6px);
-      backdrop-filter: blur(6px);
-    }
-    .hoja {
-      background: color-mix(in srgb, var(--p-sup) 88%, transparent);
-      -webkit-backdrop-filter: blur(20px) saturate(160%);
-      backdrop-filter: blur(20px) saturate(160%);
-    }
-  }
+  /* Acá había vidrio esmerilado: los menús, el velo y la hoja dejaban
+     ver lo de abajo desenfocado. Se quitó. Un formulario translúcido
+     sobre una lista de clientes es texto encima de texto, y el
+     desenfoque de pantalla completa es lo más caro que puede pintar un
+     teléfono viejo cada vez que se abre una hoja. Superficie opaca y un
+     velo liso: se lee igual y abre más rápido. */
   .hallazgos button {
     display: block; width: 100%; text-align: left;
     padding: .5rem .6rem; border-radius: 7px;
@@ -622,9 +658,9 @@ ul, ol { list-style: none; padding: 0; }
   .rango { display: flex; align-items: center; gap: .5rem; margin-bottom: 1rem; }
   /* Un solo riel con tres pastillas: se lee como un control, no como
      tres botones sueltos que casualmente están juntos. */
-  .rango .presets { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--p-sup); }
+  .rango .presets { display: flex; gap: 2px; padding: 3px; border-radius: var(--r-ctrl); background: var(--p-sup); }
   .rango .presets button {
-    padding: .42rem .85rem; border-radius: 999px; color: var(--p-tenue); font-weight: 500;
+    padding: .42rem .85rem; border-radius: 7px; color: var(--p-tenue); font-weight: 500;
     transition: background .15s var(--ease), color .15s var(--ease);
   }
   .rango .presets button:hover { color: var(--p-txt); }
@@ -636,7 +672,7 @@ ul, ol { list-style: none; padding: 0; }
   .rango-fechas .f { display: flex; flex-direction: column; gap: .2rem; flex: 1 1 0; min-width: 0; }
   .rango-fechas select {
     width: 100%; font-size: 13px; font-family: inherit; padding: .45rem .55rem;
-    border-radius: 9px; background: var(--p-sup); color: var(--p-txt);
+    border-radius: var(--r-ctrl); background: var(--p-sup); color: var(--p-txt);
     border: 1px solid var(--p-linea);
   }
   /* El riel de orden rueda de lado en pantallas angostas en vez de
@@ -649,7 +685,7 @@ ul, ol { list-style: none; padding: 0; }
   #btn-cli-filtros[aria-expanded="true"] { background: var(--p-prim-suave); color: var(--p-primario); }
   .rango-fechas label { color: var(--p-tenue); font-size: .78rem; }
   .rango-fechas input[type="date"] {
-    width: 100%; font-size: 13px; font-family: inherit; padding: .45rem .55rem; border-radius: 9px;
+    width: 100%; font-size: 13px; font-family: inherit; padding: .45rem .55rem; border-radius: var(--r-ctrl);
     background: var(--p-sup); color: var(--p-txt); border: 1px solid var(--p-linea);
   }
 
@@ -694,7 +730,7 @@ ul, ol { list-style: none; padding: 0; }
   }
   .hoy-sw-b {
     display: flex; align-items: center; gap: .55rem; min-width: 0;
-    padding: .9rem .9rem; border-radius: 18px;
+    padding: .9rem .9rem; border-radius: var(--radio);
     background: var(--p-tarj); border: 1px solid var(--p-borde);
     box-shadow: var(--p-alza); color: var(--p-txt2); font-weight: 600;
     transition: transform .15s var(--ease), box-shadow .18s var(--ease),
@@ -714,8 +750,8 @@ ul, ol { list-style: none; padding: 0; }
   /* Con algo esperando, el contador se pinta de naranja: es el aviso. */
   .hoy-sw-n.hay { background: var(--p-acento); color: #fff; }
   .hoy-sw-b[aria-selected="true"] {
-    background: var(--p-primario); border-color: transparent; color: #fff;
-    box-shadow: 0 12px 26px -12px color-mix(in srgb, var(--p-primario) 70%, transparent);
+    background: var(--p-primario); border-color: transparent; color: var(--p-sobre-prim);
+    box-shadow: none;
   }
   .hoy-sw-b[aria-selected="true"] .hoy-sw-i { color: #fff; }
   .hoy-sw-b[aria-selected="true"] .hoy-sw-n { background: rgba(255,255,255,.22); color: #fff; }
@@ -949,14 +985,10 @@ ul, ol { list-style: none; padding: 0; }
     position: relative; background: var(--p-tarj); border: 1px solid var(--p-borde);
     border-radius: var(--radio); padding: 1.1rem 1.1rem .9rem; overflow: hidden;
   }
-  /* El velo: la referencia lo hace con lila; acá con el naranja de la
-     marca, tan bajo que no se nombra. Es el único adorno de la pantalla. */
-  .ag2-cab::before {
-    content: ""; position: absolute; inset: 0 0 auto 0; height: 70%;
-    background: linear-gradient(170deg, var(--p-suave), transparent 70%);
-    pointer-events: none;
-  }
-  .ag2-cab > * { position: relative; }
+  /* La tarjeta del calendario llevaba un degradado naranja de arriba
+     hacia abajo, "tan bajo que no se nombra". Si no se nombra, sobra:
+     era el único adorno de la pantalla y teñía de durazno justo el
+     lugar donde hay que distinguir los puntos de color de cada día. */
   .ag2-top { display: flex; align-items: center; gap: .4rem; margin-bottom: .9rem; }
   .ag2-mes {
     flex: 1 1 auto; min-width: 0; white-space: nowrap;
@@ -980,9 +1012,8 @@ ul, ol { list-style: none; padding: 0; }
     position: fixed; z-index: 60; width: min(19rem, calc(100vw - 1.6rem));
     padding: .7rem; border-radius: var(--radio-chico);
     background: var(--p-sup); border: 1px solid var(--p-borde);
-    box-shadow: 0 14px 34px rgba(16, 26, 48, .18);
+    box-shadow: var(--p-flota);
   }
-  :root[data-tema="oscuro"] .ag2-salto { box-shadow: 0 14px 34px rgba(0, 0, 0, .5); }
   .ag2-salto[hidden] { display: none; }
   .ag2-salto-ano {
     display: flex; align-items: center; justify-content: space-between;
@@ -1007,7 +1038,7 @@ ul, ol { list-style: none; padding: 0; }
   /* El mes de hoy se marca con un punto; el que se está mirando, lleno. */
   .ag2-salto-meses button.ahora { color: var(--p-acento); }
   .ag2-salto-meses button[aria-pressed="true"] {
-    background: var(--p-primario); color: #fff;
+    background: var(--p-primario); color: var(--p-sobre-prim);
   }
   .ag2-flechas { display: flex; gap: .15rem; }
   .ag2-flechas button, .ag2-hoy {
@@ -1026,12 +1057,12 @@ ul, ol { list-style: none; padding: 0; }
   .conm { flex: 0 0 auto; }
   .ag2-hueco { flex: 1 1 0; min-width: 0; }
   .conm {
-    display: inline-flex; padding: 3px; border-radius: 999px; gap: 2px;
+    display: inline-flex; padding: 3px; border-radius: var(--r-ctrl); gap: 2px;
     background: var(--p-ctrl); border: 1px solid var(--p-ctrl-bd);
   }
   .conm button {
     display: inline-flex; align-items: center; justify-content: center; gap: .3rem;
-    height: 1.85rem; padding: 0 .8rem; border-radius: 999px;
+    height: 1.85rem; padding: 0 .8rem; border-radius: 7px;
     font-size: .76rem; font-weight: 600; color: var(--p-tenue);
     transition: background .18s var(--ease), color .18s var(--ease);
   }
@@ -1061,7 +1092,7 @@ ul, ol { list-style: none; padding: 0; }
   }
   .ag2-d {
     display: flex; flex-direction: column; align-items: center; gap: .2rem;
-    padding: .4rem 0 .5rem; border-radius: 14px;
+    padding: .4rem 0 .5rem; border-radius: var(--radio-chico);
   }
   .ag2-d .l { font-size: .68rem; font-weight: 600; color: var(--p-tenue); }
   .ag2-d .n {
@@ -1139,7 +1170,7 @@ ul, ol { list-style: none; padding: 0; }
      botón de abrir y el enlace del teléfono. Un enlace no puede vivir
      dentro de un botón, y el teléfono tiene que verse sin abrir nada. */
   .pild {
-    width: 100%; box-sizing: border-box; padding: .6rem .75rem; border-radius: 16px;
+    width: 100%; box-sizing: border-box; padding: .6rem .75rem; border-radius: var(--radio);
     background: var(--tinte); transition: transform .14s var(--ease);
   }
   .pild-ab {
@@ -1162,7 +1193,7 @@ ul, ol { list-style: none; padding: 0; }
   .pild-tel {
     display: inline-flex; align-items: center; gap: .32rem;
     margin: .3rem 0 0 3.05rem; padding: .18rem .45rem .18rem .3rem;
-    border-radius: 999px; text-decoration: none;
+    border-radius: var(--r-chip); text-decoration: none;
     font-family: var(--datos); font-size: .76rem; font-weight: 600;
     font-variant-numeric: tabular-nums; letter-spacing: .01em;
     color: var(--p-txt2); -webkit-tap-highlight-color: transparent;
@@ -1256,7 +1287,7 @@ ul, ol { list-style: none; padding: 0; }
   .lis-filtros { display: flex; gap: .35rem; flex-wrap: wrap; }
   .lis-filtros select {
     font-size: .78rem; font-weight: 600; color: var(--p-txt2);
-    height: 1.95rem; padding: 0 1.35rem 0 .6rem; border-radius: 999px;
+    height: 1.95rem; padding: 0 1.35rem 0 .6rem; border-radius: var(--r-ctrl);
     background: var(--p-ctrl); border: 1px solid var(--p-ctrl-bd);
     -webkit-appearance: none; appearance: none; box-sizing: border-box;
     max-width: 12rem; text-overflow: ellipsis;
@@ -1343,7 +1374,7 @@ ul, ol { list-style: none; padding: 0; }
     /* Altura fija, ancho segun el texto. Antes cada boton media distinto
        segun donde estuviera (39 / 37 / 34 px en una misma pantalla) y se
        notaba en cuanto habia dos juntos. */
-    font-weight: 600; height: 2.25rem; padding: 0 .95rem; border-radius: 999px;
+    font-weight: 600; height: 2.25rem; padding: 0 .95rem; border-radius: var(--r-ctrl);
     justify-content: center; line-height: 1;
     background: var(--p-ctrl); color: var(--p-txt);
     border: 1px solid var(--p-ctrl-bd); white-space: nowrap;
@@ -1397,7 +1428,7 @@ ul, ol { list-style: none; padding: 0; }
     display: flex; align-items: center; gap: .7rem;
     padding: .7rem .8rem;
     background: var(--p-barra); color: var(--p-barra-t);
-    border-radius: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.28);
+    border-radius: var(--radio-chico); box-shadow: var(--p-flota);
   }
   .instalar img { border-radius: 9px; flex: 0 0 auto; }
   .instalar p { margin: 0; flex: 1 1 auto; font-size: .84rem; line-height: 1.35; }
@@ -1430,8 +1461,8 @@ ul, ol { list-style: none; padding: 0; }
     background: var(--p-barra); color: var(--p-barra-t);
     padding: .45rem .65rem; border-radius: 7px; font-size: .78rem;
     white-space: nowrap; transform: translate(-50%, -115%);
-    opacity: 0; transition: opacity .12s var(--ease);
-    box-shadow: 0 4px 14px rgba(0,0,0,.18);
+    opacity: 0; transition: opacity var(--t-rapida) var(--ease);
+    box-shadow: var(--p-flota);
   }
   .globo.ver { opacity: 1; }
   .globo b { font-weight: 500; }
@@ -1471,14 +1502,14 @@ ul, ol { list-style: none; padding: 0; }
      palabra con una rayita de dos píxeles debajo. */
   .pest-est button {
     flex: 0 0 auto; white-space: nowrap;
-    padding: .55rem 1.05rem; border-radius: 999px; font-weight: 500;
+    padding: .55rem 1.05rem; border-radius: var(--r-ctrl); font-weight: 500;
     background: var(--p-sup); color: var(--p-txt2);
     border: 1px solid var(--p-ctrl-bd);
     transition: background .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease);
   }
   .pest-est button:hover { background: var(--p-sup2); }
   .pest-est button[aria-selected="true"] {
-    background: var(--p-primario); color: #fff; font-weight: 600;
+    background: var(--p-primario); color: var(--p-sobre-prim); font-weight: 600;
   }
   .pest-est .n {
     margin-left: .35rem; font-variant-numeric: tabular-nums;
@@ -1643,7 +1674,7 @@ ul, ol { list-style: none; padding: 0; }
 
   #clientes-barra input[type="search"] {
     flex: 1; max-width: 26rem; font-family: inherit; font-size: 13.5px;
-    padding: .5rem .7rem; border-radius: 8px;
+    padding: .5rem .7rem; border-radius: var(--r-ctrl);
     background: var(--p-sup); color: var(--p-txt); border: 1px solid var(--p-linea);
   }
   #clientes-barra input:focus { border-color: var(--p-primario); outline: none; }
@@ -1661,7 +1692,7 @@ ul, ol { list-style: none; padding: 0; }
   .cli-marcas { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .45rem; }
   .pastilla {
     display: inline-flex; align-items: center; gap: .35rem;
-    font-size: .75rem; font-weight: 500; padding: .25rem .6rem; border-radius: 999px;
+    font-size: .75rem; font-weight: 500; padding: .25rem .6rem; border-radius: var(--r-chip);
     background: var(--p-sup2); color: var(--p-tenue); white-space: nowrap;
   }
   .pastilla.toca { background: var(--est-espera-bg); color: var(--est-espera-tx); }
@@ -1699,7 +1730,7 @@ ul, ol { list-style: none; padding: 0; }
   .ficha.cli:hover .cli-ir { color: var(--p-primario); }
   /* Los dos botones de contacto se agrandan: acá no hay una tabla que
      los obligue a ser chiquitos y esto se toca en la calle. */
-  .acc[data-alto] a { width: 2.4rem; height: 2.4rem; border-radius: 999px; }
+  .acc[data-alto] a { width: 2.4rem; height: 2.4rem; border-radius: var(--r-ctrl); }
   .acc[data-alto] a svg { width: 17px; height: 17px; }
   #estado-clientes:not(.is-error), #estado-lista:not(.is-error) {
     text-align: right; font-size: .8rem;
@@ -1907,10 +1938,10 @@ ul, ol { list-style: none; padding: 0; }
      cuánto (o una fecha exacta). Vive en la hoja de completar. */
   .mant-bloque { margin-top: 1.1rem; padding-top: 1rem; border-top: 1px solid var(--p-linea); }
   .mant-lbl { display: block; color: var(--p-tenue); font-size: .85rem; margin-bottom: .5rem; }
-  .seg { display: inline-flex; background: var(--p-sup2); border: 1px solid var(--p-borde); border-radius: 12px; padding: 3px; gap: 3px; }
+  .seg { display: inline-flex; background: var(--p-sup2); border: 1px solid var(--p-borde); border-radius: var(--radio-chico); padding: 3px; gap: 3px; }
   .seg-b { border: 0; background: transparent; color: var(--p-tenue); padding: .45rem 1.3rem;
     border-radius: 9px; font: inherit; font-weight: 600; cursor: pointer; }
-  .seg-b[aria-pressed="true"] { background: var(--p-primario); color: #fff; }
+  .seg-b[aria-pressed="true"] { background: var(--p-primario); color: var(--p-sobre-prim); }
   /* Dos columnas fijas y no `auto-fit`: con un solo campo adentro, la
      rejilla automática lo estiraría a todo el ancho y dejaría de medir
      lo mismo que "Se cobró", que es justo lo que se quería. */
@@ -1932,7 +1963,7 @@ ul, ol { list-style: none; padding: 0; }
   .nom-caja { position: relative; }
   .ac-lista {
     position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 40;
-    background: var(--p-tarj); border: 1px solid var(--p-linea); border-radius: 12px;
+    background: var(--p-tarj); border: 1px solid var(--p-linea); border-radius: var(--radio-chico);
     box-shadow: var(--p-alza2); overflow: hidden; max-height: 15rem; overflow-y: auto;
   }
   .ac-item {
@@ -1971,11 +2002,10 @@ ul, ol { list-style: none; padding: 0; }
      uno busca de verdad al abrir la agenda, y un borde de 1,5px se
      perdía entre los días que sí tienen color de estado. */
   .cal button.hoy {
-    background: var(--p-primario); color: #fff; font-weight: 700;
-    box-shadow: 0 2px 8px -2px rgba(42,99,214,.45);
+    background: var(--p-primario); color: var(--p-sobre-prim); font-weight: 700;
   }
   .cal button.hoy:hover { background: var(--p-primario); }
-  .cal button.hoy.con, .cal button.hoy.vencido { background: var(--p-primario); color: #fff; }
+  .cal button.hoy.con, .cal button.hoy.vencido { background: var(--p-primario); color: var(--p-sobre-prim); }
   .cal button.con { background: var(--est-espera-bg); color: var(--est-espera-tx); font-weight: 600; }
   .cal button.vencido { background: var(--est-mal-bg); color: var(--est-mal-tx); font-weight: 600; }
   /* Los puntos van en fila bajo el número: uno por tipo de marca. */
@@ -2009,9 +2039,6 @@ ul, ol { list-style: none; padding: 0; }
   .cal-pop.de-anio { grid-template-columns: repeat(2, minmax(3.6rem, 1fr)); }
   /* El de hoy se nombra sin rellenarse; el escogido sí va relleno. */
   .cal-pop button.es-hoy { color: var(--p-primario); }
-  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  }
-
   /* Los tres controles del mes en un solo riel: se leen como un control
      y no como tres botones que casualmente quedaron juntos. */
 
@@ -2117,7 +2144,7 @@ ul, ol { list-style: none; padding: 0; }
   .accs-lista { display: flex; flex-direction: column; gap: .4rem; }
   .acc-fila {
     display: flex; align-items: center; gap: .7rem; width: 100%;
-    padding: .8rem .9rem; border-radius: 12px; border: 1px solid var(--p-borde);
+    padding: .8rem .9rem; border-radius: var(--radio-chico); border: 1px solid var(--p-borde);
     background: var(--p-sup2); color: var(--p-txt); font: inherit; font-weight: 500;
     cursor: pointer; text-align: left; text-decoration: none;
   }
@@ -2142,8 +2169,8 @@ ul, ol { list-style: none; padding: 0; }
   .aviso-uno {
     display: flex; align-items: center; gap: .55rem;
     background: var(--p-barra); color: var(--p-barra-t);
-    padding: .6rem .9rem; border-radius: 9px; font-weight: 500;
-    box-shadow: 0 10px 30px rgba(0,0,0,.28);
+    padding: .6rem .9rem; border-radius: var(--r-ctrl); font-weight: 500;
+    box-shadow: var(--p-flota);
     animation: subeAviso .22s var(--ease);
   }
   .aviso-uno svg { width: 15px; height: 15px; flex: 0 0 15px; }
@@ -2168,8 +2195,13 @@ ul, ol { list-style: none; padding: 0; }
      Un contorno propio y visible: el del navegador desaparecía sobre
      los fondos oscuros. Sólo con `:focus-visible`, así que aparece al
      navegar con teclado y no al hacer clic. */
+  /* El anillo NO toca el radio. Antes esta regla llevaba
+     `border-radius: 5px`, así que cualquier cosa que recibiera el foco
+     con el teclado cambiaba de forma mientras lo tenía: un botón de
+     10px pasaba a 5px, un avatar redondo se volvía cuadrado. El
+     contorno sigue solo la forma del elemento. */
   .panel :focus-visible, .clave-caja :focus-visible, .hoja :focus-visible {
-    outline: 2px solid var(--p-primario); outline-offset: 2px; border-radius: 5px;
+    outline: 2px solid var(--p-primario); outline-offset: 2px;
   }
 
   /* ---------- La hoja modal ---------- */
@@ -2180,7 +2212,7 @@ ul, ol { list-style: none; padding: 0; }
   .hoja {
     background: var(--p-sup); border: 1px solid var(--p-borde);
     border-radius: var(--radio); padding: 1.4rem 1.5rem 1.5rem;
-    width: min(32rem, 100%); box-shadow: 0 24px 60px rgba(0,0,0,.35);
+    width: min(32rem, 100%); box-shadow: var(--p-alza2);
     /* Una hoja más alta que la pantalla deja los botones de guardar
        fuera y sin forma de llegar a ellos. Rueda por dentro. */
     max-height: calc(100vh - 2rem); overflow-y: auto;
@@ -2309,7 +2341,7 @@ ul, ol { list-style: none; padding: 0; }
   /* El campo donde se escribe. */
   .apunte-f textarea {
     width: 100%; box-sizing: border-box; resize: vertical; min-height: 3.1rem;
-    font: inherit; font-size: 13.5px; border-radius: 8px; padding: .5rem .6rem;
+    font: inherit; font-size: 13.5px; border-radius: var(--r-ctrl); padding: .5rem .6rem;
     background: var(--p-fondo); color: var(--p-txt); border: 1px solid var(--p-linea);
   }
   .apunte-f textarea:focus-visible { outline: 2px solid var(--p-acento); outline-offset: 1px; }
@@ -2334,7 +2366,7 @@ ul, ol { list-style: none; padding: 0; }
   .sv-fila .f { margin: 0; }
   .sv-fila label { color: var(--p-tenue); }
   .sv-fila input, .sv-fila select {
-    font-size: 13.5px; border-radius: 8px; padding: .5rem .6rem; width: 100%;
+    font-size: 13.5px; border-radius: var(--r-ctrl); padding: .5rem .6rem; width: 100%;
     box-sizing: border-box;
     background: var(--p-fondo); color: var(--p-txt); border: 1px solid var(--p-linea);
   }
@@ -2350,7 +2382,7 @@ ul, ol { list-style: none; padding: 0; }
   .sv-quitar {
     border: 1px solid transparent; background: none; color: var(--p-tenue);
     font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer;
-    height: 2rem; padding: 0 .6rem; border-radius: 999px;
+    height: 2rem; padding: 0 .6rem; border-radius: var(--r-ctrl);
     transition: color .15s var(--ease), background .15s var(--ease), border-color .15s var(--ease);
   }
   .sv-quitar:hover { color: var(--est-mal-tx); background: color-mix(in srgb, var(--est-mal-tx) 10%, transparent); }
@@ -2366,7 +2398,7 @@ ul, ol { list-style: none; padding: 0; }
   .precio-f { display: grid; grid-template-columns: 1fr 9.5rem; gap: .5rem 1rem; align-items: center; }
   .precio-et { color: var(--p-txt2); font-size: .84rem; line-height: 1.3; }
   .precio-f input {
-    font-size: 13.5px; border-radius: 8px; padding: .5rem .6rem; width: 100%;
+    font-size: 13.5px; border-radius: var(--r-ctrl); padding: .5rem .6rem; width: 100%;
     box-sizing: border-box;
     background: var(--p-fondo); color: var(--p-txt); border: 1px solid var(--p-linea);
     font-family: var(--datos); font-variant-numeric: tabular-nums; text-align: right;
@@ -2421,20 +2453,30 @@ ul, ol { list-style: none; padding: 0; }
   /* Cualquier .f dentro de una hoja hereda el mismo look de la rejilla:
      sin esto los campos sueltos ("Otras señas", "Nota…") heredaban el
      estilo por defecto del navegador (fondo blanco, borde ancho). */
-  .hoja .f > label { color: var(--p-tenue); }
+  .hoja .f > label { color: var(--p-txt2); }
+  /* El borde de un campo tiene que verse: es lo que dice "acá se
+     escribe". Iba en `--p-linea`, el mismo 14% de tinta de un divisor,
+     y el campo se distinguía del fondo de la hoja sólo por un tinte.
+     `--p-borde-campo` pasa 3:1 contra la hoja. */
   .hoja .f > input, .hoja .f > select, .hoja .f > textarea {
-    font-size: 13.5px; border-radius: 8px; padding: .5rem .6rem;
-    background: var(--p-fondo); color: var(--p-txt); border: 1px solid var(--p-linea);
+    font-size: 14px; border-radius: var(--r-ctrl); padding: .55rem .7rem;
+    background: var(--p-tarj); color: var(--p-txt); border: 1px solid var(--p-borde-campo);
     width: 100%; min-width: 0; box-sizing: border-box;
+    transition: border-color var(--t-rapida) var(--ease), box-shadow var(--t-rapida) var(--ease);
   }
+  /* El foco es un solo anillo, en el azul del panel. Antes el borde se
+     ponía azul pero se colaba además el resplandor naranja que trae la
+     hoja de estilos del sitio público: dos colores para decir "estás
+     acá". */
   .hoja .f > input:focus, .hoja .f > select:focus, .hoja .f > textarea:focus {
     border-color: var(--p-primario); outline: none;
+    box-shadow: 0 0 0 2px var(--p-prim-suave);
   }
   /* El buscador y el select de tipos de Servicios viven en la vista
      (no en un modal), y por eso quedaban con el estilo del navegador. */
   #sv-busca, #sv-tipo {
-    font-size: 13.5px; border-radius: 8px; padding: .5rem .6rem;
-    background: var(--p-fondo); color: var(--p-txt); border: 1px solid var(--p-linea);
+    font-size: 14px; border-radius: var(--r-ctrl); padding: .55rem .7rem;
+    background: var(--p-tarj); color: var(--p-txt); border: 1px solid var(--p-borde-campo);
     box-sizing: border-box;
   }
   /* El buscador iguala su altura con el botón "Agendar servicio" que va
@@ -2460,16 +2502,15 @@ ul, ol { list-style: none; padding: 0; }
      ===================================================================== */
   .velo-acc {
     position: fixed; inset: 0; z-index: 50; background: rgba(8,12,22,.45);
-    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
-    opacity: 0; transition: opacity .24s var(--ease);
+    opacity: 0; transition: opacity var(--t-media) var(--ease);
   }
   .velo-acc.viva { opacity: 1; }
   .hoja-acc {
     position: fixed; left: .6rem; right: .6rem; z-index: 55;
     bottom: calc(5.4rem + env(safe-area-inset-bottom));
-    background: var(--p-sup); border: 1px solid var(--p-borde); border-radius: 24px;
+    background: var(--p-sup); border: 1px solid var(--p-borde); border-radius: var(--radio);
     padding: .4rem .5rem .6rem;
-    box-shadow: 0 18px 50px -14px rgba(8,12,22,.5);
+    box-shadow: var(--p-alza2);
     transform: translateY(calc(100% + 6rem));
     transition: transform .38s cubic-bezier(.22,1,.36,1);
     touch-action: none;
@@ -2491,11 +2532,11 @@ ul, ol { list-style: none; padding: 0; }
   @media (min-width: 860px) { .asa { display: none; } }
   .acc-op {
     width: 100%; display: flex; align-items: center; gap: .8rem; text-align: left;
-    padding: .7rem; border-radius: 16px; transition: background .15s var(--ease);
+    padding: .7rem; border-radius: var(--radio); transition: background .15s var(--ease);
   }
   .acc-op:hover, .acc-op:active { background: var(--p-ctrl); }
   .acc-ico {
-    flex: 0 0 2.6rem; width: 2.6rem; height: 2.6rem; border-radius: 14px;
+    flex: 0 0 2.6rem; width: 2.6rem; height: 2.6rem; border-radius: var(--radio-chico);
     display: inline-flex; align-items: center; justify-content: center;
     background: var(--p-ctrl); color: var(--p-txt2);
   }
@@ -2530,7 +2571,7 @@ ul, ol { list-style: none; padding: 0; }
   .pend-filtros::-webkit-scrollbar { display: none; }
   .pend-f {
     flex: 0 0 auto; display: inline-flex; align-items: center; gap: .45rem;
-    height: 2.1rem; padding: 0 .85rem; border-radius: 999px; white-space: nowrap;
+    height: 2.1rem; padding: 0 .85rem; border-radius: var(--r-ctrl); white-space: nowrap;
     font-size: .8rem; font-weight: 600; color: var(--p-txt2);
     background: var(--p-ctrl); border: 1px solid var(--p-ctrl-bd);
     transition: background .18s var(--ease), color .18s var(--ease), border-color .18s var(--ease);
@@ -2542,7 +2583,7 @@ ul, ol { list-style: none; padding: 0; }
     font-family: var(--datos); font-size: .86rem; font-weight: 700;
     font-variant-numeric: tabular-nums; color: var(--tono, var(--p-tenue));
   }
-  .pend-f[aria-pressed="true"] { background: var(--p-primario); border-color: transparent; color: #fff; }
+  .pend-f[aria-pressed="true"] { background: var(--p-primario); border-color: transparent; color: var(--p-sobre-prim); }
   .pend-f[aria-pressed="true"] .n { color: rgba(255,255,255,.85); }
 
   .pend-sec + .pend-sec { margin-top: 1.8rem; }
@@ -2562,7 +2603,7 @@ ul, ol { list-style: none; padding: 0; }
      Azul = algo nuevo entró. Gris = se está enfriando. */
   .pcard {
     position: relative; overflow: hidden; margin-bottom: .5rem;
-    border: 1px solid var(--p-borde); border-radius: 16px;
+    border: 1px solid var(--p-borde); border-radius: var(--radio);
     background: var(--p-tarj); box-shadow: var(--p-alza-fila);
   }
   .pcard::before {
@@ -2610,7 +2651,7 @@ ul, ol { list-style: none; padding: 0; }
   .pcab-fl svg { width: 17px; height: 17px; }
   .pcab[aria-expanded="true"] .pcab-fl { transform: rotate(180deg); }
   .ptag {
-    display: inline-flex; align-items: center; padding: .2rem .55rem; border-radius: 999px;
+    display: inline-flex; align-items: center; padding: .2rem .55rem; border-radius: var(--r-chip);
     font-size: .7rem; font-weight: 600; white-space: nowrap;
     background: color-mix(in srgb, var(--tono) 14%, transparent); color: var(--tono);
   }
@@ -2664,7 +2705,7 @@ ul, ol { list-style: none; padding: 0; }
   #top-clientes { display: flex; flex-direction: column; gap: .5rem; }
   .top-cli {
     display: grid; grid-template-columns: 1.6rem minmax(0, 1.4fr) minmax(6rem, 2fr) auto;
-    align-items: center; gap: .8rem; padding: .55rem .6rem; border-radius: 12px;
+    align-items: center; gap: .8rem; padding: .55rem .6rem; border-radius: var(--radio-chico);
     background: var(--p-sup2); cursor: pointer; transition: background .12s;
   }
   .top-cli:hover { background: var(--p-tarj); }
@@ -2739,7 +2780,7 @@ ul, ol { list-style: none; padding: 0; }
   /* Aviso de posible duplicado (§4): amarillo suave, no alarma. Ofrece
      abrir la ficha que ya existe antes de crear otra. */
   .dup-aviso {
-    margin: .5rem 0 0; padding: .6rem .75rem; border-radius: 12px;
+    margin: .5rem 0 0; padding: .6rem .75rem; border-radius: var(--radio-chico);
     background: color-mix(in srgb, var(--est-espera-tx, #d99a2b) 12%, transparent);
     border: 1px solid color-mix(in srgb, var(--est-espera-tx, #d99a2b) 30%, transparent);
   }
@@ -2747,7 +2788,7 @@ ul, ol { list-style: none; padding: 0; }
   .dup-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
   .dup-chip {
     display: inline-flex; align-items: baseline; gap: .35rem; cursor: pointer;
-    padding: .35rem .6rem; border-radius: 999px; border: 1px solid var(--p-linea);
+    padding: .35rem .6rem; border-radius: var(--r-chip); border: 1px solid var(--p-linea);
     background: var(--p-sup2); color: var(--p-txt); font-size: .85rem; font-weight: 500;
   }
   .dup-chip small { color: var(--p-tenue); font-family: var(--datos); font-weight: 400; }
@@ -2779,34 +2820,27 @@ ul, ol { list-style: none; padding: 0; }
 
   /* ---------- Clave ---------- */
   .clave-pantalla { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
-  /* La tarjeta de entrada: vidrio esmerilado sobre el fondo que respira,
-     con un halo azul→naranja detrás. Es la primera pantalla, así que se
-     gana verse. */
+  /* La tarjeta de entrada. Era de vidrio esmerilado con un halo
+     azul→naranja desenfocado detrás: el degradado de dos colores con
+     brillo es la firma de una pantalla de ingreso generada. Ahora es
+     una tarjeta como las demás, opaca y con su filete. */
   .clave-caja {
     position: relative; width: 100%; max-width: 22rem; text-align: center;
-    background: color-mix(in srgb, var(--p-tarj) 80%, transparent);
-    border: 1px solid var(--p-borde); border-radius: 26px;
+    background: var(--p-tarj);
+    border: 1px solid var(--p-borde); border-radius: var(--radio);
     padding: 2.4rem 1.8rem 2rem; box-shadow: var(--p-alza2);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
-    backdrop-filter: blur(18px) saturate(160%);
-    animation: clave-entra .5s var(--ease) both;
+    animation: clave-entra var(--t-media) var(--ease) both;
   }
-  @keyframes clave-entra { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+  @keyframes clave-entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
   /* El arranque: el logo y una línea, sin tarjeta ni halo. Dura lo que
      tarda una pregunta al servidor, así que no se gana más que eso. */
   .arranque { text-align: center; animation: arranque-entra .4s var(--ease) both; }
   .arranque p { margin: 0; color: var(--p-tenue); font-size: .9rem; }
   @keyframes arranque-entra { from { opacity: 0; } to { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .arranque { animation: none; } }
-  .clave-caja::before {
-    content: ""; position: absolute; inset: -2px; z-index: -1; border-radius: 28px;
-    background: linear-gradient(135deg, var(--p-primario), var(--p-acento));
-    opacity: .5; filter: blur(22px);
-  }
   .clave-logo {
     width: 76px; height: 76px; margin: 0 auto 1.1rem; border-radius: 50%;
     display: grid; place-items: center; background: var(--p-sup2);
-    box-shadow: 0 8px 22px -8px color-mix(in srgb, var(--p-primario) 60%, transparent);
   }
   .clave-logo img { width: 52px; height: 52px; }
   .clave-caja h1 { font-family: var(--display); font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; margin: 0; }
@@ -2825,7 +2859,7 @@ ul, ol { list-style: none; padding: 0; }
   .btn-fuerte {
     display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
     background: var(--p-acento); color: #fff; font-weight: 600;
-    padding: .62rem 1.3rem; border-radius: 999px;
+    padding: .62rem 1.3rem; border-radius: var(--r-ctrl);
     transition: background .15s var(--ease), transform .12s var(--ease);
   }
   .btn-fuerte:hover { background: var(--p-acento-t); }
@@ -2834,7 +2868,7 @@ ul, ol { list-style: none; padding: 0; }
   .btn-suave {
     display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
     background: var(--p-sup2); color: var(--p-txt); font-weight: 600;
-    padding: .62rem 1.3rem; border-radius: 999px;
+    padding: .62rem 1.3rem; border-radius: var(--r-ctrl);
     transition: background .15s var(--ease);
   }
   .btn-suave:hover { background: var(--p-linea); }
@@ -2851,33 +2885,22 @@ ul, ol { list-style: none; padding: 0; }
       bottom: calc(.5rem + env(safe-area-inset-bottom));
       width: auto; height: auto;
       flex-direction: row; z-index: 30; padding: 0;
-      border-radius: 999px;
-      /* Vidrio. La barra deja de ser una pastilla opaca tapando la
-         pantalla: se vuelve traslucida y el contenido se ve pasar por
-         debajo al desplazar. El `saturate` es lo que evita que el
-         desenfoque deje el color de abajo lavado, y el filete interior
-         de arriba es el brillo del canto — sin el, el vidrio se lee
-         como un plastico mate. */
-      background: var(--p-vidrio);
-      -webkit-backdrop-filter: blur(22px) saturate(180%);
-      backdrop-filter: blur(22px) saturate(180%);
-      border: 1px solid var(--p-vidrio-bd);
-      box-shadow: 0 14px 34px -14px rgba(16,26,48,.3),
-                  0 2px 8px rgba(16,26,48,.06),
-                  inset 0 1px 0 var(--p-vidrio-luz);
-      transition: box-shadow .3s var(--ease), background .3s var(--ease);
-    }
-    /* Sin soporte de desenfoque el vidrio seria un velo ilegible: se
-       vuelve opaca. */
-    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-      .barra { background: var(--p-barra); }
+      border-radius: 20px;
+      /* Mate. La barra era de vidrio: translúcida, con desenfoque y un
+         brillo en el canto. Debajo de ella pasan nombres y montos, y
+         leer cinco etiquetas de 10px encima de texto desenfocado es
+         leer con ruido. Ahora es una superficie opaca con su filete y
+         la misma sombra que cualquier otra cosa que flota. También dejó
+         de ser una cápsula: con las esquinas a 20px se lee como una
+         barra, que es lo que es. */
+      background: var(--p-barra);
+      border: 1px solid var(--p-borde);
+      box-shadow: var(--p-flota);
+      transition: box-shadow var(--t-media) var(--ease);
     }
     /* Arriba del todo no hay nada que pase por debajo, asi que la barra
        se posa: baja la sombra y deja de flotar sobre nada. */
-    .barra.posada {
-      box-shadow: 0 4px 14px -8px rgba(16,26,48,.22),
-                  inset 0 1px 0 var(--p-vidrio-luz);
-    }
+    .barra.posada { box-shadow: var(--p-alza-fila); }
     .barra-logo, .barra-pie { display: none; }
     /* El inset de abajo ya lo lleva la barra en su `bottom`; repetirlo
        acá dentro dejaría un hueco negro del alto de la rayita. */
@@ -2891,7 +2914,7 @@ ul, ol { list-style: none; padding: 0; }
       position: relative; flex-direction: column; gap: .18rem;
       justify-content: flex-start; font-size: .62rem;
       padding: .42rem .1rem .3rem; text-align: center; line-height: 1.15;
-      border-radius: 999px; background: none;
+      border-radius: 14px; background: none;
     }
     .barra nav button svg { position: relative; z-index: 1; width: 19px; height: 19px; flex-basis: 19px; }
     /* El activo: icono y etiqueta en naranja, más un punto debajo.
