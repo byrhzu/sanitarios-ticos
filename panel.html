@@ -882,7 +882,10 @@ ul, ol { list-style: none; padding: 0; }
     margin: .3rem 0 0; display: flex; align-items: baseline; gap: .75rem; flex-wrap: wrap;
   }
   .dinero-cifra .cifra-n {
-    font-family: var(--display); font-weight: 700; font-size: clamp(2.6rem, 6vw, 3.6rem);
+    /* Era de 3,6rem: casi 58px, tamaño de cartel. Es la cifra principal
+       de la pantalla y tiene que mandar, pero mandar sobre las de abajo
+       (1,55rem), no sobre la página entera. */
+    font-family: var(--display); font-weight: 700; font-size: clamp(2.2rem, 4.6vw, 2.8rem);
     line-height: 1; letter-spacing: -.045em; font-variant-numeric: tabular-nums;
   }
   .dinero-pie { margin: .45rem 0 0; color: var(--p-tenue); font-size: .85rem; }
@@ -1099,7 +1102,7 @@ ul, ol { list-style: none; padding: 0; }
     width: 2.1rem; height: 2.1rem; border-radius: 50%;
     display: inline-flex; align-items: center; justify-content: center;
     font-family: var(--datos); font-size: .92rem; font-weight: 600;
-    transition: background .22s var(--ease), color .22s var(--ease), box-shadow .22s var(--ease);
+    transition: background var(--t-rapida) var(--ease), color var(--t-rapida) var(--ease);
   }
   .ag2-d.fuera .l, .ag2-d.fuera .n { opacity: .35; }
   .ag2-d.hoy .n { color: var(--p-acento-t); }
@@ -1180,11 +1183,11 @@ ul, ol { list-style: none; padding: 0; }
   .pild:active { transform: scale(.985); }
   .pild.hecho { opacity: .72; }
   /* Un trabajo que ya pasó y nadie cerró. El tono no reemplaza al del
-     servicio —el ícono tiene que seguir reconociéndose— sino que le pone
-     una barra al canto, que es lo que se ve corriendo la lista. */
+     servicio —el ícono tiene que seguir reconociéndose—: tiñe la fila
+     un punto y le pone un filete entero, no una barra al canto. */
   .pild.vencida {
     background: color-mix(in srgb, var(--est-curso-tx) 7%, var(--tinte));
-    box-shadow: inset 3px 0 0 var(--est-curso-tx);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--est-curso-tx) 35%, transparent);
   }
 
   /* El teléfono, bajo el nombre y alineado con él. Se lee como un dato
@@ -1224,7 +1227,7 @@ ul, ol { list-style: none; padding: 0; }
     display: flex; align-items: center; gap: .4rem; flex-wrap: wrap;
     color: var(--p-txt2); font-size: .76rem; margin-top: .12rem;
   }
-  .pild-fl { flex: 0 0 auto; color: var(--p-tenue); display: inline-flex; transition: transform .28s var(--ease); }
+  .pild-fl { flex: 0 0 auto; color: var(--p-tenue); display: inline-flex; transition: transform var(--t-media) var(--ease); }
   .pild-fl svg { width: 17px; height: 17px; }
   /* `data-abierto` y no `aria-expanded`: el estado accesible vive en el
      botón de adentro, pero quien pinta la flecha y abre el detalle es la
@@ -1234,7 +1237,7 @@ ul, ol { list-style: none; padding: 0; }
   /* ---- El detalle, que se abre EN SU LUGAR ----
      `grid-template-rows: 0fr -> 1fr` es lo que permite animar hasta la
      altura real sin conocerla de antemano; con `height: auto` no se anima. */
-  .det { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .32s var(--ease); }
+  .det { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--t-media) var(--ease); }
   .pild[data-abierto="true"] + .det { grid-template-rows: 1fr; }
   .det > div { overflow: hidden; }
   .det-caja { padding: .7rem .75rem .2rem; }
@@ -2220,9 +2223,9 @@ ul, ol { list-style: none; padding: 0; }
   /* La hoja entra desde abajo y el velo se funde: dos movimientos de
      220ms que dicen "esto se abrió encima" sin hacerlo esperar a nadie. */
   .velo:not([hidden]) { animation: entra-suave .18s var(--ease) both; }
-  .velo:not([hidden]) .hoja { animation: entra-hoja .22s var(--ease) both; }
+  .velo:not([hidden]) .hoja { animation: entra-hoja var(--t-media) var(--ease) both; }
   @keyframes entra-hoja {
-    from { opacity: 0; transform: translateY(14px) scale(.985); }
+    from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: none; }
   }
   .hoja h2 { font-size: 1.15rem; font-weight: 600; margin: 0; }
@@ -2512,7 +2515,7 @@ ul, ol { list-style: none; padding: 0; }
     padding: .4rem .5rem .6rem;
     box-shadow: var(--p-alza2);
     transform: translateY(calc(100% + 6rem));
-    transition: transform .38s cubic-bezier(.22,1,.36,1);
+    transition: transform .24s var(--ease);
     touch-action: none;
   }
   .hoja-acc.viva { transform: translateY(0); }
@@ -2545,7 +2548,7 @@ ul, ol { list-style: none; padding: 0; }
   .acc-fl { color: var(--p-tenue); display: inline-flex; }
   .acc-fl svg { width: 17px; height: 17px; }
   /* El "+" gira y se vuelve una ×: la misma pieza abre y cierra. */
-  .fab svg { transition: transform .34s cubic-bezier(.22,1,.36,1); }
+  .fab svg { transition: transform var(--t-media) var(--ease); }
   .fab.abierta svg { transform: rotate(135deg); }
   @media (max-width: 859px) {
     .barra { z-index: 60; }
@@ -2597,22 +2600,23 @@ ul, ol { list-style: none; padding: 0; }
     letter-spacing: -.015em; margin: 0;
   }
 
-  /* El filo de color de la izquierda dice de qué tipo es el pendiente. No
-     es decorativo y no inventa tonos: sale de los colores de estado que el
-     panel ya usa. Rojo = plata sin cobrar. Ámbar = se pasó la fecha.
-     Azul = algo nuevo entró. Gris = se está enfriando. */
+  /* El tono dice de qué tipo es el pendiente: rojo = plata sin cobrar,
+     ámbar = se pasó la fecha, azul = algo nuevo entró, gris = se está
+     enfriando. Lo llevan el "hace 3 días" y la etiqueta de la derecha.
+
+     Antes lo llevaba además un filo de 4px pegado al borde izquierdo de
+     cada tarjeta. Se quitó: la tarjeta con canto de color es el adorno
+     que cualquier panel generado le pone a una lista, y acá repetía por
+     tercera vez un dato que ya estaba escrito dos veces en la misma
+     fila. */
   .pcard {
     position: relative; overflow: hidden; margin-bottom: .5rem;
     border: 1px solid var(--p-borde); border-radius: var(--radio);
     background: var(--p-tarj); box-shadow: var(--p-alza-fila);
   }
-  .pcard::before {
-    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-    background: var(--tono); z-index: 1;
-  }
   .pcab {
     width: 100%; display: flex; align-items: flex-start; gap: .6rem; text-align: left;
-    padding: .75rem .8rem .75rem 1.05rem;
+    padding: .75rem .8rem .75rem .95rem;
   }
   .pcab-t { flex: 1; min-width: 0; }
   .pcab-t b {
@@ -2647,7 +2651,7 @@ ul, ol { list-style: none; padding: 0; }
     .pcab-s { grid-column: 1 / -1; }
   }
   .pcab-der { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; }
-  .pcab-fl { color: var(--p-tenue); display: inline-flex; transition: transform .28s var(--ease); }
+  .pcab-fl { color: var(--p-tenue); display: inline-flex; transition: transform var(--t-media) var(--ease); }
   .pcab-fl svg { width: 17px; height: 17px; }
   .pcab[aria-expanded="true"] .pcab-fl { transform: rotate(180deg); }
   .ptag {
@@ -2656,7 +2660,7 @@ ul, ol { list-style: none; padding: 0; }
     background: color-mix(in srgb, var(--tono) 14%, transparent); color: var(--tono);
   }
   .pcab[aria-expanded="true"] + .det { grid-template-rows: 1fr; }
-  .pcard .det-caja { padding: 0 .8rem .35rem 1.05rem; }
+  .pcard .det-caja { padding: 0 .8rem .35rem .95rem; }
 
   /* ---- Cuando no hay nada pendiente ----
      Es la única pantalla del panel que uno quiere ver. Se gana llegando
@@ -2834,7 +2838,7 @@ ul, ol { list-style: none; padding: 0; }
   @keyframes clave-entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
   /* El arranque: el logo y una línea, sin tarjeta ni halo. Dura lo que
      tarda una pregunta al servidor, así que no se gana más que eso. */
-  .arranque { text-align: center; animation: arranque-entra .4s var(--ease) both; }
+  .arranque { text-align: center; animation: arranque-entra var(--t-media) var(--ease) both; }
   .arranque p { margin: 0; color: var(--p-tenue); font-size: .9rem; }
   @keyframes arranque-entra { from { opacity: 0; } to { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .arranque { animation: none; } }
@@ -2997,10 +3001,14 @@ ul, ol { list-style: none; padding: 0; }
   /* ---------- Movimiento ----------
      Tres reglas y ninguna más:
 
-       1. Nada dura más de 280ms. Esto se abre veinte veces al día; una
-          animación que se disfruta la primera vez estorba la décima.
-       2. Se mueve lo que entra, no lo que ya estaba. Nada rebota, nada
-          gira, nada se desliza de lado.
+       1. Nada dura más de 200ms (`--t-rapida` y `--t-media`). Esto se
+          abre veinte veces al día; una animación que se disfruta la
+          primera vez estorba la décima. Las únicas excepciones son las
+          que confirman algo una sola vez: el giro de actualizar, el
+          destello de "guardado" y el visto de la lista vacía.
+       2. Se mueve lo que entra, no lo que ya estaba. Sólo opacidad y un
+          desplazamiento corto: nada rebota, nada se agranda, nada se
+          desliza de lado.
        3. Todo sale de `both`, así que si algo falla el elemento queda
           en su estado final y no invisible.
 
@@ -3013,7 +3021,7 @@ ul, ol { list-style: none; padding: 0; }
   }
   @keyframes entra-suave { from { opacity: 0; } to { opacity: 1; } }
   @keyframes entra-menu {
-    from { opacity: 0; transform: scale(.94) translateY(-6px); }
+    from { opacity: 0; transform: translateY(-4px); }
     to   { opacity: 1; transform: none; }
   }
 
@@ -3021,7 +3029,7 @@ ul, ol { list-style: none; padding: 0; }
      tarjetas: si se movieran las dos, se vería como un salto. */
   .vista:not([hidden]) { animation: entra-suave .16s var(--ease) both; }
 
-  .escalona > * { animation: entra-sube .26s var(--ease) both; }
+  .escalona > * { animation: entra-sube var(--t-media) var(--ease) both; }
   .escalona > *:nth-child(1) { animation-delay: 0ms; }
   .escalona > *:nth-child(2) { animation-delay: 35ms; }
   .escalona > *:nth-child(3) { animation-delay: 70ms; }
@@ -10265,6 +10273,25 @@ window.INSTALACION = {
   });
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && !$("velo").hidden) cerrarHoja(null);
+  });
+
+  /* Escape cierra CUALQUIER hoja, no sólo la de arriba. Eran trece hojas
+     y sólo una —la de estado— respondía a la tecla; en las otras doce
+     había que ir con el cursor hasta "Cancelar". Cada hoja tiene su
+     propia forma de cerrarse (algunas limpian datos al salir), así que
+     acá no se esconde nada a mano: se aprieta el botón de cancelar de
+     la hoja que esté encima, que es exactamente lo que haría la
+     persona. Todas lo tienen, con un id que termina en `-cerrar` o
+     `-cancelar`. */
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    var abiertas = Array.prototype.filter.call(document.querySelectorAll(".velo"), function (v) {
+      return !v.hidden && v.id !== "velo";      // la de estado ya se atiende arriba
+    });
+    if (!abiertas.length) return;
+    // Varias a la vez: la última del documento es la que se pinta encima.
+    var salir = abiertas[abiertas.length - 1].querySelector('button[id$="-cerrar"], button[id$="-cancelar"]');
+    if (salir) { e.preventDefault(); salir.click(); }
   });
 
   /* =========================================================
